@@ -41,5 +41,6 @@ public sealed class TechnicalFoundationTests
         var options = new DatabaseInitializationOptions();
 
         Assert.False(options.ApplyMigrationsOnStartup);
+        Assert.False(options.ApplySeedingOnStartup);
     }
 }

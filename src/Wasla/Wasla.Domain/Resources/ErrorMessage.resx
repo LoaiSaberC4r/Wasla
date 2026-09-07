@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ValidationErrorTitle" xml:space="preserve"><value>Validation Error</value></data>
+  <data name="DomainErrorTitle" xml:space="preserve"><value>Domain Error</value></data>
+  <data name="ResourceNotFoundTitle" xml:space="preserve"><value>Resource Not Found</value></data>
+  <data name="ConflictTitle" xml:space="preserve"><value>Conflict</value></data>
+  <data name="UnauthorizedTitle" xml:space="preserve"><value>Unauthorized</value></data>
+  <data name="SecurityErrorTitle" xml:space="preserve"><value>Security Error</value></data>
+  <data name="TooManyRequestsTitle" xml:space="preserve"><value>Too Many Requests</value></data>
+  <data name="InfrastructureErrorTitle" xml:space="preserve"><value>Infrastructure Error</value></data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve"><value>Unexpected Error</value></data>
+  <data name="MethodNotAllowedTitle" xml:space="preserve"><value>Method Not Allowed</value></data>
+  <data name="UnsupportedMediaTypeTitle" xml:space="preserve"><value>Unsupported Media Type</value></data>
+  <data name="NotFound" xml:space="preserve"><value>The requested resource was not found.</value></data>
+  <data name="AuthenticationRequired" xml:space="preserve"><value>Authentication is required.</value></data>
+  <data name="AccessForbidden" xml:space="preserve"><value>You do not have permission to perform this action.</value></data>
+  <data name="InvalidCredentials" xml:space="preserve"><value>The supplied credentials are invalid.</value></data>
+  <data name="AccountInactive" xml:space="preserve"><value>The account is inactive.</value></data>
+  <data name="ApplicationUserNotFound" xml:space="preserve"><value>The application user was not found.</value></data>
+  <data name="UserNameRequired" xml:space="preserve"><value>User name is required.</value></data>
+  <data name="UserNameTooLong" xml:space="preserve"><value>User name must not exceed 100 characters.</value></data>
+  <data name="UserNameAlreadyExists" xml:space="preserve"><value>This user name is already in use.</value></data>
+  <data name="EmailRequired" xml:space="preserve"><value>Email is required.</value></data>
+  <data name="EmailInvalid" xml:space="preserve"><value>Email is not valid.</value></data>
+  <data name="EmailAlreadyExists" xml:space="preserve"><value>This email is already in use.</value></data>
+  <data name="PhoneNumberRequired" xml:space="preserve"><value>Phone number is required.</value></data>
+  <data name="PasswordRequired" xml:space="preserve"><value>Password is required.</value></data>
+  <data name="PasswordInvalid" xml:space="preserve"><value>Password does not meet the security policy.</value></data>
+  <data name="PasswordConfirmationMismatch" xml:space="preserve"><value>Password confirmation does not match.</value></data>
+  <data name="CurrentPasswordInvalid" xml:space="preserve"><value>The current password is invalid.</value></data>
+  <data name="PasswordMustBeDifferent" xml:space="preserve"><value>The new password must be different from the current password.</value></data>
+  <data name="NameArRequired" xml:space="preserve"><value>Arabic name is required.</value></data>
+  <data name="DateOfBirthRequired" xml:space="preserve"><value>Date of birth is required.</value></data>
+  <data name="DateOfBirthFuture" xml:space="preserve"><value>Date of birth cannot be in the future.</value></data>
+  <data name="GenderInvalid" xml:space="preserve"><value>Gender must be Male or Female.</value></data>
+  <data name="RequiredMediaMissing" xml:space="preserve"><value>A required verification file is missing.</value></data>
+  <data name="DoctorNotFound" xml:space="preserve"><value>The doctor was not found.</value></data>
+  <data name="DoctorInvalidStatus" xml:space="preserve"><value>The doctor status does not allow this action.</value></data>
+  <data name="DoctorNationalIdRequired" xml:space="preserve"><value>National ID is required to approve a doctor.</value></data>
+  <data name="DoctorNationalIdAlreadyExists" xml:space="preserve"><value>This National ID is already assigned.</value></data>
+  <data name="DoctorMediaNotFound" xml:space="preserve"><value>The requested doctor media was not found.</value></data>
+  <data name="ReasonRequired" xml:space="preserve"><value>A reason is required.</value></data>
+  <data name="InvalidRowVersion" xml:space="preserve"><value>The resource was changed by another request. Refresh and try again.</value></data>
+  <data name="SuperAdminNotFound" xml:space="preserve"><value>The SuperAdmin was not found.</value></data>
+  <data name="RootSuperAdminRequired" xml:space="preserve"><value>Only the Root SuperAdmin can perform this action.</value></data>
+  <data name="RootSuperAdminProtected" xml:space="preserve"><value>The Root SuperAdmin is protected from this action.</value></data>
+  <data name="RoleNotFound" xml:space="preserve"><value>The role was not found.</value></data>
+  <data name="PermissionNotFound" xml:space="preserve"><value>One or more permissions were not found.</value></data>
+  <data name="RootPermissionNotAssignable" xml:space="preserve"><value>Root-only permissions cannot be assigned to roles.</value></data>
+  <data name="DuplicatePermission" xml:space="preserve"><value>Permission IDs must not contain duplicates.</value></data>
+  <data name="OtpInvalid" xml:space="preserve"><value>The verification code is invalid.</value></data>
+  <data name="OtpExpired" xml:space="preserve"><value>The verification code has expired.</value></data>
+  <data name="TooManyAttempts" xml:space="preserve"><value>Too many verification attempts were made.</value></data>
+  <data name="ResetTokenInvalid" xml:space="preserve"><value>The reset token is invalid.</value></data>
+  <data name="ResetTokenExpired" xml:space="preserve"><value>The reset token has expired.</value></data>
+  <data name="PasswordResetChallengeConsumed" xml:space="preserve"><value>The password reset request can no longer be used.</value></data>
+  <data name="PasswordResetConfigurationInvalid" xml:space="preserve"><value>Password recovery configuration is invalid.</value></data>
+  <data name="PasswordResetRequestAccepted" xml:space="preserve"><value>If the account exists, a verification code will be sent.</value></data>
+  <data name="ValidationNotNull" xml:space="preserve"><value>'{PropertyName}' must not be null.</value></data>
+  <data name="ValidationNotEmpty" xml:space="preserve"><value>'{PropertyName}' must not be empty.</value></data>
+  <data name="ValidationEmail" xml:space="preserve"><value>'{PropertyName}' is not a valid email address.</value></data>
+  <data name="ValidationMaximumLength" xml:space="preserve"><value>'{PropertyName}' must be {MaxLength} characters or fewer.</value></data>
+  <data name="ValidationMinimumLength" xml:space="preserve"><value>'{PropertyName}' must be at least {MinLength} characters.</value></data>
+  <data name="ValidationExactLength" xml:space="preserve"><value>'{PropertyName}' must be exactly {MaxLength} characters.</value></data>
+  <data name="ValidationLength" xml:space="preserve"><value>'{PropertyName}' must be between {MinLength} and {MaxLength} characters.</value></data>
+  <data name="ValidationGreaterThan" xml:space="preserve"><value>'{PropertyName}' must be greater than '{ComparisonValue}'.</value></data>
+  <data name="ValidationGreaterThanOrEqual" xml:space="preserve"><value>'{PropertyName}' must be at least '{ComparisonValue}'.</value></data>
+  <data name="ValidationInclusiveBetween" xml:space="preserve"><value>'{PropertyName}' must be between {From} and {To}.</value></data>
+  <data name="ValidationEqual" xml:space="preserve"><value>'{PropertyName}' must equal '{ComparisonValue}'.</value></data>
+  <data name="ValidationRegularExpression" xml:space="preserve"><value>'{PropertyName}' has an invalid format.</value></data>
+  <data name="ValidationPredicate" xml:space="preserve"><value>The specified condition was not met for '{PropertyName}'.</value></data>
+  <data name="ValidationEnum" xml:space="preserve"><value>'{PropertyName}' has an invalid value.</value></data>
+  <data name="ValidationNull" xml:space="preserve"><value>'{PropertyName}' must be null.</value></data>
+  <data name="ValidationEmpty" xml:space="preserve"><value>'{PropertyName}' must be empty.</value></data>
+</root>

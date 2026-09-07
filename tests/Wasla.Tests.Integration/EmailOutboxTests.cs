@@ -120,7 +120,31 @@ public sealed class EmailOutboxTests
     }
 
     [Fact]
-    public async Task DbContext_MapsOnlyTechnicalOutboxPersistence()
+    public async Task ProcessingLease_PreventsEarlyClaimAndAllowsRecoveryAfterExpiry()
+    {
+        await using var fixture = await OutboxFixture.CreateAsync();
+        await fixture.PersistAsync(CreateMessage("lease-recovery"));
+        var leaseUntil = fixture.Clock.UtcNow.AddMinutes(1);
+        await fixture.DbContext.EmailOutboxMessages.ExecuteUpdateAsync(
+            setters => setters
+                .SetProperty(message => message.Status, EmailOutboxStatus.Processing)
+                .SetProperty(message => message.NextAttemptOnUtc, leaseUntil)
+                .SetProperty(message => message.ProcessingToken, Guid.NewGuid()),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, await fixture.Processor.ProcessBatchAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, fixture.EmailSender.SendCount);
+
+        fixture.Clock.UtcNow = leaseUntil.AddSeconds(1);
+        Assert.Equal(1, await fixture.Processor.ProcessBatchAsync(TestContext.Current.CancellationToken));
+        fixture.DbContext.ChangeTracker.Clear();
+        Assert.Equal(
+            EmailOutboxStatus.Sent,
+            (await fixture.DbContext.EmailOutboxMessages.SingleAsync(TestContext.Current.CancellationToken)).Status);
+    }
+
+    [Fact]
+    public async Task DbContext_MapsTrustAccessAndOutboxPersistence()
     {
         await using var fixture = await OutboxFixture.CreateAsync();
 
@@ -129,13 +153,18 @@ public sealed class EmailOutboxTests
             .Select(entity => entity.ClrType)
             .ToArray();
 
-        Assert.Equal([typeof(EmailOutboxMessage)], entityTypes);
         Assert.NotNull(fixture.DbContext.Model
             .FindEntityType(typeof(EmailOutboxMessage)));
+        Assert.Contains(typeof(Wasla.Domain.Security.ApplicationUser), entityTypes);
+        Assert.Contains(typeof(Wasla.Domain.Security.Role), entityTypes);
+        Assert.Contains(typeof(Wasla.Domain.Security.Permission), entityTypes);
+        Assert.Contains(typeof(Wasla.Domain.Doctors.Doctor), entityTypes);
+        Assert.Contains(typeof(Wasla.Domain.Patients.Patient), entityTypes);
+        Assert.Contains(typeof(Wasla.Domain.Security.PasswordResetChallenge), entityTypes);
     }
 
     [Fact]
-    public void TechnicalMigration_GeneratesOnlyOutboxSqlServerScript()
+    public void TrustAccessMigration_GeneratesRequiredSqlServerTables()
     {
         var options = new DbContextOptionsBuilder<WaslaDbContext>()
             .UseSqlServer(
@@ -151,6 +180,13 @@ public sealed class EmailOutboxTests
             "CREATE TABLE [EmailOutboxMessages]",
             script,
             StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE [ApplicationUsers]", script, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE [Doctors]", script, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE [Patients]", script, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE [SuperAdmins]", script, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE [PasswordResetChallenges]", script, StringComparison.Ordinal);
+        Assert.Contains("WHERE [NationalId] IS NOT NULL", script, StringComparison.Ordinal);
+        Assert.Contains("WHERE [IsRootSuperAdmin] = 1", script, StringComparison.Ordinal);
         foreach (var removedTable in new[]
                  {
                      "Law" + "yers",

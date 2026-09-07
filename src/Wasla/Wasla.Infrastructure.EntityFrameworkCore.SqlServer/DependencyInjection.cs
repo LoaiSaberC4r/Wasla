@@ -36,6 +36,8 @@ public static class DependencyInjection
 
         services.AddOptions<DatabaseInitializationOptions>()
             .Bind(configuration.GetSection(DatabaseInitializationOptions.SectionName));
+        services.AddOptions<RootSuperAdminOptions>()
+            .Bind(configuration.GetSection(RootSuperAdminOptions.SectionName));
         services.AddOptions<EmailOutboxOptions>()
             .Bind(configuration.GetSection(EmailOutboxOptions.SectionName))
             .Validate(
@@ -47,6 +49,8 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddScoped<IEmailOutbox, EmailOutbox>();
+        services.AddScoped<IWaslaDataStore, WaslaDataStore>();
+        services.AddScoped<WaslaSecuritySeeder>();
         services.AddScoped<EmailOutboxProcessor>();
         services.AddSingleton<IDatabaseMigrationService, EfCoreDatabaseMigrationService>();
         services.AddHostedService<DatabaseInitializationHostedService>();

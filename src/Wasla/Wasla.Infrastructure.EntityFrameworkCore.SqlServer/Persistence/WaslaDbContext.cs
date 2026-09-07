@@ -1,4 +1,7 @@
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email;
+using Wasla.Domain.Doctors;
+using Wasla.Domain.Patients;
+using Wasla.Domain.Security;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +13,16 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     : DbContext(options)
 {
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
+    public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<SuperAdmin> SuperAdmins => Set<SuperAdmin>();
+    public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<DoctorStatusHistory> DoctorStatusHistories => Set<DoctorStatusHistory>();
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<PasswordResetChallenge> PasswordResetChallenges => Set<PasswordResetChallenge>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
