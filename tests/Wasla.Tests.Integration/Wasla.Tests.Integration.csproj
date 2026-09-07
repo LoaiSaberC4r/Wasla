@@ -5,10 +5,12 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../src/Wasla/Wasla.Api/Wasla.Api.csproj" />
     <ProjectReference Include="../../src/Wasla/Wasla.Application/Wasla.Application.csproj" />
     <ProjectReference Include="../../src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer/Wasla.Infrastructure.EntityFrameworkCore.SqlServer.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

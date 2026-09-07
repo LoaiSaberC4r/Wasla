@@ -4,4 +4,8 @@
     <ProjectReference Include="../Wasla.Application/Wasla.Application.csproj" />
     <ProjectReference Include="../Wasla.Domain/Wasla.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
 </Project>

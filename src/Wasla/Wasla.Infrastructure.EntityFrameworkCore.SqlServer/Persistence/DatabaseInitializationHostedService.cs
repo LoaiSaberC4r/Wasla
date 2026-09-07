@@ -29,22 +29,31 @@ internal sealed partial class DatabaseInitializationHostedService(
             connection.Database,
             connection.IntegratedSecurity);
 
-        if (!options.Value.ApplyMigrationsOnStartup)
+        if (!options.Value.ApplyMigrationsOnStartup && !options.Value.ApplySeedingOnStartup)
         {
             InitializationSkipped(logger);
             return;
         }
 
-        var compiledMigrations = migrationService.GetCompiledMigrations(dbContext);
-        var pendingMigrations = await migrationService
-            .GetPendingMigrationsAsync(dbContext, cancellationToken);
+        if (options.Value.ApplyMigrationsOnStartup)
+        {
+            var compiledMigrations = migrationService.GetCompiledMigrations(dbContext);
+            var pendingMigrations = await migrationService
+                .GetPendingMigrationsAsync(dbContext, cancellationToken);
 
-        MigrationsDiscovered(
-            logger,
-            compiledMigrations.Count,
-            pendingMigrations.Count);
+            MigrationsDiscovered(
+                logger,
+                compiledMigrations.Count,
+                pendingMigrations.Count);
 
-        await migrationService.MigrateAsync(dbContext, cancellationToken);
+            await migrationService.MigrateAsync(dbContext, cancellationToken);
+        }
+
+        if (options.Value.ApplySeedingOnStartup)
+        {
+            await scope.ServiceProvider.GetRequiredService<WaslaSecuritySeeder>()
+                .SeedAsync(cancellationToken);
+        }
         InitializationCompleted(logger);
     }
 

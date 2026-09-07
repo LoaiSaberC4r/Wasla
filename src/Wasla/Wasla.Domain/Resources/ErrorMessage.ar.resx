@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ValidationErrorTitle" xml:space="preserve"><value>خطأ في التحقق</value></data>
+  <data name="DomainErrorTitle" xml:space="preserve"><value>خطأ في قواعد المجال</value></data>
+  <data name="ResourceNotFoundTitle" xml:space="preserve"><value>المورد غير موجود</value></data>
+  <data name="ConflictTitle" xml:space="preserve"><value>تعارض</value></data>
+  <data name="UnauthorizedTitle" xml:space="preserve"><value>غير مصرح</value></data>
+  <data name="SecurityErrorTitle" xml:space="preserve"><value>خطأ أمني</value></data>
+  <data name="TooManyRequestsTitle" xml:space="preserve"><value>طلبات كثيرة جدًا</value></data>
+  <data name="InfrastructureErrorTitle" xml:space="preserve"><value>خطأ في البنية التحتية</value></data>
+  <data name="UnexpectedErrorTitle" xml:space="preserve"><value>خطأ غير متوقع</value></data>
+  <data name="MethodNotAllowedTitle" xml:space="preserve"><value>الطريقة غير مسموحة</value></data>
+  <data name="UnsupportedMediaTypeTitle" xml:space="preserve"><value>نوع الوسائط غير مدعوم</value></data>
+  <data name="NotFound" xml:space="preserve"><value>المورد المطلوب غير موجود.</value></data>
+  <data name="AuthenticationRequired" xml:space="preserve"><value>يجب تسجيل الدخول.</value></data>
+  <data name="AccessForbidden" xml:space="preserve"><value>ليست لديك صلاحية لتنفيذ هذا الإجراء.</value></data>
+  <data name="InvalidCredentials" xml:space="preserve"><value>بيانات تسجيل الدخول غير صحيحة.</value></data>
+  <data name="AccountInactive" xml:space="preserve"><value>الحساب غير نشط.</value></data>
+  <data name="ApplicationUserNotFound" xml:space="preserve"><value>مستخدم التطبيق غير موجود.</value></data>
+  <data name="UserNameRequired" xml:space="preserve"><value>اسم المستخدم مطلوب.</value></data>
+  <data name="UserNameTooLong" xml:space="preserve"><value>يجب ألا يتجاوز اسم المستخدم 100 حرف.</value></data>
+  <data name="UserNameAlreadyExists" xml:space="preserve"><value>اسم المستخدم مستخدم بالفعل.</value></data>
+  <data name="EmailRequired" xml:space="preserve"><value>البريد الإلكتروني مطلوب.</value></data>
+  <data name="EmailInvalid" xml:space="preserve"><value>البريد الإلكتروني غير صالح.</value></data>
+  <data name="EmailAlreadyExists" xml:space="preserve"><value>البريد الإلكتروني مستخدم بالفعل.</value></data>
+  <data name="PhoneNumberRequired" xml:space="preserve"><value>رقم الهاتف مطلوب.</value></data>
+  <data name="PasswordRequired" xml:space="preserve"><value>كلمة المرور مطلوبة.</value></data>
+  <data name="PasswordInvalid" xml:space="preserve"><value>كلمة المرور لا تحقق سياسة الأمان.</value></data>
+  <data name="PasswordConfirmationMismatch" xml:space="preserve"><value>تأكيد كلمة المرور غير مطابق.</value></data>
+  <data name="CurrentPasswordInvalid" xml:space="preserve"><value>كلمة المرور الحالية غير صحيحة.</value></data>
+  <data name="PasswordMustBeDifferent" xml:space="preserve"><value>يجب أن تختلف كلمة المرور الجديدة عن الحالية.</value></data>
+  <data name="NameArRequired" xml:space="preserve"><value>الاسم باللغة العربية مطلوب.</value></data>
+  <data name="DateOfBirthRequired" xml:space="preserve"><value>تاريخ الميلاد مطلوب.</value></data>
+  <data name="DateOfBirthFuture" xml:space="preserve"><value>لا يمكن أن يكون تاريخ الميلاد في المستقبل.</value></data>
+  <data name="GenderInvalid" xml:space="preserve"><value>يجب أن يكون النوع ذكر أو أنثى.</value></data>
+  <data name="RequiredMediaMissing" xml:space="preserve"><value>ملف تحقق مطلوب غير مرفق.</value></data>
+  <data name="DoctorNotFound" xml:space="preserve"><value>الطبيب غير موجود.</value></data>
+  <data name="DoctorInvalidStatus" xml:space="preserve"><value>حالة الطبيب لا تسمح بهذا الإجراء.</value></data>
+  <data name="DoctorNationalIdRequired" xml:space="preserve"><value>الرقم القومي مطلوب لاعتماد الطبيب.</value></data>
+  <data name="DoctorNationalIdAlreadyExists" xml:space="preserve"><value>الرقم القومي مرتبط بحساب آخر.</value></data>
+  <data name="DoctorMediaNotFound" xml:space="preserve"><value>ملف الطبيب المطلوب غير موجود.</value></data>
+  <data name="ReasonRequired" xml:space="preserve"><value>السبب مطلوب.</value></data>
+  <data name="InvalidRowVersion" xml:space="preserve"><value>تم تعديل المورد بواسطة طلب آخر. حدّث البيانات وحاول مجددًا.</value></data>
+  <data name="SuperAdminNotFound" xml:space="preserve"><value>المشرف العام غير موجود.</value></data>
+  <data name="RootSuperAdminRequired" xml:space="preserve"><value>هذا الإجراء متاح للمشرف الجذر فقط.</value></data>
+  <data name="RootSuperAdminProtected" xml:space="preserve"><value>المشرف الجذر محمي من هذا الإجراء.</value></data>
+  <data name="RoleNotFound" xml:space="preserve"><value>الدور غير موجود.</value></data>
+  <data name="PermissionNotFound" xml:space="preserve"><value>صلاحية واحدة أو أكثر غير موجودة.</value></data>
+  <data name="RootPermissionNotAssignable" xml:space="preserve"><value>لا يمكن تعيين صلاحيات الجذر للأدوار.</value></data>
+  <data name="DuplicatePermission" xml:space="preserve"><value>يجب ألا تحتوي الصلاحيات على عناصر مكررة.</value></data>
+  <data name="OtpInvalid" xml:space="preserve"><value>رمز التحقق غير صحيح.</value></data>
+  <data name="OtpExpired" xml:space="preserve"><value>انتهت صلاحية رمز التحقق.</value></data>
+  <data name="TooManyAttempts" xml:space="preserve"><value>تم تجاوز عدد محاولات التحقق المسموح.</value></data>
+  <data name="ResetTokenInvalid" xml:space="preserve"><value>رمز إعادة التعيين غير صحيح.</value></data>
+  <data name="ResetTokenExpired" xml:space="preserve"><value>انتهت صلاحية رمز إعادة التعيين.</value></data>
+  <data name="PasswordResetChallengeConsumed" xml:space="preserve"><value>لم يعد من الممكن استخدام طلب إعادة تعيين كلمة المرور.</value></data>
+  <data name="PasswordResetConfigurationInvalid" xml:space="preserve"><value>إعدادات استعادة كلمة المرور غير صحيحة.</value></data>
+  <data name="PasswordResetRequestAccepted" xml:space="preserve"><value>إذا كان الحساب موجودًا فسيتم إرسال رمز تحقق.</value></data>
+  <data name="ValidationNotNull" xml:space="preserve"><value>يجب ألا تكون قيمة '{PropertyName}' فارغة.</value></data>
+  <data name="ValidationNotEmpty" xml:space="preserve"><value>الحقل '{PropertyName}' مطلوب.</value></data>
+  <data name="ValidationEmail" xml:space="preserve"><value>الحقل '{PropertyName}' ليس بريدًا إلكترونيًا صالحًا.</value></data>
+  <data name="ValidationMaximumLength" xml:space="preserve"><value>يجب ألا يزيد طول '{PropertyName}' عن {MaxLength} حرفًا.</value></data>
+  <data name="ValidationMinimumLength" xml:space="preserve"><value>يجب ألا يقل طول '{PropertyName}' عن {MinLength} حرفًا.</value></data>
+  <data name="ValidationExactLength" xml:space="preserve"><value>يجب أن يكون طول '{PropertyName}' {MaxLength} حرفًا.</value></data>
+  <data name="ValidationLength" xml:space="preserve"><value>يجب أن يكون طول '{PropertyName}' بين {MinLength} و{MaxLength} حرفًا.</value></data>
+  <data name="ValidationGreaterThan" xml:space="preserve"><value>يجب أن تكون قيمة '{PropertyName}' أكبر من '{ComparisonValue}'.</value></data>
+  <data name="ValidationGreaterThanOrEqual" xml:space="preserve"><value>يجب أن تكون قيمة '{PropertyName}' على الأقل '{ComparisonValue}'.</value></data>
+  <data name="ValidationInclusiveBetween" xml:space="preserve"><value>يجب أن تكون قيمة '{PropertyName}' بين {From} و{To}.</value></data>
+  <data name="ValidationEqual" xml:space="preserve"><value>يجب أن تساوي قيمة '{PropertyName}' القيمة '{ComparisonValue}'.</value></data>
+  <data name="ValidationRegularExpression" xml:space="preserve"><value>صيغة الحقل '{PropertyName}' غير صحيحة.</value></data>
+  <data name="ValidationPredicate" xml:space="preserve"><value>لم يتحقق الشرط المطلوب للحقل '{PropertyName}'.</value></data>
+  <data name="ValidationEnum" xml:space="preserve"><value>قيمة الحقل '{PropertyName}' غير صحيحة.</value></data>
+  <data name="ValidationNull" xml:space="preserve"><value>يجب أن تكون قيمة '{PropertyName}' فارغة.</value></data>
+  <data name="ValidationEmpty" xml:space="preserve"><value>يجب أن يكون الحقل '{PropertyName}' فارغًا.</value></data>
+</root>

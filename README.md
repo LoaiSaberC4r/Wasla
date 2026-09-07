@@ -10,9 +10,12 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Technical Bootstrap / Pre-Implementation
+**Current Stage:** Trust and Access Foundation
 
-The product implementation has not started yet.
+Identity, permission-based authorization, authentication/password recovery,
+Doctor and Patient self-registration, Doctor approval governance, Root
+SuperAdmin governance, localized errors, private verification media, and the
+durable email outbox are implemented.
 
 The initial repository baseline is based on the reusable technical foundation from:
 
@@ -250,6 +253,25 @@ Wasla.*
 ```
 
 without changing the underlying technical behavior during the bootstrap step.
+
+## Required Local Secrets
+
+The API intentionally fails startup when JWT and password-recovery secrets are
+missing. Configure them with user secrets, environment variables, or a local
+`.env` file (never commit real values):
+
+```text
+Jwt__SigningKey=<at-least-32-characters>
+PasswordReset__HmacSecret=<at-least-32-characters>
+```
+
+Root SuperAdmin credentials are required only when
+`DatabaseInitialization__ApplySeedingOnStartup=true`; the required keys are
+listed in `.env.example`. Production defaults keep both migrations and seeding
+disabled. The configured `EmailBranding__FooterImageUrl` must be an absolute
+HTTP(S) URL. Place the approved brand image at
+`src/Wasla/Wasla.Api/wwwroot/email-assets/wasla-email-footer.png` before
+deployment.
 
 ---
 
