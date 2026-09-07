@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "BuildingBlock Team",
+  "classifications": [ "Web", "Web API", "Clean Architecture", "DDD", "CQRS", ".NET 10" ],
+  "identity": "BuildingBlock.Templates.CleanArchitecture",
+  "name": "BuildingBlock Clean Architecture Solution",
+  "shortName": "buildingblock-sln",
+  "sourceName": "Wasla",
+  "defaultName": "Company.Product",
+  "preferNameDirectory": true,
+  "description": "A .NET 10 Clean Architecture solution containing the reusable BuildingBlock and a domain-neutral technical foundation.",
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "primaryOutputs": [
+    { "path": "Wasla.sln" },
+    { "path": "src/Wasla/Wasla.Api/Wasla.Api.csproj" }
+  ],
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            ".git/**",
+            ".vs/**",
+            "**/bin/**",
+            "**/obj/**",
+            "**/TestResults/**",
+            "artifacts/**",
+            "*.zip",
+            "*.g.cs",
+            "*.AssemblyInfo.cs"
+          ]
+        }
+      ]
+    }
+  ]
+}

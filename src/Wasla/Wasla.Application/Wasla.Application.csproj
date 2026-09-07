@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlock/BuildingBlock.Application/BuildingBlock.Application.csproj" />
+    <ProjectReference Include="../../BuildingBlock/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference Include="../Wasla.Domain/Wasla.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="MediatR" />
+  </ItemGroup>
+</Project>

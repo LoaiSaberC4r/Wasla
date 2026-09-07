@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <UserSecretsId>Wasla.Api</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlock/BuildingBlock.Api/BuildingBlock.Api.csproj" />
+    <ProjectReference Include="../Wasla.Application/Wasla.Application.csproj" />
+    <ProjectReference Include="../Wasla.Infrastructure/Wasla.Infrastructure.csproj" />
+    <ProjectReference Include="../Wasla.Infrastructure.EntityFrameworkCore.SqlServer/Wasla.Infrastructure.EntityFrameworkCore.SqlServer.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+</Project>

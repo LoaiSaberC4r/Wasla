@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Generic domain primitives, result pattern, and specifications.</Description>
+  </PropertyGroup>
+</Project>

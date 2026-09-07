@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlock/BuildingBlock.Application/BuildingBlock.Application.csproj" />
+    <ProjectReference Include="../../BuildingBlock/BuildingBlock.Infrastructure/BuildingBlock.Infrastructure.csproj" />
+    <ProjectReference Include="../../BuildingBlock/BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer/BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer.csproj" />
+    <ProjectReference Include="../Wasla.Application/Wasla.Application.csproj" />
+    <ProjectReference Include="../Wasla.Domain/Wasla.Domain.csproj" />
+    <ProjectReference Include="../Wasla.Infrastructure/Wasla.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+  </ItemGroup>
+</Project>
