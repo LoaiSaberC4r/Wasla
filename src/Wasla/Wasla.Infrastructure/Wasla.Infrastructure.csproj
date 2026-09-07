@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlock/BuildingBlock.Infrastructure/BuildingBlock.Infrastructure.csproj" />
+    <ProjectReference Include="../Wasla.Application/Wasla.Application.csproj" />
+    <ProjectReference Include="../Wasla.Domain/Wasla.Domain.csproj" />
+  </ItemGroup>
+</Project>

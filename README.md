@@ -243,13 +243,7 @@ This repository is initialized from the reusable `BuildingBlockWithNET10` techni
 
 The reusable `BuildingBlock.*` projects remain product-agnostic.
 
-The original sample product namespace and projects are renamed from:
-
-```text
-AcademyOps.*
-```
-
-to:
+The original sample product namespace and projects are renamed to:
 
 ```text
 Wasla.*
