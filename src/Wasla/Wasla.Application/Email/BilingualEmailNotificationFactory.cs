@@ -66,6 +66,28 @@ internal sealed class BilingualEmailNotificationFactory(
         };
     }
 
+    public EmailNotificationContent DoctorSpecializationModificationRequested(
+        string doctorName,
+        string message,
+        int revisionNumber)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(doctorName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+        var revision = revisionNumber.ToString(CultureInfo.InvariantCulture);
+        return Build(
+            "Wasla | مطلوب تعديل التخصصات الطبية | Specialization Changes Requested",
+            [
+                $"مرحبًا د. {doctorName}،",
+                $"مطلوب تعديل طلب التخصصات الطبية للإصدار رقم {revision}.",
+                $"رسالة المراجعة: {message}"
+            ],
+            [
+                $"Hello Dr. {doctorName},",
+                $"Changes were requested for medical-specialization revision {revision}.",
+                $"Review message: {message}"
+            ]);
+    }
+
     private EmailNotificationContent BuildWithReason(
         string subject,
         string doctorName,

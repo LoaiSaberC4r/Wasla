@@ -17,4 +17,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Persistence/Seeding/Data/egypt-governorates.v1.json" />
+    <EmbeddedResource Include="Persistence/Seeding/Data/egypt-cities.v1.json" />
+    <EmbeddedResource Include="Persistence/Seeding/Data/egypt-areas.v1.json" />
+  </ItemGroup>
 </Project>

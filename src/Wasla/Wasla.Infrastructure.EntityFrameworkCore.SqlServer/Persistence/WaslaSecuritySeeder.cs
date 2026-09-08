@@ -15,10 +15,6 @@ internal sealed class WaslaSecuritySeeder(
     IDateTimeProvider clock,
     IOptions<RootSuperAdminOptions> rootOptions)
 {
-    private static readonly Guid RootApplicationUserId = Guid.Parse("30000000-0000-0000-0000-000000000001");
-    private static readonly Guid RootSuperAdminId = Guid.Parse("30000000-0000-0000-0000-000000000002");
-    private static readonly Guid RootUserRoleId = Guid.Parse("30000000-0000-0000-0000-000000000003");
-
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
         ValidateRootOptions();
@@ -34,16 +30,16 @@ internal sealed class WaslaSecuritySeeder(
         var configured = rootOptions.Value;
         var semanticUser = await dbContext.ApplicationUsers
             .SingleOrDefaultAsync(user => user.UserName == configured.UserName || user.Email == configured.Email, cancellationToken);
-        if (semanticUser is not null && semanticUser.Id != RootApplicationUserId)
+        if (semanticUser is not null && semanticUser.Id != SystemSeedIds.RootApplicationUserId)
         {
             throw new InvalidOperationException("Root SuperAdmin credentials conflict with an existing user identity.");
         }
 
-        var user = await dbContext.ApplicationUsers.FindAsync([RootApplicationUserId], cancellationToken);
+        var user = await dbContext.ApplicationUsers.FindAsync([SystemSeedIds.RootApplicationUserId], cancellationToken);
         if (user is null)
         {
             var result = ApplicationUser.Create(
-                RootApplicationUserId,
+                SystemSeedIds.RootApplicationUserId,
                 configured.UserName,
                 configured.Email,
                 configured.PhoneNumber,
@@ -68,18 +64,18 @@ internal sealed class WaslaSecuritySeeder(
 
         var semanticRoot = await dbContext.SuperAdmins.IgnoreQueryFilters()
             .SingleOrDefaultAsync(admin => admin.IsRootSuperAdmin, cancellationToken);
-        if (semanticRoot is not null && semanticRoot.Id != RootSuperAdminId)
+        if (semanticRoot is not null && semanticRoot.Id != SystemSeedIds.RootSuperAdminId)
         {
             throw new InvalidOperationException("A Root SuperAdmin exists with a conflicting deterministic identity.");
         }
 
         var rootById = await dbContext.SuperAdmins.IgnoreQueryFilters()
-            .SingleOrDefaultAsync(admin => admin.Id == RootSuperAdminId, cancellationToken);
+            .SingleOrDefaultAsync(admin => admin.Id == SystemSeedIds.RootSuperAdminId, cancellationToken);
         if (rootById is null)
         {
             var result = SuperAdmin.Create(
-                RootSuperAdminId,
-                RootApplicationUserId,
+                SystemSeedIds.RootSuperAdminId,
+                SystemSeedIds.RootApplicationUserId,
                 configured.NameAr,
                 configured.NameEn,
                 isRootSuperAdmin: true,
@@ -91,7 +87,7 @@ internal sealed class WaslaSecuritySeeder(
 
             dbContext.SuperAdmins.Add(result.Value);
         }
-        else if (!rootById.IsRootSuperAdmin || rootById.ApplicationUserId != RootApplicationUserId)
+        else if (!rootById.IsRootSuperAdmin || rootById.ApplicationUserId != SystemSeedIds.RootApplicationUserId)
         {
             throw new InvalidOperationException("The deterministic Root SuperAdmin profile id is assigned to conflicting data.");
         }
@@ -171,9 +167,30 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.DoctorsReactivate,
                 PermissionNames.RolesView,
                 PermissionNames.PermissionsView,
-                PermissionNames.RolePermissionsManage
+                PermissionNames.RolePermissionsManage,
+                PermissionNames.SpecializationsView,
+                PermissionNames.SpecializationsCreate,
+                PermissionNames.SpecializationsUpdate,
+                PermissionNames.SpecializationsActivate,
+                PermissionNames.SpecializationsDeactivate,
+                PermissionNames.SpecializationsDelete,
+                PermissionNames.SpecializationsRestore,
+                PermissionNames.DoctorSpecializationRequestsViewAll,
+                PermissionNames.DoctorSpecializationRequestsViewDetails,
+                PermissionNames.DoctorSpecializationRequestsAdjust,
+                PermissionNames.DoctorSpecializationRequestsApprove,
+                PermissionNames.DoctorSpecializationRequestsReject,
+                PermissionNames.DoctorSpecializationRequestsRequestModification
             ],
-            [SystemRoleIds.Doctor] = [PermissionNames.DoctorOnboardingViewOwn],
+            [SystemRoleIds.Doctor] =
+            [
+                PermissionNames.DoctorOnboardingViewOwn,
+                PermissionNames.DoctorSpecializationsViewOwn,
+                PermissionNames.DoctorSpecializationsSubmitOwn,
+                PermissionNames.DoctorSpecializationsResubmitOwn,
+                PermissionNames.DoctorPracticeLocationViewOwn,
+                PermissionNames.DoctorPracticeLocationManageOwn
+            ],
             [SystemRoleIds.Patient] = [PermissionNames.PatientProfileViewOwn]
         };
         foreach (var (roleId, permissionNames) in mappings)
@@ -202,13 +219,13 @@ internal sealed class WaslaSecuritySeeder(
     private async Task SeedRootRoleAsync(CancellationToken cancellationToken)
     {
         if (!await dbContext.UserRoles.AnyAsync(
-                mapping => mapping.ApplicationUserId == RootApplicationUserId &&
+                mapping => mapping.ApplicationUserId == SystemSeedIds.RootApplicationUserId &&
                            mapping.RoleId == SystemRoleIds.SuperAdmin,
                 cancellationToken))
         {
             dbContext.UserRoles.Add(new UserRole(
-                RootUserRoleId,
-                RootApplicationUserId,
+                SystemSeedIds.RootUserRoleId,
+                SystemSeedIds.RootApplicationUserId,
                 SystemRoleIds.SuperAdmin));
             await dbContext.SaveChangesAsync(cancellationToken);
         }

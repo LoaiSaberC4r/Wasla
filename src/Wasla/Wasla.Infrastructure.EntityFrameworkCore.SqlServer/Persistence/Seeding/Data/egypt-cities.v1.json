@@ -1,0 +1,2459 @@
+[
+  {
+    "Id": 1001,
+    "GovernorateId": 1,
+    "NameAr": "قسم التبين",
+    "NameEn": "Al Tibbin",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 1002,
+    "GovernorateId": 1,
+    "NameAr": "قسم حلوان",
+    "NameEn": "Hilwan",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 1003,
+    "GovernorateId": 1,
+    "NameAr": "قسم 15 مايو",
+    "NameEn": "15 Mayu",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 1004,
+    "GovernorateId": 1,
+    "NameAr": "قسم المعادي",
+    "NameEn": "Maadi",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 1005,
+    "GovernorateId": 1,
+    "NameAr": "قسم طره",
+    "NameEn": "Tura",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 1006,
+    "GovernorateId": 1,
+    "NameAr": "مصرالقديمة",
+    "NameEn": "Misr Al-Qadima",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 1007,
+    "GovernorateId": 1,
+    "NameAr": "قسم السيدة زينب",
+    "NameEn": "Sayyida Zainab",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 1008,
+    "GovernorateId": 1,
+    "NameAr": "قسم الخليفة",
+    "NameEn": "Al Khalifa",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 1009,
+    "GovernorateId": 1,
+    "NameAr": "قسم عابدين",
+    "NameEn": "Abdin",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 1010,
+    "GovernorateId": 1,
+    "NameAr": "قسم الموسكي",
+    "NameEn": "Muski",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 1011,
+    "GovernorateId": 1,
+    "NameAr": "قسم قصر النيل",
+    "NameEn": "Qasr Al-Nile",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 1012,
+    "GovernorateId": 1,
+    "NameAr": "قسم بولاق",
+    "NameEn": "Bulaq",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 1013,
+    "GovernorateId": 1,
+    "NameAr": "قسم الأزبكية",
+    "NameEn": "Al Azbakiyya",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 1014,
+    "GovernorateId": 1,
+    "NameAr": "قسم الدرب الأحمر",
+    "NameEn": "Al Darb al-Ahmar",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 1015,
+    "GovernorateId": 1,
+    "NameAr": "قسم الجمالية",
+    "NameEn": "Gamaliyya",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 1016,
+    "GovernorateId": 1,
+    "NameAr": "قسم باب الشعرية",
+    "NameEn": "Bab Al-Shariyya",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 1017,
+    "GovernorateId": 1,
+    "NameAr": "قسم الظاهر",
+    "NameEn": "Al Zahir",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 1018,
+    "GovernorateId": 1,
+    "NameAr": "قسم الشرابية",
+    "NameEn": "Al Sharabiyya",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 1019,
+    "GovernorateId": 1,
+    "NameAr": "قسم شبرا",
+    "NameEn": "Shubra",
+    "DisplayOrder": 19
+  },
+  {
+    "Id": 1020,
+    "GovernorateId": 1,
+    "NameAr": "قسم روضالفرج",
+    "NameEn": "Rud Al-Farag",
+    "DisplayOrder": 20
+  },
+  {
+    "Id": 1021,
+    "GovernorateId": 1,
+    "NameAr": "قسم الساحل",
+    "NameEn": "Al Sahil",
+    "DisplayOrder": 21
+  },
+  {
+    "Id": 1022,
+    "GovernorateId": 1,
+    "NameAr": "قسم الوايلي",
+    "NameEn": "Al Wayli",
+    "DisplayOrder": 22
+  },
+  {
+    "Id": 1023,
+    "GovernorateId": 1,
+    "NameAr": "قسم حدائقالقبة",
+    "NameEn": "Hadaiq Al-Qubba",
+    "DisplayOrder": 23
+  },
+  {
+    "Id": 1024,
+    "GovernorateId": 1,
+    "NameAr": "قسم الزيتون",
+    "NameEn": "Al Zaytun",
+    "DisplayOrder": 24
+  },
+  {
+    "Id": 1025,
+    "GovernorateId": 1,
+    "NameAr": "قسم المطرية",
+    "NameEn": "Al Matariyya",
+    "DisplayOrder": 25
+  },
+  {
+    "Id": 1026,
+    "GovernorateId": 1,
+    "NameAr": "قسم أول مدينة نصر",
+    "NameEn": "Nasr City",
+    "DisplayOrder": 26
+  },
+  {
+    "Id": 1027,
+    "GovernorateId": 1,
+    "NameAr": "قسم ثانمدينةنصر",
+    "NameEn": "Madinat Nasr-2",
+    "DisplayOrder": 27
+  },
+  {
+    "Id": 1028,
+    "GovernorateId": 1,
+    "NameAr": "قسم مصرالجديدة",
+    "NameEn": "Misr al-Gadida",
+    "DisplayOrder": 28
+  },
+  {
+    "Id": 1029,
+    "GovernorateId": 1,
+    "NameAr": "قسم النزهة",
+    "NameEn": "Nuzha",
+    "DisplayOrder": 29
+  },
+  {
+    "Id": 1030,
+    "GovernorateId": 1,
+    "NameAr": "قسم عينشمس",
+    "NameEn": "Ain Shams",
+    "DisplayOrder": 30
+  },
+  {
+    "Id": 1031,
+    "GovernorateId": 1,
+    "NameAr": "قسم الزاويةالحمراء",
+    "NameEn": "Zawiyya Al-Hamra",
+    "DisplayOrder": 31
+  },
+  {
+    "Id": 1032,
+    "GovernorateId": 1,
+    "NameAr": "قسم السلام",
+    "NameEn": "Al Salam",
+    "DisplayOrder": 32
+  },
+  {
+    "Id": 1033,
+    "GovernorateId": 1,
+    "NameAr": "قسم الزمالك",
+    "NameEn": "Zamalik",
+    "DisplayOrder": 33
+  },
+  {
+    "Id": 1034,
+    "GovernorateId": 1,
+    "NameAr": "منشأةناصر",
+    "NameEn": "Minshat Nasir",
+    "DisplayOrder": 34
+  },
+  {
+    "Id": 1035,
+    "GovernorateId": 1,
+    "NameAr": "قسم البساتين",
+    "NameEn": "Basatin",
+    "DisplayOrder": 35
+  },
+  {
+    "Id": 1036,
+    "GovernorateId": 1,
+    "NameAr": "قسم المرج",
+    "NameEn": "Marg",
+    "DisplayOrder": 36
+  },
+  {
+    "Id": 1037,
+    "GovernorateId": 1,
+    "NameAr": "قسم أول القاهرة الجديدة",
+    "NameEn": "New Cairo-1",
+    "DisplayOrder": 37
+  },
+  {
+    "Id": 1038,
+    "GovernorateId": 1,
+    "NameAr": "قسم ثان القاهرة الجديدة",
+    "NameEn": "New Cairo-2",
+    "DisplayOrder": 38
+  },
+  {
+    "Id": 1039,
+    "GovernorateId": 1,
+    "NameAr": "قسم ثالث القاهرة الجديدة",
+    "NameEn": "New Cairo-3",
+    "DisplayOrder": 39
+  },
+  {
+    "Id": 1040,
+    "GovernorateId": 1,
+    "NameAr": "قسم الشروق",
+    "NameEn": "Shroq",
+    "DisplayOrder": 40
+  },
+  {
+    "Id": 1041,
+    "GovernorateId": 1,
+    "NameAr": "قسم بدر",
+    "NameEn": "Badr",
+    "DisplayOrder": 41
+  },
+  {
+    "Id": 2001,
+    "GovernorateId": 2,
+    "NameAr": "قسم المنتزة",
+    "NameEn": "Muntazah",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 2002,
+    "GovernorateId": 2,
+    "NameAr": "قسم أول الرمل",
+    "NameEn": "Al Raml",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 2003,
+    "GovernorateId": 2,
+    "NameAr": "قسم سيدى جابر",
+    "NameEn": "Sidi Gabir",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 2004,
+    "GovernorateId": 2,
+    "NameAr": "قسم باب شرقى",
+    "NameEn": "Bab Sharqi",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 2005,
+    "GovernorateId": 2,
+    "NameAr": "قسم محرم بك",
+    "NameEn": "Muharam Bik",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 2006,
+    "GovernorateId": 2,
+    "NameAr": "قسم العطارين",
+    "NameEn": "Al Attarin",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 2007,
+    "GovernorateId": 2,
+    "NameAr": "قسم المنشية",
+    "NameEn": "Al Manshiyya",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 2008,
+    "GovernorateId": 2,
+    "NameAr": "قسم كرموز",
+    "NameEn": "Karmuz",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 2009,
+    "GovernorateId": 2,
+    "NameAr": "قسم اللبان",
+    "NameEn": "A L Labban",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 2010,
+    "GovernorateId": 2,
+    "NameAr": "قسم الجمرك",
+    "NameEn": "Al Gumruk",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 2011,
+    "GovernorateId": 2,
+    "NameAr": "قسم مينا البصل",
+    "NameEn": "Mina Al-Basal",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 2012,
+    "GovernorateId": 2,
+    "NameAr": "قسم الدخيلة",
+    "NameEn": "Al Dikhila",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 2013,
+    "GovernorateId": 2,
+    "NameAr": "قسم العامرية",
+    "NameEn": "Al Amreia",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 2014,
+    "GovernorateId": 2,
+    "NameAr": "قسم برج العرب",
+    "NameEn": "Burg al-Arab",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 2015,
+    "GovernorateId": 2,
+    "NameAr": "اداره شرطه ميناء الأسكندريه",
+    "NameEn": "Port Alexandria Police Department",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 2016,
+    "GovernorateId": 2,
+    "NameAr": "مدينه برج العرب الجديده",
+    "NameEn": "Burg Al-Arab City",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 2017,
+    "GovernorateId": 2,
+    "NameAr": "قسم ثان الرمل",
+    "NameEn": "Kesm than Al Raml",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 2018,
+    "GovernorateId": 2,
+    "NameAr": "الساحل الشمالى",
+    "NameEn": "North Coast",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 3001,
+    "GovernorateId": 3,
+    "NameAr": "قسم الشرق",
+    "NameEn": "Al-Sharq",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 3002,
+    "GovernorateId": 3,
+    "NameAr": "قسم العرب",
+    "NameEn": "Al-Arab",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 3003,
+    "GovernorateId": 3,
+    "NameAr": "قسم المناخ",
+    "NameEn": "Al-Munakh",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 3004,
+    "GovernorateId": 3,
+    "NameAr": "قسم بور فؤاد",
+    "NameEn": "Port Fuad",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 3005,
+    "GovernorateId": 3,
+    "NameAr": "قسم الضواحى",
+    "NameEn": "Al-Dawahy",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 3006,
+    "GovernorateId": 3,
+    "NameAr": "قسم الجنوب",
+    "NameEn": "Al-Ganoub",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 3007,
+    "GovernorateId": 3,
+    "NameAr": "قسم الزهور",
+    "NameEn": "Al-Zohour",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 3008,
+    "GovernorateId": 3,
+    "NameAr": "قسم ثان بور فؤاد",
+    "NameEn": "Port Fuad 2",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 3009,
+    "GovernorateId": 3,
+    "NameAr": "قسم مبارك - شرق التفريعة",
+    "NameEn": "Mubark-Sharq Tafrea",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 3010,
+    "GovernorateId": 3,
+    "NameAr": "قسم المناصرة",
+    "NameEn": "Al-Manasra",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 3011,
+    "GovernorateId": 3,
+    "NameAr": "قسم ثان الجنوب",
+    "NameEn": "Al-Ganoub 2",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 3012,
+    "GovernorateId": 3,
+    "NameAr": "إدارة شرطة ميناء بورسعيد",
+    "NameEn": "Police Department Port Said Port",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 4001,
+    "GovernorateId": 4,
+    "NameAr": "قسم السويس",
+    "NameEn": "Suez",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 4002,
+    "GovernorateId": 4,
+    "NameAr": "قسم الأربعين",
+    "NameEn": "Al-Arbiin",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 4003,
+    "GovernorateId": 4,
+    "NameAr": "قسم عتاقة",
+    "NameEn": "Ataqa",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 4004,
+    "GovernorateId": 4,
+    "NameAr": "قسم فيصل",
+    "NameEn": "Faysal",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 4005,
+    "GovernorateId": 4,
+    "NameAr": "قسم الجناين",
+    "NameEn": "Al-Ganayin",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 4006,
+    "GovernorateId": 4,
+    "NameAr": "إدارة شرطة ميناء السويس",
+    "NameEn": "Port Suez Police Department",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 5001,
+    "GovernorateId": 5,
+    "NameAr": "قسم أول دمياط",
+    "NameEn": "Dumyat 1",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 5002,
+    "GovernorateId": 5,
+    "NameAr": "مركز دمياط",
+    "NameEn": "Dumyat",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 5003,
+    "GovernorateId": 5,
+    "NameAr": "مركز فارسكور",
+    "NameEn": "Fariskur",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 5004,
+    "GovernorateId": 5,
+    "NameAr": "مركز كفر سعد",
+    "NameEn": "Kafr Sad",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 5005,
+    "GovernorateId": 5,
+    "NameAr": "قسم مدينه دمياط الجديده",
+    "NameEn": "Dumyat Al-Gadida",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 5006,
+    "GovernorateId": 5,
+    "NameAr": "قسم رأس البر",
+    "NameEn": "Ras al-Bar",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 5007,
+    "GovernorateId": 5,
+    "NameAr": "مركز الزرقا",
+    "NameEn": "Zarqa",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 5008,
+    "GovernorateId": 5,
+    "NameAr": "إداره شرطه ميناء دمياط الجديد",
+    "NameEn": "Police Department Port of Damietta",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 5009,
+    "GovernorateId": 5,
+    "NameAr": "قسم ثان دمياط",
+    "NameEn": "Dumyat 2",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 6001,
+    "GovernorateId": 6,
+    "NameAr": "قسم اول المنصورة",
+    "NameEn": "El Mansora 1",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 6002,
+    "GovernorateId": 6,
+    "NameAr": "قسم ثان المنصورة",
+    "NameEn": "E Mansora 2",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 6003,
+    "GovernorateId": 6,
+    "NameAr": "مركز المنصورة",
+    "NameEn": "El Mansora",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 6004,
+    "GovernorateId": 6,
+    "NameAr": "مركز أجا",
+    "NameEn": "Aga",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 6005,
+    "GovernorateId": 6,
+    "NameAr": "مركز السنبلاوين",
+    "NameEn": "Sinbillawin",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 6006,
+    "GovernorateId": 6,
+    "NameAr": "مركز المطرية",
+    "NameEn": "Matariyya",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 6007,
+    "GovernorateId": 6,
+    "NameAr": "مركز المنزلة",
+    "NameEn": "Manzala",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 6008,
+    "GovernorateId": 6,
+    "NameAr": "مركز بلقاس",
+    "NameEn": "Bilqas",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 6009,
+    "GovernorateId": 6,
+    "NameAr": "مركز دكرنس",
+    "NameEn": "Dikirnis",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 6010,
+    "GovernorateId": 6,
+    "NameAr": "مركز شربين",
+    "NameEn": "Shirbin",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 6011,
+    "GovernorateId": 6,
+    "NameAr": "مركز طلخا",
+    "NameEn": "Talkha",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 6012,
+    "GovernorateId": 6,
+    "NameAr": "قسم ميت غمر",
+    "NameEn": "Mit Ghamr (Qism)",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 6013,
+    "GovernorateId": 6,
+    "NameAr": "مركز ميت غمر",
+    "NameEn": "Mit Ghamr (Markaz)",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 6014,
+    "GovernorateId": 6,
+    "NameAr": "مركز منية النصر",
+    "NameEn": "Minya Al-Nasr",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 6015,
+    "GovernorateId": 6,
+    "NameAr": "مركز الجمالية",
+    "NameEn": "Gamaliyya",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 6016,
+    "GovernorateId": 6,
+    "NameAr": "مركز تمى الأمديد",
+    "NameEn": "Tamy Al-Amdid",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 6017,
+    "GovernorateId": 6,
+    "NameAr": "مركز ميت سلسيل",
+    "NameEn": "MIt Salsil",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 6018,
+    "GovernorateId": 6,
+    "NameAr": "مركز بنى عبيد",
+    "NameEn": "Bany Abeed",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 6019,
+    "GovernorateId": 6,
+    "NameAr": "مركز محلة دمنة",
+    "NameEn": "Mahalet Demna",
+    "DisplayOrder": 19
+  },
+  {
+    "Id": 6020,
+    "GovernorateId": 6,
+    "NameAr": "قسم جمصة",
+    "NameEn": "Gamsa",
+    "DisplayOrder": 20
+  },
+  {
+    "Id": 6021,
+    "GovernorateId": 6,
+    "NameAr": "مركز نبروة",
+    "NameEn": "Nebro",
+    "DisplayOrder": 21
+  },
+  {
+    "Id": 7001,
+    "GovernorateId": 7,
+    "NameAr": "قسم اول الزقازيق",
+    "NameEn": "Zaqaziq 1",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 7002,
+    "GovernorateId": 7,
+    "NameAr": "قسم ثان الزقازيق",
+    "NameEn": "Zaqaziq 2",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 7003,
+    "GovernorateId": 7,
+    "NameAr": "مركز الزقازيق",
+    "NameEn": "Zaqaziq",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 7004,
+    "GovernorateId": 7,
+    "NameAr": "مركز أبو حماد",
+    "NameEn": "Abu Hammad",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 7005,
+    "GovernorateId": 7,
+    "NameAr": "مركز أبوكبير",
+    "NameEn": "Abu Kabir",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 7006,
+    "GovernorateId": 7,
+    "NameAr": "مركز الحسينية",
+    "NameEn": "Al-Husayniya",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 7007,
+    "GovernorateId": 7,
+    "NameAr": "قسم الصالحية الجديدة",
+    "NameEn": "Al-Salhiyya",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 7008,
+    "GovernorateId": 7,
+    "NameAr": "مركز بلبيس",
+    "NameEn": "Bilbis",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 7009,
+    "GovernorateId": 7,
+    "NameAr": "قسم اول مدينة العاشر من رمضان",
+    "NameEn": "10 Ramadan 1",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 7010,
+    "GovernorateId": 7,
+    "NameAr": "مركز ديرب نجم",
+    "NameEn": "Dyarb Nigm",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 7011,
+    "GovernorateId": 7,
+    "NameAr": "قسم فاقوس",
+    "NameEn": "Faqus (Qism)",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 7012,
+    "GovernorateId": 7,
+    "NameAr": "مركز فاقوس",
+    "NameEn": "Faqus (Markaz)",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 7013,
+    "GovernorateId": 7,
+    "NameAr": "مركز كفر صقر",
+    "NameEn": "Kafr Saqr",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 7014,
+    "GovernorateId": 7,
+    "NameAr": "مركز منيا القمح",
+    "NameEn": "Minya al-Qamh",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 7015,
+    "GovernorateId": 7,
+    "NameAr": "مركز ههيا",
+    "NameEn": "Hihya",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 7016,
+    "GovernorateId": 7,
+    "NameAr": "مركز مشتول السوق",
+    "NameEn": "Mashtul Al-Suq",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 7017,
+    "GovernorateId": 7,
+    "NameAr": "مركز الأبراهيمية",
+    "NameEn": "El-Ibrahimiya",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 7018,
+    "GovernorateId": 7,
+    "NameAr": "قسم القنايات",
+    "NameEn": "Al-Qanayat",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 7019,
+    "GovernorateId": 7,
+    "NameAr": "مركز أولاد صقر",
+    "NameEn": "Awlad Saqr",
+    "DisplayOrder": 19
+  },
+  {
+    "Id": 7020,
+    "GovernorateId": 7,
+    "NameAr": "قسم القرين",
+    "NameEn": "Qurin",
+    "DisplayOrder": 20
+  },
+  {
+    "Id": 7021,
+    "GovernorateId": 7,
+    "NameAr": "قسم ثان مدينه العاشر من رمضان",
+    "NameEn": "10 Ramadan 2",
+    "DisplayOrder": 21
+  },
+  {
+    "Id": 8001,
+    "GovernorateId": 8,
+    "NameAr": "قسم بنها",
+    "NameEn": "Banha (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 8002,
+    "GovernorateId": 8,
+    "NameAr": "مركز بنها",
+    "NameEn": "Banha (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 8003,
+    "GovernorateId": 8,
+    "NameAr": "مركز الخانكة",
+    "NameEn": "Al Khanka",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 8004,
+    "GovernorateId": 8,
+    "NameAr": "مركز القناطر الخيرية",
+    "NameEn": "Qanatir Al-Khayriyya",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 8005,
+    "GovernorateId": 8,
+    "NameAr": "مركز شبين القناطر",
+    "NameEn": "Shibin al-Qanatir",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 8006,
+    "GovernorateId": 8,
+    "NameAr": "قسم أول شبرا الخيمة",
+    "NameEn": "Shubra Al-Khayma 1",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 8007,
+    "GovernorateId": 8,
+    "NameAr": "قسم ثان شبرا الخيمة",
+    "NameEn": "Shubra Al-Khayma 2",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 8008,
+    "GovernorateId": 8,
+    "NameAr": "مركز طوخ",
+    "NameEn": "Tukh",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 8009,
+    "GovernorateId": 8,
+    "NameAr": "قسم قليوب",
+    "NameEn": "Qalyub (Qism)",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 8010,
+    "GovernorateId": 8,
+    "NameAr": "مركز قليوب",
+    "NameEn": "Qalyub (Markaz)",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 8011,
+    "GovernorateId": 8,
+    "NameAr": "مركز كفر شكر",
+    "NameEn": "Kafr Shukr",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 8012,
+    "GovernorateId": 8,
+    "NameAr": "قسم الخصوص",
+    "NameEn": "Khsos",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 8013,
+    "GovernorateId": 8,
+    "NameAr": "قسم العبور",
+    "NameEn": "Abour",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 8014,
+    "GovernorateId": 8,
+    "NameAr": "قسم قها",
+    "NameEn": "Qaha",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 9001,
+    "GovernorateId": 9,
+    "NameAr": "قسم كفر الشيخ",
+    "NameEn": "Kafr Al-Shaykh (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 9002,
+    "GovernorateId": 9,
+    "NameAr": "مركز كفر الشيخ",
+    "NameEn": "Kafr Al-Shaykh (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 9003,
+    "GovernorateId": 9,
+    "NameAr": "مركز البرلس",
+    "NameEn": "Burullus",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 9004,
+    "GovernorateId": 9,
+    "NameAr": "مركز بيلا",
+    "NameEn": "Biyalu",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 9005,
+    "GovernorateId": 9,
+    "NameAr": "قسم دسوق",
+    "NameEn": "Disuq (Qism)",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 9006,
+    "GovernorateId": 9,
+    "NameAr": "مركز دسوق",
+    "NameEn": "Disuq (Markaz)",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 9007,
+    "GovernorateId": 9,
+    "NameAr": "مركز سيدى سالم",
+    "NameEn": "Sidi Salim",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 9008,
+    "GovernorateId": 9,
+    "NameAr": "مركز فوه",
+    "NameEn": "Fuwwa",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 9009,
+    "GovernorateId": 9,
+    "NameAr": "مركز قلين",
+    "NameEn": "Qillin",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 9010,
+    "GovernorateId": 9,
+    "NameAr": "مركز مطوبس",
+    "NameEn": "Mitubas",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 9011,
+    "GovernorateId": 9,
+    "NameAr": "مركز الحامول",
+    "NameEn": "Al Hamul",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 9012,
+    "GovernorateId": 9,
+    "NameAr": "مركز الرياض",
+    "NameEn": "Riyad",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 10001,
+    "GovernorateId": 10,
+    "NameAr": "قسم أول طنطا",
+    "NameEn": "Tanta 1",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 10002,
+    "GovernorateId": 10,
+    "NameAr": "قسم ثان طنطا",
+    "NameEn": "Tanta 2",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 10003,
+    "GovernorateId": 10,
+    "NameAr": "مركز طنطا",
+    "NameEn": "Tanta",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 10004,
+    "GovernorateId": 10,
+    "NameAr": "مركز السنطة",
+    "NameEn": "Santa",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 10005,
+    "GovernorateId": 10,
+    "NameAr": "قسم أول المحلة الكبرى",
+    "NameEn": "El Mahalla El Kobra 1",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 10006,
+    "GovernorateId": 10,
+    "NameAr": "قسم ثان المحلة الكبرى",
+    "NameEn": "El Mahalla El Kobra 2",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 10007,
+    "GovernorateId": 10,
+    "NameAr": "مركز المحله الكبرى",
+    "NameEn": "El Mahalla El Kobra",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 10008,
+    "GovernorateId": 10,
+    "NameAr": "مركز بسيون",
+    "NameEn": "Basyun",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 10009,
+    "GovernorateId": 10,
+    "NameAr": "مركز زفتى",
+    "NameEn": "Zifta",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 10010,
+    "GovernorateId": 10,
+    "NameAr": "مركز سمنود",
+    "NameEn": "Samannud",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 10011,
+    "GovernorateId": 10,
+    "NameAr": "مركز قطور",
+    "NameEn": "Qutur",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 10012,
+    "GovernorateId": 10,
+    "NameAr": "مركز كفر الزيات",
+    "NameEn": "Kafr Al-Zayyat",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 11001,
+    "GovernorateId": 11,
+    "NameAr": "قسم شبين الكوم",
+    "NameEn": "Shibin al-Kum (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 11002,
+    "GovernorateId": 11,
+    "NameAr": "مركز شبين الكوم",
+    "NameEn": "Shibin al-Kum (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 11003,
+    "GovernorateId": 11,
+    "NameAr": "مركز أشمون",
+    "NameEn": "Ashmun",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 11004,
+    "GovernorateId": 11,
+    "NameAr": "مركز الباجور",
+    "NameEn": "Al-Bagur",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 11005,
+    "GovernorateId": 11,
+    "NameAr": "مركز الشهداء",
+    "NameEn": "Al-Shuhada",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 11006,
+    "GovernorateId": 11,
+    "NameAr": "مركز بركة السبع",
+    "NameEn": "Birkat Al-Sab",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 11007,
+    "GovernorateId": 11,
+    "NameAr": "مركز تلا",
+    "NameEn": "Tala",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 11008,
+    "GovernorateId": 11,
+    "NameAr": "مركز قويسنا",
+    "NameEn": "Quwisna",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 11009,
+    "GovernorateId": 11,
+    "NameAr": "مركز منوف",
+    "NameEn": "Minuf",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 11010,
+    "GovernorateId": 11,
+    "NameAr": "قسم مدينة سرس الليانة",
+    "NameEn": "Sirs Al-Layyana City",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 11011,
+    "GovernorateId": 11,
+    "NameAr": "مركز السادات",
+    "NameEn": "Sadat City",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 11012,
+    "GovernorateId": 11,
+    "NameAr": "قسم مدينة منوف",
+    "NameEn": "Minuf City",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 12001,
+    "GovernorateId": 12,
+    "NameAr": "قسم دمنهور",
+    "NameEn": "Damanhur (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 12002,
+    "GovernorateId": 12,
+    "NameAr": "مركز دمنهور",
+    "NameEn": "Damanhur (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 12003,
+    "GovernorateId": 12,
+    "NameAr": "مركز ابوالمطامير",
+    "NameEn": "Abu-l-Matamir",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 12004,
+    "GovernorateId": 12,
+    "NameAr": "مركز ابوحمص",
+    "NameEn": "Abu Hummus",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 12005,
+    "GovernorateId": 12,
+    "NameAr": "مركز الدلنجات",
+    "NameEn": "Al-Dilingat",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 12006,
+    "GovernorateId": 12,
+    "NameAr": "مركز المحمودية",
+    "NameEn": "Al-Mahmudiyya",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 12007,
+    "GovernorateId": 12,
+    "NameAr": "مركز إيتاى البارود",
+    "NameEn": "Itay Al-Barud",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 12008,
+    "GovernorateId": 12,
+    "NameAr": "مركز حوش عيسى",
+    "NameEn": "Hush Isa",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 12009,
+    "GovernorateId": 12,
+    "NameAr": "مركز رشيد",
+    "NameEn": "Rashid",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 12010,
+    "GovernorateId": 12,
+    "NameAr": "مركز شبراخيت",
+    "NameEn": "Shubra Khit",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 12011,
+    "GovernorateId": 12,
+    "NameAr": "قسم كفرالدوار",
+    "NameEn": "Kafr Al-Dawwar (Qism)",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 12012,
+    "GovernorateId": 12,
+    "NameAr": "مركز كفر الدوار",
+    "NameEn": "Kafr Al-Dawwar (Markaz)",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 12013,
+    "GovernorateId": 12,
+    "NameAr": "مركز كوم حمادة",
+    "NameEn": "Kum Hamada",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 12014,
+    "GovernorateId": 12,
+    "NameAr": "مركز وادى النطرون",
+    "NameEn": "Wadi Al-NatrUn",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 12015,
+    "GovernorateId": 12,
+    "NameAr": "مركز الرحمانية",
+    "NameEn": "Al-Rahmaniyya",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 12016,
+    "GovernorateId": 12,
+    "NameAr": "مركز إدكو",
+    "NameEn": "Idku",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 12017,
+    "GovernorateId": 12,
+    "NameAr": "قسم غرب النوبارية",
+    "NameEn": "Nubariyya West",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 12018,
+    "GovernorateId": 12,
+    "NameAr": "مركز بدر",
+    "NameEn": "Badr",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 13001,
+    "GovernorateId": 13,
+    "NameAr": "قسم أول الاسماعيلية",
+    "NameEn": "Ismailiyya 1",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 13002,
+    "GovernorateId": 13,
+    "NameAr": "قسم ثان الاسماعيلية",
+    "NameEn": "Ismailiyya 2",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 13003,
+    "GovernorateId": 13,
+    "NameAr": "قسم ثالث الاسماعيلية",
+    "NameEn": "Ismailiyya 3",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 13004,
+    "GovernorateId": 13,
+    "NameAr": "مركز الاسماعيلية",
+    "NameEn": "Ismailiyya",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 13005,
+    "GovernorateId": 13,
+    "NameAr": "مركز التل الكبير",
+    "NameEn": "Tal al-Kabir, al-",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 13006,
+    "GovernorateId": 13,
+    "NameAr": "مركز القنطرة",
+    "NameEn": "Qantara Gharb, al-",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 13007,
+    "GovernorateId": 13,
+    "NameAr": "مركز فايد",
+    "NameEn": "Fayid",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 13008,
+    "GovernorateId": 13,
+    "NameAr": "قسم القنطرة شرق",
+    "NameEn": "Qantara Sharq, al-",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 14001,
+    "GovernorateId": 14,
+    "NameAr": "قسم امبابه",
+    "NameEn": "Imbaba (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 14002,
+    "GovernorateId": 14,
+    "NameAr": "قسم العجوزة",
+    "NameEn": "Al-Aguza",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 14003,
+    "GovernorateId": 14,
+    "NameAr": "قسم الدقي",
+    "NameEn": "DuqqI",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 14004,
+    "GovernorateId": 14,
+    "NameAr": "قسم الجيزة",
+    "NameEn": "Giza (Qism)",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 14005,
+    "GovernorateId": 14,
+    "NameAr": "قسم بولاق الدكرور",
+    "NameEn": "Bulaq Al-DakrUr",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 14006,
+    "GovernorateId": 14,
+    "NameAr": "قسم الأهرام",
+    "NameEn": "Al-Ahram",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 14007,
+    "GovernorateId": 14,
+    "NameAr": "قسم أول 6 أكتوبر",
+    "NameEn": "6 October-1",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 14008,
+    "GovernorateId": 14,
+    "NameAr": "قسم الحوامدية",
+    "NameEn": "Hwamdeia",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 14009,
+    "GovernorateId": 14,
+    "NameAr": "مركز الجيزة",
+    "NameEn": "Giza (Markaz)",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 14010,
+    "GovernorateId": 14,
+    "NameAr": "مركز البدرشين",
+    "NameEn": "Badrashain",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 14011,
+    "GovernorateId": 14,
+    "NameAr": "مركز الصف",
+    "NameEn": "Saf",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 14012,
+    "GovernorateId": 14,
+    "NameAr": "مركز العياط",
+    "NameEn": "Ayat",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 14013,
+    "GovernorateId": 14,
+    "NameAr": "مركز إمبابة",
+    "NameEn": "Imbaba (Markaz)",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 14014,
+    "GovernorateId": 14,
+    "NameAr": "قسم الواحاتالبحرية",
+    "NameEn": "Bahariya Oasis",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 14015,
+    "GovernorateId": 14,
+    "NameAr": "مركز أطفيح",
+    "NameEn": "Atfeh",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 14016,
+    "GovernorateId": 14,
+    "NameAr": "مركز أوسيم",
+    "NameEn": "Auseem",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 14017,
+    "GovernorateId": 14,
+    "NameAr": "قسم الوراق",
+    "NameEn": "Waraq",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 14018,
+    "GovernorateId": 14,
+    "NameAr": "قسم العمرانية",
+    "NameEn": "Umraniyya",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 14019,
+    "GovernorateId": 14,
+    "NameAr": "قسم الشيخ زايد",
+    "NameEn": "Shaykh Zayed",
+    "DisplayOrder": 19
+  },
+  {
+    "Id": 14020,
+    "GovernorateId": 14,
+    "NameAr": "مركز كرداسة",
+    "NameEn": "Kardasa",
+    "DisplayOrder": 20
+  },
+  {
+    "Id": 14021,
+    "GovernorateId": 14,
+    "NameAr": "قسم ثان 6 أكتوبر",
+    "NameEn": "6 October-2",
+    "DisplayOrder": 21
+  },
+  {
+    "Id": 15001,
+    "GovernorateId": 15,
+    "NameAr": "قسم بنى سويف",
+    "NameEn": "Bani Swayf (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 15002,
+    "GovernorateId": 15,
+    "NameAr": "مركز بنى سويف",
+    "NameEn": "Bani Swayf (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 15003,
+    "GovernorateId": 15,
+    "NameAr": "قسم مدينة بنى سويف الجديدة",
+    "NameEn": "Bani Swayf City",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 15004,
+    "GovernorateId": 15,
+    "NameAr": "مركز الفشن",
+    "NameEn": "Al Fashn",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 15005,
+    "GovernorateId": 15,
+    "NameAr": "مركز الواسطى",
+    "NameEn": "Al Wasta",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 15006,
+    "GovernorateId": 15,
+    "NameAr": "مركز أهناسيا",
+    "NameEn": "Ahnasya",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 15007,
+    "GovernorateId": 15,
+    "NameAr": "مركز ببا",
+    "NameEn": "Biba",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 15008,
+    "GovernorateId": 15,
+    "NameAr": "مركز سمسطا",
+    "NameEn": "Sumusta",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 15009,
+    "GovernorateId": 15,
+    "NameAr": "مركز ناصر",
+    "NameEn": "Nasir",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 16001,
+    "GovernorateId": 16,
+    "NameAr": "قسم الفيوم",
+    "NameEn": "Fayyum (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 16002,
+    "GovernorateId": 16,
+    "NameAr": "مركز الفيوم",
+    "NameEn": "Fayyum (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 16003,
+    "GovernorateId": 16,
+    "NameAr": "مركز أبشواى",
+    "NameEn": "Abshaway",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 16004,
+    "GovernorateId": 16,
+    "NameAr": "مركز أطسا",
+    "NameEn": "Atsa",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 16005,
+    "GovernorateId": 16,
+    "NameAr": "مركز سنورس",
+    "NameEn": "Sinuras",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 16006,
+    "GovernorateId": 16,
+    "NameAr": "مركز طامية",
+    "NameEn": "Tamya",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 16007,
+    "GovernorateId": 16,
+    "NameAr": "مركز يوسف الصديق",
+    "NameEn": "Yousef El sadeq",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 16008,
+    "GovernorateId": 16,
+    "NameAr": "مدينة الفيوم الجديدة",
+    "NameEn": "Fayyum City",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 17001,
+    "GovernorateId": 17,
+    "NameAr": "قسم المنيا",
+    "NameEn": "Kesm Al-minya",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 17002,
+    "GovernorateId": 17,
+    "NameAr": "مركز المنيا",
+    "NameEn": "Markz Al Minya",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 17003,
+    "GovernorateId": 17,
+    "NameAr": "مدينة المنيا الجديدة",
+    "NameEn": "New Minya",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 17004,
+    "GovernorateId": 17,
+    "NameAr": "مركز ابو قرقاص",
+    "NameEn": "Markz Abu Qurqas",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 17005,
+    "GovernorateId": 17,
+    "NameAr": "مركز العدوة",
+    "NameEn": "Markz Al Idwa",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 17006,
+    "GovernorateId": 17,
+    "NameAr": "مركز بنى مزار",
+    "NameEn": "Markz Bani Mazar",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 17007,
+    "GovernorateId": 17,
+    "NameAr": "مركز دير مواس",
+    "NameEn": "Markz Dir Mawas",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 17008,
+    "GovernorateId": 17,
+    "NameAr": "مركز سمالوط",
+    "NameEn": "Markz Samalut",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 17009,
+    "GovernorateId": 17,
+    "NameAr": "مركز مطاى",
+    "NameEn": "Markz Matay",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 17010,
+    "GovernorateId": 17,
+    "NameAr": "مركز مغاغة",
+    "NameEn": "Markz Maghagha",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 17011,
+    "GovernorateId": 17,
+    "NameAr": "قسم ملوى",
+    "NameEn": "Kesm Mallawi",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 17012,
+    "GovernorateId": 17,
+    "NameAr": "مركز ملوى",
+    "NameEn": "Markz Mallawi",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 18001,
+    "GovernorateId": 18,
+    "NameAr": "قسم أول أسيوط",
+    "NameEn": "Kesm Awal Assuit",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 18002,
+    "GovernorateId": 18,
+    "NameAr": "قسم ثان أسيوط",
+    "NameEn": "Kesm Than Assuit",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 18003,
+    "GovernorateId": 18,
+    "NameAr": "مركز أسيوط",
+    "NameEn": "Assuit",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 18004,
+    "GovernorateId": 18,
+    "NameAr": "مركز أبنوب",
+    "NameEn": "Abnub",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 18005,
+    "GovernorateId": 18,
+    "NameAr": "مركز أبوتيج",
+    "NameEn": "Abu Tig",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 18006,
+    "GovernorateId": 18,
+    "NameAr": "مركز البدارى",
+    "NameEn": "Al- Badari",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 18007,
+    "GovernorateId": 18,
+    "NameAr": "مركز ساحل سليم",
+    "NameEn": "Sahil Silim",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 18008,
+    "GovernorateId": 18,
+    "NameAr": "مركز الغنايم",
+    "NameEn": "Al-Ghanayem",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 18009,
+    "GovernorateId": 18,
+    "NameAr": "مركز القوصية",
+    "NameEn": "Al-Qusia",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 18010,
+    "GovernorateId": 18,
+    "NameAr": "مركز ديروط",
+    "NameEn": "Dayrut",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 18011,
+    "GovernorateId": 18,
+    "NameAr": "مركز صدفا",
+    "NameEn": "Sidfa",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 18012,
+    "GovernorateId": 18,
+    "NameAr": "مركز منفلوط",
+    "NameEn": "Manfalut",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 18013,
+    "GovernorateId": 18,
+    "NameAr": "مركز الفتح",
+    "NameEn": "Alfath",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 18014,
+    "GovernorateId": 18,
+    "NameAr": "مدينة اسيوط الجديدة",
+    "NameEn": "Assuit City",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 19001,
+    "GovernorateId": 19,
+    "NameAr": "قسم اول سوهاج",
+    "NameEn": "Suhag (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 19002,
+    "GovernorateId": 19,
+    "NameAr": "قسم ثان سوهاج",
+    "NameEn": "Suhag-2",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 19003,
+    "GovernorateId": 19,
+    "NameAr": "مركز سوهاج",
+    "NameEn": "Suhag (Markaz)",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 19004,
+    "GovernorateId": 19,
+    "NameAr": "مركز أخميم",
+    "NameEn": "Akhmim",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 19005,
+    "GovernorateId": 19,
+    "NameAr": "مركز البلينا",
+    "NameEn": "Al-Balyana",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 19006,
+    "GovernorateId": 19,
+    "NameAr": "مركز المراغة",
+    "NameEn": "Al-Maragha",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 19007,
+    "GovernorateId": 19,
+    "NameAr": "مركز المنشأة",
+    "NameEn": "Al-Minshat",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 19008,
+    "GovernorateId": 19,
+    "NameAr": "مركز دار السلام",
+    "NameEn": "Dar al-Salam",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 19009,
+    "GovernorateId": 19,
+    "NameAr": "قسم جرجا",
+    "NameEn": "Girga (Qism)",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 19010,
+    "GovernorateId": 19,
+    "NameAr": "مركز جرجا",
+    "NameEn": "Girga (Markaz)",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 19011,
+    "GovernorateId": 19,
+    "NameAr": "مركز جهينة الغربية",
+    "NameEn": "Guhayna Al-Gharbiyya",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 19012,
+    "GovernorateId": 19,
+    "NameAr": "مركز ساقلته",
+    "NameEn": "Saqulta",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 19013,
+    "GovernorateId": 19,
+    "NameAr": "مركز طما",
+    "NameEn": "Tama",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 19014,
+    "GovernorateId": 19,
+    "NameAr": "مركز طهطا",
+    "NameEn": "Tahta",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 19015,
+    "GovernorateId": 19,
+    "NameAr": "قسم طهطا",
+    "NameEn": "Kesm Tahta",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 19016,
+    "GovernorateId": 19,
+    "NameAr": "قسم الكوثر",
+    "NameEn": "Kawther",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 19017,
+    "GovernorateId": 19,
+    "NameAr": "مركز العسيرات",
+    "NameEn": "Al Usayrat",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 19018,
+    "GovernorateId": 19,
+    "NameAr": "مدينة أخميم الجديدة",
+    "NameEn": "Akhmim City",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 19019,
+    "GovernorateId": 19,
+    "NameAr": "مدينة سوهاج الجديدة",
+    "NameEn": "Suhag City",
+    "DisplayOrder": 19
+  },
+  {
+    "Id": 20001,
+    "GovernorateId": 20,
+    "NameAr": "قسم قنا",
+    "NameEn": "Qina (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 20002,
+    "GovernorateId": 20,
+    "NameAr": "مركز قنا",
+    "NameEn": "Qina (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 20003,
+    "GovernorateId": 20,
+    "NameAr": "مركز أبو طشت",
+    "NameEn": "Abu Tisht",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 20004,
+    "GovernorateId": 20,
+    "NameAr": "مركز أرمنت",
+    "NameEn": "Armant",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 20005,
+    "GovernorateId": 20,
+    "NameAr": "مركز إسنا",
+    "NameEn": "Isna",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 20006,
+    "GovernorateId": 20,
+    "NameAr": "مركز دشنا",
+    "NameEn": "Dishna",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 20007,
+    "GovernorateId": 20,
+    "NameAr": "مركز قوص",
+    "NameEn": "Qus",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 20008,
+    "GovernorateId": 20,
+    "NameAr": "مركز نجع حمادى",
+    "NameEn": "Nag Hammadi",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 20009,
+    "GovernorateId": 20,
+    "NameAr": "مركز نقادة",
+    "NameEn": "Naqada",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 20010,
+    "GovernorateId": 20,
+    "NameAr": "مركز فرشوط",
+    "NameEn": "Farshut",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 20011,
+    "GovernorateId": 20,
+    "NameAr": "مركز قفط",
+    "NameEn": "Qift",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 20012,
+    "GovernorateId": 20,
+    "NameAr": "مركز الوقف",
+    "NameEn": "Al Waqf",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 20013,
+    "GovernorateId": 20,
+    "NameAr": "مدينة قنا الجديدة",
+    "NameEn": "Qina City",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 21001,
+    "GovernorateId": 21,
+    "NameAr": "قسم أسوان",
+    "NameEn": "Aswan (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 21002,
+    "GovernorateId": 21,
+    "NameAr": "مركز أسوان",
+    "NameEn": "Aswan (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 21003,
+    "GovernorateId": 21,
+    "NameAr": "مركز أدفو",
+    "NameEn": "Adfu",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 21004,
+    "GovernorateId": 21,
+    "NameAr": "مركز كوم امبو",
+    "NameEn": "Kum Umbu",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 21005,
+    "GovernorateId": 21,
+    "NameAr": "مركز نصر",
+    "NameEn": "Nasr",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 21006,
+    "GovernorateId": 21,
+    "NameAr": "مركز دراو",
+    "NameEn": "Daraw",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 21007,
+    "GovernorateId": 21,
+    "NameAr": "مركز أبوسنبل",
+    "NameEn": "Abu Simbel",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 21008,
+    "GovernorateId": 21,
+    "NameAr": "مدينة أسوان الجديدة",
+    "NameEn": "Aswan City",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 21009,
+    "GovernorateId": 21,
+    "NameAr": "مدينة توشكى الجديدة",
+    "NameEn": "Tushaka",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 22001,
+    "GovernorateId": 22,
+    "NameAr": "قسم الأقصر",
+    "NameEn": "Luxor (Qism)",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 22002,
+    "GovernorateId": 22,
+    "NameAr": "مركز الأقصر",
+    "NameEn": "Luxor (Markaz)",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 22003,
+    "GovernorateId": 22,
+    "NameAr": "مركز شرطة طيبة",
+    "NameEn": "Tiba police station",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 23001,
+    "GovernorateId": 23,
+    "NameAr": "قسم أول الغردقة",
+    "NameEn": "Hurghada 1",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 23002,
+    "GovernorateId": 23,
+    "NameAr": "قسم القصير",
+    "NameEn": "Qusir",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 23003,
+    "GovernorateId": 23,
+    "NameAr": "قسم سفاجا",
+    "NameEn": "Safaga",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 23004,
+    "GovernorateId": 23,
+    "NameAr": "قسم مرسى علم",
+    "NameEn": "Marsa Alam",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 23005,
+    "GovernorateId": 23,
+    "NameAr": "قسم رأس غارب",
+    "NameEn": "Ras Gharib",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 23006,
+    "GovernorateId": 23,
+    "NameAr": "قسم شلاتين",
+    "NameEn": "Shallatin",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 23007,
+    "GovernorateId": 23,
+    "NameAr": "قسم حلايب",
+    "NameEn": "Halayib",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 23008,
+    "GovernorateId": 23,
+    "NameAr": "قسم ثان الغردقة",
+    "NameEn": "Hurghada 2",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 24001,
+    "GovernorateId": 24,
+    "NameAr": "مركز الواحات الخارجة",
+    "NameEn": "Al-Kharga Oasis",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 24002,
+    "GovernorateId": 24,
+    "NameAr": "مركز الوحات الداخلة",
+    "NameEn": "A-Dakhla Oasis",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 24003,
+    "GovernorateId": 24,
+    "NameAr": "مركز الفرافرة",
+    "NameEn": "Al Farafra Oasis",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 24004,
+    "GovernorateId": 24,
+    "NameAr": "مركز باريس",
+    "NameEn": "Paris Paris",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 25001,
+    "GovernorateId": 25,
+    "NameAr": "قسم مرسى مطروح",
+    "NameEn": "Marsa Matruh",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 25002,
+    "GovernorateId": 25,
+    "NameAr": "قسم الحمام",
+    "NameEn": "Al-Hammam",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 25003,
+    "GovernorateId": 25,
+    "NameAr": "قسم السلوم",
+    "NameEn": "Salloum",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 25004,
+    "GovernorateId": 25,
+    "NameAr": "مركز الضبعة",
+    "NameEn": "Daba",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 25005,
+    "GovernorateId": 25,
+    "NameAr": "قسم سيدى برانى",
+    "NameEn": "Sidi Barani",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 25006,
+    "GovernorateId": 25,
+    "NameAr": "مركز سيوة",
+    "NameEn": "Siwa",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 25007,
+    "GovernorateId": 25,
+    "NameAr": "قسم مارينا العلمين السياحية",
+    "NameEn": "Alamn",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 25008,
+    "GovernorateId": 25,
+    "NameAr": "قسم الساحل الشمالى-جزء",
+    "NameEn": "North Coast",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 26001,
+    "GovernorateId": 26,
+    "NameAr": "قسم أول العريش",
+    "NameEn": "El Arish 1",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 26002,
+    "GovernorateId": 26,
+    "NameAr": "قسم ثان العريش",
+    "NameEn": "El Arish 2",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 26003,
+    "GovernorateId": 26,
+    "NameAr": "قسم ثالث العريش",
+    "NameEn": "El Arish 3",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 26004,
+    "GovernorateId": 26,
+    "NameAr": "قسم رابع العريش",
+    "NameEn": "El Arish 4",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 26005,
+    "GovernorateId": 26,
+    "NameAr": "قسم بئر العبد",
+    "NameEn": "Bir Al-Abd",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 26006,
+    "GovernorateId": 26,
+    "NameAr": "قسم الحسنة",
+    "NameEn": "Al-Hasna",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 26007,
+    "GovernorateId": 26,
+    "NameAr": "قسم نخل",
+    "NameEn": "Nakhl",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 26008,
+    "GovernorateId": 26,
+    "NameAr": "قسم الشيخ زويد",
+    "NameEn": "Shaykh Zuwayd",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 26009,
+    "GovernorateId": 26,
+    "NameAr": "قسم رفح",
+    "NameEn": "Rafah",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 26010,
+    "GovernorateId": 26,
+    "NameAr": "قسم رمانة",
+    "NameEn": "Rummana",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 26011,
+    "GovernorateId": 26,
+    "NameAr": "قسم القسيمة",
+    "NameEn": "Qasima",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 27001,
+    "GovernorateId": 27,
+    "NameAr": "قسم الطور",
+    "NameEn": "Al-Tur",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 27002,
+    "GovernorateId": 27,
+    "NameAr": "قسم رأس سدر",
+    "NameEn": "Ras Sidr",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 27003,
+    "GovernorateId": 27,
+    "NameAr": "قسم أبو رديس",
+    "NameEn": "Abu Radis",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 27004,
+    "GovernorateId": 27,
+    "NameAr": "قسم سانت كاترين",
+    "NameEn": "Sant Katrin",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 27005,
+    "GovernorateId": 27,
+    "NameAr": "قسم شرم الشيخ",
+    "NameEn": "Sharm el-Sheikh",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 27006,
+    "GovernorateId": 27,
+    "NameAr": "قسم دهب",
+    "NameEn": "Dahab",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 27007,
+    "GovernorateId": 27,
+    "NameAr": "قسم نويبع",
+    "NameEn": "Nuweiba",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 27008,
+    "GovernorateId": 27,
+    "NameAr": "قسم طابا",
+    "NameEn": "Taba",
+    "DisplayOrder": 8
+  }
+]

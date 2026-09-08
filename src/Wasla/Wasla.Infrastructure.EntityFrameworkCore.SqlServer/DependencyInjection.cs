@@ -51,6 +51,8 @@ public static class DependencyInjection
         services.AddScoped<IEmailOutbox, EmailOutbox>();
         services.AddScoped<IWaslaDataStore, WaslaDataStore>();
         services.AddScoped<WaslaSecuritySeeder>();
+        services.AddScoped<MedicalSpecializationSeeder>();
+        services.AddScoped<EgyptLocationSeedCoordinator>();
         services.AddScoped<EmailOutboxProcessor>();
         services.AddSingleton<IDatabaseMigrationService, EfCoreDatabaseMigrationService>();
         services.AddHostedService<DatabaseInitializationHostedService>();
