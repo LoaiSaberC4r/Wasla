@@ -4,6 +4,7 @@ using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
+using Wasla.Domain.ReferenceData;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -264,6 +265,262 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
                 challenge.InvalidatedOnUtc == null &&
                 challenge.ConsumedOnUtc == null)
             .ToListAsync(cancellationToken);
+
+    public Task<MedicalSpecialization?> FindMedicalSpecializationAsync(
+        Guid id,
+        bool includeDeleted,
+        CancellationToken cancellationToken)
+    {
+        IQueryable<MedicalSpecialization> query = dbContext.MedicalSpecializations;
+        if (includeDeleted)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+
+        return query.SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
+    }
+
+    public Task<bool> MedicalSpecializationNameArExistsAsync(
+        string nameAr,
+        Guid? excludingId,
+        CancellationToken cancellationToken)
+        => dbContext.MedicalSpecializations.IgnoreQueryFilters().AsNoTracking().AnyAsync(
+            item => item.NameAr == nameAr && (!excludingId.HasValue || item.Id != excludingId.Value),
+            cancellationToken);
+
+    public Task<bool> MedicalSpecializationNameEnExistsAsync(
+        string nameEn,
+        Guid? excludingId,
+        CancellationToken cancellationToken)
+        => dbContext.MedicalSpecializations.IgnoreQueryFilters().AsNoTracking().AnyAsync(
+            item => item.NameEn == nameEn && (!excludingId.HasValue || item.Id != excludingId.Value),
+            cancellationToken);
+
+    public async Task<(IReadOnlyList<MedicalSpecialization> Items, long TotalCount)> ListMedicalSpecializationsAsync(
+        string? search,
+        bool? isActive,
+        bool? isDeleted,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        IQueryable<MedicalSpecialization> query = dbContext.MedicalSpecializations.AsNoTracking().IgnoreQueryFilters();
+        if (isDeleted.HasValue)
+        {
+            query = query.Where(item => item.IsDeleted == isDeleted.Value);
+        }
+        if (isActive.HasValue)
+        {
+            query = query.Where(item => item.IsActive == isActive.Value);
+        }
+        var normalizedSearch = search?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedSearch))
+        {
+            query = query.Where(item => item.NameAr.Contains(normalizedSearch) ||
+                                        item.NameEn != null && item.NameEn.Contains(normalizedSearch));
+        }
+
+        var count = await query.LongCountAsync(cancellationToken);
+        var items = await query.OrderBy(item => item.SortOrder).ThenBy(item => item.NameAr)
+            .Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        return (items, count);
+    }
+
+    public async Task<IReadOnlyList<MedicalSpecializationOptionRecord>> ListSelectableMedicalSpecializationsAsync(
+        CancellationToken cancellationToken)
+        => await dbContext.MedicalSpecializations.AsNoTracking()
+            .Where(item => item.IsActive)
+            .OrderBy(item => item.SortOrder).ThenBy(item => item.NameAr)
+            .Select(item => new MedicalSpecializationOptionRecord(item.Id, item.NameAr, item.NameEn))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Guid>> ListAvailableMedicalSpecializationIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken)
+        => await dbContext.MedicalSpecializations.AsNoTracking()
+            .Where(item => ids.Contains(item.Id) && item.IsActive)
+            .Select(item => item.Id)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorSpecializationViewRecord>> ListDoctorSpecializationsAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken)
+        => await (from selected in dbContext.DoctorSpecializations.AsNoTracking()
+                  join specialization in dbContext.MedicalSpecializations.IgnoreQueryFilters().AsNoTracking()
+                      on selected.MedicalSpecializationId equals specialization.Id
+                  where selected.DoctorId == doctorId
+                  orderby selected.IsPrimary descending, specialization.SortOrder, specialization.NameAr
+                  select new DoctorSpecializationViewRecord(
+                      specialization.Id,
+                      specialization.NameAr,
+                      specialization.NameEn,
+                      selected.IsPrimary)).ToListAsync(cancellationToken);
+
+    public Task<DoctorSpecializationRequest?> FindOpenDoctorSpecializationRequestAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorSpecializationRequests.SingleOrDefaultAsync(
+            item => item.DoctorId == doctorId &&
+                    (item.Status == DoctorSpecializationRequestStatus.PendingReview ||
+                     item.Status == DoctorSpecializationRequestStatus.ModificationRequested),
+            cancellationToken);
+
+    public Task<DoctorSpecializationRequest?> FindLatestDoctorSpecializationRequestAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorSpecializationRequests.AsNoTracking()
+            .Where(item => item.DoctorId == doctorId)
+            .OrderByDescending(item => item.SubmittedOnUtc)
+            .ThenByDescending(item => item.CreatedOnUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<DoctorSpecializationRequestOwnerRecord?> FindDoctorSpecializationRequestAsync(
+        Guid requestId,
+        CancellationToken cancellationToken)
+        => (from request in dbContext.DoctorSpecializationRequests
+            join doctor in dbContext.Doctors on request.DoctorId equals doctor.Id
+            join user in dbContext.ApplicationUsers on doctor.ApplicationUserId equals user.Id
+            where request.Id == requestId
+            select new DoctorSpecializationRequestOwnerRecord(request, doctor, user))
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorSpecializationRequestItemViewRecord>> ListDoctorSpecializationRequestItemsAsync(
+        Guid requestId,
+        int revisionNumber,
+        CancellationToken cancellationToken)
+        => await (from revision in dbContext.DoctorSpecializationRequestRevisions.AsNoTracking()
+                  join item in dbContext.DoctorSpecializationRequestItems.AsNoTracking() on revision.Id equals item.RevisionId
+                  join specialization in dbContext.MedicalSpecializations.IgnoreQueryFilters().AsNoTracking()
+                      on item.MedicalSpecializationId equals specialization.Id
+                  where revision.DoctorSpecializationRequestId == requestId && revision.RevisionNumber == revisionNumber
+                  orderby item.IsPrimary descending, specialization.SortOrder, specialization.NameAr
+                  select new DoctorSpecializationRequestItemViewRecord(
+                      specialization.Id,
+                      specialization.NameAr,
+                      specialization.NameEn,
+                      item.IsPrimary)).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorSpecializationRequestRevision>> ListDoctorSpecializationRequestRevisionsAsync(
+        Guid requestId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorSpecializationRequestRevisions.AsNoTracking()
+            .Where(item => item.DoctorSpecializationRequestId == requestId)
+            .OrderBy(item => item.RevisionNumber)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorSpecializationRequestHistory>> ListDoctorSpecializationRequestHistoryAsync(
+        Guid requestId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorSpecializationRequestHistories.AsNoTracking()
+            .Where(item => item.DoctorSpecializationRequestId == requestId)
+            .OrderBy(item => item.PerformedOnUtc).ThenBy(item => item.Id)
+            .ToListAsync(cancellationToken);
+
+    public async Task<(IReadOnlyList<DoctorSpecializationRequestQueueRecord> Items, long TotalCount)> ListDoctorSpecializationRequestsAsync(
+        DoctorSpecializationRequestStatus? status,
+        DoctorSpecializationRequestType? type,
+        string? search,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = from request in dbContext.DoctorSpecializationRequests.AsNoTracking()
+                    join doctor in dbContext.Doctors.AsNoTracking() on request.DoctorId equals doctor.Id
+                    join user in dbContext.ApplicationUsers.AsNoTracking() on doctor.ApplicationUserId equals user.Id
+                    select new { Request = request, Doctor = doctor, User = user };
+        if (status.HasValue)
+        {
+            query = query.Where(item => item.Request.Status == status.Value);
+        }
+        if (type.HasValue)
+        {
+            query = query.Where(item => item.Request.Type == type.Value);
+        }
+        var normalizedSearch = search?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedSearch))
+        {
+            query = query.Where(item => item.Doctor.NameAr.Contains(normalizedSearch) ||
+                                        item.Doctor.NameEn != null && item.Doctor.NameEn.Contains(normalizedSearch) ||
+                                        item.User.Email.Contains(normalizedSearch) || item.User.UserName.Contains(normalizedSearch));
+        }
+
+        var count = await query.LongCountAsync(cancellationToken);
+        var items = await query.OrderByDescending(item => item.Request.SubmittedOnUtc)
+            .Skip((pageNumber - 1) * pageSize).Take(pageSize)
+            .Select(item => new DoctorSpecializationRequestQueueRecord(
+                item.Request.Id,
+                item.Doctor.Id,
+                item.Doctor.NameAr,
+                item.Doctor.NameEn,
+                item.User.Email,
+                item.Request.Type,
+                item.Request.Status,
+                item.Request.CurrentRevisionNumber,
+                item.Request.SubmittedOnUtc,
+                item.Request.RowVersion))
+            .ToListAsync(cancellationToken);
+        return (items, count);
+    }
+
+    public async Task ReplaceDoctorSpecializationsAsync(
+        Guid doctorId,
+        IReadOnlyCollection<DoctorSpecialization> replacements,
+        CancellationToken cancellationToken)
+    {
+        var current = await dbContext.DoctorSpecializations.Where(item => item.DoctorId == doctorId).ToListAsync(cancellationToken);
+        dbContext.DoctorSpecializations.RemoveRange(current);
+        await dbContext.DoctorSpecializations.AddRangeAsync(replacements, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<LocationReferenceRecord>> ListGovernoratesAsync(CancellationToken cancellationToken)
+        => await dbContext.Governorates.AsNoTracking().Where(item => item.IsActive)
+            .OrderBy(item => item.DisplayOrder).ThenBy(item => item.NameAr)
+            .Select(item => new LocationReferenceRecord(item.Id, item.NameAr, item.NameEn)).ToListAsync(cancellationToken);
+
+    public Task<bool> ActiveGovernorateExistsAsync(int governorateId, CancellationToken cancellationToken)
+        => dbContext.Governorates.AsNoTracking().AnyAsync(item => item.Id == governorateId && item.IsActive, cancellationToken);
+
+    public async Task<IReadOnlyList<LocationReferenceRecord>> ListCitiesAsync(int governorateId, CancellationToken cancellationToken)
+        => await dbContext.Cities.AsNoTracking().Where(item => item.GovernorateId == governorateId && item.IsActive)
+            .OrderBy(item => item.DisplayOrder).ThenBy(item => item.NameAr)
+            .Select(item => new LocationReferenceRecord(item.Id, item.NameAr, item.NameEn)).ToListAsync(cancellationToken);
+
+    public Task<bool> ActiveCityExistsAsync(int cityId, CancellationToken cancellationToken)
+        => dbContext.Cities.AsNoTracking().AnyAsync(item => item.Id == cityId && item.IsActive, cancellationToken);
+
+    public async Task<IReadOnlyList<LocationReferenceRecord>> ListAreasAsync(int cityId, CancellationToken cancellationToken)
+        => await dbContext.Areas.AsNoTracking().Where(item => item.CityId == cityId && item.IsActive)
+            .OrderBy(item => item.DisplayOrder).ThenBy(item => item.NameAr)
+            .Select(item => new LocationReferenceRecord(item.Id, item.NameAr, item.NameEn)).ToListAsync(cancellationToken);
+
+    public Task<LocationHierarchyRecord?> FindLocationHierarchyAsync(int areaId, CancellationToken cancellationToken)
+        => (from area in dbContext.Areas.AsNoTracking()
+            join city in dbContext.Cities.AsNoTracking() on area.CityId equals city.Id
+            join governorate in dbContext.Governorates.AsNoTracking() on city.GovernorateId equals governorate.Id
+            where area.Id == areaId
+            select new LocationHierarchyRecord(
+                area.Id,
+                city.Id,
+                governorate.Id,
+                area.IsActive,
+                city.IsActive,
+                governorate.IsActive)).SingleOrDefaultAsync(cancellationToken);
+
+    public Task<DoctorPracticeLocation?> FindDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeLocations.SingleOrDefaultAsync(item => item.DoctorId == doctorId, cancellationToken);
+
+    public Task<DoctorPracticeLocationViewRecord?> GetDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken)
+        => (from location in dbContext.DoctorPracticeLocations.AsNoTracking()
+            join governorate in dbContext.Governorates.AsNoTracking() on location.GovernorateId equals governorate.Id
+            join city in dbContext.Cities.AsNoTracking() on location.CityId equals city.Id
+            join area in dbContext.Areas.AsNoTracking() on location.AreaId equals area.Id
+            where location.DoctorId == doctorId
+            select new DoctorPracticeLocationViewRecord(
+                location,
+                new LocationReferenceRecord(governorate.Id, governorate.NameAr, governorate.NameEn),
+                new LocationReferenceRecord(city.Id, city.NameAr, city.NameEn),
+                new LocationReferenceRecord(area.Id, area.NameAr, area.NameEn)))
+            .SingleOrDefaultAsync(cancellationToken);
 
     public void Add<TEntity>(TEntity entity) where TEntity : class
         => dbContext.Set<TEntity>().Add(entity);

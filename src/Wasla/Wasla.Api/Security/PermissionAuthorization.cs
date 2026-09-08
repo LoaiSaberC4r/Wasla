@@ -61,7 +61,12 @@ internal sealed class PermissionAuthorizationHandler(
 
         IEnumerable<string> effective = snapshot.Permissions;
         if (snapshot.User.UserType == UserType.Doctor &&
-            snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
+            snapshot.DoctorStatus == DoctorApprovalStatus.Pending)
+        {
+            effective = effective.Where(PermissionNames.PendingDoctorOnboarding.Contains);
+        }
+        else if (snapshot.User.UserType == UserType.Doctor &&
+                 snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
         {
             effective = effective.Where(permission => string.Equals(
                 permission,

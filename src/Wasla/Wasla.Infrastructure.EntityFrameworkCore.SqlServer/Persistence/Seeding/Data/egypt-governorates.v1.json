@@ -1,0 +1,164 @@
+[
+  {
+    "Id": 1,
+    "NameAr": "القاهرة",
+    "NameEn": "Cairo",
+    "DisplayOrder": 1
+  },
+  {
+    "Id": 2,
+    "NameAr": "الاسكندرية",
+    "NameEn": "Alexandria",
+    "DisplayOrder": 2
+  },
+  {
+    "Id": 3,
+    "NameAr": "بورسعيد",
+    "NameEn": "Port Said",
+    "DisplayOrder": 3
+  },
+  {
+    "Id": 4,
+    "NameAr": "السويس",
+    "NameEn": "Suez",
+    "DisplayOrder": 4
+  },
+  {
+    "Id": 5,
+    "NameAr": "دمياط",
+    "NameEn": "Damietta",
+    "DisplayOrder": 5
+  },
+  {
+    "Id": 6,
+    "NameAr": "الدقهلية",
+    "NameEn": "Dakahlia",
+    "DisplayOrder": 6
+  },
+  {
+    "Id": 7,
+    "NameAr": "الشرقية",
+    "NameEn": "Sharkia",
+    "DisplayOrder": 7
+  },
+  {
+    "Id": 8,
+    "NameAr": "القليوبية",
+    "NameEn": "Kalyoubia",
+    "DisplayOrder": 8
+  },
+  {
+    "Id": 9,
+    "NameAr": "كفر الشيخ",
+    "NameEn": "Kafr El-Shikh",
+    "DisplayOrder": 9
+  },
+  {
+    "Id": 10,
+    "NameAr": "الغربية",
+    "NameEn": "Gharbia",
+    "DisplayOrder": 10
+  },
+  {
+    "Id": 11,
+    "NameAr": "المنوفية",
+    "NameEn": "Menoufia",
+    "DisplayOrder": 11
+  },
+  {
+    "Id": 12,
+    "NameAr": "البحيرة",
+    "NameEn": "Behera",
+    "DisplayOrder": 12
+  },
+  {
+    "Id": 13,
+    "NameAr": "الإسماعيلية",
+    "NameEn": "Ismailia",
+    "DisplayOrder": 13
+  },
+  {
+    "Id": 14,
+    "NameAr": "الجيزة",
+    "NameEn": "Giza",
+    "DisplayOrder": 14
+  },
+  {
+    "Id": 15,
+    "NameAr": "بنى سويف",
+    "NameEn": "Beni Suef",
+    "DisplayOrder": 15
+  },
+  {
+    "Id": 16,
+    "NameAr": "الفيوم",
+    "NameEn": "Fayoum",
+    "DisplayOrder": 16
+  },
+  {
+    "Id": 17,
+    "NameAr": "المنيا",
+    "NameEn": "Menia",
+    "DisplayOrder": 17
+  },
+  {
+    "Id": 18,
+    "NameAr": "أسيوط",
+    "NameEn": "Assiut",
+    "DisplayOrder": 18
+  },
+  {
+    "Id": 19,
+    "NameAr": "سوهاج",
+    "NameEn": "Suhag",
+    "DisplayOrder": 19
+  },
+  {
+    "Id": 20,
+    "NameAr": "قنا",
+    "NameEn": "Qena",
+    "DisplayOrder": 20
+  },
+  {
+    "Id": 21,
+    "NameAr": "أسوان",
+    "NameEn": "Aswan",
+    "DisplayOrder": 21
+  },
+  {
+    "Id": 22,
+    "NameAr": "مدينة الأقصر",
+    "NameEn": "Luxor",
+    "DisplayOrder": 22
+  },
+  {
+    "Id": 23,
+    "NameAr": "البحر الأحمر",
+    "NameEn": "Red Sea",
+    "DisplayOrder": 23
+  },
+  {
+    "Id": 24,
+    "NameAr": "الوادى الجديد",
+    "NameEn": "New Valley",
+    "DisplayOrder": 24
+  },
+  {
+    "Id": 25,
+    "NameAr": "مطروح",
+    "NameEn": "Matrouh",
+    "DisplayOrder": 25
+  },
+  {
+    "Id": 26,
+    "NameAr": "شمال سيناء",
+    "NameEn": "North Sinai",
+    "DisplayOrder": 26
+  },
+  {
+    "Id": 27,
+    "NameAr": "جنوب سيناء",
+    "NameEn": "South Sinai",
+    "DisplayOrder": 27
+  }
+]

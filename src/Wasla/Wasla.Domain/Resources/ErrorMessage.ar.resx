@@ -76,4 +76,38 @@
   <data name="ValidationEnum" xml:space="preserve"><value>قيمة الحقل '{PropertyName}' غير صحيحة.</value></data>
   <data name="ValidationNull" xml:space="preserve"><value>يجب أن تكون قيمة '{PropertyName}' فارغة.</value></data>
   <data name="ValidationEmpty" xml:space="preserve"><value>يجب أن يكون الحقل '{PropertyName}' فارغًا.</value></data>
+  <data name="MedicalSpecializationInvalid" xml:space="preserve"><value>بيانات التخصص الطبي غير صحيحة.</value></data>
+  <data name="MedicalSpecializationNotFound" xml:space="preserve"><value>التخصص الطبي غير موجود.</value></data>
+  <data name="MedicalSpecializationDuplicateNameAr" xml:space="preserve"><value>اسم التخصص باللغة العربية مستخدم بالفعل.</value></data>
+  <data name="MedicalSpecializationDuplicateNameEn" xml:space="preserve"><value>اسم التخصص باللغة الإنجليزية مستخدم بالفعل.</value></data>
+  <data name="MedicalSpecializationAlreadyActive" xml:space="preserve"><value>التخصص الطبي مفعّل بالفعل.</value></data>
+  <data name="MedicalSpecializationAlreadyInactive" xml:space="preserve"><value>التخصص الطبي غير مفعّل بالفعل.</value></data>
+  <data name="MedicalSpecializationMustDeactivateBeforeDelete" xml:space="preserve"><value>يجب إلغاء تفعيل التخصص الطبي قبل حذفه.</value></data>
+  <data name="MedicalSpecializationDeleted" xml:space="preserve"><value>التخصص الطبي محذوف.</value></data>
+  <data name="MedicalSpecializationNotDeleted" xml:space="preserve"><value>التخصص الطبي غير محذوف.</value></data>
+  <data name="MedicalSpecializationConcurrencyConflict" xml:space="preserve"><value>تم تعديل التخصص الطبي بواسطة طلب آخر.</value></data>
+  <data name="LocationInvalid" xml:space="preserve"><value>بيانات الموقع غير صحيحة.</value></data>
+  <data name="LocationGovernorateNotFound" xml:space="preserve"><value>المحافظة غير موجودة.</value></data>
+  <data name="LocationCityNotFound" xml:space="preserve"><value>المدينة غير موجودة.</value></data>
+  <data name="LocationAreaNotFound" xml:space="preserve"><value>المنطقة غير موجودة.</value></data>
+  <data name="LocationInvalidHierarchy" xml:space="preserve"><value>المحافظة والمدينة والمنطقة المختارة لا تكوّن تسلسلاً إداريًا صحيحًا.</value></data>
+  <data name="LocationInactive" xml:space="preserve"><value>الموقع المختار غير مفعّل.</value></data>
+  <data name="DoctorSpecializationsOpenRequestAlreadyExists" xml:space="preserve"><value>يوجد بالفعل طلب تخصصات مفتوح لهذا الطبيب.</value></data>
+  <data name="DoctorSpecializationsRequestNotFound" xml:space="preserve"><value>طلب التخصصات غير موجود.</value></data>
+  <data name="DoctorSpecializationsNoSpecializations" xml:space="preserve"><value>يجب اختيار تخصص واحد على الأقل.</value></data>
+  <data name="DoctorSpecializationsPrimaryRequired" xml:space="preserve"><value>يجب تحديد تخصص أساسي واحد فقط.</value></data>
+  <data name="DoctorSpecializationsMultiplePrimary" xml:space="preserve"><value>لا يمكن تحديد أكثر من تخصص أساسي واحد.</value></data>
+  <data name="DoctorSpecializationsDuplicateSpecialization" xml:space="preserve"><value>لا يمكن اختيار التخصص نفسه أكثر من مرة.</value></data>
+  <data name="DoctorSpecializationsSpecializationNotAvailable" xml:space="preserve"><value>تخصص واحد أو أكثر من التخصصات المختارة غير متاح.</value></data>
+  <data name="DoctorSpecializationsSpecializationNoLongerAvailable" xml:space="preserve"><value>تخصص واحد أو أكثر من التخصصات المختارة لم يعد متاحًا.</value></data>
+  <data name="DoctorSpecializationsInvalidRequestStatus" xml:space="preserve"><value>حالة طلب التخصصات لا تسمح بهذا الإجراء.</value></data>
+  <data name="DoctorSpecializationsConcurrencyConflict" xml:space="preserve"><value>تم تعديل طلب التخصصات بواسطة طلب آخر.</value></data>
+  <data name="DoctorPracticeLocationInvalid" xml:space="preserve"><value>بيانات موقع الممارسة غير صحيحة.</value></data>
+  <data name="DoctorPracticeLocationNotFound" xml:space="preserve"><value>موقع ممارسة الطبيب غير موجود.</value></data>
+  <data name="DoctorPracticeLocationInvalidLatitude" xml:space="preserve"><value>يجب أن يكون خط العرض بين -90 و90.</value></data>
+  <data name="DoctorPracticeLocationInvalidLongitude" xml:space="preserve"><value>يجب أن يكون خط الطول بين -180 و180.</value></data>
+  <data name="DoctorPracticeLocationRowVersionRequired" xml:space="preserve"><value>نسخة الصف مطلوبة عند تحديث موقع ممارسة موجود.</value></data>
+  <data name="DoctorPracticeLocationRowVersionMustBeNull" xml:space="preserve"><value>يجب ألا تُرسل نسخة صف عند إنشاء موقع الممارسة لأول مرة.</value></data>
+  <data name="DoctorPracticeLocationConcurrencyConflict" xml:space="preserve"><value>تم تعديل موقع الممارسة بواسطة طلب آخر.</value></data>
+  <data name="DoctorOnboardingUnavailable" xml:space="preserve"><value>لا يمكن استكمال إعداد ملف الطبيب في حالة الحساب الحالية.</value></data>
 </root>

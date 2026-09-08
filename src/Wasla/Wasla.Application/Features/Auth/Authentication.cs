@@ -123,13 +123,17 @@ internal sealed class LoginCommandHandler(
 
         IEnumerable<string> permissions = snapshot.Permissions;
         if (snapshot.User.UserType == UserType.Doctor &&
-            snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
+            snapshot.DoctorStatus == DoctorApprovalStatus.Pending)
         {
-            permissions = permissions.Where(permission =>
-                string.Equals(
-                    permission,
-                    PermissionNames.DoctorOnboardingViewOwn,
-                    StringComparison.OrdinalIgnoreCase));
+            permissions = permissions.Where(PermissionNames.PendingDoctorOnboarding.Contains);
+        }
+        else if (snapshot.User.UserType == UserType.Doctor &&
+                 snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
+        {
+            permissions = permissions.Where(permission => string.Equals(
+                permission,
+                PermissionNames.DoctorOnboardingViewOwn,
+                StringComparison.OrdinalIgnoreCase));
         }
 
         if (snapshot.IsRootSuperAdmin)

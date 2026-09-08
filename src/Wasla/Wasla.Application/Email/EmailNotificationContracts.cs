@@ -20,5 +20,9 @@ public interface IEmailNotificationFactory
 {
     EmailNotificationContent PasswordResetOtp(string otp, int expirationMinutes);
     EmailNotificationContent DoctorLifecycle(DoctorEmailEvent emailEvent, string doctorName, string? reason = null);
+    EmailNotificationContent DoctorSpecializationModificationRequested(
+        string doctorName,
+        string message,
+        int revisionNumber);
 }
 

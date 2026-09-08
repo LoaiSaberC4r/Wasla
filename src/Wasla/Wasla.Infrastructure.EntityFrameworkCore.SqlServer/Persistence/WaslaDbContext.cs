@@ -2,6 +2,7 @@ using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email;
 using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
+using Wasla.Domain.ReferenceData;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,16 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<DoctorStatusHistory> DoctorStatusHistories => Set<DoctorStatusHistory>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<PasswordResetChallenge> PasswordResetChallenges => Set<PasswordResetChallenge>();
+    public DbSet<MedicalSpecialization> MedicalSpecializations => Set<MedicalSpecialization>();
+    public DbSet<DoctorSpecialization> DoctorSpecializations => Set<DoctorSpecialization>();
+    public DbSet<DoctorSpecializationRequest> DoctorSpecializationRequests => Set<DoctorSpecializationRequest>();
+    public DbSet<DoctorSpecializationRequestRevision> DoctorSpecializationRequestRevisions => Set<DoctorSpecializationRequestRevision>();
+    public DbSet<DoctorSpecializationRequestItem> DoctorSpecializationRequestItems => Set<DoctorSpecializationRequestItem>();
+    public DbSet<DoctorSpecializationRequestHistory> DoctorSpecializationRequestHistories => Set<DoctorSpecializationRequestHistory>();
+    public DbSet<Governorate> Governorates => Set<Governorate>();
+    public DbSet<City> Cities => Set<City>();
+    public DbSet<Area> Areas => Set<Area>();
+    public DbSet<DoctorPracticeLocation> DoctorPracticeLocations => Set<DoctorPracticeLocation>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {

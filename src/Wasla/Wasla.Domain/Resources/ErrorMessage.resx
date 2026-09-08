@@ -76,4 +76,38 @@
   <data name="ValidationEnum" xml:space="preserve"><value>'{PropertyName}' has an invalid value.</value></data>
   <data name="ValidationNull" xml:space="preserve"><value>'{PropertyName}' must be null.</value></data>
   <data name="ValidationEmpty" xml:space="preserve"><value>'{PropertyName}' must be empty.</value></data>
+  <data name="MedicalSpecializationInvalid" xml:space="preserve"><value>The medical specialization data is invalid.</value></data>
+  <data name="MedicalSpecializationNotFound" xml:space="preserve"><value>The medical specialization was not found.</value></data>
+  <data name="MedicalSpecializationDuplicateNameAr" xml:space="preserve"><value>The Arabic specialization name is already used.</value></data>
+  <data name="MedicalSpecializationDuplicateNameEn" xml:space="preserve"><value>The English specialization name is already used.</value></data>
+  <data name="MedicalSpecializationAlreadyActive" xml:space="preserve"><value>The medical specialization is already active.</value></data>
+  <data name="MedicalSpecializationAlreadyInactive" xml:space="preserve"><value>The medical specialization is already inactive.</value></data>
+  <data name="MedicalSpecializationMustDeactivateBeforeDelete" xml:space="preserve"><value>Deactivate the medical specialization before deleting it.</value></data>
+  <data name="MedicalSpecializationDeleted" xml:space="preserve"><value>The medical specialization is deleted.</value></data>
+  <data name="MedicalSpecializationNotDeleted" xml:space="preserve"><value>The medical specialization is not deleted.</value></data>
+  <data name="MedicalSpecializationConcurrencyConflict" xml:space="preserve"><value>The medical specialization was changed by another request.</value></data>
+  <data name="LocationInvalid" xml:space="preserve"><value>The location data is invalid.</value></data>
+  <data name="LocationGovernorateNotFound" xml:space="preserve"><value>The governorate was not found.</value></data>
+  <data name="LocationCityNotFound" xml:space="preserve"><value>The city was not found.</value></data>
+  <data name="LocationAreaNotFound" xml:space="preserve"><value>The area was not found.</value></data>
+  <data name="LocationInvalidHierarchy" xml:space="preserve"><value>The selected governorate, city, and area do not form a valid hierarchy.</value></data>
+  <data name="LocationInactive" xml:space="preserve"><value>The selected location is inactive.</value></data>
+  <data name="DoctorSpecializationsOpenRequestAlreadyExists" xml:space="preserve"><value>An open specialization request already exists.</value></data>
+  <data name="DoctorSpecializationsRequestNotFound" xml:space="preserve"><value>The specialization request was not found.</value></data>
+  <data name="DoctorSpecializationsNoSpecializations" xml:space="preserve"><value>Select at least one specialization.</value></data>
+  <data name="DoctorSpecializationsPrimaryRequired" xml:space="preserve"><value>Exactly one primary specialization is required.</value></data>
+  <data name="DoctorSpecializationsMultiplePrimary" xml:space="preserve"><value>Only one primary specialization is allowed.</value></data>
+  <data name="DoctorSpecializationsDuplicateSpecialization" xml:space="preserve"><value>A specialization cannot be selected more than once.</value></data>
+  <data name="DoctorSpecializationsSpecializationNotAvailable" xml:space="preserve"><value>One or more selected specializations are unavailable.</value></data>
+  <data name="DoctorSpecializationsSpecializationNoLongerAvailable" xml:space="preserve"><value>One or more selected specializations are no longer available.</value></data>
+  <data name="DoctorSpecializationsInvalidRequestStatus" xml:space="preserve"><value>The specialization request is not in a valid status for this operation.</value></data>
+  <data name="DoctorSpecializationsConcurrencyConflict" xml:space="preserve"><value>The specialization request was changed by another request.</value></data>
+  <data name="DoctorPracticeLocationInvalid" xml:space="preserve"><value>The practice location data is invalid.</value></data>
+  <data name="DoctorPracticeLocationNotFound" xml:space="preserve"><value>The practice location was not found.</value></data>
+  <data name="DoctorPracticeLocationInvalidLatitude" xml:space="preserve"><value>Latitude must be between -90 and 90.</value></data>
+  <data name="DoctorPracticeLocationInvalidLongitude" xml:space="preserve"><value>Longitude must be between -180 and 180.</value></data>
+  <data name="DoctorPracticeLocationRowVersionRequired" xml:space="preserve"><value>RowVersion is required when updating an existing practice location.</value></data>
+  <data name="DoctorPracticeLocationRowVersionMustBeNull" xml:space="preserve"><value>RowVersion must be null when creating a practice location.</value></data>
+  <data name="DoctorPracticeLocationConcurrencyConflict" xml:space="preserve"><value>The practice location was changed by another request.</value></data>
+  <data name="DoctorOnboardingUnavailable" xml:space="preserve"><value>Doctor onboarding is unavailable for the current account status.</value></data>
 </root>
