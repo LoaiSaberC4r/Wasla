@@ -3,6 +3,7 @@ using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
+using Wasla.Domain.Families;
 
 namespace Wasla.Application.Persistence;
 
@@ -51,6 +52,33 @@ public sealed record DoctorPracticeLocationViewRecord(
     LocationReferenceRecord Governorate,
     LocationReferenceRecord City,
     LocationReferenceRecord Area);
+public sealed record PatientSearchRecord(
+    Guid PatientId,
+    string NameAr,
+    string? NameEn,
+    DateOnly DateOfBirth,
+    Gender Gender,
+    string? PhoneNumber,
+    bool HasContactPhone);
+public sealed record FamilyMemberViewRecord(FamilyMember Member, Patient Patient);
+public sealed record FamilyRelationshipRequestRecord(
+    FamilyRelationshipRequest Request,
+    Patient Requester,
+    Patient Target,
+    ApplicationUser Submitter);
+public sealed record FamilyRelationshipRequestQueueRecord(
+    Guid RequestId,
+    FamilyRelationshipRequestType RequestType,
+    FamilyRelationshipRequestStatus Status,
+    Guid RequesterPatientId,
+    string RequesterNameAr,
+    Guid TargetPatientId,
+    string TargetNameAr,
+    FamilyMemberRole RequesterClaimedRole,
+    FamilyMemberRole TargetClaimedRole,
+    int CurrentRevisionNumber,
+    DateTime SubmittedOnUtc,
+    byte[] RowVersion);
 
 public interface IWaslaDataStore
 {
@@ -62,6 +90,41 @@ public interface IWaslaDataStore
     Task<Doctor?> FindDoctorByIdAsync(Guid doctorId, CancellationToken cancellationToken);
     Task<Doctor?> FindDoctorByUserIdAsync(Guid applicationUserId, CancellationToken cancellationToken);
     Task<Patient?> FindPatientByUserIdAsync(Guid applicationUserId, CancellationToken cancellationToken);
+    Task<Patient?> FindPatientByIdAsync(Guid patientId, CancellationToken cancellationToken);
+    Task<PatientAccountLink?> FindPatientAccountLinkAsync(Guid applicationUserId, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<PatientSearchRecord> Items, long TotalCount)> SearchPatientsAsync(
+        string? phoneNumber,
+        string? name,
+        DateOnly? dateOfBirth,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<PatientContact>> ListPatientContactsAsync(Guid patientId, CancellationToken cancellationToken);
+    Task<PatientContact?> FindPatientContactAsync(Guid patientId, Guid contactId, CancellationToken cancellationToken);
+    Task<bool> HasUsablePrimaryContactAsync(Guid patientId, Guid? excludingContactId, CancellationToken cancellationToken);
+    Task<FamilyMember?> FindActiveFamilyMemberByPatientIdAsync(Guid patientId, CancellationToken cancellationToken);
+    Task<Family?> FindFamilyByIdAsync(Guid familyId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<FamilyMemberViewRecord>> ListActiveFamilyMembersAsync(Guid familyId, CancellationToken cancellationToken);
+    Task<FamilyRelationshipRequest?> FindOpenFamilyRelationshipRequestAsync(
+        Guid requesterPatientId,
+        Guid targetPatientId,
+        FamilyRelationshipRequestType requestType,
+        Guid? familyId,
+        CancellationToken cancellationToken);
+    Task<FamilyRelationshipRequestRecord?> FindFamilyRelationshipRequestAsync(Guid requestId, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<FamilyRelationshipRequestQueueRecord> Items, long TotalCount)> ListFamilyRelationshipRequestsAsync(
+        FamilyRelationshipRequestStatus? status,
+        FamilyRelationshipRequestType? requestType,
+        string? search,
+        Guid? submittedByApplicationUserId,
+        Guid? relatedPatientId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<FamilyRelationshipDocument>> ListFamilyRelationshipDocumentsAsync(Guid requestId, CancellationToken cancellationToken);
+    Task<FamilyRelationshipDocument?> FindFamilyRelationshipDocumentAsync(Guid requestId, Guid documentId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<FamilyRelationshipRequestHistory>> ListFamilyRelationshipRequestHistoryAsync(Guid requestId, CancellationToken cancellationToken);
+    void MarkFamilyMembershipChanged(Family family);
     Task<bool> NationalIdExistsAsync(string nationalId, Guid? excludingDoctorId, CancellationToken cancellationToken);
     Task<(IReadOnlyList<DoctorAdminRecord> Items, long TotalCount)> ListDoctorsAsync(
         DoctorApprovalStatus? approvalStatus,

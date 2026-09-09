@@ -55,6 +55,24 @@ public static class PermissionNames
     public const string DoctorSpecializationRequestsRequestModification = "DoctorSpecializationRequests.RequestModification";
     public const string DoctorPracticeLocationViewOwn = "DoctorPracticeLocation.ViewOwn";
     public const string DoctorPracticeLocationManageOwn = "DoctorPracticeLocation.ManageOwn";
+    public const string PatientsSearchBasic = "Patients.SearchBasic";
+    public const string PatientsRegister = "Patients.Register";
+    public const string PatientProfileUpdateOwn = "PatientProfile.UpdateOwn";
+    public const string PatientContactsViewOwn = "PatientContacts.ViewOwn";
+    public const string PatientContactsManageOwn = "PatientContacts.ManageOwn";
+    public const string FamiliesViewOwn = "Families.ViewOwn";
+    public const string FamiliesManageOwn = "Families.ManageOwn";
+    public const string FamilyRelationshipRequestsCreate = "FamilyRelationshipRequests.Create";
+    public const string FamilyRelationshipRequestsViewOwn = "FamilyRelationshipRequests.ViewOwn";
+    public const string FamilyRelationshipRequestsResubmitOwn = "FamilyRelationshipRequests.ResubmitOwn";
+    public const string FamilyRelationshipRequestsCreateAssisted = "FamilyRelationshipRequests.CreateAssisted";
+    public const string FamilyRelationshipRequestsViewAssisted = "FamilyRelationshipRequests.ViewAssisted";
+    public const string FamilyRelationshipRequestsResubmitAssisted = "FamilyRelationshipRequests.ResubmitAssisted";
+    public const string FamilyRelationshipRequestsViewAll = "FamilyRelationshipRequests.ViewAll";
+    public const string FamilyRelationshipRequestsViewDetails = "FamilyRelationshipRequests.ViewDetails";
+    public const string FamilyRelationshipRequestsApprove = "FamilyRelationshipRequests.Approve";
+    public const string FamilyRelationshipRequestsReject = "FamilyRelationshipRequests.Reject";
+    public const string FamilyRelationshipRequestsRequestModification = "FamilyRelationshipRequests.RequestModification";
 
     public static readonly IReadOnlySet<string> RootOnly = new HashSet<string>(
         [
@@ -107,7 +125,25 @@ public static class PermissionNames
         DoctorSpecializationRequestsReject,
         DoctorSpecializationRequestsRequestModification,
         DoctorPracticeLocationViewOwn,
-        DoctorPracticeLocationManageOwn
+        DoctorPracticeLocationManageOwn,
+        PatientsSearchBasic,
+        PatientsRegister,
+        PatientProfileUpdateOwn,
+        PatientContactsViewOwn,
+        PatientContactsManageOwn,
+        FamiliesViewOwn,
+        FamiliesManageOwn,
+        FamilyRelationshipRequestsCreate,
+        FamilyRelationshipRequestsViewOwn,
+        FamilyRelationshipRequestsResubmitOwn,
+        FamilyRelationshipRequestsCreateAssisted,
+        FamilyRelationshipRequestsViewAssisted,
+        FamilyRelationshipRequestsResubmitAssisted,
+        FamilyRelationshipRequestsViewAll,
+        FamilyRelationshipRequestsViewDetails,
+        FamilyRelationshipRequestsApprove,
+        FamilyRelationshipRequestsReject,
+        FamilyRelationshipRequestsRequestModification
     ];
 
     public static readonly IReadOnlySet<string> PendingDoctorOnboarding = new HashSet<string>(

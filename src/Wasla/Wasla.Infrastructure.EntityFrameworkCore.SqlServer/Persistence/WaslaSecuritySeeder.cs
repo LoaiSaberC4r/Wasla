@@ -180,7 +180,12 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.DoctorSpecializationRequestsAdjust,
                 PermissionNames.DoctorSpecializationRequestsApprove,
                 PermissionNames.DoctorSpecializationRequestsReject,
-                PermissionNames.DoctorSpecializationRequestsRequestModification
+                PermissionNames.DoctorSpecializationRequestsRequestModification,
+                PermissionNames.FamilyRelationshipRequestsViewAll,
+                PermissionNames.FamilyRelationshipRequestsViewDetails,
+                PermissionNames.FamilyRelationshipRequestsApprove,
+                PermissionNames.FamilyRelationshipRequestsReject,
+                PermissionNames.FamilyRelationshipRequestsRequestModification
             ],
             [SystemRoleIds.Doctor] =
             [
@@ -191,7 +196,26 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.DoctorPracticeLocationViewOwn,
                 PermissionNames.DoctorPracticeLocationManageOwn
             ],
-            [SystemRoleIds.Patient] = [PermissionNames.PatientProfileViewOwn]
+            [SystemRoleIds.Reception] =
+            [
+                PermissionNames.PatientsSearchBasic,
+                PermissionNames.PatientsRegister,
+                PermissionNames.FamilyRelationshipRequestsCreateAssisted,
+                PermissionNames.FamilyRelationshipRequestsViewAssisted,
+                PermissionNames.FamilyRelationshipRequestsResubmitAssisted
+            ],
+            [SystemRoleIds.Patient] =
+            [
+                PermissionNames.PatientProfileViewOwn,
+                PermissionNames.PatientProfileUpdateOwn,
+                PermissionNames.PatientContactsViewOwn,
+                PermissionNames.PatientContactsManageOwn,
+                PermissionNames.FamiliesViewOwn,
+                PermissionNames.FamiliesManageOwn,
+                PermissionNames.FamilyRelationshipRequestsCreate,
+                PermissionNames.FamilyRelationshipRequestsViewOwn,
+                PermissionNames.FamilyRelationshipRequestsResubmitOwn
+            ]
         };
         foreach (var (roleId, permissionNames) in mappings)
         {

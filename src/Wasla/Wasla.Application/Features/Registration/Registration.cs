@@ -305,24 +305,33 @@ internal sealed class RegisterPatientCommandHandler(
                 now);
             var patientResult = Patient.Create(
                 patientId,
-                applicationUserId,
                 request.NameAr,
                 request.NameEn,
                 request.DateOfBirth,
                 request.Gender,
+                request.PhoneNumber,
+                request.Email,
                 profile,
                 personalFront,
                 personalBack,
                 DateOnly.FromDateTime(now));
-            if (userResult.IsFailure || patientResult.IsFailure)
+            var linkResult = PatientAccountLink.Create(
+                Guid.NewGuid(),
+                applicationUserId,
+                patientId,
+                PatientAccountLinkSource.SelfRegistration,
+                now);
+            if (userResult.IsFailure || patientResult.IsFailure || linkResult.IsFailure)
             {
                 await CleanupAsync();
                 return Result<RegisterPatientResponse>.Fail(
-                    userResult.IsFailure ? userResult.Errors : patientResult.Errors);
+                    userResult.IsFailure ? userResult.Errors :
+                    patientResult.IsFailure ? patientResult.Errors : linkResult.Errors);
             }
 
             dataStore.Add(userResult.Value);
             dataStore.Add(patientResult.Value);
+            dataStore.Add(linkResult.Value);
             dataStore.Add(new UserRole(Guid.NewGuid(), applicationUserId, role.Id));
             await dataStore.SaveChangesAsync(cancellationToken);
             return Result<RegisterPatientResponse>.Ok(new RegisterPatientResponse(patientId, applicationUserId));

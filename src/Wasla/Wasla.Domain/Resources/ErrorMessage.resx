@@ -110,4 +110,34 @@
   <data name="DoctorPracticeLocationRowVersionMustBeNull" xml:space="preserve"><value>RowVersion must be null when creating a practice location.</value></data>
   <data name="DoctorPracticeLocationConcurrencyConflict" xml:space="preserve"><value>The practice location was changed by another request.</value></data>
   <data name="DoctorOnboardingUnavailable" xml:space="preserve"><value>Doctor onboarding is unavailable for the current account status.</value></data>
+  <data name="PatientInvalid" xml:space="preserve"><value>The patient data is invalid.</value></data>
+  <data name="PatientNotFound" xml:space="preserve"><value>The patient was not found.</value></data>
+  <data name="PatientAccountLinkNotFound" xml:space="preserve"><value>No verified patient link exists for this account.</value></data>
+  <data name="PatientAccountLinkInvalid" xml:space="preserve"><value>The patient account link is invalid.</value></data>
+  <data name="PatientContactRequired" xml:space="preserve"><value>A patient phone or a primary contact phone is required.</value></data>
+  <data name="PatientContactNotFound" xml:space="preserve"><value>The patient contact was not found.</value></data>
+  <data name="PatientLastContactRequired" xml:space="preserve"><value>The last usable primary contact cannot be removed while the patient has no phone.</value></data>
+  <data name="PatientContactInvalid" xml:space="preserve"><value>The patient contact data is invalid.</value></data>
+  <data name="PatientMediaNotFound" xml:space="preserve"><value>The requested patient media was not found.</value></data>
+  <data name="FamilyInvalid" xml:space="preserve"><value>The family data is invalid.</value></data>
+  <data name="FamilyInactive" xml:space="preserve"><value>The family is inactive.</value></data>
+  <data name="FamilyNotFound" xml:space="preserve"><value>The family was not found.</value></data>
+  <data name="FamilyMemberInvalid" xml:space="preserve"><value>The family member data is invalid.</value></data>
+  <data name="FamilyMemberNotFound" xml:space="preserve"><value>The family member was not found.</value></data>
+  <data name="FamilyAlreadyMember" xml:space="preserve"><value>The patient is already a member of this family.</value></data>
+  <data name="FamilyPatientAlreadyInAnotherFamily" xml:space="preserve"><value>The patient already belongs to another active family.</value></data>
+  <data name="FamilyActiveFatherAlreadyExists" xml:space="preserve"><value>The family already has an active father.</value></data>
+  <data name="FamilyActiveMotherAlreadyExists" xml:space="preserve"><value>The family already has an active mother.</value></data>
+  <data name="FamilyManagementForbidden" xml:space="preserve"><value>The current family role cannot manage membership.</value></data>
+  <data name="FamilyRelationshipRequestNotFound" xml:space="preserve"><value>The family relationship request was not found.</value></data>
+  <data name="FamilyRelationshipRequestInvalid" xml:space="preserve"><value>The family relationship request is invalid.</value></data>
+  <data name="FamilyRelationshipRequestInvalidState" xml:space="preserve"><value>The request state does not allow this action.</value></data>
+  <data name="FamilyRelationshipRequestAlreadyFinalized" xml:space="preserve"><value>The request is already finalized.</value></data>
+  <data name="FamilyRelationshipRequestModificationRequired" xml:space="preserve"><value>A modification message is required.</value></data>
+  <data name="FamilyRelationshipRequestRejectionReasonRequired" xml:space="preserve"><value>A rejection reason is required.</value></data>
+  <data name="FamilyRelationshipRequestEvidenceRequired" xml:space="preserve"><value>At least one verification evidence file is required.</value></data>
+  <data name="FamilyRelationshipRequestTargetInvalid" xml:space="preserve"><value>The target patient is not eligible for this relationship.</value></data>
+  <data name="FamilyRelationshipRequestRequesterInvalid" xml:space="preserve"><value>The requester is not authorized for this family operation.</value></data>
+  <data name="FamilyRelationshipRequestOpenAlreadyExists" xml:space="preserve"><value>An open request already exists for this relationship.</value></data>
+  <data name="FamilyRelationshipDocumentNotFound" xml:space="preserve"><value>The verification document was not found.</value></data>
 </root>

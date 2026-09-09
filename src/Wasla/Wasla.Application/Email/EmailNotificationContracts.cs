@@ -1,5 +1,7 @@
 namespace Wasla.Application.Email;
 
+using Wasla.Domain.Families;
+
 public sealed record EmailNotificationContent(string Subject, string HtmlBody, string? TextBody = null);
 
 public interface IEmailBrandingProvider
@@ -24,5 +26,10 @@ public interface IEmailNotificationFactory
         string doctorName,
         string message,
         int revisionNumber);
+    EmailNotificationContent FamilyRelationshipStatus(
+        string patientName,
+        FamilyRelationshipRequestAction action,
+        int revisionNumber,
+        string? message = null);
 }
 
