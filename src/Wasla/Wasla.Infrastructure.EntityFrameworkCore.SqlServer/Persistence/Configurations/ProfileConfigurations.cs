@@ -72,13 +72,47 @@ internal sealed class PatientConfiguration : IWriteEntityConfiguration<Patient>
         builder.Property(patient => patient.NameAr).HasMaxLength(200).IsRequired();
         builder.Property(patient => patient.NameEn).HasMaxLength(200);
         builder.Property(patient => patient.Gender).HasConversion<int>().IsRequired();
+        builder.Property(patient => patient.PhoneNumber).HasMaxLength(30);
+        builder.Property(patient => patient.Email).HasMaxLength(200);
         builder.Property(patient => patient.ProfileImageMediaKey).HasMaxLength(1000);
         builder.Property(patient => patient.PersonalIdFrontMediaKey).HasMaxLength(1000);
         builder.Property(patient => patient.PersonalIdBackMediaKey).HasMaxLength(1000);
-        builder.HasIndex(patient => patient.ApplicationUserId).IsUnique().HasDatabaseName("UX_Patients_ApplicationUserId");
-        builder.HasOne(patient => patient.ApplicationUser)
-            .WithOne()
-            .HasForeignKey<Patient>(patient => patient.ApplicationUserId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(patient => patient.RowVersion).IsRowVersion().IsConcurrencyToken();
+        builder.HasIndex(patient => patient.PhoneNumber).HasDatabaseName("IX_Patients_PhoneNumber");
+        builder.HasIndex(patient => patient.DateOfBirth).HasDatabaseName("IX_Patients_DateOfBirth");
+        builder.HasIndex(patient => patient.NameAr).HasDatabaseName("IX_Patients_NameAr");
+    }
+}
+
+internal sealed class PatientAccountLinkConfiguration : IWriteEntityConfiguration<PatientAccountLink>
+{
+    public void ConfigureAggregate(EntityTypeBuilder<PatientAccountLink> builder)
+    {
+        builder.ToTable("PatientAccountLinks");
+        builder.HasKey(item => item.Id);
+        builder.Property(item => item.Source).HasConversion<int>().IsRequired();
+        builder.HasIndex(item => item.ApplicationUserId).IsUnique().HasDatabaseName("UX_PatientAccountLinks_ApplicationUserId");
+        builder.HasIndex(item => item.PatientId).IsUnique().HasDatabaseName("UX_PatientAccountLinks_PatientId");
+        builder.HasOne<ApplicationUser>().WithOne().HasForeignKey<PatientAccountLink>(item => item.ApplicationUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Patient>().WithOne().HasForeignKey<PatientAccountLink>(item => item.PatientId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class PatientContactConfiguration : IWriteEntityConfiguration<PatientContact>
+{
+    public void ConfigureAggregate(EntityTypeBuilder<PatientContact> builder)
+    {
+        builder.ToTable("PatientContacts");
+        builder.HasKey(item => item.Id);
+        builder.Property(item => item.NameAr).HasMaxLength(200).IsRequired();
+        builder.Property(item => item.NameEn).HasMaxLength(200);
+        builder.Property(item => item.PhoneNumber).HasMaxLength(30).IsRequired();
+        builder.Property(item => item.RelationshipType).HasConversion<int>().IsRequired();
+        builder.Property(item => item.IsPrimary).IsRequired();
+        builder.HasIndex(item => item.PatientId).HasDatabaseName("IX_PatientContacts_PatientId");
+        builder.HasIndex(item => item.PhoneNumber).HasDatabaseName("IX_PatientContacts_PhoneNumber");
+        builder.HasIndex(item => item.LinkedPatientId).HasDatabaseName("IX_PatientContacts_LinkedPatientId");
+        builder.HasOne<Patient>().WithMany().HasForeignKey(item => item.PatientId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Patient>().WithMany().HasForeignKey(item => item.LinkedPatientId).OnDelete(DeleteBehavior.Restrict);
     }
 }

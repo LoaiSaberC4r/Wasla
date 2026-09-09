@@ -110,4 +110,34 @@
   <data name="DoctorPracticeLocationRowVersionMustBeNull" xml:space="preserve"><value>يجب ألا تُرسل نسخة صف عند إنشاء موقع الممارسة لأول مرة.</value></data>
   <data name="DoctorPracticeLocationConcurrencyConflict" xml:space="preserve"><value>تم تعديل موقع الممارسة بواسطة طلب آخر.</value></data>
   <data name="DoctorOnboardingUnavailable" xml:space="preserve"><value>لا يمكن استكمال إعداد ملف الطبيب في حالة الحساب الحالية.</value></data>
+  <data name="PatientInvalid" xml:space="preserve"><value>بيانات المريض غير صحيحة.</value></data>
+  <data name="PatientNotFound" xml:space="preserve"><value>المريض غير موجود.</value></data>
+  <data name="PatientAccountLinkNotFound" xml:space="preserve"><value>لا يوجد ربط موثق بين هذا الحساب ومريض.</value></data>
+  <data name="PatientAccountLinkInvalid" xml:space="preserve"><value>ربط حساب المريض غير صحيح.</value></data>
+  <data name="PatientContactRequired" xml:space="preserve"><value>يلزم رقم هاتف للمريض أو رقم هاتف جهة اتصال أساسية.</value></data>
+  <data name="PatientContactNotFound" xml:space="preserve"><value>جهة اتصال المريض غير موجودة.</value></data>
+  <data name="PatientLastContactRequired" xml:space="preserve"><value>لا يمكن حذف آخر جهة اتصال أساسية صالحة بينما لا يوجد هاتف للمريض.</value></data>
+  <data name="PatientContactInvalid" xml:space="preserve"><value>بيانات جهة اتصال المريض غير صحيحة.</value></data>
+  <data name="PatientMediaNotFound" xml:space="preserve"><value>ملف المريض المطلوب غير موجود.</value></data>
+  <data name="FamilyInvalid" xml:space="preserve"><value>بيانات الأسرة غير صحيحة.</value></data>
+  <data name="FamilyInactive" xml:space="preserve"><value>الأسرة غير مفعلة.</value></data>
+  <data name="FamilyNotFound" xml:space="preserve"><value>الأسرة غير موجودة.</value></data>
+  <data name="FamilyMemberInvalid" xml:space="preserve"><value>بيانات عضو الأسرة غير صحيحة.</value></data>
+  <data name="FamilyMemberNotFound" xml:space="preserve"><value>عضو الأسرة غير موجود.</value></data>
+  <data name="FamilyAlreadyMember" xml:space="preserve"><value>المريض عضو بالفعل في هذه الأسرة.</value></data>
+  <data name="FamilyPatientAlreadyInAnotherFamily" xml:space="preserve"><value>المريض ينتمي بالفعل إلى أسرة أخرى مفعلة.</value></data>
+  <data name="FamilyActiveFatherAlreadyExists" xml:space="preserve"><value>يوجد أب مفعّل بالفعل في الأسرة.</value></data>
+  <data name="FamilyActiveMotherAlreadyExists" xml:space="preserve"><value>توجد أم مفعّلة بالفعل في الأسرة.</value></data>
+  <data name="FamilyManagementForbidden" xml:space="preserve"><value>دور العضو الحالي لا يسمح بإدارة عضوية الأسرة.</value></data>
+  <data name="FamilyRelationshipRequestNotFound" xml:space="preserve"><value>طلب إثبات علاقة الأسرة غير موجود.</value></data>
+  <data name="FamilyRelationshipRequestInvalid" xml:space="preserve"><value>طلب إثبات علاقة الأسرة غير صحيح.</value></data>
+  <data name="FamilyRelationshipRequestInvalidState" xml:space="preserve"><value>حالة الطلب لا تسمح بهذا الإجراء.</value></data>
+  <data name="FamilyRelationshipRequestAlreadyFinalized" xml:space="preserve"><value>تم إنهاء الطلب بالفعل.</value></data>
+  <data name="FamilyRelationshipRequestModificationRequired" xml:space="preserve"><value>رسالة التعديل مطلوبة.</value></data>
+  <data name="FamilyRelationshipRequestRejectionReasonRequired" xml:space="preserve"><value>سبب الرفض مطلوب.</value></data>
+  <data name="FamilyRelationshipRequestEvidenceRequired" xml:space="preserve"><value>يلزم ملف إثبات واحد على الأقل.</value></data>
+  <data name="FamilyRelationshipRequestTargetInvalid" xml:space="preserve"><value>المريض المستهدف غير مؤهل لهذه العلاقة.</value></data>
+  <data name="FamilyRelationshipRequestRequesterInvalid" xml:space="preserve"><value>مقدم الطلب غير مصرح له بهذا الإجراء الأسري.</value></data>
+  <data name="FamilyRelationshipRequestOpenAlreadyExists" xml:space="preserve"><value>يوجد طلب مفتوح بالفعل لهذه العلاقة.</value></data>
+  <data name="FamilyRelationshipDocumentNotFound" xml:space="preserve"><value>مستند الإثبات غير موجود.</value></data>
 </root>

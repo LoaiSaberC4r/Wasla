@@ -5,6 +5,7 @@ using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
+using Wasla.Domain.Families;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -73,9 +74,9 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             .Where(item => item.ApplicationUserId == applicationUserId)
             .Select(item => new { item.Id, item.ApprovalStatus })
             .SingleOrDefaultAsync(cancellationToken);
-        var patientId = await dbContext.Patients.AsNoTracking()
+        var patientId = await dbContext.PatientAccountLinks.AsNoTracking()
             .Where(item => item.ApplicationUserId == applicationUserId)
-            .Select(item => (Guid?)item.Id)
+            .Select(item => (Guid?)item.PatientId)
             .SingleOrDefaultAsync(cancellationToken);
         var superAdmin = await dbContext.SuperAdmins.AsNoTracking()
             .Where(item => item.ApplicationUserId == applicationUserId)
@@ -101,8 +102,191 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             .SingleOrDefaultAsync(doctor => doctor.ApplicationUserId == applicationUserId, cancellationToken);
 
     public Task<Patient?> FindPatientByUserIdAsync(Guid applicationUserId, CancellationToken cancellationToken)
-        => dbContext.Patients.AsNoTracking()
-            .SingleOrDefaultAsync(patient => patient.ApplicationUserId == applicationUserId, cancellationToken);
+        => (from link in dbContext.PatientAccountLinks
+            join patient in dbContext.Patients on link.PatientId equals patient.Id
+            where link.ApplicationUserId == applicationUserId
+            select patient).SingleOrDefaultAsync(cancellationToken);
+
+    public Task<Patient?> FindPatientByIdAsync(Guid patientId, CancellationToken cancellationToken)
+        => dbContext.Patients.SingleOrDefaultAsync(patient => patient.Id == patientId, cancellationToken);
+
+    public Task<PatientAccountLink?> FindPatientAccountLinkAsync(Guid applicationUserId, CancellationToken cancellationToken)
+        => dbContext.PatientAccountLinks.AsNoTracking()
+            .SingleOrDefaultAsync(link => link.ApplicationUserId == applicationUserId, cancellationToken);
+
+    public async Task<(IReadOnlyList<PatientSearchRecord> Items, long TotalCount)> SearchPatientsAsync(
+        string? phoneNumber,
+        string? name,
+        DateOnly? dateOfBirth,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = dbContext.Patients.AsNoTracking();
+        var normalizedPhone = phoneNumber?.Trim();
+        var normalizedName = name?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedPhone))
+        {
+            query = query.Where(patient => patient.PhoneNumber != null && patient.PhoneNumber.Contains(normalizedPhone));
+        }
+        if (!string.IsNullOrWhiteSpace(normalizedName))
+        {
+            query = query.Where(patient => patient.NameAr.Contains(normalizedName) ||
+                                           patient.NameEn != null && patient.NameEn.Contains(normalizedName));
+        }
+        if (dateOfBirth.HasValue)
+        {
+            query = query.Where(patient => patient.DateOfBirth == dateOfBirth.Value);
+        }
+
+        var total = await query.LongCountAsync(cancellationToken);
+        var items = await query.OrderBy(patient => patient.NameAr)
+            .ThenBy(patient => patient.DateOfBirth)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(patient => new PatientSearchRecord(
+                patient.Id,
+                patient.NameAr,
+                patient.NameEn,
+                patient.DateOfBirth,
+                patient.Gender,
+                patient.PhoneNumber,
+                dbContext.PatientContacts.Any(contact => contact.PatientId == patient.Id && contact.PhoneNumber != "")))
+            .ToListAsync(cancellationToken);
+        return (items, total);
+    }
+
+    public async Task<IReadOnlyList<PatientContact>> ListPatientContactsAsync(Guid patientId, CancellationToken cancellationToken)
+        => await dbContext.PatientContacts.AsNoTracking()
+            .Where(contact => contact.PatientId == patientId)
+            .OrderByDescending(contact => contact.IsPrimary)
+            .ThenBy(contact => contact.NameAr)
+            .ToListAsync(cancellationToken);
+
+    public Task<PatientContact?> FindPatientContactAsync(Guid patientId, Guid contactId, CancellationToken cancellationToken)
+        => dbContext.PatientContacts.SingleOrDefaultAsync(
+            contact => contact.Id == contactId && contact.PatientId == patientId,
+            cancellationToken);
+
+    public Task<bool> HasUsablePrimaryContactAsync(Guid patientId, Guid? excludingContactId, CancellationToken cancellationToken)
+        => dbContext.PatientContacts.AnyAsync(
+            contact => contact.PatientId == patientId && contact.IsPrimary && contact.PhoneNumber != "" &&
+                       (!excludingContactId.HasValue || contact.Id != excludingContactId.Value),
+            cancellationToken);
+
+    public Task<FamilyMember?> FindActiveFamilyMemberByPatientIdAsync(Guid patientId, CancellationToken cancellationToken)
+        => dbContext.FamilyMembers.SingleOrDefaultAsync(
+            member => member.PatientId == patientId && member.IsActive,
+            cancellationToken);
+
+    public Task<Family?> FindFamilyByIdAsync(Guid familyId, CancellationToken cancellationToken)
+        => dbContext.Families.Include(family => family.Members)
+            .SingleOrDefaultAsync(family => family.Id == familyId, cancellationToken);
+
+    public async Task<IReadOnlyList<FamilyMemberViewRecord>> ListActiveFamilyMembersAsync(Guid familyId, CancellationToken cancellationToken)
+        => await (from member in dbContext.FamilyMembers.AsNoTracking()
+                  join patient in dbContext.Patients.AsNoTracking() on member.PatientId equals patient.Id
+                  where member.FamilyId == familyId && member.IsActive
+                  orderby member.Role, patient.NameAr
+                  select new FamilyMemberViewRecord(member, patient)).ToListAsync(cancellationToken);
+
+    public Task<FamilyRelationshipRequest?> FindOpenFamilyRelationshipRequestAsync(
+        Guid requesterPatientId,
+        Guid targetPatientId,
+        FamilyRelationshipRequestType requestType,
+        Guid? familyId,
+        CancellationToken cancellationToken)
+        => dbContext.FamilyRelationshipRequests.SingleOrDefaultAsync(
+            item => item.RequesterPatientId == requesterPatientId &&
+                    item.TargetPatientId == targetPatientId &&
+                    item.RequestType == requestType && item.FamilyId == familyId &&
+                    (item.Status == FamilyRelationshipRequestStatus.Pending ||
+                     item.Status == FamilyRelationshipRequestStatus.ModificationRequested),
+            cancellationToken);
+
+    public Task<FamilyRelationshipRequestRecord?> FindFamilyRelationshipRequestAsync(Guid requestId, CancellationToken cancellationToken)
+        => (from item in dbContext.FamilyRelationshipRequests
+            join requester in dbContext.Patients on item.RequesterPatientId equals requester.Id
+            join target in dbContext.Patients on item.TargetPatientId equals target.Id
+            join submitter in dbContext.ApplicationUsers on item.SubmittedByApplicationUserId equals submitter.Id
+            where item.Id == requestId
+            select new FamilyRelationshipRequestRecord(item, requester, target, submitter))
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<(IReadOnlyList<FamilyRelationshipRequestQueueRecord> Items, long TotalCount)> ListFamilyRelationshipRequestsAsync(
+        FamilyRelationshipRequestStatus? status,
+        FamilyRelationshipRequestType? requestType,
+        string? search,
+        Guid? submittedByApplicationUserId,
+        Guid? relatedPatientId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = from item in dbContext.FamilyRelationshipRequests.AsNoTracking()
+                    join requester in dbContext.Patients.AsNoTracking() on item.RequesterPatientId equals requester.Id
+                    join target in dbContext.Patients.AsNoTracking() on item.TargetPatientId equals target.Id
+                    select new { item, requester, target };
+        if (status.HasValue)
+        {
+            query = query.Where(row => row.item.Status == status.Value);
+        }
+        if (requestType.HasValue)
+        {
+            query = query.Where(row => row.item.RequestType == requestType.Value);
+        }
+        if (submittedByApplicationUserId.HasValue)
+        {
+            query = query.Where(row => row.item.SubmittedByApplicationUserId == submittedByApplicationUserId.Value);
+        }
+        if (relatedPatientId.HasValue)
+        {
+            query = query.Where(row => row.item.RequesterPatientId == relatedPatientId.Value || row.item.TargetPatientId == relatedPatientId.Value);
+        }
+        var normalizedSearch = search?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedSearch))
+        {
+            query = query.Where(row => row.requester.NameAr.Contains(normalizedSearch) ||
+                                       row.target.NameAr.Contains(normalizedSearch) ||
+                                       row.requester.NameEn != null && row.requester.NameEn.Contains(normalizedSearch) ||
+                                       row.target.NameEn != null && row.target.NameEn.Contains(normalizedSearch));
+        }
+
+        var total = await query.LongCountAsync(cancellationToken);
+        var items = await query.OrderByDescending(row => row.item.SubmittedOnUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(row => new FamilyRelationshipRequestQueueRecord(
+                row.item.Id, row.item.RequestType, row.item.Status, row.requester.Id, row.requester.NameAr,
+                row.target.Id, row.target.NameAr, row.item.RequesterClaimedRole, row.item.TargetClaimedRole,
+                row.item.CurrentRevisionNumber, row.item.SubmittedOnUtc, row.item.RowVersion))
+            .ToListAsync(cancellationToken);
+        return (items, total);
+    }
+
+    public async Task<IReadOnlyList<FamilyRelationshipDocument>> ListFamilyRelationshipDocumentsAsync(Guid requestId, CancellationToken cancellationToken)
+        => await dbContext.FamilyRelationshipDocuments.AsNoTracking()
+            .Where(document => document.FamilyRelationshipRequestId == requestId)
+            .OrderBy(document => document.RevisionNumber)
+            .ThenBy(document => document.UploadedOnUtc)
+            .ToListAsync(cancellationToken);
+
+    public Task<FamilyRelationshipDocument?> FindFamilyRelationshipDocumentAsync(Guid requestId, Guid documentId, CancellationToken cancellationToken)
+        => dbContext.FamilyRelationshipDocuments.AsNoTracking().SingleOrDefaultAsync(
+            document => document.Id == documentId && document.FamilyRelationshipRequestId == requestId,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<FamilyRelationshipRequestHistory>> ListFamilyRelationshipRequestHistoryAsync(Guid requestId, CancellationToken cancellationToken)
+        => await dbContext.FamilyRelationshipRequestHistories.AsNoTracking()
+            .Where(history => history.RequestId == requestId)
+            .OrderBy(history => history.PerformedOnUtc)
+            .ToListAsync(cancellationToken);
+
+    public void MarkFamilyMembershipChanged(Family family)
+    {
+        ArgumentNullException.ThrowIfNull(family);
+        dbContext.Entry(family).Property(item => item.Status).IsModified = true;
+    }
 
     public Task<bool> NationalIdExistsAsync(
         string nationalId,

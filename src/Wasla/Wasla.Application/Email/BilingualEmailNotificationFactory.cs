@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using BuildingBlock.Application.Time;
+using Wasla.Domain.Families;
 
 namespace Wasla.Application.Email;
 
@@ -86,6 +87,32 @@ internal sealed class BilingualEmailNotificationFactory(
                 $"Changes were requested for medical-specialization revision {revision}.",
                 $"Review message: {message}"
             ]);
+    }
+
+    public EmailNotificationContent FamilyRelationshipStatus(
+        string patientName,
+        FamilyRelationshipRequestAction action,
+        int revisionNumber,
+        string? message = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(patientName);
+        var revision = revisionNumber.ToString(CultureInfo.InvariantCulture);
+        return action switch
+        {
+            FamilyRelationshipRequestAction.Approved => Build(
+                "Wasla | تم اعتماد علاقة الأسرة | Family Relationship Approved",
+                [$"مرحبًا {patientName}،", $"تم اعتماد طلب علاقة الأسرة للإصدار رقم {revision}."],
+                [$"Hello {patientName},", $"Your family relationship request revision {revision} was approved."]),
+            FamilyRelationshipRequestAction.Rejected => Build(
+                "Wasla | تم رفض علاقة الأسرة | Family Relationship Rejected",
+                [$"مرحبًا {patientName}،", $"تم رفض طلب علاقة الأسرة للإصدار رقم {revision}.", $"السبب: {message}"],
+                [$"Hello {patientName},", $"Your family relationship request revision {revision} was rejected.", $"Reason: {message}"]),
+            FamilyRelationshipRequestAction.ModificationRequested => Build(
+                "Wasla | مطلوب تعديل إثبات علاقة الأسرة | Family Relationship Changes Requested",
+                [$"مرحبًا {patientName}،", $"مطلوب تعديل طلب علاقة الأسرة للإصدار رقم {revision}.", $"رسالة المراجعة: {message}"],
+                [$"Hello {patientName},", $"Changes are required for family relationship request revision {revision}.", $"Review message: {message}"]),
+            _ => throw new ArgumentOutOfRangeException(nameof(action))
+        };
     }
 
     private EmailNotificationContent BuildWithReason(

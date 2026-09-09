@@ -80,11 +80,12 @@ public sealed class TrustAccessDomainTests
     {
         var patient = Patient.Create(
             Guid.NewGuid(),
-            Guid.NewGuid(),
             "مريض",
             null,
             new DateOnly(2010, 9, 8),
             Gender.Female,
+            null,
+            null,
             null,
             null,
             null,
