@@ -73,6 +73,27 @@ public static class PermissionNames
     public const string FamilyRelationshipRequestsApprove = "FamilyRelationshipRequests.Approve";
     public const string FamilyRelationshipRequestsReject = "FamilyRelationshipRequests.Reject";
     public const string FamilyRelationshipRequestsRequestModification = "FamilyRelationshipRequests.RequestModification";
+    public const string DoctorPracticesViewOwn = "DoctorPractices.ViewOwn";
+    public const string DoctorPracticesManageOwn = "DoctorPractices.ManageOwn";
+    public const string DoctorPracticesActivateOwn = "DoctorPractices.ActivateOwn";
+    public const string DoctorPracticeConfigurationViewOwn = "DoctorPracticeConfiguration.ViewOwn";
+    public const string DoctorPracticeConfigurationManageOwn = "DoctorPracticeConfiguration.ManageOwn";
+    public const string DoctorPracticeBrandingViewOwn = "DoctorPracticeBranding.ViewOwn";
+    public const string DoctorPracticeBrandingManageOwn = "DoctorPracticeBranding.ManageOwn";
+    public const string DoctorPracticeScheduleViewOwn = "DoctorPracticeSchedule.ViewOwn";
+    public const string DoctorPracticeScheduleManageOwn = "DoctorPracticeSchedule.ManageOwn";
+    public const string DoctorPracticeSegmentsViewOwn = "DoctorPracticeSegments.ViewOwn";
+    public const string DoctorPracticeSegmentsManageOwn = "DoctorPracticeSegments.ManageOwn";
+    public const string DoctorPracticePricingViewOwn = "DoctorPracticePricing.ViewOwn";
+    public const string DoctorPracticePricingManageOwn = "DoctorPracticePricing.ManageOwn";
+    public const string ReceptionUsersViewOwn = "ReceptionUsers.ViewOwn";
+    public const string ReceptionUsersManageOwn = "ReceptionUsers.ManageOwn";
+    public const string ReceptionAssignmentsViewOwn = "ReceptionAssignments.ViewOwn";
+    public const string ReceptionAssignmentsManageOwn = "ReceptionAssignments.ManageOwn";
+    public const string PracticeReservationsManage = "PracticeReservations.Manage";
+    public const string PracticeQueueManage = "PracticeQueue.Manage";
+    public const string PracticePaymentsRecord = "PracticePayments.Record";
+    public const string PracticeWalkInsCreate = "PracticeWalkIns.Create";
 
     public static readonly IReadOnlySet<string> RootOnly = new HashSet<string>(
         [
@@ -143,8 +164,40 @@ public static class PermissionNames
         FamilyRelationshipRequestsViewDetails,
         FamilyRelationshipRequestsApprove,
         FamilyRelationshipRequestsReject,
-        FamilyRelationshipRequestsRequestModification
+        FamilyRelationshipRequestsRequestModification,
+        DoctorPracticesViewOwn,
+        DoctorPracticesManageOwn,
+        DoctorPracticesActivateOwn,
+        DoctorPracticeConfigurationViewOwn,
+        DoctorPracticeConfigurationManageOwn,
+        DoctorPracticeBrandingViewOwn,
+        DoctorPracticeBrandingManageOwn,
+        DoctorPracticeScheduleViewOwn,
+        DoctorPracticeScheduleManageOwn,
+        DoctorPracticeSegmentsViewOwn,
+        DoctorPracticeSegmentsManageOwn,
+        DoctorPracticePricingViewOwn,
+        DoctorPracticePricingManageOwn,
+        ReceptionUsersViewOwn,
+        ReceptionUsersManageOwn,
+        ReceptionAssignmentsViewOwn,
+        ReceptionAssignmentsManageOwn,
+        PracticeReservationsManage,
+        PracticeQueueManage,
+        PracticePaymentsRecord,
+        PracticeWalkInsCreate
     ];
+
+    public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
+        [
+            PatientsSearchBasic,
+            PatientsRegister,
+            PracticeReservationsManage,
+            PracticeQueueManage,
+            PracticePaymentsRecord,
+            PracticeWalkInsCreate
+        ],
+        StringComparer.OrdinalIgnoreCase);
 
     public static readonly IReadOnlySet<string> PendingDoctorOnboarding = new HashSet<string>(
         [

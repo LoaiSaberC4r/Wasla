@@ -10,12 +10,17 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Trust and Access Foundation
+**Current Stage:** Doctor Practices Operational Foundation
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root
 SuperAdmin governance, localized errors, private verification media, and the
 durable email outbox are implemented.
+
+The operational model is practice-scoped: one Doctor can own multiple
+`DoctorPractice` records, each with independent location, configuration,
+branding/logo, schedule and exceptions, segments, visit types, pricing, and
+Reception assignments.
 
 The initial repository baseline is based on the reusable technical foundation from:
 
@@ -82,11 +87,11 @@ Platform-level authority responsible for governance, doctor approval, security a
 
 ### Doctor
 
-Owns the operational doctor scope and manages profile, configuration, schedule, reception users, reservations, queue operations, clinical encounters, and permitted financial visibility.
+Owns one or more operational practices and manages their configuration, schedule, reception users, reservations, queue operations, clinical encounters, and permitted financial visibility.
 
 ### Reception
 
-Operates within an assigned Doctor scope and handles patient registration/search, reservations, check-in, tickets, queue operations, and payment recording.
+Operates only within explicitly assigned Doctor Practices and handles the capabilities granted independently on each assignment.
 
 ### Patient
 
@@ -95,6 +100,41 @@ A platform-global patient profile that is not owned by one Doctor and can accumu
 ---
 
 ## Core Domain Principles
+
+### Doctor Owns Many Practices
+
+`Doctor 1 ── * DoctorPractice` is the source-of-truth ownership model. Operational
+settings must not be attached directly to `Doctor` because each physical practice
+can have a different location, theme, schedule, availability, segment catalog,
+pricing, and Reception team.
+
+Practices are created inactive. Activation requires complete practice/location
+details, configuration, branding, and a logo; a schedule is deliberately not an
+activation prerequisite. Therefore `Active` is not synonymous with `Bookable`:
+bookability also requires online booking to be enabled, an effective schedule,
+and available capacity.
+
+Reception authorization is always server-side and practice-scoped:
+
+```text
+Authenticated user
+    + Reception role/relevant permission
+    + active ReceptionPracticeAssignment
+    + assignment-specific permission
+```
+
+Selecting a current practice in a client never grants access by itself.
+
+`Normal`/`VIP` are Segments (and own queue priority); `NewConsultation`/`FollowUp`
+are Visit Types (and own visit duration). Prices are defined by the complete
+Practice + Segment + Visit Type tuple. Future Reservations must snapshot these
+names, priority, and price so later catalog changes do not rewrite history.
+
+Follow-up eligibility remains intentionally deferred until Medical Encounters
+exist. The confirmed rule is: only a completed encounter can let the Doctor open
+a time-limited, single-use eligibility, progressing through Available → Reserved
+→ Completed → Consumed. Prior attendance alone never grants unlimited follow-up
+access.
 
 ### Patient is Platform-Global
 

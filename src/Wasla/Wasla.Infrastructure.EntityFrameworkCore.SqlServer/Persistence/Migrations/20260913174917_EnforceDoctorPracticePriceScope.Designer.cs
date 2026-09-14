@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -11,9 +12,11 @@ using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrations
 {
     [DbContext(typeof(WaslaDbContext))]
-    partial class WaslaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913174917_EnforceDoctorPracticePriceScope")]
+    partial class EnforceDoctorPracticePriceScope
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

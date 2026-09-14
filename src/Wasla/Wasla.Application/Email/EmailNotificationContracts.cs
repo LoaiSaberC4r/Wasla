@@ -31,5 +31,10 @@ public interface IEmailNotificationFactory
         FamilyRelationshipRequestAction action,
         int revisionNumber,
         string? message = null);
+    EmailNotificationContent ReceptionAccountCreated(string receptionName, string userName)
+        => new(
+            "Wasla | Reception Account Created",
+            $"<p>A reception account was created for {receptionName} ({userName}).</p>",
+            $"A reception account was created for {receptionName} ({userName}).");
 }
 

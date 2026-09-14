@@ -194,7 +194,24 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.DoctorSpecializationsSubmitOwn,
                 PermissionNames.DoctorSpecializationsResubmitOwn,
                 PermissionNames.DoctorPracticeLocationViewOwn,
-                PermissionNames.DoctorPracticeLocationManageOwn
+                PermissionNames.DoctorPracticeLocationManageOwn,
+                PermissionNames.DoctorPracticesViewOwn,
+                PermissionNames.DoctorPracticesManageOwn,
+                PermissionNames.DoctorPracticesActivateOwn,
+                PermissionNames.DoctorPracticeConfigurationViewOwn,
+                PermissionNames.DoctorPracticeConfigurationManageOwn,
+                PermissionNames.DoctorPracticeBrandingViewOwn,
+                PermissionNames.DoctorPracticeBrandingManageOwn,
+                PermissionNames.DoctorPracticeScheduleViewOwn,
+                PermissionNames.DoctorPracticeScheduleManageOwn,
+                PermissionNames.DoctorPracticeSegmentsViewOwn,
+                PermissionNames.DoctorPracticeSegmentsManageOwn,
+                PermissionNames.DoctorPracticePricingViewOwn,
+                PermissionNames.DoctorPracticePricingManageOwn,
+                PermissionNames.ReceptionUsersViewOwn,
+                PermissionNames.ReceptionUsersManageOwn,
+                PermissionNames.ReceptionAssignmentsViewOwn,
+                PermissionNames.ReceptionAssignmentsManageOwn
             ],
             [SystemRoleIds.Reception] =
             [
@@ -202,7 +219,11 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.PatientsRegister,
                 PermissionNames.FamilyRelationshipRequestsCreateAssisted,
                 PermissionNames.FamilyRelationshipRequestsViewAssisted,
-                PermissionNames.FamilyRelationshipRequestsResubmitAssisted
+                PermissionNames.FamilyRelationshipRequestsResubmitAssisted,
+                PermissionNames.PracticeReservationsManage,
+                PermissionNames.PracticeQueueManage,
+                PermissionNames.PracticePaymentsRecord,
+                PermissionNames.PracticeWalkInsCreate
             ],
             [SystemRoleIds.Patient] =
             [

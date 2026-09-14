@@ -6,10 +6,12 @@ using BuildingBlock.Application.Time;
 using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Doctors;
+using Wasla.Application.Features.Practices;
 using Wasla.Application.Media;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
 using Wasla.Domain.Patients;
+using Wasla.Domain.Practices;
 using Wasla.Domain.Resources;
 
 namespace Wasla.Application.Features.Patients;
@@ -30,7 +32,8 @@ public sealed record CreateReceptionPatientCommand(
     string? PhoneNumber,
     string? Email,
     MediaUpload? ProfileImage,
-    PatientContactInput? PrimaryContact)
+    PatientContactInput? PrimaryContact,
+    Guid? DoctorPracticeId = null)
     : ICommand<CreateReceptionPatientResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 public sealed record CreateReceptionPatientResponse(Guid PatientId);
@@ -78,7 +81,8 @@ public sealed record SearchPatientsQuery(
     string? Name,
     DateOnly? DateOfBirth,
     int PageNumber = 1,
-    int PageSize = 20) : IQuery<PagedResponse<PatientSearchResponse>>;
+    int PageSize = 20,
+    Guid? DoctorPracticeId = null) : IQuery<PagedResponse<PatientSearchResponse>>;
 public sealed record PatientSearchResponse(
     Guid PatientId,
     string NameAr,
@@ -168,7 +172,8 @@ internal sealed class CreateReceptionPatientCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
     IMediaService mediaService,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    IReceptionPracticeAuthorizationService practiceAuthorization)
     : ICommandHandler<CreateReceptionPatientCommand, CreateReceptionPatientResponse>
 {
     public async Task<Result<CreateReceptionPatientResponse>> Handle(CreateReceptionPatientCommand request, CancellationToken cancellationToken)
@@ -176,6 +181,18 @@ internal sealed class CreateReceptionPatientCommandHandler(
         if (!currentUser.IsAuthenticated || currentUser.UserId is null)
         {
             return Result<CreateReceptionPatientResponse>.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
+        }
+
+        if (request.DoctorPracticeId is not { } practiceId)
+        {
+            return Result<CreateReceptionPatientResponse>.Fail(ReceptionErrors.AccessDenied);
+        }
+
+        var access = await practiceAuthorization.AuthorizeAsync(
+            practiceId, Wasla.Domain.Security.PermissionNames.PatientsRegister, cancellationToken);
+        if (access.IsFailure)
+        {
+            return Result<CreateReceptionPatientResponse>.Fail(access.Errors);
         }
 
         if (request.PrimaryContact?.LinkedPatientId is { } linkedId &&
@@ -385,11 +402,25 @@ internal sealed class DeactivateMyPatientContactCommandHandler(IWaslaDataStore d
     }
 }
 
-internal sealed class SearchPatientsQueryHandler(IWaslaDataStore dataStore)
+internal sealed class SearchPatientsQueryHandler(
+    IWaslaDataStore dataStore,
+    IReceptionPracticeAuthorizationService practiceAuthorization)
     : IQueryHandler<SearchPatientsQuery, PagedResponse<PatientSearchResponse>>
 {
     public async Task<Result<PagedResponse<PatientSearchResponse>>> Handle(SearchPatientsQuery request, CancellationToken cancellationToken)
     {
+        if (request.DoctorPracticeId is not { } practiceId)
+        {
+            return Result<PagedResponse<PatientSearchResponse>>.Fail(ReceptionErrors.AccessDenied);
+        }
+
+        var access = await practiceAuthorization.AuthorizeAsync(
+            practiceId, Wasla.Domain.Security.PermissionNames.PatientsSearchBasic, cancellationToken);
+        if (access.IsFailure)
+        {
+            return Result<PagedResponse<PatientSearchResponse>>.Fail(access.Errors);
+        }
+
         var (items, total) = await dataStore.SearchPatientsAsync(request.PhoneNumber, request.Name, request.DateOfBirth, request.PageNumber, request.PageSize, cancellationToken);
         return Result<PagedResponse<PatientSearchResponse>>.Ok(new(
             items.Select(item => new PatientSearchResponse(item.PatientId, item.NameAr, item.NameEn, item.DateOfBirth, item.Gender, item.PhoneNumber, item.HasContactPhone)).ToArray(),

@@ -30,7 +30,7 @@ public sealed class PatientsController(ISender sender) : ControllerBase
                 request.PrimaryContactLinkedPatientId, request.PrimaryContactIsPrimary);
         var result = await sender.Send(new CreateReceptionPatientCommand(
             request.NameAr, request.NameEn, request.DateOfBirth, request.Gender, request.PhoneNumber,
-            request.Email, ToUpload(request.ProfileImage), contact), cancellationToken);
+            request.Email, ToUpload(request.ProfileImage), contact, request.DoctorPracticeId), cancellationToken);
         return result.IsSuccess ? StatusCode(StatusCodes.Status201Created, result.Value) : result.Errors.ToActionProblem(cancellationToken);
     }
 
@@ -38,8 +38,11 @@ public sealed class PatientsController(ISender sender) : ControllerBase
     [Permission(PermissionNames.PatientsSearchBasic)]
     public async Task<IActionResult> Search([FromQuery] string? phoneNumber, [FromQuery] string? name,
         [FromQuery] DateOnly? dateOfBirth, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? doctorPracticeId = null,
         CancellationToken cancellationToken = default)
-        => (await sender.Send(new SearchPatientsQuery(phoneNumber, name, dateOfBirth, pageNumber, pageSize), cancellationToken)).ToIActionResult(cancellationToken);
+        => (await sender.Send(new SearchPatientsQuery(
+            phoneNumber, name, dateOfBirth, pageNumber, pageSize, doctorPracticeId), cancellationToken))
+            .ToIActionResult(cancellationToken);
 
     [HttpGet("me")]
     [Permission(PermissionNames.PatientProfileViewOwn)]
@@ -101,6 +104,7 @@ public sealed class CreateReceptionPatientRequest
     public string? PhoneNumber { get; set; }
     public string? Email { get; set; }
     public IFormFile? ProfileImage { get; set; }
+    public Guid? DoctorPracticeId { get; set; }
     public string? PrimaryContactNameAr { get; set; }
     public string? PrimaryContactNameEn { get; set; }
     public string? PrimaryContactPhoneNumber { get; set; }

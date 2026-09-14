@@ -140,4 +140,52 @@
   <data name="FamilyRelationshipRequestRequesterInvalid" xml:space="preserve"><value>The requester is not authorized for this family operation.</value></data>
   <data name="FamilyRelationshipRequestOpenAlreadyExists" xml:space="preserve"><value>An open request already exists for this relationship.</value></data>
   <data name="FamilyRelationshipDocumentNotFound" xml:space="preserve"><value>The verification document was not found.</value></data>
+  <data name="DoctorPracticeInvalid" xml:space="preserve"><value>The doctor practice data is invalid.</value></data>
+  <data name="DoctorPracticeNotFound" xml:space="preserve"><value>The doctor practice was not found.</value></data>
+  <data name="DoctorPracticeNotOwned" xml:space="preserve"><value>The doctor practice does not belong to the current doctor.</value></data>
+  <data name="DoctorPracticeInvalidLatitude" xml:space="preserve"><value>Latitude must be between -90 and 90.</value></data>
+  <data name="DoctorPracticeInvalidLongitude" xml:space="preserve"><value>Longitude must be between -180 and 180.</value></data>
+  <data name="DoctorPracticeActivationRequirementsNotMet" xml:space="preserve"><value>The practice requires valid details, configuration, branding, and a logo before activation.</value></data>
+  <data name="DoctorPracticeAlreadyActive" xml:space="preserve"><value>The doctor practice is already active.</value></data>
+  <data name="DoctorPracticeAlreadyInactive" xml:space="preserve"><value>The doctor practice is already inactive.</value></data>
+  <data name="DoctorPracticeConcurrencyConflict" xml:space="preserve"><value>The doctor practice was changed by another request.</value></data>
+  <data name="DoctorPracticeConfigurationInvalid" xml:space="preserve"><value>The practice configuration is invalid.</value></data>
+  <data name="DoctorPracticeConfigurationInvalidTimeZone" xml:space="preserve"><value>The practice time zone is invalid.</value></data>
+  <data name="DoctorPracticeConfigurationNotFound" xml:space="preserve"><value>The practice configuration was not found.</value></data>
+  <data name="DoctorPracticeConfigurationConcurrencyConflict" xml:space="preserve"><value>The practice configuration was changed by another request.</value></data>
+  <data name="DoctorPracticeBrandingInvalid" xml:space="preserve"><value>The practice branding is invalid.</value></data>
+  <data name="DoctorPracticeBrandingInvalidColor" xml:space="preserve"><value>Theme colors must use the #RRGGBB format.</value></data>
+  <data name="DoctorPracticeBrandingInvalidLogo" xml:space="preserve"><value>The practice logo is invalid.</value></data>
+  <data name="DoctorPracticeBrandingActivePracticeRequiresLogo" xml:space="preserve"><value>An active practice cannot have its logo removed.</value></data>
+  <data name="DoctorPracticeBrandingNotFound" xml:space="preserve"><value>The practice branding was not found.</value></data>
+  <data name="DoctorPracticeBrandingLogoNotFound" xml:space="preserve"><value>The practice logo was not found.</value></data>
+  <data name="DoctorPracticeBrandingConcurrencyConflict" xml:space="preserve"><value>The practice branding was changed by another request.</value></data>
+  <data name="DoctorPracticeScheduleInvalidPeriod" xml:space="preserve"><value>The schedule period is invalid.</value></data>
+  <data name="DoctorPracticeSchedulePeriodOverlap" xml:space="preserve"><value>The schedule period overlaps another period in this practice.</value></data>
+  <data name="DoctorPracticeScheduleDoctorCrossPracticeOverlap" xml:space="preserve"><value>The doctor is already scheduled at another practice during this time.</value></data>
+  <data name="DoctorPracticeScheduleInvalidException" xml:space="preserve"><value>The schedule exception is invalid.</value></data>
+  <data name="DoctorPracticeScheduleNotFound" xml:space="preserve"><value>The schedule item was not found.</value></data>
+  <data name="DoctorPracticeScheduleConcurrencyConflict" xml:space="preserve"><value>The schedule item was changed by another request.</value></data>
+  <data name="DoctorPracticeSegmentInvalid" xml:space="preserve"><value>The practice segment is invalid.</value></data>
+  <data name="DoctorPracticeSegmentNotFound" xml:space="preserve"><value>The practice segment was not found.</value></data>
+  <data name="DoctorPracticeSegmentDefaultProtected" xml:space="preserve"><value>The default Normal segment cannot be deactivated or deleted.</value></data>
+  <data name="DoctorPracticeSegmentConcurrencyConflict" xml:space="preserve"><value>The practice segment was changed by another request.</value></data>
+  <data name="DoctorPracticeVisitTypeInvalid" xml:space="preserve"><value>The practice visit type is invalid.</value></data>
+  <data name="DoctorPracticeVisitTypeNotFound" xml:space="preserve"><value>The practice visit type was not found.</value></data>
+  <data name="DoctorPracticeVisitTypeConcurrencyConflict" xml:space="preserve"><value>The practice visit type was changed by another request.</value></data>
+  <data name="DoctorPracticePricingInvalid" xml:space="preserve"><value>The segment and visit-type price is invalid.</value></data>
+  <data name="DoctorPracticePricingScopeMismatch" xml:space="preserve"><value>The segment and visit type must belong to the same practice.</value></data>
+  <data name="DoctorPracticePricingDuplicate" xml:space="preserve"><value>A price already exists for this segment and visit type.</value></data>
+  <data name="DoctorPracticePricingNotFound" xml:space="preserve"><value>The practice price was not found.</value></data>
+  <data name="DoctorPracticePricingConcurrencyConflict" xml:space="preserve"><value>The practice price was changed by another request.</value></data>
+  <data name="ReceptionInvalid" xml:space="preserve"><value>The reception profile is invalid.</value></data>
+  <data name="ReceptionNotFound" xml:space="preserve"><value>The reception profile was not found.</value></data>
+  <data name="ReceptionIdentityConflict" xml:space="preserve"><value>The existing account cannot be reused as a receptionist.</value></data>
+  <data name="ReceptionAssignmentInvalid" xml:space="preserve"><value>The reception practice assignment is invalid.</value></data>
+  <data name="ReceptionAssignmentNotFound" xml:space="preserve"><value>The reception practice assignment was not found.</value></data>
+  <data name="ReceptionAssignmentDuplicate" xml:space="preserve"><value>The receptionist is already assigned to this practice.</value></data>
+  <data name="ReceptionAssignmentCrossDoctorNotSupported" xml:space="preserve"><value>Cross-doctor receptionist assignments are not supported.</value></data>
+  <data name="ReceptionAssignmentAccessDenied" xml:space="preserve"><value>The receptionist is not assigned the required permission for this practice.</value></data>
+  <data name="ReceptionAssignmentInvalidPermission" xml:space="preserve"><value>One or more assignment permissions are invalid.</value></data>
+  <data name="ReceptionAssignmentConcurrencyConflict" xml:space="preserve"><value>The reception assignment was changed by another request.</value></data>
 </root>

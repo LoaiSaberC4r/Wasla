@@ -6,6 +6,7 @@ using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Families;
+using Wasla.Domain.Practices;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -78,6 +79,10 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             .Where(item => item.ApplicationUserId == applicationUserId)
             .Select(item => (Guid?)item.PatientId)
             .SingleOrDefaultAsync(cancellationToken);
+        var receptionId = await dbContext.Receptions.AsNoTracking()
+            .Where(item => item.ApplicationUserId == applicationUserId)
+            .Select(item => (Guid?)item.Id)
+            .SingleOrDefaultAsync(cancellationToken);
         var superAdmin = await dbContext.SuperAdmins.AsNoTracking()
             .Where(item => item.ApplicationUserId == applicationUserId)
             .Select(item => new { item.Id, item.IsRootSuperAdmin })
@@ -90,6 +95,7 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             doctor?.Id,
             doctor?.ApprovalStatus,
             patientId,
+            receptionId,
             superAdmin?.Id,
             superAdmin?.IsRootSuperAdmin == true);
     }
@@ -113,6 +119,14 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
     public Task<PatientAccountLink?> FindPatientAccountLinkAsync(Guid applicationUserId, CancellationToken cancellationToken)
         => dbContext.PatientAccountLinks.AsNoTracking()
             .SingleOrDefaultAsync(link => link.ApplicationUserId == applicationUserId, cancellationToken);
+
+    public Task<bool> HasUserRoleAsync(
+        Guid applicationUserId,
+        Guid roleId,
+        CancellationToken cancellationToken)
+        => dbContext.UserRoles.AsNoTracking().AnyAsync(
+            item => item.ApplicationUserId == applicationUserId && item.RoleId == roleId,
+            cancellationToken);
 
     public async Task<(IReadOnlyList<PatientSearchRecord> Items, long TotalCount)> SearchPatientsAsync(
         string? phoneNumber,
@@ -690,21 +704,273 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
                 city.IsActive,
                 governorate.IsActive)).SingleOrDefaultAsync(cancellationToken);
 
-    public Task<DoctorPracticeLocation?> FindDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken)
-        => dbContext.DoctorPracticeLocations.SingleOrDefaultAsync(item => item.DoctorId == doctorId, cancellationToken);
+    public Task<DoctorPractice?> FindDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken)
+        => dbContext.DoctorPractices.SingleOrDefaultAsync(
+            item => item.DoctorId == doctorId && item.IsLegacyOnboarding,
+            cancellationToken);
 
     public Task<DoctorPracticeLocationViewRecord?> GetDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken)
         => (from location in dbContext.DoctorPracticeLocations.AsNoTracking()
             join governorate in dbContext.Governorates.AsNoTracking() on location.GovernorateId equals governorate.Id
             join city in dbContext.Cities.AsNoTracking() on location.CityId equals city.Id
             join area in dbContext.Areas.AsNoTracking() on location.AreaId equals area.Id
-            where location.DoctorId == doctorId
+            where location.DoctorId == doctorId && location.IsLegacyOnboarding
             select new DoctorPracticeLocationViewRecord(
                 location,
                 new LocationReferenceRecord(governorate.Id, governorate.NameAr, governorate.NameEn),
                 new LocationReferenceRecord(city.Id, city.NameAr, city.NameEn),
                 new LocationReferenceRecord(area.Id, area.NameAr, area.NameEn)))
             .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorPracticeViewRecord>> ListDoctorPracticesAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken)
+        => await (from practice in dbContext.DoctorPractices.AsNoTracking()
+            join governorate in dbContext.Governorates.AsNoTracking() on practice.GovernorateId equals governorate.Id
+            join city in dbContext.Cities.AsNoTracking() on practice.CityId equals city.Id
+            join area in dbContext.Areas.AsNoTracking() on practice.AreaId equals area.Id
+            where practice.DoctorId == doctorId
+            orderby practice.NameAr, practice.Id
+            select new DoctorPracticeViewRecord(
+                practice,
+                new LocationReferenceRecord(governorate.Id, governorate.NameAr, governorate.NameEn),
+                new LocationReferenceRecord(city.Id, city.NameAr, city.NameEn),
+                new LocationReferenceRecord(area.Id, area.NameAr, area.NameEn)))
+            .ToListAsync(cancellationToken);
+
+    public Task<DoctorPractice?> FindDoctorPracticeAsync(Guid practiceId, CancellationToken cancellationToken)
+        => dbContext.DoctorPractices.SingleOrDefaultAsync(item => item.Id == practiceId, cancellationToken);
+
+    public Task<DoctorPracticeViewRecord?> GetDoctorPracticeAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => (from practice in dbContext.DoctorPractices.AsNoTracking()
+            join governorate in dbContext.Governorates.AsNoTracking() on practice.GovernorateId equals governorate.Id
+            join city in dbContext.Cities.AsNoTracking() on practice.CityId equals city.Id
+            join area in dbContext.Areas.AsNoTracking() on practice.AreaId equals area.Id
+            where practice.Id == practiceId
+            select new DoctorPracticeViewRecord(
+                practice,
+                new LocationReferenceRecord(governorate.Id, governorate.NameAr, governorate.NameEn),
+                new LocationReferenceRecord(city.Id, city.NameAr, city.NameEn),
+                new LocationReferenceRecord(area.Id, area.NameAr, area.NameEn)))
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public Task<DoctorPracticeConfiguration?> FindDoctorPracticeConfigurationAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeConfigurations.SingleOrDefaultAsync(
+            item => item.DoctorPracticeId == practiceId,
+            cancellationToken);
+
+    public Task<DoctorPracticeBranding?> FindDoctorPracticeBrandingAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeBrandings.SingleOrDefaultAsync(
+            item => item.DoctorPracticeId == practiceId,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorPracticeSchedulePeriod>> ListDoctorPracticeSchedulePeriodsAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorPracticeSchedulePeriods.AsNoTracking()
+            .Where(item => item.DoctorPracticeId == practiceId)
+            .OrderBy(item => item.DayOfWeek)
+            .ThenBy(item => item.StartTime)
+            .ToListAsync(cancellationToken);
+
+    public Task<DoctorPracticeSchedulePeriod?> FindDoctorPracticeSchedulePeriodAsync(
+        Guid periodId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeSchedulePeriods.SingleOrDefaultAsync(item => item.Id == periodId, cancellationToken);
+
+    public Task<bool> HasDoctorScheduleOverlapAsync(
+        Guid doctorId,
+        Guid practiceId,
+        Guid? excludingPeriodId,
+        DayOfWeek dayOfWeek,
+        TimeOnly startTime,
+        TimeOnly endTime,
+        CancellationToken cancellationToken)
+        => (from period in dbContext.DoctorPracticeSchedulePeriods.AsNoTracking()
+            join practice in dbContext.DoctorPractices.AsNoTracking()
+                on period.DoctorPracticeId equals practice.Id
+            where practice.DoctorId == doctorId &&
+                  period.DayOfWeek == dayOfWeek &&
+                  period.StartTime < endTime && startTime < period.EndTime &&
+                  (!excludingPeriodId.HasValue || period.Id != excludingPeriodId.Value)
+            select period.Id).AnyAsync(cancellationToken);
+
+    public async Task AcquireDoctorScheduleLockAsync(Guid doctorId, CancellationToken cancellationToken)
+    {
+        if (!string.Equals(
+                dbContext.Database.ProviderName,
+                "Microsoft.EntityFrameworkCore.SqlServer",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var resource = $"Wasla:DoctorSchedule:{doctorId:N}";
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"DECLARE @result int; EXEC @result = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @result < 0 THROW 51001, 'Could not acquire the doctor schedule lock.', 1;",
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DoctorPracticeScheduleException>> ListDoctorPracticeScheduleExceptionsAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorPracticeScheduleExceptions.AsNoTracking()
+            .Where(item => item.DoctorPracticeId == practiceId)
+            .OrderBy(item => item.Date)
+            .ThenBy(item => item.StartTime)
+            .ToListAsync(cancellationToken);
+
+    public Task<DoctorPracticeScheduleException?> FindDoctorPracticeScheduleExceptionAsync(
+        Guid exceptionId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeScheduleExceptions.SingleOrDefaultAsync(
+            item => item.Id == exceptionId,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorPracticeSegment>> ListDoctorPracticeSegmentsAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorPracticeSegments.AsNoTracking()
+            .Where(item => item.DoctorPracticeId == practiceId)
+            .OrderByDescending(item => item.Priority)
+            .ThenBy(item => item.NameAr)
+            .ToListAsync(cancellationToken);
+
+    public Task<DoctorPracticeSegment?> FindDoctorPracticeSegmentAsync(
+        Guid segmentId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeSegments.SingleOrDefaultAsync(item => item.Id == segmentId, cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorPracticeVisitType>> ListDoctorPracticeVisitTypesAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorPracticeVisitTypes.AsNoTracking()
+            .Where(item => item.DoctorPracticeId == practiceId)
+            .OrderBy(item => item.Type)
+            .ToListAsync(cancellationToken);
+
+    public Task<DoctorPracticeVisitType?> FindDoctorPracticeVisitTypeAsync(
+        Guid visitTypeId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeVisitTypes.SingleOrDefaultAsync(item => item.Id == visitTypeId, cancellationToken);
+
+    public async Task<IReadOnlyList<DoctorPracticeSegmentVisitTypePrice>> ListDoctorPracticePricesAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorPracticeSegmentVisitTypePrices.AsNoTracking()
+            .Where(item => item.DoctorPracticeId == practiceId)
+            .OrderBy(item => item.SegmentId)
+            .ThenBy(item => item.VisitTypeId)
+            .ToListAsync(cancellationToken);
+
+    public Task<DoctorPracticeSegmentVisitTypePrice?> FindDoctorPracticePriceAsync(
+        Guid priceId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeSegmentVisitTypePrices.SingleOrDefaultAsync(
+            item => item.Id == priceId,
+            cancellationToken);
+
+    public Task<bool> DoctorPracticePriceExistsAsync(
+        Guid practiceId,
+        Guid segmentId,
+        Guid visitTypeId,
+        Guid? excludingPriceId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorPracticeSegmentVisitTypePrices.AsNoTracking().AnyAsync(
+            item => item.DoctorPracticeId == practiceId && item.SegmentId == segmentId &&
+                    item.VisitTypeId == visitTypeId &&
+                    (!excludingPriceId.HasValue || item.Id != excludingPriceId.Value),
+            cancellationToken);
+
+    public async Task<IReadOnlyList<ReceptionViewRecord>> ListDoctorReceptionsAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken)
+        => await (from reception in dbContext.Receptions.AsNoTracking()
+            join user in dbContext.ApplicationUsers.AsNoTracking() on reception.ApplicationUserId equals user.Id
+            where reception.OwnerDoctorId == doctorId
+            orderby reception.NameAr
+            select new ReceptionViewRecord(reception, user)).ToListAsync(cancellationToken);
+
+    public Task<ReceptionViewRecord?> FindDoctorReceptionAsync(
+        Guid receptionId,
+        CancellationToken cancellationToken)
+        => (from reception in dbContext.Receptions
+            join user in dbContext.ApplicationUsers on reception.ApplicationUserId equals user.Id
+            where reception.Id == receptionId
+            select new ReceptionViewRecord(reception, user)).SingleOrDefaultAsync(cancellationToken);
+
+    public Task<Reception?> FindReceptionByApplicationUserIdAsync(
+        Guid applicationUserId,
+        CancellationToken cancellationToken)
+        => dbContext.Receptions.SingleOrDefaultAsync(
+            item => item.ApplicationUserId == applicationUserId,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<ReceptionPracticeAssignment>> ListReceptionAssignmentsAsync(
+        Guid receptionId,
+        CancellationToken cancellationToken)
+        => await dbContext.ReceptionPracticeAssignments.AsNoTracking()
+            .Where(item => item.ReceptionId == receptionId)
+            .OrderBy(item => item.CreatedOnUtc)
+            .ToListAsync(cancellationToken);
+
+    public Task<ReceptionPracticeAssignment?> FindReceptionAssignmentAsync(
+        Guid assignmentId,
+        CancellationToken cancellationToken)
+        => dbContext.ReceptionPracticeAssignments.SingleOrDefaultAsync(
+            item => item.Id == assignmentId,
+            cancellationToken);
+
+    public Task<bool> ReceptionAssignmentExistsAsync(
+        Guid receptionId,
+        Guid practiceId,
+        CancellationToken cancellationToken)
+        => dbContext.ReceptionPracticeAssignments.AsNoTracking().AnyAsync(
+            item => item.ReceptionId == receptionId && item.DoctorPracticeId == practiceId,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<ReceptionPracticeAssignmentPermission>> ListReceptionAssignmentPermissionsAsync(
+        Guid assignmentId,
+        CancellationToken cancellationToken)
+        => await dbContext.ReceptionPracticeAssignmentPermissions.AsNoTracking()
+            .Where(item => item.AssignmentId == assignmentId)
+            .OrderBy(item => item.PermissionId)
+            .ToListAsync(cancellationToken);
+
+    public async Task ReplaceReceptionAssignmentPermissionsAsync(
+        Guid assignmentId,
+        IReadOnlyCollection<ReceptionPracticeAssignmentPermission> replacements,
+        CancellationToken cancellationToken)
+    {
+        var existing = await dbContext.ReceptionPracticeAssignmentPermissions
+            .Where(item => item.AssignmentId == assignmentId)
+            .ToListAsync(cancellationToken);
+        dbContext.ReceptionPracticeAssignmentPermissions.RemoveRange(existing);
+        await dbContext.ReceptionPracticeAssignmentPermissions.AddRangeAsync(replacements, cancellationToken);
+    }
+
+    public Task<bool> HasReceptionPracticePermissionAsync(
+        Guid applicationUserId,
+        Guid practiceId,
+        string permissionName,
+        CancellationToken cancellationToken)
+        => (from reception in dbContext.Receptions.AsNoTracking()
+            join assignment in dbContext.ReceptionPracticeAssignments.AsNoTracking()
+                on reception.Id equals assignment.ReceptionId
+            join assignmentPermission in dbContext.ReceptionPracticeAssignmentPermissions.AsNoTracking()
+                on assignment.Id equals assignmentPermission.AssignmentId
+            join permission in dbContext.Permissions.AsNoTracking()
+                on assignmentPermission.PermissionId equals permission.Id
+            where reception.ApplicationUserId == applicationUserId &&
+                  assignment.DoctorPracticeId == practiceId && assignment.IsActive &&
+                  permission.Name == permissionName
+            select assignment.Id).AnyAsync(cancellationToken);
 
     public void Add<TEntity>(TEntity entity) where TEntity : class
         => dbContext.Set<TEntity>().Add(entity);

@@ -4,6 +4,7 @@ using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Doctors;
+using Wasla.Application.Features.Practices;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Doctors;
 using Wasla.Domain.ReferenceData;
@@ -187,6 +188,7 @@ internal sealed class UpsertMyDoctorPracticeLocationCommandHandler(
 
             location = created.Value;
             dataStore.Add(location);
+            DoctorPracticeCreation.AddDefaults(dataStore, location.Id, doctor.Value.ApplicationUserId);
         }
         else
         {
