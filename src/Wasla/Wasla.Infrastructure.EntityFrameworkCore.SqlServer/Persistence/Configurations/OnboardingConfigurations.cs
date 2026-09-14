@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Wasla.Domain.Doctors;
 using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Security;
+using Wasla.Domain.Practices;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Configurations;
 
@@ -164,20 +165,28 @@ internal sealed class AreaConfiguration : IWriteEntityConfiguration<Area>
     }
 }
 
-internal sealed class DoctorPracticeLocationConfiguration : IWriteEntityConfiguration<DoctorPracticeLocation>
+internal sealed class DoctorPracticeConfiguration : IWriteEntityConfiguration<DoctorPractice>
 {
-    public void ConfigureAggregate(EntityTypeBuilder<DoctorPracticeLocation> builder)
+    public void ConfigureAggregate(EntityTypeBuilder<DoctorPractice> builder)
     {
-        builder.ToTable("DoctorPracticeLocations");
+        builder.ToTable("DoctorPractices");
         builder.HasKey(item => item.Id);
+        builder.Property(item => item.NameAr).HasMaxLength(200).IsRequired();
+        builder.Property(item => item.NameEn).HasMaxLength(200);
         builder.Property(item => item.DetailedAddress).HasMaxLength(500).IsRequired();
         builder.Property(item => item.Latitude).HasPrecision(9, 6).IsRequired();
         builder.Property(item => item.Longitude).HasPrecision(9, 6).IsRequired();
+        builder.Property(item => item.IsActive).IsRequired();
+        builder.Property(item => item.IsLegacyOnboarding).IsRequired();
         builder.Property(item => item.RowVersion).IsRowVersion().IsConcurrencyToken();
-        builder.HasIndex(item => item.DoctorId).IsUnique().HasDatabaseName("UX_DoctorPracticeLocations_DoctorId");
+        builder.HasIndex([nameof(DoctorPractice.DoctorId)], "IX_DoctorPractices_DoctorId");
+        builder.HasIndex([nameof(DoctorPractice.DoctorId)], "UX_DoctorPractices_OneLegacyOnboardingPerDoctor")
+            .IsUnique().HasFilter("[IsLegacyOnboarding] = 1");
         builder.HasOne<Doctor>().WithMany().HasForeignKey(item => item.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Governorate>().WithMany().HasForeignKey(item => item.GovernorateId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<City>().WithMany().HasForeignKey(item => item.CityId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Area>().WithMany().HasForeignKey(item => item.AreaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.CreatedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.ModifiedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }

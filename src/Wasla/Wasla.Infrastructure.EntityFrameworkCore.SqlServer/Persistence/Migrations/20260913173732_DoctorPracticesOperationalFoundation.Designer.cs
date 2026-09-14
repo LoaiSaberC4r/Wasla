@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -11,9 +12,11 @@ using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrations
 {
     [DbContext(typeof(WaslaDbContext))]
-    partial class WaslaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913173732_DoctorPracticesOperationalFoundation")]
+    partial class DoctorPracticesOperationalFoundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1178,9 +1181,6 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("Id", "DoctorPracticeId")
-                        .HasName("AK_DoctorPracticeSegments_Id_PracticeId");
-
                     b.HasIndex("CreatedByApplicationUserId");
 
                     b.HasIndex("ModifiedByApplicationUserId");
@@ -1237,9 +1237,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasIndex("ModifiedByApplicationUserId");
 
-                    b.HasIndex("SegmentId", "DoctorPracticeId");
+                    b.HasIndex("SegmentId");
 
-                    b.HasIndex("VisitTypeId", "DoctorPracticeId");
+                    b.HasIndex("VisitTypeId");
 
                     b.HasIndex("DoctorPracticeId", "SegmentId", "VisitTypeId")
                         .IsUnique()
@@ -1294,9 +1294,6 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasAlternateKey("Id", "DoctorPracticeId")
-                        .HasName("AK_DoctorPracticeVisitTypes_Id_PracticeId");
 
                     b.HasIndex("CreatedByApplicationUserId");
 
@@ -2491,15 +2488,13 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasOne("Wasla.Domain.Practices.DoctorPracticeSegment", null)
                         .WithMany()
-                        .HasForeignKey("SegmentId", "DoctorPracticeId")
-                        .HasPrincipalKey("Id", "DoctorPracticeId")
+                        .HasForeignKey("SegmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Wasla.Domain.Practices.DoctorPracticeVisitType", null)
                         .WithMany()
-                        .HasForeignKey("VisitTypeId", "DoctorPracticeId")
-                        .HasPrincipalKey("Id", "DoctorPracticeId")
+                        .HasForeignKey("VisitTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

@@ -11,8 +11,9 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Wasla.Domain.Security;
 using Wasla.Domain.Common;
+using Wasla.Domain.Doctors;
+using Wasla.Domain.Security;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 namespace Wasla.Tests.Integration;
@@ -353,6 +354,272 @@ public sealed class DoctorOnboardingApiTests
         Assert.Equal(
             HttpStatusCode.Forbidden,
             (await receptionClient.GetAsync("/api/v1/doctors/me/practice-location", testToken)).StatusCode);
+    }
+
+    [Fact]
+    public async Task OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope()
+    {
+        await using var factory = await OnboardingApiFactory.CreateAsync();
+        var testToken = TestContext.Current.CancellationToken;
+        await SeedApprovedDoctorAsync(factory, "practice-doctor-a", "practice-a@example.test", testToken);
+        await SeedApprovedDoctorAsync(factory, "practice-doctor-b", "practice-b@example.test", testToken);
+
+        using var doctorA = factory.CreateClient();
+        doctorA.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await LoginAsync(doctorA, "practice-doctor-a", "DoctorPass123!", testToken));
+        using var doctorB = factory.CreateClient();
+        doctorB.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await LoginAsync(doctorB, "practice-doctor-b", "DoctorPass123!", testToken));
+
+        var governorates = await doctorA.GetFromJsonAsync<JsonElement>("/api/v1/public/governorates", testToken);
+        var governorateId = governorates[0].GetProperty("id").GetInt32();
+        var cities = await doctorA.GetFromJsonAsync<JsonElement>(
+            $"/api/v1/public/governorates/{governorateId}/cities", testToken);
+        var cityId = cities[0].GetProperty("id").GetInt32();
+        var areas = await doctorA.GetFromJsonAsync<JsonElement>(
+            $"/api/v1/public/cities/{cityId}/areas", testToken);
+        var areaId = areas[0].GetProperty("id").GetInt32();
+
+        var cairo = await CreatePracticeAsync(
+            doctorA, "عيادة القاهرة", governorateId, cityId, areaId, testToken);
+        var shebin = await CreatePracticeAsync(
+            doctorA, "عيادة شبين", governorateId, cityId, areaId, testToken);
+        _ = await CreatePracticeAsync(
+            doctorB, "عيادة طبيب آخر", governorateId, cityId, areaId, testToken);
+        var cairoId = cairo.GetProperty("id").GetGuid();
+        var shebinId = shebin.GetProperty("id").GetGuid();
+
+        Assert.False(cairo.GetProperty("isActive").GetBoolean());
+        Assert.Equal(
+            HttpStatusCode.Forbidden,
+            (await doctorB.GetAsync($"/api/v1/doctors/me/practices/{cairoId}", testToken)).StatusCode);
+
+        var activationWithoutLogo = await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/activate",
+            new { rowVersion = cairo.GetProperty("rowVersion").GetString() },
+            testToken);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, activationWithoutLogo.StatusCode);
+
+        var branding = await doctorA.GetFromJsonAsync<JsonElement>(
+            $"/api/v1/doctors/me/practices/{cairoId}/branding", testToken);
+        using var firstLogo = CreateLogoUpload(branding.GetProperty("rowVersion").GetString()!, "cairo.png");
+        var firstLogoResponse = await doctorA.PostAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/branding/logo", firstLogo, testToken);
+        Assert.Equal(HttpStatusCode.OK, firstLogoResponse.StatusCode);
+        var branded = await ReadJsonAsync(firstLogoResponse, testToken);
+
+        using var replacementLogo = CreateLogoUpload(
+            branded.GetProperty("rowVersion").GetString()!, "cairo-replacement.png");
+        var replacementResponse = await doctorA.PostAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/branding/logo", replacementLogo, testToken);
+        Assert.Equal(HttpStatusCode.OK, replacementResponse.StatusCode);
+        var replacedBranding = await ReadJsonAsync(replacementResponse, testToken);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await doctorA.GetAsync($"/api/v1/doctors/me/practices/{cairoId}/branding/logo", testToken)).StatusCode);
+
+        var activatedResponse = await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/activate",
+            new { rowVersion = cairo.GetProperty("rowVersion").GetString() },
+            testToken);
+        Assert.Equal(HttpStatusCode.OK, activatedResponse.StatusCode);
+        var activated = await ReadJsonAsync(activatedResponse, testToken);
+        Assert.True(activated.GetProperty("isActive").GetBoolean());
+
+        using var removeLogo = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/v1/doctors/me/practices/{cairoId}/branding/logo")
+        {
+            Content = JsonContent.Create(new
+            {
+                rowVersion = replacedBranding.GetProperty("rowVersion").GetString()
+            })
+        };
+        var removeLogoResponse = await doctorA.SendAsync(removeLogo, testToken);
+        Assert.Equal(HttpStatusCode.Conflict, removeLogoResponse.StatusCode);
+
+        var stalePracticeUpdate = await doctorA.PutAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}",
+            new
+            {
+                nameAr = "عيادة القاهرة المعدلة",
+                nameEn = "Updated Cairo Practice",
+                governorateId,
+                cityId,
+                areaId,
+                detailedAddress = "15 شارع الاختبار",
+                latitude = 30.0561m,
+                longitude = 31.3301m,
+                rowVersion = cairo.GetProperty("rowVersion").GetString()
+            },
+            testToken);
+        Assert.Equal(HttpStatusCode.Conflict, stalePracticeUpdate.StatusCode);
+
+        Assert.Equal(HttpStatusCode.Created, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/schedule/periods",
+            new { dayOfWeek = DayOfWeek.Saturday, startTime = "10:00:00", endTime = "14:00:00", slotDurationMinutes = 20 },
+            testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/schedule/periods",
+            new { dayOfWeek = DayOfWeek.Saturday, startTime = "17:00:00", endTime = "21:00:00", slotDurationMinutes = 20 },
+            testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/schedule/periods",
+            new { dayOfWeek = DayOfWeek.Saturday, startTime = "13:00:00", endTime = "16:00:00", slotDurationMinutes = 20 },
+            testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{shebinId}/schedule/periods",
+            new { dayOfWeek = DayOfWeek.Saturday, startTime = "12:00:00", endTime = "15:00:00", slotDurationMinutes = 20 },
+            testToken)).StatusCode);
+
+        var segments = await doctorA.GetFromJsonAsync<JsonElement>(
+            $"/api/v1/doctors/me/practices/{cairoId}/segments", testToken);
+        var visitTypes = await doctorA.GetFromJsonAsync<JsonElement>(
+            $"/api/v1/doctors/me/practices/{cairoId}/visit-types", testToken);
+        Assert.Single(segments.EnumerateArray());
+        Assert.True(segments[0].GetProperty("isDefault").GetBoolean());
+        Assert.Equal(2, visitTypes.GetArrayLength());
+        var priceRequest = new
+        {
+            segmentId = segments[0].GetProperty("id").GetGuid(),
+            visitTypeId = visitTypes[0].GetProperty("id").GetGuid(),
+            price = 500m
+        };
+        Assert.Equal(HttpStatusCode.Created, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/prices", priceRequest, testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/practices/{cairoId}/prices", priceRequest, testToken)).StatusCode);
+
+        var receptionResponse = await doctorA.PostAsJsonAsync(
+            "/api/v1/doctors/me/receptions",
+            new
+            {
+                userName = "scoped-reception",
+                email = "scoped-reception@example.test",
+                phoneNumber = "01000000009",
+                temporaryPassword = "ReceptionPass123!",
+                nameAr = "سارة الاستقبال",
+                nameEn = "Sara Reception"
+            },
+            testToken);
+        Assert.Equal(HttpStatusCode.Created, receptionResponse.StatusCode);
+        var reception = await ReadJsonAsync(receptionResponse, testToken);
+        var receptionId = reception.GetProperty("id").GetGuid();
+        var searchPermissionId = SystemPermissionIds.For(PermissionNames.PatientsSearchBasic);
+        var cairoAssignmentRequest = new
+        {
+            doctorPracticeId = cairoId,
+            permissionIds = new[] { searchPermissionId }
+        };
+        Assert.Equal(HttpStatusCode.Created, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/receptions/{receptionId}/assignments",
+            cairoAssignmentRequest,
+            testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/receptions/{receptionId}/assignments",
+            cairoAssignmentRequest,
+            testToken)).StatusCode);
+
+        using var receptionClient = factory.CreateClient();
+        receptionClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await LoginAsync(
+                receptionClient, "scoped-reception", "ReceptionPass123!", testToken));
+        var changedPassword = await receptionClient.PostAsJsonAsync(
+            "/api/v1/auth/change-password",
+            new
+            {
+                currentPassword = "ReceptionPass123!",
+                newPassword = "ReceptionPass456!",
+                confirmPassword = "ReceptionPass456!"
+            },
+            testToken);
+        Assert.Equal(HttpStatusCode.NoContent, changedPassword.StatusCode);
+        receptionClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await LoginAsync(
+                receptionClient, "scoped-reception", "ReceptionPass456!", testToken));
+
+        Assert.Equal(HttpStatusCode.OK, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={shebinId}", testToken)).StatusCode);
+
+        Assert.Equal(HttpStatusCode.Created, (await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/receptions/{receptionId}/assignments",
+            new { doctorPracticeId = shebinId, permissionIds = new[] { searchPermissionId } },
+            testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={shebinId}", testToken)).StatusCode);
+        var receptionPractices = await receptionClient.GetFromJsonAsync<JsonElement>(
+            "/api/v1/reception/practices", testToken);
+        Assert.Equal(2, receptionPractices.GetArrayLength());
+    }
+
+    private static async Task SeedApprovedDoctorAsync(
+        OnboardingApiFactory factory,
+        string userName,
+        string email,
+        CancellationToken cancellationToken)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
+        var passwords = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+        var userId = Guid.NewGuid();
+        var user = ApplicationUser.Create(
+            userId,
+            userName,
+            email,
+            null,
+            await passwords.HashAsync("DoctorPass123!", cancellationToken),
+            UserType.Doctor,
+            false,
+            DateTime.UtcNow).Value;
+        var doctor = Doctor.Create(
+            Guid.NewGuid(), userId, "طبيب عيادات", "Practice Doctor", new DateOnly(1990, 1, 1),
+            Gender.Male, null, "front.png", "back.png", "syndicate.png", null,
+            DateOnly.FromDateTime(DateTime.UtcNow)).Value;
+        var nationalId = userName.EndsWith('a') ? "29801011234567" : "29801011234568";
+        Assert.True(doctor.Approve(nationalId, userId, DateTime.UtcNow).IsSuccess);
+
+        db.ApplicationUsers.Add(user);
+        db.Doctors.Add(doctor);
+        db.UserRoles.Add(new UserRole(Guid.NewGuid(), userId, SystemRoleIds.Doctor));
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task<JsonElement> CreatePracticeAsync(
+        HttpClient client,
+        string nameAr,
+        int governorateId,
+        int cityId,
+        int areaId,
+        CancellationToken cancellationToken)
+    {
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/doctors/me/practices",
+            new
+            {
+                nameAr,
+                nameEn = "Test Practice",
+                governorateId,
+                cityId,
+                areaId,
+                detailedAddress = "15 شارع الاختبار",
+                latitude = 30.0561m,
+                longitude = 31.3301m
+            },
+            cancellationToken);
+        Assert.True(
+            response.StatusCode == HttpStatusCode.Created,
+            await response.Content.ReadAsStringAsync(cancellationToken));
+        return await ReadJsonAsync(response, cancellationToken);
+    }
+
+    private static MultipartFormDataContent CreateLogoUpload(string rowVersion, string fileName)
+    {
+        var content = new MultipartFormDataContent();
+        AddFile(content, "Logo", fileName);
+        content.Add(new StringContent(rowVersion), "RowVersion");
+        return content;
     }
 
     private static MultipartFormDataContent CreateDoctorRegistration()

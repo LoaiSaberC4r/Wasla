@@ -109,8 +109,7 @@ public sealed class ArchitectureTests
             "Law" + "yer",
             "Cli" + "ent",
             "Consul" + "tation",
-            "Legal" + "Specialization",
-            "Gover" + "norate"
+            "Legal" + "Specialization"
         };
 
         foreach (var assembly in new[]

@@ -32,7 +32,8 @@ public sealed record CurrentUserResponse(
     IReadOnlyList<string> Permissions,
     bool IsFirstLogin,
     Guid? DoctorId,
-    Guid? PatientId);
+    Guid? PatientId,
+    Guid? ReceptionId);
 
 public sealed record ChangePasswordCommand(
     string CurrentPassword,
@@ -182,7 +183,8 @@ internal sealed class MeQueryHandler(
             LoginCommandHandler.EffectivePermissions(snapshot),
             user.IsFirstLogin,
             snapshot.DoctorId,
-            snapshot.PatientId));
+            snapshot.PatientId,
+            snapshot.ReceptionId));
     }
 }
 

@@ -115,6 +115,26 @@ internal sealed class BilingualEmailNotificationFactory(
         };
     }
 
+    public EmailNotificationContent ReceptionAccountCreated(string receptionName, string userName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(receptionName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userName);
+        return Build(
+            "Wasla | تم إنشاء حساب الاستقبال | Reception Account Created",
+            [
+                $"مرحبًا {receptionName}،",
+                "تم إنشاء حساب استقبال لك على وصلة.",
+                $"اسم المستخدم: {userName}",
+                "استخدم كلمة المرور المؤقتة التي زودك بها الطبيب ثم قم بتغييرها بعد تسجيل الدخول."
+            ],
+            [
+                $"Hello {receptionName},",
+                "A Wasla reception account has been created for you.",
+                $"User name: {userName}",
+                "Use the temporary password supplied by the doctor and change it after signing in."
+            ]);
+    }
+
     private EmailNotificationContent BuildWithReason(
         string subject,
         string doctorName,

@@ -4,6 +4,7 @@ using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Families;
+using Wasla.Domain.Practices;
 
 namespace Wasla.Application.Persistence;
 
@@ -14,6 +15,7 @@ public sealed record UserAccessSnapshot(
     Guid? DoctorId,
     DoctorApprovalStatus? DoctorStatus,
     Guid? PatientId,
+    Guid? ReceptionId,
     Guid? SuperAdminId,
     bool IsRootSuperAdmin);
 
@@ -48,10 +50,16 @@ public sealed record LocationHierarchyRecord(
     bool CityIsActive,
     bool GovernorateIsActive);
 public sealed record DoctorPracticeLocationViewRecord(
-    DoctorPracticeLocation Location,
+    DoctorPractice Location,
     LocationReferenceRecord Governorate,
     LocationReferenceRecord City,
     LocationReferenceRecord Area);
+public sealed record DoctorPracticeViewRecord(
+    DoctorPractice Practice,
+    LocationReferenceRecord Governorate,
+    LocationReferenceRecord City,
+    LocationReferenceRecord Area);
+public sealed record ReceptionViewRecord(Reception Reception, ApplicationUser User);
 public sealed record PatientSearchRecord(
     Guid PatientId,
     string NameAr,
@@ -146,6 +154,7 @@ public interface IWaslaDataStore
     Task<IReadOnlyList<Permission>> ListPermissionsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyList<RolePermission>> ListRolePermissionsAsync(Guid roleId, CancellationToken cancellationToken);
     Task<IReadOnlyList<Permission>> ListPermissionsByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+    Task<bool> HasUserRoleAsync(Guid applicationUserId, Guid roleId, CancellationToken cancellationToken);
     Task<PasswordResetChallenge?> FindChallengeAsync(Guid id, CancellationToken cancellationToken);
     Task<PasswordResetChallenge?> FindLatestChallengeAsync(Guid applicationUserId, CancellationToken cancellationToken);
     Task<IReadOnlyList<PasswordResetChallenge>> ListActiveChallengesAsync(Guid applicationUserId, CancellationToken cancellationToken);
@@ -188,8 +197,87 @@ public interface IWaslaDataStore
     Task<bool> ActiveCityExistsAsync(int cityId, CancellationToken cancellationToken);
     Task<IReadOnlyList<LocationReferenceRecord>> ListAreasAsync(int cityId, CancellationToken cancellationToken);
     Task<LocationHierarchyRecord?> FindLocationHierarchyAsync(int areaId, CancellationToken cancellationToken);
-    Task<DoctorPracticeLocation?> FindDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken);
+    Task<DoctorPractice?> FindDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken);
     Task<DoctorPracticeLocationViewRecord?> GetDoctorPracticeLocationAsync(Guid doctorId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<DoctorPracticeViewRecord>> ListDoctorPracticesAsync(Guid doctorId, CancellationToken cancellationToken);
+    Task<DoctorPractice?> FindDoctorPracticeAsync(Guid practiceId, CancellationToken cancellationToken);
+    Task<DoctorPracticeViewRecord?> GetDoctorPracticeAsync(Guid practiceId, CancellationToken cancellationToken);
+    Task<DoctorPracticeConfiguration?> FindDoctorPracticeConfigurationAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<DoctorPracticeBranding?> FindDoctorPracticeBrandingAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<DoctorPracticeSchedulePeriod>> ListDoctorPracticeSchedulePeriodsAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<DoctorPracticeSchedulePeriod?> FindDoctorPracticeSchedulePeriodAsync(
+        Guid periodId,
+        CancellationToken cancellationToken);
+    Task<bool> HasDoctorScheduleOverlapAsync(
+        Guid doctorId,
+        Guid practiceId,
+        Guid? excludingPeriodId,
+        DayOfWeek dayOfWeek,
+        TimeOnly startTime,
+        TimeOnly endTime,
+        CancellationToken cancellationToken);
+    Task AcquireDoctorScheduleLockAsync(Guid doctorId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<DoctorPracticeScheduleException>> ListDoctorPracticeScheduleExceptionsAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<DoctorPracticeScheduleException?> FindDoctorPracticeScheduleExceptionAsync(
+        Guid exceptionId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<DoctorPracticeSegment>> ListDoctorPracticeSegmentsAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<DoctorPracticeSegment?> FindDoctorPracticeSegmentAsync(Guid segmentId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<DoctorPracticeVisitType>> ListDoctorPracticeVisitTypesAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<DoctorPracticeVisitType?> FindDoctorPracticeVisitTypeAsync(Guid visitTypeId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<DoctorPracticeSegmentVisitTypePrice>> ListDoctorPracticePricesAsync(
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<DoctorPracticeSegmentVisitTypePrice?> FindDoctorPracticePriceAsync(
+        Guid priceId,
+        CancellationToken cancellationToken);
+    Task<bool> DoctorPracticePriceExistsAsync(
+        Guid practiceId,
+        Guid segmentId,
+        Guid visitTypeId,
+        Guid? excludingPriceId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<ReceptionViewRecord>> ListDoctorReceptionsAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken);
+    Task<ReceptionViewRecord?> FindDoctorReceptionAsync(Guid receptionId, CancellationToken cancellationToken);
+    Task<Reception?> FindReceptionByApplicationUserIdAsync(
+        Guid applicationUserId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<ReceptionPracticeAssignment>> ListReceptionAssignmentsAsync(
+        Guid receptionId,
+        CancellationToken cancellationToken);
+    Task<ReceptionPracticeAssignment?> FindReceptionAssignmentAsync(
+        Guid assignmentId,
+        CancellationToken cancellationToken);
+    Task<bool> ReceptionAssignmentExistsAsync(
+        Guid receptionId,
+        Guid practiceId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<ReceptionPracticeAssignmentPermission>> ListReceptionAssignmentPermissionsAsync(
+        Guid assignmentId,
+        CancellationToken cancellationToken);
+    Task ReplaceReceptionAssignmentPermissionsAsync(
+        Guid assignmentId,
+        IReadOnlyCollection<ReceptionPracticeAssignmentPermission> replacements,
+        CancellationToken cancellationToken);
+    Task<bool> HasReceptionPracticePermissionAsync(
+        Guid applicationUserId,
+        Guid practiceId,
+        string permissionName,
+        CancellationToken cancellationToken);
     void Add<TEntity>(TEntity entity) where TEntity : class;
     void Remove<TEntity>(TEntity entity) where TEntity : class;
     void SetOriginalRowVersion<TEntity>(TEntity entity, byte[] rowVersion) where TEntity : class;

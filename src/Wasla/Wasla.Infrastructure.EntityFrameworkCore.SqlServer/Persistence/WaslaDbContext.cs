@@ -4,6 +4,7 @@ using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Families;
+using Wasla.Domain.Practices;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +42,19 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<Governorate> Governorates => Set<Governorate>();
     public DbSet<City> Cities => Set<City>();
     public DbSet<Area> Areas => Set<Area>();
-    public DbSet<DoctorPracticeLocation> DoctorPracticeLocations => Set<DoctorPracticeLocation>();
+    public DbSet<DoctorPractice> DoctorPractices => Set<DoctorPractice>();
+    public DbSet<DoctorPractice> DoctorPracticeLocations => Set<DoctorPractice>();
+    public DbSet<DoctorPracticeConfiguration> DoctorPracticeConfigurations => Set<DoctorPracticeConfiguration>();
+    public DbSet<DoctorPracticeBranding> DoctorPracticeBrandings => Set<DoctorPracticeBranding>();
+    public DbSet<DoctorPracticeSchedulePeriod> DoctorPracticeSchedulePeriods => Set<DoctorPracticeSchedulePeriod>();
+    public DbSet<DoctorPracticeScheduleException> DoctorPracticeScheduleExceptions => Set<DoctorPracticeScheduleException>();
+    public DbSet<DoctorPracticeSegment> DoctorPracticeSegments => Set<DoctorPracticeSegment>();
+    public DbSet<DoctorPracticeVisitType> DoctorPracticeVisitTypes => Set<DoctorPracticeVisitType>();
+    public DbSet<DoctorPracticeSegmentVisitTypePrice> DoctorPracticeSegmentVisitTypePrices => Set<DoctorPracticeSegmentVisitTypePrice>();
+    public DbSet<Reception> Receptions => Set<Reception>();
+    public DbSet<ReceptionPracticeAssignment> ReceptionPracticeAssignments => Set<ReceptionPracticeAssignment>();
+    public DbSet<ReceptionPracticeAssignmentPermission> ReceptionPracticeAssignmentPermissions
+        => Set<ReceptionPracticeAssignmentPermission>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {

@@ -5,6 +5,7 @@ using Wasla.Application.Common.Validation;
 using Wasla.Application.Email;
 using Wasla.Application.Features.Doctors;
 using Wasla.Application.Features.Families;
+using Wasla.Application.Features.Practices;
 using Wasla.Domain.Families;
 
 namespace Wasla.Application;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddBuildingBlockApplicationBehaviors();
         services.AddScoped<DoctorLifecycleService>();
         services.AddScoped<FamilyRelationshipWorkflowService>();
+        services.AddScoped<IReceptionPracticeAuthorizationService, ReceptionPracticeAuthorizationService>();
         services.AddSingleton<IPatientAccessPolicy, PatientAccessPolicy>();
         services.AddSingleton<IEmailNotificationFactory, BilingualEmailNotificationFactory>();
 
