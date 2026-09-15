@@ -174,6 +174,44 @@ internal sealed class DoctorPracticePriceConfiguration
     }
 }
 
+internal sealed class PublicPracticeAvailabilitySlotConfiguration
+    : IWriteEntityConfiguration<PublicPracticeAvailabilitySlot>
+{
+    public void ConfigureAggregate(EntityTypeBuilder<PublicPracticeAvailabilitySlot> builder)
+    {
+        builder.ToTable("PublicPracticeAvailabilitySlots");
+        builder.HasKey(item => new { item.DoctorPracticeId, item.LocalDate, item.LocalTime });
+        builder.Property(item => item.LocalTime).HasColumnType("time").IsRequired();
+        builder.Property(item => item.SlotStartUtc).HasColumnType("datetime2").IsRequired();
+        builder.Property(item => item.VisibleFromUtc).HasColumnType("datetime2").IsRequired();
+        builder.Property(item => item.RefreshedOnUtc).HasColumnType("datetime2").IsRequired();
+        builder.HasIndex(item => new
+            {
+                item.DoctorId,
+                item.IsAvailable,
+                item.VisibleFromUtc,
+                item.SlotStartUtc
+            })
+            .HasDatabaseName("IX_PublicAvailabilitySlots_Doctor_Availability");
+        builder.HasIndex(item => new { item.DoctorPracticeId, item.SlotStartUtc })
+            .HasDatabaseName("IX_PublicAvailabilitySlots_Practice_Start");
+    }
+}
+
+internal sealed class PublicDoctorSearchRankConfiguration
+    : IWriteEntityConfiguration<PublicDoctorSearchRank>
+{
+    public void ConfigureAggregate(EntityTypeBuilder<PublicDoctorSearchRank> builder)
+    {
+        builder.ToTable("PublicDoctorSearchRanks");
+        builder.HasKey(item => item.DoctorId);
+        builder.Property(item => item.RefreshedOnUtc).HasColumnType("datetime2").IsRequired();
+        builder.HasIndex(item => new { item.PopularityScore, item.DoctorId })
+            .IsDescending(true, false)
+            .HasDatabaseName("IX_PublicDoctorSearchRanks_Popularity_Doctor");
+    }
+}
+
 internal sealed class ReceptionConfiguration : IWriteEntityConfiguration<Reception>
 {
     public void ConfigureAggregate(EntityTypeBuilder<Reception> builder)

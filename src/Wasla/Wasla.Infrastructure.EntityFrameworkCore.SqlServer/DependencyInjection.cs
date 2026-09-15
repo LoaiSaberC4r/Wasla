@@ -48,16 +48,25 @@ public static class DependencyInjection
                            options.ClaimLeaseSeconds >= 120,
                 "Email outbox options are invalid.")
             .ValidateOnStart();
+        services.AddOptions<PublicDiscoveryProjectionOptions>()
+            .Bind(configuration.GetSection(PublicDiscoveryProjectionOptions.SectionName))
+            .Validate(
+                options => options.RefreshIntervalHours is >= 1 and <= 168,
+                "Public discovery projection options are invalid.")
+            .ValidateOnStart();
 
         services.AddScoped<IEmailOutbox, EmailOutbox>();
         services.AddScoped<IWaslaDataStore, WaslaDataStore>();
         services.AddScoped<IPublicDiscoveryService, PublicDiscoveryService>();
+        services.AddScoped<IPublicDiscoveryRankingProjectionRefresher,
+            PublicDiscoveryRankingProjectionRefresher>();
         services.AddScoped<WaslaSecuritySeeder>();
         services.AddScoped<MedicalSpecializationSeeder>();
         services.AddScoped<EgyptLocationSeedCoordinator>();
         services.AddScoped<EmailOutboxProcessor>();
         services.AddSingleton<IDatabaseMigrationService, EfCoreDatabaseMigrationService>();
         services.AddHostedService<DatabaseInitializationHostedService>();
+        services.AddHostedService<PublicDiscoveryProjectionMaintenanceHostedService>();
         services.AddHostedService<EmailOutboxBackgroundService>();
 
         services.AddDbContext<WaslaDbContext>((serviceProvider, options) =>
