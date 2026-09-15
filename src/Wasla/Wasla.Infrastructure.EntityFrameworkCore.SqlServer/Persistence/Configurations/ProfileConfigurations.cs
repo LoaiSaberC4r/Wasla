@@ -15,6 +15,9 @@ internal sealed class DoctorConfiguration : IWriteEntityConfiguration<Doctor>
         builder.HasKey(doctor => doctor.Id);
         builder.Property(doctor => doctor.NameAr).HasMaxLength(200).IsRequired();
         builder.Property(doctor => doctor.NameEn).HasMaxLength(200);
+        builder.Property(doctor => doctor.NormalizedNameAr).HasMaxLength(200).IsRequired();
+        builder.Property(doctor => doctor.NormalizedNameEn).HasMaxLength(200);
+        builder.Property(doctor => doctor.Bio).HasMaxLength(2000);
         builder.Property(doctor => doctor.Gender).HasConversion<int>().IsRequired();
         builder.Property(doctor => doctor.ApprovalStatus).HasConversion<int>().IsRequired();
         builder.Property(doctor => doctor.ProfileImageMediaKey).HasMaxLength(1000);
@@ -32,6 +35,8 @@ internal sealed class DoctorConfiguration : IWriteEntityConfiguration<Doctor>
             .HasFilter("[NationalId] IS NOT NULL")
             .HasDatabaseName("UX_Doctors_NationalId");
         builder.HasIndex(doctor => doctor.ApprovalStatus).HasDatabaseName("IX_Doctors_ApprovalStatus");
+        builder.HasIndex(doctor => doctor.NormalizedNameAr).HasDatabaseName("IX_Doctors_NormalizedNameAr");
+        builder.HasIndex(doctor => doctor.NormalizedNameEn).HasDatabaseName("IX_Doctors_NormalizedNameEn");
         builder.HasIndex(doctor => doctor.CreatedOnUtc).HasDatabaseName("IX_Doctors_CreatedOnUtc");
         builder.HasOne(doctor => doctor.ApplicationUser)
             .WithOne()
@@ -41,6 +46,27 @@ internal sealed class DoctorConfiguration : IWriteEntityConfiguration<Doctor>
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(doctor => doctor.RejectedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(doctor => doctor.SuspendedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(doctor => doctor.ReactivatedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(doctor => doctor.ModifiedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class DoctorQualificationConfiguration : IWriteEntityConfiguration<DoctorQualification>
+{
+    public void ConfigureAggregate(EntityTypeBuilder<DoctorQualification> builder)
+    {
+        builder.ToTable("DoctorQualifications");
+        builder.HasKey(item => item.Id);
+        builder.Property(item => item.NameAr).HasMaxLength(300).IsRequired();
+        builder.Property(item => item.NameEn).HasMaxLength(300);
+        builder.Property(item => item.RowVersion).IsRowVersion().IsConcurrencyToken();
+        builder.HasIndex(item => new { item.DoctorId, item.DisplayOrder })
+            .HasDatabaseName("IX_DoctorQualifications_DoctorId_DisplayOrder");
+        builder.HasOne<Doctor>().WithMany().HasForeignKey(item => item.DoctorId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.CreatedByApplicationUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.ModifiedByApplicationUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

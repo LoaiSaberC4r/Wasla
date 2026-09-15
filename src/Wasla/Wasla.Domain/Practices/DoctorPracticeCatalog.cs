@@ -195,7 +195,6 @@ public sealed class DoctorPracticeVisitType : AggregateRoot<Guid>, IAuditableEnt
         DoctorPracticeVisitTypeCode type,
         string nameAr,
         string? nameEn,
-        int durationMinutes,
         Guid? actorId)
         : base(id)
     {
@@ -203,7 +202,6 @@ public sealed class DoctorPracticeVisitType : AggregateRoot<Guid>, IAuditableEnt
         Type = type;
         NameAr = nameAr;
         NameEn = nameEn;
-        DurationMinutes = durationMinutes;
         IsActive = true;
         CreatedByApplicationUserId = actorId;
     }
@@ -212,7 +210,6 @@ public sealed class DoctorPracticeVisitType : AggregateRoot<Guid>, IAuditableEnt
     public DoctorPracticeVisitTypeCode Type { get; private set; }
     public string NameAr { get; private set; } = string.Empty;
     public string? NameEn { get; private set; }
-    public int DurationMinutes { get; private set; }
     public bool IsActive { get; private set; }
     public Guid? CreatedByApplicationUserId { get; private set; }
     public Guid? ModifiedByApplicationUserId { get; private set; }
@@ -228,11 +225,9 @@ public sealed class DoctorPracticeVisitType : AggregateRoot<Guid>, IAuditableEnt
         => type switch
         {
             DoctorPracticeVisitTypeCode.NewConsultation => Create(
-                id, doctorPracticeId, type, "كشف جديد", "New consultation",
-                DoctorPracticePlatformDefaults.NewConsultationDurationMinutes, actorId),
+                id, doctorPracticeId, type, "كشف جديد", "New consultation", actorId),
             DoctorPracticeVisitTypeCode.FollowUp => Create(
-                id, doctorPracticeId, type, "متابعة", "Follow-up",
-                DoctorPracticePlatformDefaults.FollowUpDurationMinutes, actorId),
+                id, doctorPracticeId, type, "متابعة", "Follow-up", actorId),
             _ => Result<DoctorPracticeVisitType>.Fail(DoctorPracticeVisitTypeErrors.Invalid)
         };
 
@@ -242,34 +237,31 @@ public sealed class DoctorPracticeVisitType : AggregateRoot<Guid>, IAuditableEnt
         DoctorPracticeVisitTypeCode type,
         string nameAr,
         string? nameEn,
-        int durationMinutes,
         Guid? actorId = null)
     {
         var normalizedAr = nameAr?.Trim() ?? string.Empty;
         var normalizedEn = string.IsNullOrWhiteSpace(nameEn) ? null : nameEn.Trim();
-        return !IsValid(id, doctorPracticeId, type, normalizedAr, normalizedEn, durationMinutes)
+        return !IsValid(id, doctorPracticeId, type, normalizedAr, normalizedEn)
             ? Result<DoctorPracticeVisitType>.Fail(DoctorPracticeVisitTypeErrors.Invalid)
             : Result<DoctorPracticeVisitType>.Ok(new DoctorPracticeVisitType(
-                id, doctorPracticeId, type, normalizedAr, normalizedEn, durationMinutes, actorId));
+                id, doctorPracticeId, type, normalizedAr, normalizedEn, actorId));
     }
 
     public Result Update(
         string nameAr,
         string? nameEn,
-        int durationMinutes,
         bool isActive,
         Guid? actorId = null)
     {
         var normalizedAr = nameAr?.Trim() ?? string.Empty;
         var normalizedEn = string.IsNullOrWhiteSpace(nameEn) ? null : nameEn.Trim();
-        if (!IsValid(Id, DoctorPracticeId, Type, normalizedAr, normalizedEn, durationMinutes))
+        if (!IsValid(Id, DoctorPracticeId, Type, normalizedAr, normalizedEn))
         {
             return Result.Fail(DoctorPracticeVisitTypeErrors.Invalid);
         }
 
         NameAr = normalizedAr;
         NameEn = normalizedEn;
-        DurationMinutes = durationMinutes;
         IsActive = isActive;
         ModifiedByApplicationUserId = actorId;
         return Result.Ok();
@@ -280,11 +272,9 @@ public sealed class DoctorPracticeVisitType : AggregateRoot<Guid>, IAuditableEnt
         Guid doctorPracticeId,
         DoctorPracticeVisitTypeCode type,
         string nameAr,
-        string? nameEn,
-        int durationMinutes)
+        string? nameEn)
         => id != Guid.Empty && doctorPracticeId != Guid.Empty && Enum.IsDefined(type) &&
-           nameAr.Length is > 0 and <= 200 && nameEn?.Length <= 200 &&
-           durationMinutes is >= 5 and <= 480;
+           nameAr.Length is > 0 and <= 200 && nameEn?.Length <= 200;
 }
 
 public sealed class DoctorPracticeSegmentVisitTypePrice : AggregateRoot<Guid>, IAuditableEntity

@@ -11,6 +11,9 @@ public static class DoctorErrors
     public static Error NationalIdAlreadyExists => Error.Conflict("Doctor.NationalIdAlreadyExists", ErrorMessage.DoctorNationalIdAlreadyExists);
     public static Error MediaNotFound => Error.NotFound("Doctor.MediaNotFound", ErrorMessage.DoctorMediaNotFound);
     public static Error ReasonRequired => Error.Validation("Doctor.ReasonRequired", ErrorMessage.ReasonRequired);
+    public static Error InvalidBio => Error.Validation(
+        "Doctor.InvalidBio",
+        ErrorMessage.DoctorInvalidBio);
     public static Error ConcurrencyConflict => Error.Conflict("Doctor.ConcurrencyConflict", ErrorMessage.InvalidRowVersion);
 }
 

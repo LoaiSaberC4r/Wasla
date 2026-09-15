@@ -10,7 +10,7 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Doctor Practices Operational Foundation
+**Current Stage:** Public Doctor/Practice Discovery and Availability (Phase 9)
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root
@@ -20,7 +20,10 @@ durable email outbox are implemented.
 The operational model is practice-scoped: one Doctor can own multiple
 `DoctorPractice` records, each with independent location, configuration,
 branding/logo, schedule and exceptions, segments, visit types, pricing, and
-Reception assignments.
+Reception assignments. Public discovery now exposes automatically eligible
+Doctors, all active Practices, exact base consultation pricing, Doctor-owned Bio
+and Qualifications, and Practice-local availability. Phase 10 Reservation is not
+implemented.
 
 The initial repository baseline is based on the reusable technical foundation from:
 
@@ -118,23 +121,47 @@ Reception authorization is always server-side and practice-scoped:
 
 ```text
 Authenticated user
-    + Reception role/relevant permission
+    + active Reception identity
+    + Approved Doctor with active account
+    + active Practice owned by that Doctor
     + active ReceptionPracticeAssignment
+    + global role permission
     + assignment-specific permission
 ```
 
 Selecting a current practice in a client never grants access by itself.
 
 `Normal`/`VIP` are Segments (and own queue priority); `NewConsultation`/`FollowUp`
-are Visit Types (and own visit duration). Prices are defined by the complete
-Practice + Segment + Visit Type tuple. Future Reservations must snapshot these
-names, priority, and price so later catalog changes do not rewrite history.
+are Visit Types. Appointment duration comes only from the effective schedule
+period's `SlotDurationMinutes`; a Visit Type has no duration. Prices are defined
+by the complete Practice + Segment + Visit Type tuple. Future Reservations must
+snapshot these names, priority, and price so later catalog changes do not rewrite
+history.
 
 Follow-up eligibility remains intentionally deferred until Medical Encounters
 exist. The confirmed rule is: only a completed encounter can let the Doctor open
 a time-limited, single-use eligibility, progressing through Available → Reserved
 → Completed → Consumed. Prior attendance alone never grants unlimited follow-up
 access.
+
+### Public Discovery
+
+Anonymous Phase 9 reads are available at:
+
+- `GET /api/v1/public/specializations`
+- `GET /api/v1/public/doctors`
+- `GET /api/v1/public/doctors/{doctorId}`
+- `GET /api/v1/public/doctors/{doctorId}/profile-image`
+- `GET /api/v1/public/practices/{practiceId}/logo`
+- `GET /api/v1/public/practices/{practiceId}/available-dates`
+- `GET /api/v1/public/practices/{practiceId}/available-slots?date=...`
+- `GET /api/v1/public/practices/{practiceId}/booking-options?date=...&time=...`
+
+`PublicSearchPrice` always means the active Normal Segment plus active
+NewConsultation Visit Type price. Availability includes only currently available
+slots across a 30-day horizon (Practice-local today plus 29 days). Returned date,
+time and `IsToday` values use the Practice's configured timezone. FollowUp is
+withheld from anonymous booking options until real clinical eligibility exists.
 
 ### Patient is Platform-Global
 

@@ -188,4 +188,14 @@
   <data name="ReceptionAssignmentAccessDenied" xml:space="preserve"><value>موظف الاستقبال غير مكلف بالصلاحية المطلوبة لهذه العيادة.</value></data>
   <data name="ReceptionAssignmentInvalidPermission" xml:space="preserve"><value>واحدة أو أكثر من صلاحيات التكليف غير صحيحة.</value></data>
   <data name="ReceptionAssignmentConcurrencyConflict" xml:space="preserve"><value>تم تعديل تكليف موظف الاستقبال بواسطة طلب آخر.</value></data>
+  <data name="DoctorInvalidBio" xml:space="preserve"><value>يجب أن تكون نبذة الطبيب نصاً عادياً وألا تتجاوز 2000 حرف.</value></data>
+  <data name="DoctorQualificationInvalid" xml:space="preserve"><value>بيانات مؤهل الطبيب غير صحيحة.</value></data>
+  <data name="DoctorQualificationNotFound" xml:space="preserve"><value>مؤهل الطبيب غير موجود.</value></data>
+  <data name="DoctorQualificationConcurrencyConflict" xml:space="preserve"><value>تم تعديل مؤهل الطبيب بواسطة طلب آخر.</value></data>
+  <data name="PublicDoctorNotFound" xml:space="preserve"><value>الطبيب غير متاح في البحث العام.</value></data>
+  <data name="PublicPracticeNotFound" xml:space="preserve"><value>العيادة غير متاحة في البحث العام.</value></data>
+  <data name="PublicPracticeNotBookable" xml:space="preserve"><value>العيادة غير متاحة حالياً للحجز عبر الإنترنت.</value></data>
+  <data name="PublicDateOutsideHorizon" xml:space="preserve"><value>يجب أن يكون التاريخ المطلوب ضمن نطاق الحجز العام البالغ 30 يوماً.</value></data>
+  <data name="PublicSlotUnavailable" xml:space="preserve"><value>الموعد المطلوب غير متاح حالياً.</value></data>
+  <data name="PublicMediaNotFound" xml:space="preserve"><value>الملف العام المطلوب غير موجود.</value></data>
 </root>

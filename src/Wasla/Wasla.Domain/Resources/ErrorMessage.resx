@@ -188,4 +188,14 @@
   <data name="ReceptionAssignmentAccessDenied" xml:space="preserve"><value>The receptionist is not assigned the required permission for this practice.</value></data>
   <data name="ReceptionAssignmentInvalidPermission" xml:space="preserve"><value>One or more assignment permissions are invalid.</value></data>
   <data name="ReceptionAssignmentConcurrencyConflict" xml:space="preserve"><value>The reception assignment was changed by another request.</value></data>
+  <data name="DoctorInvalidBio" xml:space="preserve"><value>Doctor bio must be plain text and no longer than 2000 characters.</value></data>
+  <data name="DoctorQualificationInvalid" xml:space="preserve"><value>The doctor qualification is invalid.</value></data>
+  <data name="DoctorQualificationNotFound" xml:space="preserve"><value>The doctor qualification was not found.</value></data>
+  <data name="DoctorQualificationConcurrencyConflict" xml:space="preserve"><value>The doctor qualification was changed by another request.</value></data>
+  <data name="PublicDoctorNotFound" xml:space="preserve"><value>The doctor is not available for public discovery.</value></data>
+  <data name="PublicPracticeNotFound" xml:space="preserve"><value>The practice is not available for public discovery.</value></data>
+  <data name="PublicPracticeNotBookable" xml:space="preserve"><value>The practice is not currently bookable online.</value></data>
+  <data name="PublicDateOutsideHorizon" xml:space="preserve"><value>The requested date must be inside the 30-day public booking horizon.</value></data>
+  <data name="PublicSlotUnavailable" xml:space="preserve"><value>The requested slot is not currently available.</value></data>
+  <data name="PublicMediaNotFound" xml:space="preserve"><value>The requested public media was not found.</value></data>
 </root>

@@ -357,6 +357,74 @@ public sealed class DoctorOnboardingApiTests
     }
 
     [Fact]
+    public async Task Doctor_can_manage_own_public_profile_but_not_another_doctors_qualifications()
+    {
+        await using var factory = await OnboardingApiFactory.CreateAsync();
+        var testToken = TestContext.Current.CancellationToken;
+        await SeedApprovedDoctorAsync(factory, "profile-doctor-a", "profile-a@example.test", testToken);
+        await SeedApprovedDoctorAsync(factory, "profile-doctor-b", "profile-b@example.test", testToken);
+
+        using var doctorA = factory.CreateClient();
+        doctorA.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await LoginAsync(doctorA, "profile-doctor-a", "DoctorPass123!", testToken));
+        using var doctorB = factory.CreateClient();
+        doctorB.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", await LoginAsync(doctorB, "profile-doctor-b", "DoctorPass123!", testToken));
+
+        var profile = await doctorA.GetFromJsonAsync<JsonElement>("/api/v1/doctors/me/profile", testToken);
+        var bioResponse = await doctorA.PutAsJsonAsync(
+            "/api/v1/doctors/me/profile/bio",
+            new { bio = "استشاري قلب", rowVersion = profile.GetProperty("rowVersion").GetString() },
+            testToken);
+        Assert.Equal(HttpStatusCode.OK, bioResponse.StatusCode);
+        Assert.Equal("استشاري قلب", (await ReadJsonAsync(bioResponse, testToken)).GetProperty("bio").GetString());
+
+        var createResponse = await doctorA.PostAsJsonAsync(
+            "/api/v1/doctors/me/qualifications",
+            new { nameAr = "دكتوراه", nameEn = (string?)null, displayOrder = 2 },
+            testToken);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var qualification = await ReadJsonAsync(createResponse, testToken);
+        var qualificationId = qualification.GetProperty("id").GetGuid();
+
+        Assert.Equal(HttpStatusCode.NotFound, (await doctorB.PutAsJsonAsync(
+            $"/api/v1/doctors/me/qualifications/{qualificationId}",
+            new
+            {
+                nameAr = "محاولة تعديل",
+                nameEn = "Denied",
+                displayOrder = 1,
+                rowVersion = qualification.GetProperty("rowVersion").GetString()
+            },
+            testToken)).StatusCode);
+
+        var updateResponse = await doctorA.PutAsJsonAsync(
+            $"/api/v1/doctors/me/qualifications/{qualificationId}",
+            new
+            {
+                nameAr = "زمالة",
+                nameEn = "Fellowship",
+                displayOrder = 1,
+                rowVersion = qualification.GetProperty("rowVersion").GetString()
+            },
+            testToken);
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+        var updated = await ReadJsonAsync(updateResponse, testToken);
+        using var delete = new HttpRequestMessage(
+            HttpMethod.Delete, $"/api/v1/doctors/me/qualifications/{qualificationId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                rowVersion = updated.GetProperty("rowVersion").GetString()
+            })
+        };
+        Assert.Equal(HttpStatusCode.NoContent, (await doctorA.SendAsync(delete, testToken)).StatusCode);
+        var qualifications = await doctorA.GetFromJsonAsync<JsonElement>(
+            "/api/v1/doctors/me/qualifications", testToken);
+        Assert.Empty(qualifications.EnumerateArray());
+    }
+
+    [Fact]
     public async Task OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope()
     {
         await using var factory = await OnboardingApiFactory.CreateAsync();
@@ -384,10 +452,11 @@ public sealed class DoctorOnboardingApiTests
             doctorA, "عيادة القاهرة", governorateId, cityId, areaId, testToken);
         var shebin = await CreatePracticeAsync(
             doctorA, "عيادة شبين", governorateId, cityId, areaId, testToken);
-        _ = await CreatePracticeAsync(
+        var otherPractice = await CreatePracticeAsync(
             doctorB, "عيادة طبيب آخر", governorateId, cityId, areaId, testToken);
         var cairoId = cairo.GetProperty("id").GetGuid();
         var shebinId = shebin.GetProperty("id").GetGuid();
+        var otherPracticeId = otherPractice.GetProperty("id").GetGuid();
 
         Assert.False(cairo.GetProperty("isActive").GetBoolean());
         Assert.Equal(
@@ -511,10 +580,12 @@ public sealed class DoctorOnboardingApiTests
             doctorPracticeId = cairoId,
             permissionIds = new[] { searchPermissionId }
         };
-        Assert.Equal(HttpStatusCode.Created, (await doctorA.PostAsJsonAsync(
+        var cairoAssignmentResponse = await doctorA.PostAsJsonAsync(
             $"/api/v1/doctors/me/receptions/{receptionId}/assignments",
             cairoAssignmentRequest,
-            testToken)).StatusCode);
+            testToken);
+        Assert.Equal(HttpStatusCode.Created, cairoAssignmentResponse.StatusCode);
+        var cairoAssignment = await ReadJsonAsync(cairoAssignmentResponse, testToken);
         Assert.Equal(HttpStatusCode.Conflict, (await doctorA.PostAsJsonAsync(
             $"/api/v1/doctors/me/receptions/{receptionId}/assignments",
             cairoAssignmentRequest,
@@ -537,17 +608,113 @@ public sealed class DoctorOnboardingApiTests
         receptionClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer", await LoginAsync(
                 receptionClient, "scoped-reception", "ReceptionPass456!", testToken));
+        var receptionMe = await receptionClient.GetFromJsonAsync<JsonElement>("/api/v1/auth/me", testToken);
+        Assert.DoesNotContain(
+            receptionMe.GetProperty("permissions").EnumerateArray(),
+            item => item.GetString()?.Contains("Revenue", StringComparison.OrdinalIgnoreCase) == true);
 
         Assert.Equal(HttpStatusCode.OK, (await receptionClient.GetAsync(
             $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
             $"/api/v1/patients/search?doctorPracticeId={shebinId}", testToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={otherPracticeId}", testToken)).StatusCode);
+
+        var assignmentId = cairoAssignment.GetProperty("id").GetGuid();
+        var deactivatedAssignmentResponse = await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/receptions/{receptionId}/assignments/{assignmentId}/deactivate",
+            new { rowVersion = cairoAssignment.GetProperty("rowVersion").GetString() },
+            testToken);
+        Assert.Equal(HttpStatusCode.OK, deactivatedAssignmentResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
+        var deactivatedAssignment = await ReadJsonAsync(deactivatedAssignmentResponse, testToken);
+        var reactivatedAssignmentResponse = await doctorA.PostAsJsonAsync(
+            $"/api/v1/doctors/me/receptions/{receptionId}/assignments/{assignmentId}/activate",
+            new { rowVersion = deactivatedAssignment.GetProperty("rowVersion").GetString() },
+            testToken);
+        Assert.Equal(HttpStatusCode.OK, reactivatedAssignmentResponse.StatusCode);
+        var reactivatedAssignment = await ReadJsonAsync(reactivatedAssignmentResponse, testToken);
+
+        var paymentPermissionId = SystemPermissionIds.For(PermissionNames.PracticePaymentsRecord);
+        var wrongPermissionResponse = await doctorA.PutAsJsonAsync(
+            $"/api/v1/doctors/me/receptions/{receptionId}/assignments/{assignmentId}",
+            new
+            {
+                permissionIds = new[] { paymentPermissionId },
+                rowVersion = reactivatedAssignment.GetProperty("rowVersion").GetString()
+            },
+            testToken);
+        Assert.Equal(HttpStatusCode.OK, wrongPermissionResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
+        var wrongPermissionAssignment = await ReadJsonAsync(wrongPermissionResponse, testToken);
+        var restoredPermissionResponse = await doctorA.PutAsJsonAsync(
+            $"/api/v1/doctors/me/receptions/{receptionId}/assignments/{assignmentId}",
+            new
+            {
+                permissionIds = new[] { searchPermissionId },
+                rowVersion = wrongPermissionAssignment.GetProperty("rowVersion").GetString()
+            },
+            testToken);
+        Assert.Equal(HttpStatusCode.OK, restoredPermissionResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
+            var receptionUser = await db.ApplicationUsers.SingleAsync(
+                item => item.UserName == "scoped-reception", testToken);
+            receptionUser.Deactivate();
+            await db.SaveChangesAsync(testToken);
+        }
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
+            var receptionUser = await db.ApplicationUsers.SingleAsync(
+                item => item.UserName == "scoped-reception", testToken);
+            receptionUser.Activate();
+            var doctorUser = await db.ApplicationUsers.SingleAsync(
+                item => item.UserName == "practice-doctor-a", testToken);
+            doctorUser.Deactivate();
+            await db.SaveChangesAsync(testToken);
+        }
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
+            var doctorUser = await db.ApplicationUsers.SingleAsync(
+                item => item.UserName == "practice-doctor-a", testToken);
+            doctorUser.Activate();
+            var doctor = await db.Doctors.SingleAsync(
+                item => item.ApplicationUserId == doctorUser.Id, testToken);
+            Assert.True(doctor.Suspend("closure test", doctorUser.Id, DateTime.UtcNow).IsSuccess);
+            await db.SaveChangesAsync(testToken);
+        }
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
+            var doctorUser = await db.ApplicationUsers.SingleAsync(
+                item => item.UserName == "practice-doctor-a", testToken);
+            var doctor = await db.Doctors.SingleAsync(
+                item => item.ApplicationUserId == doctorUser.Id, testToken);
+            Assert.True(doctor.Reactivate(doctorUser.Id, DateTime.UtcNow).IsSuccess);
+            await db.SaveChangesAsync(testToken);
+        }
+        Assert.Equal(HttpStatusCode.OK, (await receptionClient.GetAsync(
+            $"/api/v1/patients/search?doctorPracticeId={cairoId}", testToken)).StatusCode);
 
         Assert.Equal(HttpStatusCode.Created, (await doctorA.PostAsJsonAsync(
             $"/api/v1/doctors/me/receptions/{receptionId}/assignments",
             new { doctorPracticeId = shebinId, permissionIds = new[] { searchPermissionId } },
             testToken)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await receptionClient.GetAsync(
+        Assert.Equal(HttpStatusCode.Forbidden, (await receptionClient.GetAsync(
             $"/api/v1/patients/search?doctorPracticeId={shebinId}", testToken)).StatusCode);
         var receptionPractices = await receptionClient.GetFromJsonAsync<JsonElement>(
             "/api/v1/reception/practices", testToken);

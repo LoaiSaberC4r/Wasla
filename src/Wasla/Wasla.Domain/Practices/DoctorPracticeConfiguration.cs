@@ -17,8 +17,6 @@ public static class DoctorPracticePlatformDefaults
     public const string SecondaryColor = "#64CCC5";
     public const string BackgroundColor = "#FFFFFF";
     public const string TextColor = "#102A43";
-    public const int NewConsultationDurationMinutes = 30;
-    public const int FollowUpDurationMinutes = 15;
 }
 
 public sealed class DoctorPracticeConfiguration : AggregateRoot<Guid>, IAuditableEntity

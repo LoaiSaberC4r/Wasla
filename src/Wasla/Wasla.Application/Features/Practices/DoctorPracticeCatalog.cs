@@ -25,7 +25,6 @@ public sealed record DoctorPracticeVisitTypeResponse(
     DoctorPracticeVisitTypeCode Type,
     string NameAr,
     string? NameEn,
-    int DurationMinutes,
     bool IsActive,
     string RowVersion);
 
@@ -65,7 +64,6 @@ public sealed record UpdateDoctorPracticeVisitTypeCommand(
     Guid VisitTypeId,
     string NameAr,
     string? NameEn,
-    int DurationMinutes,
     bool IsActive,
     string RowVersion)
     : ICommand<DoctorPracticeVisitTypeResponse>, ITransactionalCommand<WaslaWritePersistence>;
@@ -138,7 +136,6 @@ internal sealed class UpdateDoctorPracticeVisitTypeCommandValidator
         RuleFor(command => command.VisitTypeId).NotEmpty();
         RuleFor(command => command.NameAr).NotEmpty().MaximumLength(200);
         RuleFor(command => command.NameEn).MaximumLength(200);
-        RuleFor(command => command.DurationMinutes).InclusiveBetween(5, 480);
         RuleFor(command => command.RowVersion).Must(RowVersionCodec.IsValid);
     }
 }
@@ -317,7 +314,7 @@ internal sealed class UpdateDoctorPracticeVisitTypeCommandHandler(
         }
 
         var updated = visitType.Update(
-            request.NameAr, request.NameEn, request.DurationMinutes, request.IsActive, access.Value.ActorId);
+            request.NameAr, request.NameEn, request.IsActive, access.Value.ActorId);
         if (updated.IsFailure)
         {
             return Result<DoctorPracticeVisitTypeResponse>.Fail(updated.Errors);
@@ -485,8 +482,8 @@ internal static class DoctorPracticeCatalogMapper
             item.QuotaReleaseBeforeMinutes, item.IsDefault, item.IsActive, RowVersionCodec.Encode(item.RowVersion));
 
     public static DoctorPracticeVisitTypeResponse Map(DoctorPracticeVisitType item)
-        => new(item.Id, item.Type, item.NameAr, item.NameEn, item.DurationMinutes,
-            item.IsActive, RowVersionCodec.Encode(item.RowVersion));
+        => new(item.Id, item.Type, item.NameAr, item.NameEn, item.IsActive,
+            RowVersionCodec.Encode(item.RowVersion));
 
     public static DoctorPracticePriceResponse Map(DoctorPracticeSegmentVisitTypePrice item)
         => new(item.Id, item.SegmentId, item.VisitTypeId, item.Price, RowVersionCodec.Encode(item.RowVersion));

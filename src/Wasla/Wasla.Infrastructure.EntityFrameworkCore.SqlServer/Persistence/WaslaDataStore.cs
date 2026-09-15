@@ -107,6 +107,22 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
         => dbContext.Doctors.AsNoTracking()
             .SingleOrDefaultAsync(doctor => doctor.ApplicationUserId == applicationUserId, cancellationToken);
 
+    public async Task<IReadOnlyList<DoctorQualification>> ListDoctorQualificationsAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken)
+        => await dbContext.DoctorQualifications.AsNoTracking()
+            .Where(item => item.DoctorId == doctorId)
+            .OrderBy(item => item.DisplayOrder)
+            .ThenBy(item => item.Id)
+            .ToListAsync(cancellationToken);
+
+    public Task<DoctorQualification?> FindDoctorQualificationAsync(
+        Guid qualificationId,
+        CancellationToken cancellationToken)
+        => dbContext.DoctorQualifications.SingleOrDefaultAsync(
+            item => item.Id == qualificationId,
+            cancellationToken);
+
     public Task<Patient?> FindPatientByUserIdAsync(Guid applicationUserId, CancellationToken cancellationToken)
         => (from link in dbContext.PatientAccountLinks
             join patient in dbContext.Patients on link.PatientId equals patient.Id
@@ -955,21 +971,38 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
         await dbContext.ReceptionPracticeAssignmentPermissions.AddRangeAsync(replacements, cancellationToken);
     }
 
-    public Task<bool> HasReceptionPracticePermissionAsync(
+    public Task<bool> HasReceptionPracticeAccessAsync(
         Guid applicationUserId,
         Guid practiceId,
         string permissionName,
         CancellationToken cancellationToken)
-        => (from reception in dbContext.Receptions.AsNoTracking()
+        => (from user in dbContext.ApplicationUsers.AsNoTracking()
+            join reception in dbContext.Receptions.AsNoTracking()
+                on user.Id equals reception.ApplicationUserId
+            join doctor in dbContext.Doctors.AsNoTracking()
+                on reception.OwnerDoctorId equals doctor.Id
+            join doctorUser in dbContext.ApplicationUsers.AsNoTracking()
+                on doctor.ApplicationUserId equals doctorUser.Id
+            join practice in dbContext.DoctorPractices.AsNoTracking()
+                on doctor.Id equals practice.DoctorId
             join assignment in dbContext.ReceptionPracticeAssignments.AsNoTracking()
-                on reception.Id equals assignment.ReceptionId
+                on new { ReceptionId = reception.Id, DoctorPracticeId = practice.Id }
+                equals new { assignment.ReceptionId, assignment.DoctorPracticeId }
             join assignmentPermission in dbContext.ReceptionPracticeAssignmentPermissions.AsNoTracking()
                 on assignment.Id equals assignmentPermission.AssignmentId
             join permission in dbContext.Permissions.AsNoTracking()
                 on assignmentPermission.PermissionId equals permission.Id
-            where reception.ApplicationUserId == applicationUserId &&
-                  assignment.DoctorPracticeId == practiceId && assignment.IsActive &&
-                  permission.Name == permissionName
+            where user.Id == applicationUserId && user.UserType == UserType.Reception &&
+                  user.IsActive && !user.IsFirstLogin && doctorUser.IsActive &&
+                  doctor.ApprovalStatus == DoctorApprovalStatus.Approved &&
+                  practice.Id == practiceId && practice.IsActive && assignment.IsActive &&
+                  permission.Name == permissionName &&
+                  (from userRole in dbContext.UserRoles.AsNoTracking()
+                   join rolePermission in dbContext.RolePermissions.AsNoTracking()
+                       on userRole.RoleId equals rolePermission.RoleId
+                   where userRole.ApplicationUserId == user.Id &&
+                         rolePermission.PermissionId == permission.Id
+                   select userRole.ApplicationUserId).Any()
             select assignment.Id).AnyAsync(cancellationToken);
 
     public void Add<TEntity>(TEntity entity) where TEntity : class

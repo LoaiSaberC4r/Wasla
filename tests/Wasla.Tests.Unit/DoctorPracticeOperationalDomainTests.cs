@@ -1,4 +1,6 @@
 using System.Globalization;
+using Wasla.Domain.Common;
+using Wasla.Domain.Doctors;
 using Wasla.Domain.Practices;
 
 namespace Wasla.Tests.Unit;
@@ -147,6 +149,113 @@ public sealed class DoctorPracticeOperationalDomainTests
         Assert.Equal(reception.Id, cairo.ReceptionId);
         Assert.Equal(reception.Id, shebin.ReceptionId);
         Assert.NotEqual(cairo.DoctorPracticeId, shebin.DoctorPracticeId);
+    }
+
+    [Fact]
+    public void Visit_types_do_not_own_slot_duration_and_configuration_keeps_setup_default()
+    {
+        var practiceId = Guid.NewGuid();
+        var configuration = DoctorPracticeConfiguration.CreateDefault(
+            Guid.NewGuid(), practiceId, ActorId).Value;
+        var newConsultation = DoctorPracticeVisitType.CreateDefault(
+            Guid.NewGuid(), practiceId, DoctorPracticeVisitTypeCode.NewConsultation, ActorId).Value;
+        var followUp = DoctorPracticeVisitType.CreateDefault(
+            Guid.NewGuid(), practiceId, DoctorPracticeVisitTypeCode.FollowUp, ActorId).Value;
+
+        Assert.Null(typeof(DoctorPracticeVisitType).GetProperty("DurationMinutes"));
+        Assert.Equal(20, configuration.DefaultSlotDurationMinutes);
+        Assert.Equal("كشف جديد", newConsultation.NameAr);
+        Assert.Equal("متابعة", followUp.NameAr);
+    }
+
+    [Fact]
+    public void Schedule_period_duration_is_the_only_source_of_slot_boundaries()
+    {
+        var date = new DateOnly(2026, 9, 26);
+        var period = DoctorPracticeSchedulePeriod.Create(
+            Guid.NewGuid(), Guid.NewGuid(), DayOfWeek.Saturday,
+            new TimeOnly(17, 0), new TimeOnly(20, 0), 20, ActorId).Value;
+
+        var slots = DoctorPracticeAvailabilityCalculator.CalculateAvailableSlotStarts(
+            date, [period], []);
+
+        Assert.Equal(
+            [
+                new TimeOnly(17, 0), new TimeOnly(17, 20), new TimeOnly(17, 40),
+                new TimeOnly(18, 0), new TimeOnly(18, 20), new TimeOnly(18, 40),
+                new TimeOnly(19, 0), new TimeOnly(19, 20), new TimeOnly(19, 40)
+            ],
+            slots);
+    }
+
+    [Fact]
+    public void Day_off_custom_hours_and_blocked_ranges_apply_to_the_original_slot_grid()
+    {
+        var practiceId = Guid.NewGuid();
+        var date = new DateOnly(2026, 9, 26);
+        var recurring = DoctorPracticeSchedulePeriod.Create(
+            Guid.NewGuid(), practiceId, DayOfWeek.Saturday,
+            new TimeOnly(10, 0), new TimeOnly(12, 0), 20, ActorId).Value;
+        var custom = DoctorPracticeScheduleException.Create(
+            Guid.NewGuid(), practiceId, date, DoctorPracticeScheduleExceptionType.CustomWorkingHours,
+            new TimeOnly(17, 0), new TimeOnly(18, 20), 20, ActorId).Value;
+        var blocked = DoctorPracticeScheduleException.Create(
+            Guid.NewGuid(), practiceId, date, DoctorPracticeScheduleExceptionType.BlockedTimeRange,
+            new TimeOnly(17, 25), new TimeOnly(17, 45), null, ActorId).Value;
+        var dayOff = DoctorPracticeScheduleException.Create(
+            Guid.NewGuid(), practiceId, date, DoctorPracticeScheduleExceptionType.DayOff,
+            null, null, null, ActorId).Value;
+
+        var customSlots = DoctorPracticeAvailabilityCalculator.CalculateAvailableSlotStarts(
+            date, [recurring], [custom, blocked]);
+        var noSlots = DoctorPracticeAvailabilityCalculator.CalculateAvailableSlotStarts(
+            date, [recurring], [custom, dayOff]);
+
+        Assert.Equal([new TimeOnly(17, 0), new TimeOnly(18, 0)], customSlots);
+        Assert.Empty(noSlots);
+    }
+
+    [Fact]
+    public void Arabic_name_normalization_is_searchable_without_collapsing_taa_marbuta()
+    {
+        Assert.Equal("احمد", DoctorNameNormalizer.NormalizeArabic("  أَحْـمَد  "));
+        Assert.Equal("علي", DoctorNameNormalizer.NormalizeArabic("على"));
+        Assert.Equal("منة", DoctorNameNormalizer.NormalizeArabic("منة"));
+        Assert.NotEqual(
+            DoctorNameNormalizer.NormalizeArabic("منة"),
+            DoctorNameNormalizer.NormalizeArabic("منه"));
+        Assert.Equal("sara adel", DoctorNameNormalizer.NormalizeEnglish("  SARA   Adel "));
+    }
+
+    [Fact]
+    public void Doctor_bio_is_plain_text_and_qualification_has_bilingual_ordered_content()
+    {
+        var doctor = Doctor.Create(
+            DoctorId,
+            Guid.NewGuid(),
+            "أحمد علي",
+            "Ahmed Ali",
+            new DateOnly(1985, 1, 1),
+            Gender.Male,
+            null,
+            "personal-front",
+            "personal-back",
+            "syndicate-front",
+            null,
+            new DateOnly(2026, 9, 15)).Value;
+        var qualification = DoctorQualification.Create(
+            Guid.NewGuid(), doctor.Id, "دكتوراه القلب", null, 3, ActorId).Value;
+
+        Assert.True(doctor.UpdateBio("  استشاري أمراض القلب\nخبرة 15 سنة  ", ActorId).IsSuccess);
+        Assert.Equal("استشاري أمراض القلب\nخبرة 15 سنة", doctor.Bio);
+        Assert.True(doctor.UpdateBio("<b>unsafe</b>", ActorId).IsFailure);
+        Assert.Equal("دكتوراه القلب", qualification.NameAr);
+        Assert.Null(qualification.NameEn);
+        Assert.Equal(3, qualification.DisplayOrder);
+        Assert.True(qualification.Update("زمالة القلب", "Cardiology fellowship", 1, ActorId).IsSuccess);
+        Assert.Equal(1, qualification.DisplayOrder);
+        Assert.True(DoctorQualification.Create(
+            Guid.NewGuid(), doctor.Id, " ", null, 0, ActorId).IsFailure);
     }
 
     private static DoctorPractice CreatePractice(string nameAr)

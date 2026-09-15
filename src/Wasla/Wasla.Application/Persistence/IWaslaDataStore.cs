@@ -97,6 +97,12 @@ public interface IWaslaDataStore
     Task<UserAccessSnapshot?> GetAccessSnapshotAsync(Guid applicationUserId, CancellationToken cancellationToken);
     Task<Doctor?> FindDoctorByIdAsync(Guid doctorId, CancellationToken cancellationToken);
     Task<Doctor?> FindDoctorByUserIdAsync(Guid applicationUserId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<DoctorQualification>> ListDoctorQualificationsAsync(
+        Guid doctorId,
+        CancellationToken cancellationToken);
+    Task<DoctorQualification?> FindDoctorQualificationAsync(
+        Guid qualificationId,
+        CancellationToken cancellationToken);
     Task<Patient?> FindPatientByUserIdAsync(Guid applicationUserId, CancellationToken cancellationToken);
     Task<Patient?> FindPatientByIdAsync(Guid patientId, CancellationToken cancellationToken);
     Task<PatientAccountLink?> FindPatientAccountLinkAsync(Guid applicationUserId, CancellationToken cancellationToken);
@@ -273,7 +279,7 @@ public interface IWaslaDataStore
         Guid assignmentId,
         IReadOnlyCollection<ReceptionPracticeAssignmentPermission> replacements,
         CancellationToken cancellationToken);
-    Task<bool> HasReceptionPracticePermissionAsync(
+    Task<bool> HasReceptionPracticeAccessAsync(
         Guid applicationUserId,
         Guid practiceId,
         string permissionName,

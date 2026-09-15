@@ -6,6 +6,7 @@ using Wasla.Application.Email;
 using Wasla.Application.Features.Doctors;
 using Wasla.Application.Features.Families;
 using Wasla.Application.Features.Practices;
+using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Domain.Families;
 
 namespace Wasla.Application;
@@ -27,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<DoctorLifecycleService>();
         services.AddScoped<FamilyRelationshipWorkflowService>();
         services.AddScoped<IReceptionPracticeAuthorizationService, ReceptionPracticeAuthorizationService>();
+        services.AddSingleton<IPracticeReservationOccupancyReader, EmptyPracticeReservationOccupancyReader>();
+        services.AddSingleton<IPublicDoctorPopularityReader, EmptyPublicDoctorPopularityReader>();
         services.AddSingleton<IPatientAccessPolicy, PatientAccessPolicy>();
         services.AddSingleton<IEmailNotificationFactory, BilingualEmailNotificationFactory>();
 

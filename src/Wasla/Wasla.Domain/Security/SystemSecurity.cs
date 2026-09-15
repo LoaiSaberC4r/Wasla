@@ -28,6 +28,8 @@ public static class PermissionNames
     public const string PermissionsView = "Permissions.View";
     public const string RolePermissionsManage = "RolePermissions.Manage";
     public const string DoctorOnboardingViewOwn = "DoctorOnboarding.ViewOwn";
+    public const string DoctorProfileViewOwn = "DoctorProfile.ViewOwn";
+    public const string DoctorProfileUpdateOwn = "DoctorProfile.UpdateOwn";
     public const string PatientProfileViewOwn = "PatientProfile.ViewOwn";
     public const string SuperAdminsViewAll = "SuperAdmins.ViewAll";
     public const string SuperAdminsViewDetails = "SuperAdmins.ViewDetails";
@@ -185,7 +187,9 @@ public static class PermissionNames
         PracticeReservationsManage,
         PracticeQueueManage,
         PracticePaymentsRecord,
-        PracticeWalkInsCreate
+        PracticeWalkInsCreate,
+        DoctorProfileViewOwn,
+        DoctorProfileUpdateOwn
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

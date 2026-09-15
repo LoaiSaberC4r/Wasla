@@ -129,6 +129,16 @@ public static class ErrorMessage
     public static string FamilyRelationshipRequestRequesterInvalid => GetString(nameof(FamilyRelationshipRequestRequesterInvalid));
     public static string FamilyRelationshipRequestOpenAlreadyExists => GetString(nameof(FamilyRelationshipRequestOpenAlreadyExists));
     public static string FamilyRelationshipDocumentNotFound => GetString(nameof(FamilyRelationshipDocumentNotFound));
+    public static string DoctorInvalidBio => GetString(nameof(DoctorInvalidBio));
+    public static string DoctorQualificationInvalid => GetString(nameof(DoctorQualificationInvalid));
+    public static string DoctorQualificationNotFound => GetString(nameof(DoctorQualificationNotFound));
+    public static string DoctorQualificationConcurrencyConflict => GetString(nameof(DoctorQualificationConcurrencyConflict));
+    public static string PublicDoctorNotFound => GetString(nameof(PublicDoctorNotFound));
+    public static string PublicPracticeNotFound => GetString(nameof(PublicPracticeNotFound));
+    public static string PublicPracticeNotBookable => GetString(nameof(PublicPracticeNotBookable));
+    public static string PublicDateOutsideHorizon => GetString(nameof(PublicDateOutsideHorizon));
+    public static string PublicSlotUnavailable => GetString(nameof(PublicSlotUnavailable));
+    public static string PublicMediaNotFound => GetString(nameof(PublicMediaNotFound));
     public static string ValidationNotNull => GetString(nameof(ValidationNotNull));
     public static string ValidationNotEmpty => GetString(nameof(ValidationNotEmpty));
     public static string ValidationEmail => GetString(nameof(ValidationEmail));
