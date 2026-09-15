@@ -4,6 +4,7 @@ using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Doctors;
+using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Practices;
 
@@ -211,7 +212,8 @@ internal sealed class GetEffectiveDoctorPracticeScheduleQueryHandler(
 
 internal sealed class CreateDoctorPracticeSchedulePeriodCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
     : ICommandHandler<CreateDoctorPracticeSchedulePeriodCommand, DoctorPracticeSchedulePeriodResponse>
 {
     public async Task<Result<DoctorPracticeSchedulePeriodResponse>> Handle(
@@ -254,6 +256,7 @@ internal sealed class CreateDoctorPracticeSchedulePeriodCommandHandler(
 
         dataStore.Add(period.Value);
         await dataStore.SaveChangesAsync(cancellationToken);
+        await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
         return Result<DoctorPracticeSchedulePeriodResponse>.Ok(DoctorPracticeScheduleMapper.Map(period.Value));
     }
 
@@ -290,7 +293,8 @@ internal sealed class CreateDoctorPracticeSchedulePeriodCommandHandler(
 
 internal sealed class UpdateDoctorPracticeSchedulePeriodCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
     : ICommandHandler<UpdateDoctorPracticeSchedulePeriodCommand, DoctorPracticeSchedulePeriodResponse>
 {
     public async Task<Result<DoctorPracticeSchedulePeriodResponse>> Handle(
@@ -344,13 +348,15 @@ internal sealed class UpdateDoctorPracticeSchedulePeriodCommandHandler(
 
         dataStore.SetOriginalRowVersion(period, supplied.Value);
         await dataStore.SaveChangesAsync(cancellationToken);
+        await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
         return Result<DoctorPracticeSchedulePeriodResponse>.Ok(DoctorPracticeScheduleMapper.Map(period));
     }
 }
 
 internal sealed class DeleteDoctorPracticeSchedulePeriodCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
     : ICommandHandler<DeleteDoctorPracticeSchedulePeriodCommand>
 {
     public async Task<Result> Handle(
@@ -380,13 +386,15 @@ internal sealed class DeleteDoctorPracticeSchedulePeriodCommandHandler(
         dataStore.SetOriginalRowVersion(period, supplied.Value);
         dataStore.Remove(period);
         await dataStore.SaveChangesAsync(cancellationToken);
+        await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
         return Result.Ok();
     }
 }
 
 internal sealed class CreateDoctorPracticeScheduleExceptionCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
     : ICommandHandler<CreateDoctorPracticeScheduleExceptionCommand, DoctorPracticeScheduleExceptionResponse>
 {
     public async Task<Result<DoctorPracticeScheduleExceptionResponse>> Handle(
@@ -425,6 +433,7 @@ internal sealed class CreateDoctorPracticeScheduleExceptionCommandHandler(
 
         dataStore.Add(exception.Value);
         await dataStore.SaveChangesAsync(cancellationToken);
+        await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
         return Result<DoctorPracticeScheduleExceptionResponse>.Ok(DoctorPracticeScheduleMapper.Map(exception.Value));
     }
 
@@ -502,7 +511,8 @@ internal sealed class CreateDoctorPracticeScheduleExceptionCommandHandler(
 
 internal sealed class UpdateDoctorPracticeScheduleExceptionCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
     : ICommandHandler<UpdateDoctorPracticeScheduleExceptionCommand, DoctorPracticeScheduleExceptionResponse>
 {
     public async Task<Result<DoctorPracticeScheduleExceptionResponse>> Handle(
@@ -570,13 +580,15 @@ internal sealed class UpdateDoctorPracticeScheduleExceptionCommandHandler(
 
         dataStore.SetOriginalRowVersion(exception, supplied.Value);
         await dataStore.SaveChangesAsync(cancellationToken);
+        await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
         return Result<DoctorPracticeScheduleExceptionResponse>.Ok(DoctorPracticeScheduleMapper.Map(exception));
     }
 }
 
 internal sealed class DeleteDoctorPracticeScheduleExceptionCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
     : ICommandHandler<DeleteDoctorPracticeScheduleExceptionCommand>
 {
     public async Task<Result> Handle(
@@ -607,6 +619,7 @@ internal sealed class DeleteDoctorPracticeScheduleExceptionCommandHandler(
         dataStore.SetOriginalRowVersion(exception, supplied.Value);
         dataStore.Remove(exception);
         await dataStore.SaveChangesAsync(cancellationToken);
+        await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
         return Result.Ok();
     }
 }

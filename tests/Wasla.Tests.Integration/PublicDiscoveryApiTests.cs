@@ -2,12 +2,16 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Globalization;
+using System.Collections.Concurrent;
+using System.Data.Common;
+using System.Diagnostics;
 using BuildingBlock.Application.Time;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -33,8 +37,11 @@ public sealed class PublicDiscoveryApiTests
         using var client = factory.CreateClient();
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var all = await client.GetFromJsonAsync<JsonElement>(
+        var allResponse = await client.GetAsync(
             "/api/v1/public/doctors?pageNumber=1&pageSize=20", cancellationToken);
+        var allBody = await allResponse.Content.ReadAsStringAsync(cancellationToken);
+        Assert.True(allResponse.IsSuccessStatusCode, allBody);
+        var all = JsonDocument.Parse(allBody).RootElement;
         Assert.Equal(2, all.GetProperty("totalCount").GetInt64());
         Assert.Equal(2, all.GetProperty("items").GetArrayLength());
         Assert.Equal(
@@ -169,24 +176,101 @@ public sealed class PublicDiscoveryApiTests
         Assert.Empty(slots.EnumerateArray());
     }
 
+    [Fact]
+    public async Task Search_ranks_globally_by_popularity_then_next_slot_before_paging()
+    {
+        var popularDoctorId = Guid.Parse("72000000-0000-0000-0000-000000000002");
+        await using var factory = await PublicDiscoveryApiFactory.CreateAsync(
+            popularityScores: new Dictionary<Guid, long> { [popularDoctorId] = 7 });
+        using var client = factory.CreateClient();
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var firstPage = await client.GetFromJsonAsync<JsonElement>(
+            "/api/v1/public/doctors?pageNumber=1&pageSize=1", cancellationToken);
+        var secondPage = await client.GetFromJsonAsync<JsonElement>(
+            "/api/v1/public/doctors?pageNumber=2&pageSize=1", cancellationToken);
+
+        Assert.Equal(
+            popularDoctorId,
+            Assert.Single(firstPage.GetProperty("items").EnumerateArray())
+                .GetProperty("doctorId").GetGuid());
+        Assert.Equal(
+            factory.DiscoverableDoctorId,
+            Assert.Single(secondPage.GetProperty("items").EnumerateArray())
+                .GetProperty("doctorId").GetGuid());
+    }
+
+    [Fact]
+    public async Task Search_with_one_thousand_candidates_has_constant_queries_and_page_scoped_hydration()
+    {
+        const int candidateCount = 1000;
+        const int pageSize = 20;
+        await using var factory = await PublicDiscoveryApiFactory.CreateAsync(
+            eligibleDoctorCount: candidateCount);
+        using var client = factory.CreateClient();
+        factory.ResetSearchDiagnostics();
+        var stopwatch = Stopwatch.StartNew();
+
+        var response = await client.GetAsync(
+            $"/api/v1/public/doctors?pageNumber=1&pageSize={pageSize}",
+            TestContext.Current.CancellationToken);
+        stopwatch.Stop();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.True(response.IsSuccessStatusCode, body);
+        var payload = JsonDocument.Parse(body).RootElement;
+
+        Assert.Equal(candidateCount, payload.GetProperty("totalCount").GetInt64());
+        Assert.Equal(pageSize, payload.GetProperty("items").GetArrayLength());
+        Assert.Equal(13, factory.ExecutedSelectCount);
+        var hydratedPracticeCount = payload.GetProperty("items").EnumerateArray()
+            .Sum(item => item.GetProperty("practices").GetArrayLength());
+        Assert.Equal(hydratedPracticeCount, factory.LastOccupancyPracticeIds.Count);
+        Assert.InRange(hydratedPracticeCount, pageSize, pageSize + 2);
+        Assert.Contains(factory.ExecutedSql, sql =>
+            sql.Contains("COUNT", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(factory.ExecutedSql, sql =>
+            sql.Contains("LIMIT", StringComparison.OrdinalIgnoreCase) &&
+            sql.Contains("OFFSET", StringComparison.OrdinalIgnoreCase));
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(30),
+            $"The instrumented request took {stopwatch.Elapsed}.");
+    }
+
     private sealed class PublicDiscoveryApiFactory : WebApplicationFactory<Program>
     {
         private readonly SqliteConnection connection = new("Data Source=:memory:");
-        private readonly bool atCapacity;
+        private readonly int eligibleDoctorCount;
+        private readonly QueryCountingInterceptor queryCounter = new();
+        private readonly RecordingOccupancyReader occupancyReader;
+        private readonly IReadOnlyDictionary<Guid, long> popularityScores;
 
-        private PublicDiscoveryApiFactory(bool atCapacity)
+        private PublicDiscoveryApiFactory(
+            bool atCapacity,
+            int eligibleDoctorCount,
+            IReadOnlyDictionary<Guid, long>? popularityScores)
         {
-            this.atCapacity = atCapacity;
+            this.eligibleDoctorCount = eligibleDoctorCount;
+            this.popularityScores = popularityScores ?? new Dictionary<Guid, long>();
+            occupancyReader = new RecordingOccupancyReader(
+                atCapacity ? MatchingPracticeId : null);
         }
 
         public Guid DiscoverableDoctorId { get; } = Guid.Parse("72000000-0000-0000-0000-000000000001");
         public Guid MatchingPracticeId { get; } = Guid.Parse("73000000-0000-0000-0000-000000000001");
         public Guid NonBookablePracticeId { get; } = Guid.Parse("73000000-0000-0000-0000-000000000003");
         public Guid InactivePracticeId { get; } = Guid.Parse("73000000-0000-0000-0000-000000000004");
+        public int ExecutedSelectCount => queryCounter.ExecutedSql.Length;
+        public string[] ExecutedSql => queryCounter.ExecutedSql;
+        public IReadOnlyCollection<Guid> LastOccupancyPracticeIds => occupancyReader.LastPracticeIds;
 
-        public static async Task<PublicDiscoveryApiFactory> CreateAsync(bool atCapacity = false)
+        public static async Task<PublicDiscoveryApiFactory> CreateAsync(
+            bool atCapacity = false,
+            int eligibleDoctorCount = 2,
+            IReadOnlyDictionary<Guid, long>? popularityScores = null)
         {
-            var factory = new PublicDiscoveryApiFactory(atCapacity);
+            var factory = new PublicDiscoveryApiFactory(
+                atCapacity,
+                eligibleDoctorCount,
+                popularityScores);
             await factory.connection.OpenAsync(TestContext.Current.CancellationToken);
             _ = factory.CreateClient();
             await factory.InitializeAsync();
@@ -204,6 +288,7 @@ public sealed class PublicDiscoveryApiTests
                     ["MediaStorage:RootPath"] = Path.Combine(Path.GetTempPath(), $"wasla-public-{Guid.NewGuid():N}"),
                     ["DatabaseInitialization:ApplyMigrationsOnStartup"] = "false",
                     ["DatabaseInitialization:ApplySeedingOnStartup"] = "false",
+                    ["PublicDiscoveryProjection:Enabled"] = "false",
                     ["EmailOutbox:Enabled"] = "false"
                 }));
             builder.ConfigureServices(services =>
@@ -213,14 +298,21 @@ public sealed class PublicDiscoveryApiTests
                 services.RemoveAll<WaslaDbContext>();
                 services.RemoveAll<IDateTimeProvider>();
                 services.AddSingleton<IDateTimeProvider>(new FixedClock(NowUtc));
-                if (atCapacity)
-                {
-                    services.RemoveAll<IPracticeReservationOccupancyReader>();
-                    services.AddSingleton<IPracticeReservationOccupancyReader>(
-                        new CapacityReachedReader(MatchingPracticeId));
-                }
-                services.AddDbContext<WaslaDbContext>(options => options.UseSqlite(connection));
+                services.RemoveAll<IPracticeReservationOccupancyReader>();
+                services.AddSingleton<IPracticeReservationOccupancyReader>(occupancyReader);
+                services.RemoveAll<IPublicDoctorPopularityReader>();
+                services.AddSingleton<IPublicDoctorPopularityReader>(
+                    new FixedPopularityReader(popularityScores));
+                services.AddDbContext<WaslaDbContext>(options => options
+                    .UseSqlite(connection)
+                    .AddInterceptors(queryCounter));
             });
+        }
+
+        public void ResetSearchDiagnostics()
+        {
+            queryCounter.Reset();
+            occupancyReader.Reset();
         }
 
         private async Task InitializeAsync()
@@ -259,8 +351,23 @@ public sealed class PublicDiscoveryApiTests
             AddSimpleDoctor(db, actorId, Guid.Parse("72000000-0000-0000-0000-000000000007"),
                 "طبيب حسابه غير نشط", DoctorApprovalStatus.Approved, hasActivePractice: true,
                 areaTwo: false, activeUser: false);
+            for (var index = 3; index <= eligibleDoctorCount; index++)
+            {
+                AddSimpleDoctor(
+                    db,
+                    actorId,
+                    Guid.Parse($"76000000-0000-0000-0000-{index:D12}"),
+                    $"طبيب أداء {index}",
+                    DoctorApprovalStatus.Approved,
+                    hasActivePractice: true,
+                    areaTwo: true);
+            }
 
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            await scope.ServiceProvider
+                .GetRequiredService<IPublicDiscoveryRankingProjectionRefresher>()
+                .RefreshAllAsync(TestContext.Current.CancellationToken);
+            ResetSearchDiagnostics();
         }
 
         private void AddDiscoverableDoctor(WaslaDbContext db, Guid actorId)
@@ -404,8 +511,13 @@ public sealed class PublicDiscoveryApiTests
             public DateTime UtcNow { get; } = utcNow;
         }
 
-        private sealed class CapacityReachedReader(Guid practiceId) : IPracticeReservationOccupancyReader
+        private sealed class RecordingOccupancyReader(Guid? atCapacityPracticeId)
+            : IPracticeReservationOccupancyReader
         {
+            private Guid[] lastPracticeIds = [];
+
+            public IReadOnlyCollection<Guid> LastPracticeIds => lastPracticeIds;
+
             public Task<IReadOnlyDictionary<(Guid PracticeId, DateOnly Date), PracticeOccupancySnapshot>> ReadAsync(
                 IReadOnlyCollection<Guid> practiceIds,
                 DateOnly fromDate,
@@ -413,16 +525,64 @@ public sealed class PublicDiscoveryApiTests
                 CancellationToken cancellationToken)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                lastPracticeIds = practiceIds.Distinct().ToArray();
                 var date = new DateOnly(2026, 9, 15);
                 IReadOnlyDictionary<(Guid, DateOnly), PracticeOccupancySnapshot> result =
-                    practiceIds.Contains(practiceId) && date >= fromDate && date <= throughDate
+                    atCapacityPracticeId.HasValue &&
+                    practiceIds.Contains(atCapacityPracticeId.Value) &&
+                    date >= fromDate && date <= throughDate
                         ? new Dictionary<(Guid, DateOnly), PracticeOccupancySnapshot>
                         {
-                            [(practiceId, date)] = new(
+                            [(atCapacityPracticeId.Value, date)] = new(
                                 new HashSet<TimeOnly>(), 1, new Dictionary<Guid, int>())
                         }
                         : new Dictionary<(Guid, DateOnly), PracticeOccupancySnapshot>();
                 return Task.FromResult(result);
+            }
+
+            public void Reset() => lastPracticeIds = [];
+        }
+
+        private sealed class FixedPopularityReader(IReadOnlyDictionary<Guid, long> scores)
+            : IPublicDoctorPopularityReader
+        {
+            public Task<IReadOnlyDictionary<Guid, long>> ReadSuccessfulReservationCountsAsync(
+                IReadOnlyCollection<Guid> doctorIds,
+                DateTime sinceUtc,
+                CancellationToken cancellationToken)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return Task.FromResult<IReadOnlyDictionary<Guid, long>>(
+                    doctorIds.Distinct().ToDictionary(id => id, id => scores.GetValueOrDefault(id)));
+            }
+        }
+
+        private sealed class QueryCountingInterceptor : DbCommandInterceptor
+        {
+            private readonly ConcurrentQueue<string> executedSql = new();
+
+            public string[] ExecutedSql => executedSql.ToArray();
+
+            public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+                DbCommand command,
+                CommandEventData eventData,
+                InterceptionResult<DbDataReader> result,
+                CancellationToken cancellationToken = default)
+            {
+                if (command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+                {
+                    executedSql.Enqueue(command.CommandText);
+                }
+
+                return base.ReaderExecutingAsync(
+                    command, eventData, result, cancellationToken);
+            }
+
+            public void Reset()
+            {
+                while (executedSql.TryDequeue(out _))
+                {
+                }
             }
         }
     }

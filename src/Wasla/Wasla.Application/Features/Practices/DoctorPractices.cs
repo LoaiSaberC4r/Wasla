@@ -5,6 +5,7 @@ using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Doctors;
+using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Media;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
@@ -461,7 +462,8 @@ internal sealed class GetDoctorPracticeConfigurationQueryHandler(IWaslaDataStore
 
 internal sealed class UpdateDoctorPracticeConfigurationCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
     : ICommandHandler<UpdateDoctorPracticeConfigurationCommand, DoctorPracticeConfigurationResponse>
 {
     public async Task<Result<DoctorPracticeConfigurationResponse>> Handle(
@@ -505,6 +507,7 @@ internal sealed class UpdateDoctorPracticeConfigurationCommandHandler(
 
         dataStore.SetOriginalRowVersion(configuration, supplied.Value);
         await dataStore.SaveChangesAsync(cancellationToken);
+        await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
         return Result<DoctorPracticeConfigurationResponse>.Ok(DoctorPracticeMapper.Map(configuration));
     }
 }

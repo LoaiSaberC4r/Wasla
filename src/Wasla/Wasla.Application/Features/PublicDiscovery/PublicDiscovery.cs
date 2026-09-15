@@ -135,6 +135,23 @@ public interface IPublicDoctorPopularityReader
         CancellationToken cancellationToken);
 }
 
+/// <summary>
+/// Refreshes the disposable read projection used to rank public doctor search results.
+/// Future reservation create/cancel flows can call this seam after their transaction commits.
+/// </summary>
+public interface IPublicDiscoveryRankingProjectionRefresher
+{
+    Task RefreshPracticesAsync(
+        IReadOnlyCollection<Guid> practiceIds,
+        CancellationToken cancellationToken);
+
+    Task RefreshDoctorsAsync(
+        IReadOnlyCollection<Guid> doctorIds,
+        CancellationToken cancellationToken);
+
+    Task RefreshAllAsync(CancellationToken cancellationToken);
+}
+
 public interface IPublicDiscoveryService
 {
     Task<PagedResponse<PublicDoctorSearchItemResponse>> SearchDoctorsAsync(
@@ -341,5 +358,31 @@ internal sealed class EmptyPublicDoctorPopularityReader : IPublicDoctorPopularit
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult<IReadOnlyDictionary<Guid, long>>(
             doctorIds.Distinct().ToDictionary(id => id, _ => 0L));
+    }
+}
+
+internal sealed class EmptyPublicDiscoveryRankingProjectionRefresher
+    : IPublicDiscoveryRankingProjectionRefresher
+{
+    public Task RefreshPracticesAsync(
+        IReadOnlyCollection<Guid> practiceIds,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
+
+    public Task RefreshDoctorsAsync(
+        IReadOnlyCollection<Guid> doctorIds,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
+
+    public Task RefreshAllAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
     }
 }

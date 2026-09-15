@@ -52,6 +52,8 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<DoctorPracticeSegment> DoctorPracticeSegments => Set<DoctorPracticeSegment>();
     public DbSet<DoctorPracticeVisitType> DoctorPracticeVisitTypes => Set<DoctorPracticeVisitType>();
     public DbSet<DoctorPracticeSegmentVisitTypePrice> DoctorPracticeSegmentVisitTypePrices => Set<DoctorPracticeSegmentVisitTypePrice>();
+    public DbSet<PublicPracticeAvailabilitySlot> PublicPracticeAvailabilitySlots => Set<PublicPracticeAvailabilitySlot>();
+    public DbSet<PublicDoctorSearchRank> PublicDoctorSearchRanks => Set<PublicDoctorSearchRank>();
     public DbSet<Reception> Receptions => Set<Reception>();
     public DbSet<ReceptionPracticeAssignment> ReceptionPracticeAssignments => Set<ReceptionPracticeAssignment>();
     public DbSet<ReceptionPracticeAssignmentPermission> ReceptionPracticeAssignmentPermissions

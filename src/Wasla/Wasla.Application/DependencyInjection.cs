@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddScoped<IReceptionPracticeAuthorizationService, ReceptionPracticeAuthorizationService>();
         services.AddSingleton<IPracticeReservationOccupancyReader, EmptyPracticeReservationOccupancyReader>();
         services.AddSingleton<IPublicDoctorPopularityReader, EmptyPublicDoctorPopularityReader>();
+        services.AddSingleton<IPublicDiscoveryRankingProjectionRefresher,
+            EmptyPublicDiscoveryRankingProjectionRefresher>();
         services.AddSingleton<IPatientAccessPolicy, PatientAccessPolicy>();
         services.AddSingleton<IEmailNotificationFactory, BilingualEmailNotificationFactory>();
 

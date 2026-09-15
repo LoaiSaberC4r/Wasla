@@ -12,8 +12,7 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 internal sealed class PublicDiscoveryService(
     WaslaDbContext dbContext,
     IDateTimeProvider clock,
-    IPracticeReservationOccupancyReader occupancyReader,
-    IPublicDoctorPopularityReader popularityReader) : IPublicDiscoveryService
+    IPracticeReservationOccupancyReader occupancyReader) : IPublicDiscoveryService
 {
     public async Task<PagedResponse<PublicDoctorSearchItemResponse>> SearchDoctorsAsync(
         SearchPublicDoctorsQuery request,
@@ -56,23 +55,70 @@ internal sealed class PublicDiscoveryService(
                 (!request.AreaId.HasValue || practice.AreaId == request.AreaId.Value)));
         }
 
-        var doctorIds = await query.Select(doctor => doctor.Id).ToListAsync(cancellationToken);
-        if (doctorIds.Count == 0)
+        var totalCount = await query.LongCountAsync(cancellationToken);
+        if (totalCount == 0)
         {
             return new PagedResponse<PublicDoctorSearchItemResponse>(
                 [], 0, request.PageNumber, request.PageSize);
         }
 
-        var catalog = await LoadCatalogAsync(doctorIds, cancellationToken);
-        var occupancy = await ReadOccupancyAsync(catalog.Practices.Select(item => item.Id), cancellationToken);
-        var popularity = await popularityReader.ReadSuccessfulReservationCountsAsync(
-            doctorIds, EnsureUtc(clock.UtcNow).AddDays(-90), cancellationToken);
+        var nowUtc = EnsureUtc(clock.UtcNow);
+        var rankedQuery = query.Select(doctor => new
+        {
+            DoctorId = doctor.Id,
+            PopularityScore = dbContext.PublicDoctorSearchRanks
+                .Where(rank => rank.DoctorId == doctor.Id)
+                .Select(rank => (long?)rank.PopularityScore)
+                .FirstOrDefault() ?? 0L,
+            NextAvailableSlotUtc = dbContext.PublicPracticeAvailabilitySlots
+                .Where(slot =>
+                    slot.DoctorId == doctor.Id &&
+                    slot.IsAvailable &&
+                    slot.VisibleFromUtc <= nowUtc &&
+                    slot.SlotStartUtc > nowUtc)
+                .Where(slot => dbContext.DoctorPractices.Any(practice =>
+                    practice.Id == slot.DoctorPracticeId && practice.IsActive))
+                .Where(slot => dbContext.DoctorPracticeConfigurations.Any(configuration =>
+                    configuration.DoctorPracticeId == slot.DoctorPracticeId &&
+                    configuration.AllowOnlineBooking))
+                .Where(slot => dbContext.DoctorPracticeSegmentVisitTypePrices.Any(price =>
+                    price.DoctorPracticeId == slot.DoctorPracticeId &&
+                    dbContext.DoctorPracticeSegments.Any(segment =>
+                        segment.Id == price.SegmentId &&
+                        segment.DoctorPracticeId == price.DoctorPracticeId &&
+                        segment.IsDefault &&
+                        segment.IsActive) &&
+                    dbContext.DoctorPracticeVisitTypes.Any(visitType =>
+                        visitType.Id == price.VisitTypeId &&
+                        visitType.DoctorPracticeId == price.DoctorPracticeId &&
+                        visitType.Type == DoctorPracticeVisitTypeCode.NewConsultation &&
+                        visitType.IsActive)))
+                .Select(slot => (DateTime?)slot.SlotStartUtc)
+                .Min()
+        });
 
-        var ranked = doctorIds.Select(doctorId =>
+        var pageDoctorIds = await rankedQuery
+            .OrderByDescending(item => item.PopularityScore)
+            .ThenBy(item => item.NextAvailableSlotUtc == null)
+            .ThenBy(item => item.NextAvailableSlotUtc)
+            .ThenBy(item => item.DoctorId)
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(item => item.DoctorId)
+            .ToArrayAsync(cancellationToken);
+        if (pageDoctorIds.Length == 0)
+        {
+            return new PagedResponse<PublicDoctorSearchItemResponse>(
+                [], totalCount, request.PageNumber, request.PageSize);
+        }
+
+        var catalog = await LoadCatalogAsync(pageDoctorIds, cancellationToken);
+        var occupancy = await ReadOccupancyAsync(catalog.Practices.Select(item => item.Id), cancellationToken);
+        var items = pageDoctorIds.Select(doctorId =>
         {
             var doctor = catalog.Doctors[doctorId];
             var practices = BuildPractices(catalog, doctorId, request, occupancy);
-            var item = new PublicDoctorSearchItemResponse(
+            return new PublicDoctorSearchItemResponse(
                 doctor.Id,
                 doctor.ProfileImageMediaKey is null ? null : DoctorProfileImageUrl(doctor.Id),
                 doctor.NameAr,
@@ -83,24 +129,11 @@ internal sealed class PublicDiscoveryService(
                     .ThenBy(practice => practice.Response.PracticeId)
                     .Select(practice => practice.Response)
                     .ToArray());
-            return new RankedDoctor(
-                item,
-                popularity.GetValueOrDefault(doctorId),
-                practices.Where(practice => practice.NextAvailableUtc.HasValue)
-                    .Select(practice => practice.NextAvailableUtc)
-                    .Min());
         })
-        .OrderByDescending(item => item.PopularityScore)
-        .ThenBy(item => item.NextAvailableUtc is null)
-        .ThenBy(item => item.NextAvailableUtc)
-        .ThenBy(item => item.Response.DoctorId)
-        .Skip((request.PageNumber - 1) * request.PageSize)
-        .Take(request.PageSize)
-        .Select(item => item.Response)
         .ToArray();
 
         return new PagedResponse<PublicDoctorSearchItemResponse>(
-            ranked, doctorIds.Count, request.PageNumber, request.PageSize);
+            items, totalCount, request.PageNumber, request.PageSize);
     }
 
     public async Task<PublicDoctorDetailsResponse?> GetDoctorAsync(
@@ -670,11 +703,6 @@ internal sealed class PublicDiscoveryService(
         PublicPracticeResponse Response,
         DateTimeOffset? NextAvailableUtc,
         bool MatchesLocation);
-
-    private sealed record RankedDoctor(
-        PublicDoctorSearchItemResponse Response,
-        long PopularityScore,
-        DateTimeOffset? NextAvailableUtc);
 
     private sealed record NextSlot(DateOnly Date, TimeOnly Time, bool IsToday, DateTimeOffset Utc);
 }
