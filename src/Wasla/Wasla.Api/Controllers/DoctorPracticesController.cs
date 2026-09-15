@@ -296,8 +296,8 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
         DoctorPracticeVisitTypeRequest request,
         CancellationToken cancellationToken)
         => (await sender.Send(new UpdateDoctorPracticeVisitTypeCommand(
-            practiceId, visitTypeId, request.NameAr, request.NameEn, request.DurationMinutes,
-            request.IsActive, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+            practiceId, visitTypeId, request.NameAr, request.NameEn, request.IsActive,
+            request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpGet("{practiceId:guid}/prices")]
     [Permission(PermissionNames.DoctorPracticePricingViewOwn)]
@@ -426,7 +426,6 @@ public sealed record UpdateDoctorPracticeSegmentRequest(
 public sealed record DoctorPracticeVisitTypeRequest(
     string NameAr,
     string? NameEn,
-    int DurationMinutes,
     bool IsActive,
     string RowVersion);
 public sealed record DoctorPracticePriceRequest(Guid SegmentId, Guid VisitTypeId, decimal Price);

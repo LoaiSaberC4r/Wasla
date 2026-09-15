@@ -281,6 +281,51 @@ public static class DoctorPracticeAvailabilityCalculator
         return slots;
     }
 
+    public static IReadOnlyList<TimeOnly> CalculateAvailableSlotStarts(
+        DateOnly date,
+        IEnumerable<DoctorPracticeSchedulePeriod> recurringPeriods,
+        IEnumerable<DoctorPracticeScheduleException> exceptions)
+    {
+        ArgumentNullException.ThrowIfNull(recurringPeriods);
+        ArgumentNullException.ThrowIfNull(exceptions);
+
+        var dateExceptions = exceptions.Where(item => item.Date == date).ToArray();
+        if (dateExceptions.Any(item => item.Type is
+                DoctorPracticeScheduleExceptionType.DayOff or DoctorPracticeScheduleExceptionType.Vacation))
+        {
+            return [];
+        }
+
+        var customPeriods = dateExceptions
+            .Where(item => item.Type == DoctorPracticeScheduleExceptionType.CustomWorkingHours)
+            .Select(item => new PracticeWorkingPeriod(
+                item.StartTime!.Value,
+                item.EndTime!.Value,
+                item.SlotDurationMinutes!.Value))
+            .ToArray();
+        var periods = customPeriods.Length > 0
+            ? customPeriods
+            : recurringPeriods
+                .Where(item => item.DayOfWeek == date.DayOfWeek)
+                .Select(item => item.ToWorkingPeriod())
+                .ToArray();
+        var blocked = dateExceptions
+            .Where(item => item.Type == DoctorPracticeScheduleExceptionType.BlockedTimeRange)
+            .Select(item => (Start: item.StartTime!.Value, End: item.EndTime!.Value))
+            .ToArray();
+
+        return periods
+            .SelectMany(period => CalculateSlotStarts(period).Select(start => (
+                Start: start,
+                End: TimeOnly.FromTimeSpan(start.ToTimeSpan().Add(
+                    TimeSpan.FromMinutes(period.SlotDurationMinutes))))))
+            .Where(slot => !blocked.Any(range => slot.Start < range.End && range.Start < slot.End))
+            .Select(slot => slot.Start)
+            .Distinct()
+            .OrderBy(slot => slot)
+            .ToArray();
+    }
+
     private static IEnumerable<PracticeWorkingPeriod> Subtract(
         PracticeWorkingPeriod period,
         TimeOnly blockStart,

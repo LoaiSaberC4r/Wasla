@@ -180,6 +180,11 @@ internal sealed class DoctorPracticeConfiguration : IWriteEntityConfiguration<Do
         builder.Property(item => item.IsLegacyOnboarding).IsRequired();
         builder.Property(item => item.RowVersion).IsRowVersion().IsConcurrencyToken();
         builder.HasIndex([nameof(DoctorPractice.DoctorId)], "IX_DoctorPractices_DoctorId");
+        builder.HasIndex(item => new { item.DoctorId, item.IsActive })
+            .HasDatabaseName("IX_DoctorPractices_DoctorId_IsActive");
+        builder.HasIndex(item => item.GovernorateId).HasDatabaseName("IX_DoctorPractices_GovernorateId");
+        builder.HasIndex(item => item.CityId).HasDatabaseName("IX_DoctorPractices_CityId");
+        builder.HasIndex(item => item.AreaId).HasDatabaseName("IX_DoctorPractices_AreaId");
         builder.HasIndex([nameof(DoctorPractice.DoctorId)], "UX_DoctorPractices_OneLegacyOnboardingPerDoctor")
             .IsUnique().HasFilter("[IsLegacyOnboarding] = 1");
         builder.HasOne<Doctor>().WithMany().HasForeignKey(item => item.DoctorId).OnDelete(DeleteBehavior.Restrict);

@@ -23,6 +23,7 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<SuperAdmin> SuperAdmins => Set<SuperAdmin>();
     public DbSet<Doctor> Doctors => Set<Doctor>();
+    public DbSet<DoctorQualification> DoctorQualifications => Set<DoctorQualification>();
     public DbSet<DoctorStatusHistory> DoctorStatusHistories => Set<DoctorStatusHistory>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<PatientAccountLink> PatientAccountLinks => Set<PatientAccountLink>();

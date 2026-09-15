@@ -37,6 +37,8 @@ public sealed class Doctor : AggregateRoot<Guid>, IAuditableEntity
         PersonalIdBackMediaKey = personalIdBackMediaKey;
         SyndicateCardFrontMediaKey = syndicateCardFrontMediaKey;
         SyndicateCardBackMediaKey = syndicateCardBackMediaKey;
+        NormalizedNameAr = DoctorNameNormalizer.NormalizeArabic(nameAr);
+        NormalizedNameEn = DoctorNameNormalizer.NormalizeEnglish(nameEn);
         ApprovalStatus = DoctorApprovalStatus.Pending;
     }
 
@@ -44,6 +46,9 @@ public sealed class Doctor : AggregateRoot<Guid>, IAuditableEntity
     public ApplicationUser ApplicationUser { get; private set; } = null!;
     public string NameAr { get; private set; } = string.Empty;
     public string? NameEn { get; private set; }
+    public string NormalizedNameAr { get; private set; } = string.Empty;
+    public string? NormalizedNameEn { get; private set; }
+    public string? Bio { get; private set; }
     public DateOnly DateOfBirth { get; private set; }
     public Gender Gender { get; private set; }
     public string? ProfileImageMediaKey { get; private set; }
@@ -63,6 +68,7 @@ public sealed class Doctor : AggregateRoot<Guid>, IAuditableEntity
     public string? SuspensionReason { get; private set; }
     public Guid? ReactivatedByApplicationUserId { get; private set; }
     public DateTime? ReactivatedOnUtc { get; private set; }
+    public Guid? ModifiedByApplicationUserId { get; private set; }
     public DateTime CreatedOnUtc { get; set; }
     public DateTime? ModifiedOnUtc { get; set; }
     public byte[] RowVersion { get; private set; } = [];
@@ -189,6 +195,25 @@ public sealed class Doctor : AggregateRoot<Guid>, IAuditableEntity
         ApprovalStatus = DoctorApprovalStatus.Approved;
         ReactivatedByApplicationUserId = actorId;
         ReactivatedOnUtc = RequireUtc(occurredOnUtc);
+        return Result.Ok();
+    }
+
+    public Result UpdateBio(string? bio, Guid actorId)
+    {
+        if (actorId == Guid.Empty)
+        {
+            return Result.Fail(DoctorErrors.InvalidBio);
+        }
+
+        var normalized = string.IsNullOrWhiteSpace(bio) ? null : bio.Trim();
+        if (normalized?.Length > 2000 || normalized?.IndexOfAny(['<', '>']) >= 0 ||
+            normalized?.Any(character => char.IsControl(character) && character is not '\r' and not '\n' and not '\t') == true)
+        {
+            return Result.Fail(DoctorErrors.InvalidBio);
+        }
+
+        Bio = normalized;
+        ModifiedByApplicationUserId = actorId;
         return Result.Ok();
     }
 

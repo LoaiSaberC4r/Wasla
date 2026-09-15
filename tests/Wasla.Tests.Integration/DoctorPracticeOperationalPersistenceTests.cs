@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Wasla.Domain.Doctors;
 using Wasla.Domain.Practices;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -30,6 +31,7 @@ public sealed class DoctorPracticeOperationalPersistenceTests
         AssertRowVersion<DoctorPracticeVisitType>(model);
         AssertRowVersion<DoctorPracticeSegmentVisitTypePrice>(model);
         AssertRowVersion<ReceptionPracticeAssignment>(model);
+        AssertRowVersion<DoctorQualification>(model);
 
         AssertUnique<DoctorPracticeConfiguration>(model, nameof(DoctorPracticeConfiguration.DoctorPracticeId));
         AssertUnique<DoctorPracticeBranding>(model, nameof(DoctorPracticeBranding.DoctorPracticeId));
@@ -58,6 +60,29 @@ public sealed class DoctorPracticeOperationalPersistenceTests
             index.IsUnique && index.GetFilter() == "[IsLegacyOnboarding] = 1" &&
             index.Properties.Select(property => property.Name)
                 .SequenceEqual([nameof(DoctorPractice.DoctorId)]));
+    }
+
+    [Fact]
+    public void Public_discovery_fields_are_persisted_and_indexed_without_visit_type_duration()
+    {
+        var model = CreateModel();
+        var doctor = model.FindEntityType(typeof(Doctor))!;
+        var practice = model.FindEntityType(typeof(DoctorPractice))!;
+        var qualification = model.FindEntityType(typeof(DoctorQualification))!;
+        var visitType = model.FindEntityType(typeof(DoctorPracticeVisitType))!;
+
+        Assert.NotNull(doctor.FindProperty(nameof(Doctor.NormalizedNameAr)));
+        Assert.NotNull(doctor.FindProperty(nameof(Doctor.NormalizedNameEn)));
+        Assert.NotNull(doctor.FindProperty(nameof(Doctor.Bio)));
+        Assert.Contains(doctor.GetIndexes(), index => index.Properties.Select(property => property.Name)
+            .SequenceEqual([nameof(Doctor.NormalizedNameAr)]));
+        Assert.Contains(doctor.GetIndexes(), index => index.Properties.Select(property => property.Name)
+            .SequenceEqual([nameof(Doctor.NormalizedNameEn)]));
+        Assert.Contains(practice.GetIndexes(), index => index.Properties.Select(property => property.Name)
+            .SequenceEqual([nameof(DoctorPractice.DoctorId), nameof(DoctorPractice.IsActive)]));
+        Assert.Contains(qualification.GetIndexes(), index => index.Properties.Select(property => property.Name)
+            .SequenceEqual([nameof(DoctorQualification.DoctorId), nameof(DoctorQualification.DisplayOrder)]));
+        Assert.Null(visitType.FindProperty("DurationMinutes"));
     }
 
     private static void AssertRowVersion<TEntity>(IModel model)

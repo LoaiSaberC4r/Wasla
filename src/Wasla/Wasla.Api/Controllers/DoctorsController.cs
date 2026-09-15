@@ -99,9 +99,69 @@ public sealed class DoctorSelfController(ISender sender) : ControllerBase
     public async Task<IActionResult> Onboarding(CancellationToken cancellationToken)
         => (await sender.Send(new GetDoctorOnboardingQuery(), cancellationToken))
             .ToIActionResult(cancellationToken);
+
+    [HttpGet("profile")]
+    [Permission(PermissionNames.DoctorProfileViewOwn)]
+    public async Task<IActionResult> PublicProfile(CancellationToken cancellationToken)
+        => (await sender.Send(new GetMyDoctorPublicProfileQuery(), cancellationToken))
+            .ToIActionResult(cancellationToken);
+
+    [HttpPut("profile/bio")]
+    [Permission(PermissionNames.DoctorProfileUpdateOwn)]
+    public async Task<IActionResult> UpdateBio(
+        DoctorBioRequest request,
+        CancellationToken cancellationToken)
+        => (await sender.Send(
+            new UpdateMyDoctorBioCommand(request.Bio, request.RowVersion), cancellationToken))
+            .ToIActionResult(cancellationToken);
+
+    [HttpGet("qualifications")]
+    [Permission(PermissionNames.DoctorProfileViewOwn)]
+    public async Task<IActionResult> Qualifications(CancellationToken cancellationToken)
+        => (await sender.Send(new ListMyDoctorQualificationsQuery(), cancellationToken))
+            .ToIActionResult(cancellationToken);
+
+    [HttpPost("qualifications")]
+    [Permission(PermissionNames.DoctorProfileUpdateOwn)]
+    public async Task<IActionResult> CreateQualification(
+        DoctorQualificationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new CreateMyDoctorQualificationCommand(
+            request.NameAr, request.NameEn, request.DisplayOrder), cancellationToken);
+        return result.IsSuccess
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : result.Errors.ToActionProblem(cancellationToken);
+    }
+
+    [HttpPut("qualifications/{qualificationId:guid}")]
+    [Permission(PermissionNames.DoctorProfileUpdateOwn)]
+    public async Task<IActionResult> UpdateQualification(
+        Guid qualificationId,
+        UpdateDoctorQualificationRequest request,
+        CancellationToken cancellationToken)
+        => (await sender.Send(new UpdateMyDoctorQualificationCommand(
+            qualificationId, request.NameAr, request.NameEn, request.DisplayOrder,
+            request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+
+    [HttpDelete("qualifications/{qualificationId:guid}")]
+    [Permission(PermissionNames.DoctorProfileUpdateOwn)]
+    public async Task<IActionResult> DeleteQualification(
+        Guid qualificationId,
+        DoctorRowVersionRequest request,
+        CancellationToken cancellationToken)
+        => (await sender.Send(new DeleteMyDoctorQualificationCommand(
+            qualificationId, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
 }
 
 public sealed record DoctorApprovalRequest(string NationalId, string RowVersion);
 public sealed record DoctorReasonRequest(string Reason, string RowVersion);
 public sealed record DoctorRowVersionRequest(string RowVersion);
+public sealed record DoctorBioRequest(string? Bio, string RowVersion);
+public record DoctorQualificationRequest(string NameAr, string? NameEn, int DisplayOrder);
+public sealed record UpdateDoctorQualificationRequest(
+    string NameAr,
+    string? NameEn,
+    int DisplayOrder,
+    string RowVersion) : DoctorQualificationRequest(NameAr, NameEn, DisplayOrder);
 

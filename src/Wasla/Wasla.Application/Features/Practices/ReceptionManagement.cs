@@ -473,14 +473,12 @@ internal sealed class ReceptionPracticeAuthorizationService(
         CancellationToken cancellationToken)
     {
         if (!currentUser.IsAuthenticated || currentUser.UserId is not { } userId ||
-            !currentUser.Roles.Contains(SystemRoleNames.Reception, StringComparer.OrdinalIgnoreCase) ||
-            !currentUser.Permissions.Contains(permissionCode, StringComparer.OrdinalIgnoreCase) ||
             !PermissionNames.ReceptionAssignmentScoped.Contains(permissionCode))
         {
             return Result.Fail(ReceptionErrors.AccessDenied);
         }
 
-        return await dataStore.HasReceptionPracticePermissionAsync(
+        return await dataStore.HasReceptionPracticeAccessAsync(
             userId, doctorPracticeId, permissionCode, cancellationToken)
             ? Result.Ok()
             : Result.Fail(ReceptionErrors.AccessDenied);

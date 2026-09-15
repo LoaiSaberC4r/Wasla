@@ -1,5 +1,6 @@
 using Wasla.Application.Email;
 using Wasla.Application.Persistence;
+using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
@@ -50,6 +51,7 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailOutbox, EmailOutbox>();
         services.AddScoped<IWaslaDataStore, WaslaDataStore>();
+        services.AddScoped<IPublicDiscoveryService, PublicDiscoveryService>();
         services.AddScoped<WaslaSecuritySeeder>();
         services.AddScoped<MedicalSpecializationSeeder>();
         services.AddScoped<EgyptLocationSeedCoordinator>();

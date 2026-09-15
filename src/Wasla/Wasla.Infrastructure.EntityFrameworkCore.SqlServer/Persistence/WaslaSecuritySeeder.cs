@@ -190,6 +190,8 @@ internal sealed class WaslaSecuritySeeder(
             [SystemRoleIds.Doctor] =
             [
                 PermissionNames.DoctorOnboardingViewOwn,
+                PermissionNames.DoctorProfileViewOwn,
+                PermissionNames.DoctorProfileUpdateOwn,
                 PermissionNames.DoctorSpecializationsViewOwn,
                 PermissionNames.DoctorSpecializationsSubmitOwn,
                 PermissionNames.DoctorSpecializationsResubmitOwn,
