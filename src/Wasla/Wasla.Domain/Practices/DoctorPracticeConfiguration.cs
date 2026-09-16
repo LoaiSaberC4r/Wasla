@@ -12,6 +12,7 @@ public static class DoctorPracticePlatformDefaults
     public const int CheckInGracePeriodMinutes = 15;
     public const int PatientSelfCancellationCutoffMinutes = 120;
     public const int MaximumTicketCallAttempts = 3;
+    public const int NoShowAfterPassedPatientsCount = 3;
     public const string TimeZoneId = "Africa/Cairo";
     public const string PrimaryColor = "#176B87";
     public const string SecondaryColor = "#64CCC5";
@@ -35,6 +36,7 @@ public sealed class DoctorPracticeConfiguration : AggregateRoot<Guid>, IAuditabl
         CheckInGracePeriodMinutes = DoctorPracticePlatformDefaults.CheckInGracePeriodMinutes;
         PatientSelfCancellationCutoffMinutes = DoctorPracticePlatformDefaults.PatientSelfCancellationCutoffMinutes;
         MaximumTicketCallAttempts = DoctorPracticePlatformDefaults.MaximumTicketCallAttempts;
+        NoShowAfterPassedPatientsCount = DoctorPracticePlatformDefaults.NoShowAfterPassedPatientsCount;
         TimeZoneId = DoctorPracticePlatformDefaults.TimeZoneId;
         CreatedByApplicationUserId = actorId;
     }
@@ -47,6 +49,7 @@ public sealed class DoctorPracticeConfiguration : AggregateRoot<Guid>, IAuditabl
     public int PatientSelfCancellationCutoffMinutes { get; private set; }
     public int? MaximumDailyPatients { get; private set; }
     public int MaximumTicketCallAttempts { get; private set; }
+    public int NoShowAfterPassedPatientsCount { get; private set; }
     public string TimeZoneId { get; private set; } = string.Empty;
     public Guid? CreatedByApplicationUserId { get; private set; }
     public Guid? ModifiedByApplicationUserId { get; private set; }
@@ -72,6 +75,29 @@ public sealed class DoctorPracticeConfiguration : AggregateRoot<Guid>, IAuditabl
         int maximumTicketCallAttempts,
         string timeZoneId,
         Guid? actorId = null)
+        => Update(
+            allowOnlineBooking,
+            allowWalkIn,
+            defaultSlotDurationMinutes,
+            checkInGracePeriodMinutes,
+            patientSelfCancellationCutoffMinutes,
+            maximumDailyPatients,
+            maximumTicketCallAttempts,
+            NoShowAfterPassedPatientsCount,
+            timeZoneId,
+            actorId);
+
+    public Result Update(
+        bool allowOnlineBooking,
+        bool allowWalkIn,
+        int defaultSlotDurationMinutes,
+        int checkInGracePeriodMinutes,
+        int patientSelfCancellationCutoffMinutes,
+        int? maximumDailyPatients,
+        int maximumTicketCallAttempts,
+        int noShowAfterPassedPatientsCount,
+        string timeZoneId,
+        Guid? actorId = null)
     {
         var normalizedTimeZone = timeZoneId?.Trim() ?? string.Empty;
         if (defaultSlotDurationMinutes is < 5 or > 480 ||
@@ -79,6 +105,7 @@ public sealed class DoctorPracticeConfiguration : AggregateRoot<Guid>, IAuditabl
             patientSelfCancellationCutoffMinutes is < 0 or > 43200 ||
             maximumDailyPatients is <= 0 or > 10000 ||
             maximumTicketCallAttempts is < 1 or > 100 ||
+            noShowAfterPassedPatientsCount is < 1 or > 100 ||
             normalizedTimeZone.Length is 0 or > 100)
         {
             return Result.Fail(DoctorPracticeConfigurationErrors.Invalid);
@@ -104,6 +131,7 @@ public sealed class DoctorPracticeConfiguration : AggregateRoot<Guid>, IAuditabl
         PatientSelfCancellationCutoffMinutes = patientSelfCancellationCutoffMinutes;
         MaximumDailyPatients = maximumDailyPatients;
         MaximumTicketCallAttempts = maximumTicketCallAttempts;
+        NoShowAfterPassedPatientsCount = noShowAfterPassedPatientsCount;
         TimeZoneId = normalizedTimeZone;
         ModifiedByApplicationUserId = actorId;
         return Result.Ok();

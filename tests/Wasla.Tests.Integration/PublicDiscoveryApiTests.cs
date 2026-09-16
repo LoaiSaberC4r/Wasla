@@ -72,6 +72,12 @@ public sealed class PublicDiscoveryApiTests
         Assert.Equal(JsonValueKind.Null, nonBookable.GetProperty("publicSearchPrice").ValueKind);
         Assert.Equal(JsonValueKind.Null, nonBookable.GetProperty("nextAvailableSlotDate").ValueKind);
         Assert.False(nonBookable.GetProperty("isBookable").GetBoolean());
+        Assert.False(nonBookable.GetProperty("onlineBookingEnabled").GetBoolean());
+        Assert.Equal(
+            "OnlineBookingDisabled",
+            nonBookable.GetProperty("bookingDisabledReason").GetString());
+        Assert.True(practices[0].GetProperty("onlineBookingEnabled").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, practices[0].GetProperty("bookingDisabledReason").ValueKind);
 
         var combined = await client.GetFromJsonAsync<JsonElement>(
             $"/api/v1/public/doctors?searchText={Uri.EscapeDataString("احمد")}" +

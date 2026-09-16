@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Wasla.Domain.Common;
+using Wasla.Domain.Practices;
 using Wasla.Domain.Security;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
 
@@ -22,6 +23,7 @@ internal sealed class WaslaSecuritySeeder(
         await SeedRolesAsync(cancellationToken);
         await SeedPermissionsAsync(cancellationToken);
         await SeedRolePermissionsAsync(cancellationToken);
+        await BackfillLegacyReceptionReservationPermissionsAsync(cancellationToken);
         await SeedRootRoleAsync(cancellationToken);
     }
 
@@ -185,7 +187,8 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.FamilyRelationshipRequestsViewDetails,
                 PermissionNames.FamilyRelationshipRequestsApprove,
                 PermissionNames.FamilyRelationshipRequestsReject,
-                PermissionNames.FamilyRelationshipRequestsRequestModification
+                PermissionNames.FamilyRelationshipRequestsRequestModification,
+                PermissionNames.ReservationsViewAdministrative
             ],
             [SystemRoleIds.Doctor] =
             [
@@ -213,7 +216,10 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.ReceptionUsersViewOwn,
                 PermissionNames.ReceptionUsersManageOwn,
                 PermissionNames.ReceptionAssignmentsViewOwn,
-                PermissionNames.ReceptionAssignmentsManageOwn
+                PermissionNames.ReceptionAssignmentsManageOwn,
+                PermissionNames.DoctorPracticeReservationsViewOwn,
+                PermissionNames.DoctorPracticeReservationsCancelOwn,
+                PermissionNames.DoctorPracticeReservationsRescheduleOwn
             ],
             [SystemRoleIds.Reception] =
             [
@@ -223,6 +229,11 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.FamilyRelationshipRequestsViewAssisted,
                 PermissionNames.FamilyRelationshipRequestsResubmitAssisted,
                 PermissionNames.PracticeReservationsManage,
+                PermissionNames.PracticeReservationsView,
+                PermissionNames.PracticeReservationsCreate,
+                PermissionNames.PracticeReservationsCancel,
+                PermissionNames.PracticeReservationsReschedule,
+                PermissionNames.PracticeReservationsRestoreNoShow,
                 PermissionNames.PracticeQueueManage,
                 PermissionNames.PracticePaymentsRecord,
                 PermissionNames.PracticeWalkInsCreate
@@ -237,7 +248,15 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.FamiliesManageOwn,
                 PermissionNames.FamilyRelationshipRequestsCreate,
                 PermissionNames.FamilyRelationshipRequestsViewOwn,
-                PermissionNames.FamilyRelationshipRequestsResubmitOwn
+                PermissionNames.FamilyRelationshipRequestsResubmitOwn,
+                PermissionNames.ReservationsViewOwn,
+                PermissionNames.ReservationsCreateOwn,
+                PermissionNames.ReservationsCancelOwn,
+                PermissionNames.ReservationsRescheduleOwn,
+                PermissionNames.ReservationsViewDependents,
+                PermissionNames.ReservationsCreateDependents,
+                PermissionNames.ReservationsCancelDependents,
+                PermissionNames.ReservationsRescheduleDependents
             ]
         };
         foreach (var (roleId, permissionNames) in mappings)
@@ -257,6 +276,49 @@ internal sealed class WaslaSecuritySeeder(
                     deterministicMappingId,
                     roleId,
                     permissionId));
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task BackfillLegacyReceptionReservationPermissionsAsync(CancellationToken cancellationToken)
+    {
+        var legacyId = SystemPermissionIds.For(PermissionNames.PracticeReservationsManage);
+        var granularIds = new[]
+        {
+            SystemPermissionIds.For(PermissionNames.PracticeReservationsView),
+            SystemPermissionIds.For(PermissionNames.PracticeReservationsCreate),
+            SystemPermissionIds.For(PermissionNames.PracticeReservationsCancel),
+            SystemPermissionIds.For(PermissionNames.PracticeReservationsReschedule),
+            SystemPermissionIds.For(PermissionNames.PracticeReservationsRestoreNoShow)
+        };
+        var assignmentIds = await dbContext.ReceptionPracticeAssignmentPermissions
+            .Where(item => item.PermissionId == legacyId)
+            .Select(item => item.AssignmentId)
+            .Distinct()
+            .ToArrayAsync(cancellationToken);
+        if (assignmentIds.Length == 0)
+        {
+            return;
+        }
+
+        var existing = await dbContext.ReceptionPracticeAssignmentPermissions
+            .Where(item => assignmentIds.Contains(item.AssignmentId) && granularIds.Contains(item.PermissionId))
+            .Select(item => new { item.AssignmentId, item.PermissionId })
+            .ToArrayAsync(cancellationToken);
+        var existingKeys = existing.Select(item => (item.AssignmentId, item.PermissionId)).ToHashSet();
+        var now = DateTime.UtcNow;
+        foreach (var assignmentId in assignmentIds)
+        {
+            foreach (var permissionId in granularIds)
+            {
+                if (!existingKeys.Contains((assignmentId, permissionId)))
+                {
+                    dbContext.ReceptionPracticeAssignmentPermissions.Add(
+                        new ReceptionPracticeAssignmentPermission(
+                            Guid.NewGuid(), assignmentId, permissionId, SystemSeedIds.RootApplicationUserId, now));
+                }
             }
         }
 

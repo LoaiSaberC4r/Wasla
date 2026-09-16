@@ -58,6 +58,9 @@ public static class DependencyInjection
         services.AddScoped<IEmailOutbox, EmailOutbox>();
         services.AddScoped<IWaslaDataStore, WaslaDataStore>();
         services.AddScoped<IPublicDiscoveryService, PublicDiscoveryService>();
+        services.AddScoped<ReservationPublicReaders>();
+        services.AddScoped<IPracticeReservationOccupancyReader>(provider => provider.GetRequiredService<ReservationPublicReaders>());
+        services.AddScoped<IPublicDoctorPopularityReader>(provider => provider.GetRequiredService<ReservationPublicReaders>());
         services.AddScoped<IPublicDiscoveryRankingProjectionRefresher,
             PublicDiscoveryRankingProjectionRefresher>();
         services.AddScoped<WaslaSecuritySeeder>();
@@ -68,6 +71,7 @@ public static class DependencyInjection
         services.AddHostedService<DatabaseInitializationHostedService>();
         services.AddHostedService<PublicDiscoveryProjectionMaintenanceHostedService>();
         services.AddHostedService<EmailOutboxBackgroundService>();
+        services.AddHostedService<ReservationExpirationBackgroundService>();
 
         services.AddDbContext<WaslaDbContext>((serviceProvider, options) =>
             options

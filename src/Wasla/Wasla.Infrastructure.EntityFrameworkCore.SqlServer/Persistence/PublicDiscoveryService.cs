@@ -510,7 +510,9 @@ internal sealed class PublicDiscoveryService(
                 next?.Date,
                 next?.Time,
                 next?.IsToday == true,
-                next is not null);
+                next is not null,
+                configuration?.AllowOnlineBooking == true,
+                BookingDisabledReason(snapshot, next));
             var matches = request is null ||
                 (!request.GovernorateId.HasValue || practice.GovernorateId == request.GovernorateId.Value) &&
                 (!request.CityId.HasValue || practice.CityId == request.CityId.Value) &&
@@ -588,6 +590,33 @@ internal sealed class PublicDiscoveryService(
     private static bool HasBaseBookingRequirements(PracticeSnapshot snapshot)
         => snapshot.Configuration?.AllowOnlineBooking == true &&
            PublicSearchPrice(snapshot).HasValue;
+
+    private string? BookingDisabledReason(PracticeSnapshot snapshot, NextSlot? next)
+    {
+        if (next is not null)
+        {
+            return null;
+        }
+
+        if (snapshot.Configuration?.AllowOnlineBooking != true)
+        {
+            return "OnlineBookingDisabled";
+        }
+
+        if (!PublicSearchPrice(snapshot).HasValue)
+        {
+            return "NoPricing";
+        }
+
+        var (today, _, _) = LocalWindow(snapshot.Configuration.TimeZoneId);
+        var hasSchedule = Enumerable.Range(0, PublicDiscoveryPolicy.PublicBookingHorizonDays)
+            .Select(offset => today.AddDays(offset))
+            .Any(date => DoctorPracticeAvailabilityCalculator.CalculateAvailableSlotStarts(
+                date,
+                snapshot.Periods,
+                snapshot.Exceptions).Count > 0);
+        return hasSchedule ? "NoAvailableCapacity" : "NoAvailableSchedule";
+    }
 
     private static decimal? PublicSearchPrice(PracticeSnapshot snapshot)
     {

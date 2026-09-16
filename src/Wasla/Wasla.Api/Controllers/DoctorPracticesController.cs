@@ -106,6 +106,7 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
             request.PatientSelfCancellationCutoffMinutes,
             request.MaximumDailyPatients,
             request.MaximumTicketCallAttempts,
+            request.NoShowAfterPassedPatientsCount,
             request.TimeZoneId,
             request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
 
@@ -370,6 +371,7 @@ public sealed record DoctorPracticeConfigurationRequest(
     int PatientSelfCancellationCutoffMinutes,
     int? MaximumDailyPatients,
     int MaximumTicketCallAttempts,
+    int NoShowAfterPassedPatientsCount,
     string TimeZoneId,
     string RowVersion);
 public sealed record DoctorPracticeBrandingRequest(

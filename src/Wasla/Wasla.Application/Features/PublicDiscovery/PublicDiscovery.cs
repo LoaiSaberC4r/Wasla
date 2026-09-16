@@ -37,7 +37,9 @@ public sealed record PublicPracticeResponse(
     DateOnly? NextAvailableSlotDate,
     TimeOnly? NextAvailableSlotTime,
     bool IsToday,
-    bool IsBookable);
+    bool IsBookable,
+    bool OnlineBookingEnabled,
+    string? BookingDisabledReason);
 
 public sealed record PublicDoctorSearchItemResponse(
     Guid DoctorId,

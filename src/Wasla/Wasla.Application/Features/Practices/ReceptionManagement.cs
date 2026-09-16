@@ -16,6 +16,12 @@ using Wasla.Domain.Security;
 namespace Wasla.Application.Features.Practices;
 
 public sealed record ReceptionAssignmentPermissionResponse(Guid Id, string Code);
+public sealed record AssignableReceptionPermissionResponse(
+    Guid Id,
+    string Code,
+    string NameAr,
+    string NameEn,
+    string Group);
 public sealed record ReceptionAssignmentResponse(
     Guid Id,
     Guid DoctorPracticeId,
@@ -64,6 +70,8 @@ public sealed record ActivateReceptionAssignmentCommand(Guid ReceptionId, Guid A
 public sealed record DeactivateReceptionAssignmentCommand(Guid ReceptionId, Guid AssignmentId, string RowVersion)
     : ICommand<ReceptionAssignmentResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record ListMyReceptionPracticesQuery : IQuery<IReadOnlyList<ReceptionPracticeContextResponse>>;
+public sealed record ListAssignableReceptionPermissionsQuery
+    : IQuery<IReadOnlyList<AssignableReceptionPermissionResponse>>;
 
 public interface IReceptionPracticeAuthorizationService
 {
@@ -151,6 +159,32 @@ internal sealed class ListDoctorReceptionsQueryHandler(IWaslaDataStore dataStore
         }
 
         return Result<IReadOnlyList<ReceptionResponse>>.Ok(responses);
+    }
+}
+
+internal sealed class ListAssignableReceptionPermissionsQueryHandler(
+    IWaslaDataStore dataStore,
+    ICurrentUser currentUser)
+    : IQueryHandler<ListAssignableReceptionPermissionsQuery,
+        IReadOnlyList<AssignableReceptionPermissionResponse>>
+{
+    public async Task<Result<IReadOnlyList<AssignableReceptionPermissionResponse>>> Handle(
+        ListAssignableReceptionPermissionsQuery request,
+        CancellationToken cancellationToken)
+    {
+        var doctor = await DoctorPracticeAccess.ResolveDoctorAsync(dataStore, currentUser, cancellationToken);
+        if (doctor.IsFailure)
+        {
+            return Result<IReadOnlyList<AssignableReceptionPermissionResponse>>.Fail(doctor.Errors);
+        }
+
+        var permissions = await dataStore.ListPermissionsAsync(cancellationToken);
+        var response = permissions
+            .Where(item => PermissionNames.ReceptionAssignmentScoped.Contains(item.Name))
+            .OrderBy(item => item.Name, StringComparer.Ordinal)
+            .Select(ReceptionPermissionCatalog.Map)
+            .ToArray();
+        return Result<IReadOnlyList<AssignableReceptionPermissionResponse>>.Ok(response);
     }
 }
 
@@ -627,4 +661,31 @@ internal static class ReceptionMapper
                 .OrderBy(item => item.Code, StringComparer.Ordinal)
                 .ToArray(),
             RowVersionCodec.Encode(assignment.RowVersion));
+}
+
+internal static class ReceptionPermissionCatalog
+{
+    public static AssignableReceptionPermissionResponse Map(Permission permission)
+    {
+        var (nameAr, nameEn) = permission.Name switch
+        {
+            PermissionNames.PatientsSearchBasic => ("البحث الأساسي عن المرضى", "Search patients"),
+            PermissionNames.PatientsRegister => ("تسجيل مريض", "Register patients"),
+            PermissionNames.PracticeReservationsManage => ("إدارة حجوزات العيادة (قديم)", "Manage practice reservations (legacy)"),
+            PermissionNames.PracticeReservationsView => ("عرض حجوزات العيادة", "View practice reservations"),
+            PermissionNames.PracticeReservationsCreate => ("إنشاء حجوزات العيادة", "Create practice reservations"),
+            PermissionNames.PracticeReservationsCancel => ("إلغاء حجوزات العيادة", "Cancel practice reservations"),
+            PermissionNames.PracticeReservationsReschedule => ("إعادة جدولة حجوزات العيادة", "Reschedule practice reservations"),
+            PermissionNames.PracticeReservationsRestoreNoShow => ("استعادة حجز عدم الحضور", "Restore no-show reservations"),
+            PermissionNames.PracticeQueueManage => ("إدارة طابور العيادة", "Manage practice queue"),
+            PermissionNames.PracticePaymentsRecord => ("تسجيل مدفوعات العيادة", "Record practice payments"),
+            PermissionNames.PracticeWalkInsCreate => ("إنشاء زيارة بدون حجز", "Create practice walk-ins"),
+            _ => (permission.Name, permission.Name)
+        };
+        var group = permission.Name.StartsWith("PracticeReservations.", StringComparison.Ordinal)
+            ? "Reservations"
+            : permission.Name.Split('.', 2)[0];
+        return new AssignableReceptionPermissionResponse(
+            permission.Id, permission.Name, nameAr, nameEn, group);
+    }
 }

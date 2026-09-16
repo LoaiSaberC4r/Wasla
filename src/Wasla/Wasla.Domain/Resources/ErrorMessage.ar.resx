@@ -198,4 +198,28 @@
   <data name="PublicDateOutsideHorizon" xml:space="preserve"><value>يجب أن يكون التاريخ المطلوب ضمن نطاق الحجز العام البالغ 30 يوماً.</value></data>
   <data name="PublicSlotUnavailable" xml:space="preserve"><value>الموعد المطلوب غير متاح حالياً.</value></data>
   <data name="PublicMediaNotFound" xml:space="preserve"><value>الملف العام المطلوب غير موجود.</value></data>
+  <data name="ReservationNotFound" xml:space="preserve"><value>الحجز غير موجود.</value></data>
+  <data name="ReservationInvalidState" xml:space="preserve"><value>حالة الحجز لا تسمح بهذا الإجراء.</value></data>
+  <data name="ReservationInvalidSlot" xml:space="preserve"><value>موعد الحجز المحدد غير صحيح.</value></data>
+  <data name="ReservationSlotNotAvailable" xml:space="preserve"><value>موعد الحجز المحدد لم يعد متاحاً.</value></data>
+  <data name="ReservationBookingHorizonExceeded" xml:space="preserve"><value>يجب أن يكون الموعد ضمن نطاق الحجز البالغ 30 يوماً.</value></data>
+  <data name="ReservationOnlineBookingDisabled" xml:space="preserve"><value>الحجز الإلكتروني غير مفعّل لهذه العيادة.</value></data>
+  <data name="ReservationDailyCapacityExceeded" xml:space="preserve"><value>اكتملت السعة اليومية للعيادة.</value></data>
+  <data name="ReservationSegmentCapacityExceeded" xml:space="preserve"><value>لا توجد سعة محمية أو عامة متاحة للشريحة المحددة.</value></data>
+  <data name="ReservationPatientPracticeDateConflict" xml:space="preserve"><value>للمريض حجز نشط بالفعل في هذه العيادة في هذا التاريخ.</value></data>
+  <data name="ReservationPatientAppointmentOverlap" xml:space="preserve"><value>للمريض موعد آخر متداخل.</value></data>
+  <data name="ReservationFutureConsultationAlreadyExists" xml:space="preserve"><value>للمريض استشارة مستقبلية نشطة بالفعل مع هذا الطبيب.</value></data>
+  <data name="ReservationSameDayNoShowBookingBlocked" xml:space="preserve"><value>يجب استعادة حجز عدم الحضور في اليوم نفسه بدلاً من إنشاء حجز جديد.</value></data>
+  <data name="ReservationCancellationCutoffReached" xml:space="preserve"><value>انتهت مهلة إلغاء المريض.</value></data>
+  <data name="ReservationRescheduleCutoffReached" xml:space="preserve"><value>انتهت مهلة إعادة جدولة المريض.</value></data>
+  <data name="ReservationRescheduleLimitReached" xml:space="preserve"><value>تم بلوغ الحد الأقصى لإعادة الجدولة بواسطة المريض.</value></data>
+  <data name="ReservationPatientConsentRequired" xml:space="preserve"><value>يلزم تأكيد موافقة المريض وذكر السبب لإعادة الجدولة بواسطة مقدم الخدمة.</value></data>
+  <data name="ReservationNoShowRestoreNotAllowed" xml:space="preserve"><value>لا يمكن استعادة حجز عدم الحضور هذا.</value></data>
+  <data name="ReservationNoShowRestoreCapacityUnavailable" xml:space="preserve"><value>لا توجد سعة متاحة لاستعادة حجز عدم الحضور.</value></data>
+  <data name="ReservationFollowUpNotBookable" xml:space="preserve"><value>حجز المتابعة غير متاح في هذه المرحلة.</value></data>
+  <data name="ReservationConcurrencyConflict" xml:space="preserve"><value>تم تعديل الحجز بواسطة طلب آخر.</value></data>
+  <data name="ReservationReferenceConflict" xml:space="preserve"><value>تعذر إنشاء مرجع حجز فريد.</value></data>
+  <data name="ReservationIdempotencyKeyReused" xml:space="preserve"><value>تم استخدام مفتاح منع التكرار سابقاً مع طلب مختلف.</value></data>
+  <data name="ReservationAccessDenied" xml:space="preserve"><value>ليس لديك صلاحية الوصول إلى هذا الحجز.</value></data>
+  <data name="DoctorPracticeFutureReservationsExist" xml:space="preserve"><value>يجب إعادة جدولة الحجوزات النشطة المستقبلية أو إلغاؤها قبل إلغاء تفعيل العيادة.</value></data>
 </root>

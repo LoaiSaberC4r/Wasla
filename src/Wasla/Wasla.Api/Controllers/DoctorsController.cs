@@ -77,6 +77,14 @@ public sealed class AdminDoctorsController(ISender sender) : ControllerBase
             new SuspendDoctorCommand(doctorId, request.Reason, request.RowVersion),
             cancellationToken)).ToIActionResult(cancellationToken);
 
+    [HttpGet("{doctorId:guid}/suspension-impact")]
+    [Permission(PermissionNames.DoctorsSuspend)]
+    public async Task<IActionResult> SuspensionImpact(
+        Guid doctorId,
+        CancellationToken cancellationToken)
+        => (await sender.Send(new GetDoctorSuspensionImpactQuery(doctorId), cancellationToken))
+            .ToIActionResult(cancellationToken);
+
     [HttpPost("{doctorId:guid}/reactivate")]
     [Permission(PermissionNames.DoctorsReactivate)]
     public async Task<IActionResult> Reactivate(

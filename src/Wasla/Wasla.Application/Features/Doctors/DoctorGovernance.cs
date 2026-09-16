@@ -11,6 +11,7 @@ using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
 using Wasla.Domain.Resources;
 using Wasla.Domain.Security;
+using Wasla.Domain.Reservations;
 
 namespace Wasla.Application.Features.Doctors;
 
@@ -106,7 +107,26 @@ public sealed record SuspendDoctorCommand(Guid DoctorId, string Reason, string R
 public sealed record ReactivateDoctorCommand(Guid DoctorId, string RowVersion)
     : ICommand<DoctorLifecycleResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
-public sealed record DoctorLifecycleResponse(Guid DoctorId, DoctorApprovalStatus ApprovalStatus, string RowVersion);
+public sealed record DoctorLifecycleResponse(
+    Guid DoctorId,
+    DoctorApprovalStatus ApprovalStatus,
+    string RowVersion,
+    int CancelledReservationCount = 0);
+public sealed record DoctorSuspensionPracticeImpactResponse(
+    Guid PracticeId,
+    string NameAr,
+    string? NameEn,
+    int FutureActiveReservationsCount,
+    DateTime EarliestAppointmentUtc,
+    DateTime LatestAppointmentUtc);
+public sealed record DoctorSuspensionImpactResponse(
+    Guid DoctorId,
+    int FutureActiveReservationsCount,
+    IReadOnlyList<DoctorSuspensionPracticeImpactResponse> Practices,
+    DateTime? EarliestAppointmentUtc,
+    DateTime? LatestAppointmentUtc);
+public sealed record GetDoctorSuspensionImpactQuery(Guid DoctorId)
+    : IQuery<DoctorSuspensionImpactResponse>;
 
 internal sealed class ListDoctorsQueryValidator : AbstractValidator<ListDoctorsQuery>
 {
@@ -327,6 +347,48 @@ internal sealed class SuspendDoctorCommandHandler(DoctorLifecycleService service
             cancellationToken);
 }
 
+internal sealed class GetDoctorSuspensionImpactQueryHandler(
+    IWaslaDataStore dataStore,
+    IDateTimeProvider clock)
+    : IQueryHandler<GetDoctorSuspensionImpactQuery, DoctorSuspensionImpactResponse>
+{
+    public async Task<Result<DoctorSuspensionImpactResponse>> Handle(
+        GetDoctorSuspensionImpactQuery request,
+        CancellationToken cancellationToken)
+    {
+        var doctor = await dataStore.FindDoctorByIdAsync(request.DoctorId, cancellationToken);
+        if (doctor is null)
+        {
+            return Result<DoctorSuspensionImpactResponse>.Fail(DoctorErrors.NotFound);
+        }
+
+        var reservations = await dataStore.ListFutureActiveReservationsByDoctorAsync(
+            request.DoctorId, clock.UtcNow, cancellationToken);
+        var summaries = new List<DoctorSuspensionPracticeImpactResponse>();
+        foreach (var group in reservations.GroupBy(item => item.DoctorPracticeId))
+        {
+            var practice = await dataStore.FindDoctorPracticeAsync(group.Key, cancellationToken);
+            if (practice is not null)
+            {
+                summaries.Add(new DoctorSuspensionPracticeImpactResponse(
+                    practice.Id,
+                    practice.NameAr,
+                    practice.NameEn,
+                    group.Count(),
+                    group.Min(item => item.ScheduledStartUtc),
+                    group.Max(item => item.ScheduledStartUtc)));
+            }
+        }
+
+        return Result<DoctorSuspensionImpactResponse>.Ok(new DoctorSuspensionImpactResponse(
+            doctor.Id,
+            reservations.Count,
+            summaries.OrderBy(item => item.EarliestAppointmentUtc).ToArray(),
+            reservations.Count == 0 ? null : reservations.Min(item => item.ScheduledStartUtc),
+            reservations.Count == 0 ? null : reservations.Max(item => item.ScheduledStartUtc)));
+    }
+}
+
 internal sealed class ReactivateDoctorCommandHandler(DoctorLifecycleService service)
     : ICommandHandler<ReactivateDoctorCommand, DoctorLifecycleResponse>
 {
@@ -427,12 +489,66 @@ internal sealed class DoctorLifecycleService(
             email.Subject,
             email.HtmlBody,
             email.TextBody), cancellationToken);
+        var cancelledReservationCount = 0;
+        if (emailEvent == DoctorEmailEvent.Suspended)
+        {
+            var futureReservations = await dataStore.ListFutureActiveReservationsByDoctorAsync(
+                doctor.Id, now, cancellationToken);
+            foreach (var reservation in futureReservations)
+            {
+                var cancelled = reservation.Cancel(
+                    ReservationCancellationInitiator.System,
+                    ReservationActionInitiator.System,
+                    null,
+                    ReservationCancellationReasons.DoctorSuspended,
+                    reason,
+                    now);
+                if (cancelled.IsFailure)
+                {
+                    continue;
+                }
+
+                cancelledReservationCount++;
+                var patient = await dataStore.FindPatientByIdAsync(reservation.PatientId, cancellationToken);
+                var recipients = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (!string.IsNullOrWhiteSpace(patient?.Email))
+                {
+                    recipients.Add(patient.Email);
+                }
+
+                if (reservation.BookingSource == ReservationBookingSource.FamilyMember)
+                {
+                    var bookingActor = await dataStore.FindUserByIdAsync(
+                        reservation.CreatedByApplicationUserId, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(bookingActor?.Email))
+                    {
+                        recipients.Add(bookingActor.Email);
+                    }
+                }
+
+                foreach (var recipient in recipients)
+                {
+                    var reservationHistoryId = reservation.History.Last().Id;
+                    var reference = System.Net.WebUtility.HtmlEncode(reservation.ReservationReference);
+                    var recipientHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                        System.Text.Encoding.UTF8.GetBytes(recipient)))[..12];
+                    await emailOutbox.QueueAsync(new QueueEmailMessage(
+                        $"reservation-doctor-suspended:{reservation.Id:N}:{reservationHistoryId:N}:{recipientHash}",
+                        recipient,
+                        "Wasla | تم إلغاء الحجز لتعليق الطبيب | Reservation Cancelled",
+                        $"<p dir=\"rtl\">تم إلغاء الحجز {reference} بسبب تعليق الطبيب.</p><p>Reservation {reference} was cancelled because the doctor was suspended.</p>",
+                        $"Reservation {reservation.ReservationReference} was cancelled because the doctor was suspended."),
+                        cancellationToken);
+                }
+            }
+        }
         await dataStore.SaveChangesAsync(cancellationToken);
 
         return Result<DoctorLifecycleResponse>.Ok(new DoctorLifecycleResponse(
             doctor.Id,
             doctor.ApprovalStatus,
-            RowVersionCodec.Encode(doctor.RowVersion)));
+            RowVersionCodec.Encode(doctor.RowVersion),
+            cancelledReservationCount));
     }
 }
 

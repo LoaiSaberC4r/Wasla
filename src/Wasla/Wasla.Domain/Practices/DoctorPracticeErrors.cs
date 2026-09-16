@@ -18,6 +18,10 @@ public static class DoctorPracticeErrors
     public static Error ConcurrencyConflict => Error.Conflict(
         "DoctorPractice.ConcurrencyConflict",
         Text("DoctorPracticeConcurrencyConflict"));
+    public static Error FutureReservationsExist(string details) => Error.Conflict(
+        "DoctorPractice.FutureReservationsExist",
+        Text("DoctorPracticeFutureReservationsExist"),
+        details);
 
     private static Error Validation(string code, string resource) => Error.Validation(code, Text(resource));
     internal static string Text(string resource) => ErrorMessage.GetString(resource);

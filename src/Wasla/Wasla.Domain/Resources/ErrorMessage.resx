@@ -198,4 +198,28 @@
   <data name="PublicDateOutsideHorizon" xml:space="preserve"><value>The requested date must be inside the 30-day public booking horizon.</value></data>
   <data name="PublicSlotUnavailable" xml:space="preserve"><value>The requested slot is not currently available.</value></data>
   <data name="PublicMediaNotFound" xml:space="preserve"><value>The requested public media was not found.</value></data>
+  <data name="ReservationNotFound" xml:space="preserve"><value>The reservation was not found.</value></data>
+  <data name="ReservationInvalidState" xml:space="preserve"><value>The reservation is not in a valid state for this action.</value></data>
+  <data name="ReservationInvalidSlot" xml:space="preserve"><value>The selected appointment slot is invalid.</value></data>
+  <data name="ReservationSlotNotAvailable" xml:space="preserve"><value>The selected appointment slot is no longer available.</value></data>
+  <data name="ReservationBookingHorizonExceeded" xml:space="preserve"><value>The appointment must be within the 30-day booking horizon.</value></data>
+  <data name="ReservationOnlineBookingDisabled" xml:space="preserve"><value>Online booking is disabled for this practice.</value></data>
+  <data name="ReservationDailyCapacityExceeded" xml:space="preserve"><value>The practice daily capacity is full.</value></data>
+  <data name="ReservationSegmentCapacityExceeded" xml:space="preserve"><value>The selected segment has no available protected or general capacity.</value></data>
+  <data name="ReservationPatientPracticeDateConflict" xml:space="preserve"><value>The patient already has an active reservation at this practice on this date.</value></data>
+  <data name="ReservationPatientAppointmentOverlap" xml:space="preserve"><value>The patient already has an overlapping appointment.</value></data>
+  <data name="ReservationFutureConsultationAlreadyExists" xml:space="preserve"><value>The patient already has a future active consultation with this doctor.</value></data>
+  <data name="ReservationSameDayNoShowBookingBlocked" xml:space="preserve"><value>A same-day no-show must be restored instead of creating a new reservation.</value></data>
+  <data name="ReservationCancellationCutoffReached" xml:space="preserve"><value>The patient cancellation cutoff has been reached.</value></data>
+  <data name="ReservationRescheduleCutoffReached" xml:space="preserve"><value>The patient reschedule cutoff has been reached.</value></data>
+  <data name="ReservationRescheduleLimitReached" xml:space="preserve"><value>The patient reschedule limit has been reached.</value></data>
+  <data name="ReservationPatientConsentRequired" xml:space="preserve"><value>Confirmed patient consent and a reason are required for provider rescheduling.</value></data>
+  <data name="ReservationNoShowRestoreNotAllowed" xml:space="preserve"><value>This no-show reservation cannot be restored.</value></data>
+  <data name="ReservationNoShowRestoreCapacityUnavailable" xml:space="preserve"><value>Capacity is unavailable to restore this no-show reservation.</value></data>
+  <data name="ReservationFollowUpNotBookable" xml:space="preserve"><value>Follow-up reservations are not bookable in this phase.</value></data>
+  <data name="ReservationConcurrencyConflict" xml:space="preserve"><value>The reservation was changed by another request.</value></data>
+  <data name="ReservationReferenceConflict" xml:space="preserve"><value>A unique reservation reference could not be generated.</value></data>
+  <data name="ReservationIdempotencyKeyReused" xml:space="preserve"><value>The idempotency key was already used with a different request.</value></data>
+  <data name="ReservationAccessDenied" xml:space="preserve"><value>You do not have access to this reservation.</value></data>
+  <data name="DoctorPracticeFutureReservationsExist" xml:space="preserve"><value>Future active reservations must be rescheduled or cancelled before this practice can be deactivated.</value></data>
 </root>
