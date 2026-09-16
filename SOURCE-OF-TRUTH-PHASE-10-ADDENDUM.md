@@ -44,3 +44,15 @@ Phase 9 availability counts Active and ConvertedToTicket as occupied and release
 
 - Phase 8 assignable Reception permission discovery is closed through one authoritative delegatable allowlist and legacy umbrella backfill.
 - Phase 10 implements the Reservation aggregate, persistence, lifecycle APIs, concurrency/idempotency controls, occupancy/popularity integration, expiration, and Doctor/Practice lifecycle guards.
+
+## DEC-037 — Phase 10 hardening clarifications
+
+Late is evaluated with the current configuration of the Reservation's own Practice in every list, detail, summary, filter, and capability. Upcoming and History use the authoritative appointment instant (`ScheduledStartUtc`) rather than the server calendar date; explicit date filters retain `BusinessDate` semantics.
+
+Patient/Guardian reschedule requires online booking to remain enabled and revalidates the current Segment, NewConsultation Visit Type, and pricing tuple without changing the locked original price. Reschedule updates the appointment timezone snapshot to the current Practice timezone; expiration and same-day NoShow restore interpret the existing appointment with its stored timezone snapshot. A target identical to the current appointment is rejected without history, notification, counter, or RowVersion mutation.
+
+Reception assignment UI and new assignment writes use only granular Reservation permissions. The legacy `PracticeReservations.Manage` permission remains known for historical compatibility but is removed from assignment-level grants after granular backfill.
+
+Reservation notifications resolve the Patient's usable email, approved primary linked responsible contact, verified minor-child Parent/Legal Guardian, and the family booking actor where applicable. Projection changes are queued durably in the Reservation transaction and processed only after commit; refresh failure never rolls back the business transition.
+
+Reservation reference creation follows the deterministic lock order Patient → Practice/date → Idempotency → Reference and rechecks uniqueness while holding a transaction-owned SQL application lock. ReservationHistory uses a restrictive FK and cannot cascade-delete with Reservation.

@@ -267,6 +267,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         DateTime scheduledLocalDateTime,
         DateOnly businessDate,
         int slotDurationMinutes,
+        string timeZoneId,
         ReservationActionInitiator initiator,
         Guid actorApplicationUserId,
         bool patientConsentConfirmed,
@@ -276,6 +277,11 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         if (Status != ReservationStatus.Active)
         {
             return Result.Fail(ReservationErrors.InvalidState);
+        }
+
+        if (ScheduledStartUtc == scheduledStartUtc)
+        {
+            return Result.Fail(ReservationErrors.RescheduleTargetUnchanged);
         }
 
         var isPatientAction = initiator is ReservationActionInitiator.Patient or ReservationActionInitiator.Guardian;
@@ -290,6 +296,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         }
 
         var normalizedReason = Normalize(reason);
+        var normalizedTimeZone = Normalize(timeZoneId);
         if (!isPatientAction && string.IsNullOrWhiteSpace(normalizedReason))
         {
             return Result.Fail(ReservationErrors.PatientConsentRequired);
@@ -298,6 +305,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         if (actorApplicationUserId == Guid.Empty || !Enum.IsDefined(initiator) ||
             scheduledStartUtc.Kind != DateTimeKind.Utc || scheduledLocalDateTime.Kind == DateTimeKind.Utc ||
             businessDate == default || slotDurationMinutes is < 5 or > 480 ||
+            string.IsNullOrWhiteSpace(normalizedTimeZone) || normalizedTimeZone.Length > 100 ||
             normalizedReason?.Length > ReservationPolicy.ReasonMaxLength)
         {
             return Result.Fail(ReservationErrors.InvalidSlot);
@@ -308,6 +316,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         var oldBusinessDate = BusinessDate;
         var oldDuration = SlotDurationMinutesSnapshot;
         SetAppointment(scheduledStartUtc, scheduledLocalDateTime, businessDate, slotDurationMinutes);
+        TimeZoneIdSnapshot = normalizedTimeZone;
         if (isPatientAction)
         {
             PatientInitiatedRescheduleCount++;
@@ -646,5 +655,10 @@ public static class ReservationErrors
     public static Error ConcurrencyConflict => Error.Conflict("Reservation.ConcurrencyConflict", Text("ReservationConcurrencyConflict"));
     public static Error ReferenceConflict => Error.Conflict("Reservation.ReferenceConflict", Text("ReservationReferenceConflict"));
     public static Error IdempotencyKeyReused => Error.Conflict("Reservation.IdempotencyKeyReused", Text("ReservationIdempotencyKeyReused"));
+    public static Error IdempotencyKeyRequired => Error.Validation("Reservation.IdempotencyKeyRequired", Text("ReservationIdempotencyKeyRequired"));
+    public static Error IdempotencyKeyInvalid => Error.Validation("Reservation.IdempotencyKeyInvalid", Text("ReservationIdempotencyKeyInvalid"));
+    public static Error RescheduleTargetUnchanged => Error.Validation("Reservation.RescheduleTargetUnchanged", Text("ReservationRescheduleTargetUnchanged"));
+    public static Error CurrentCatalogInvalid => Error.Conflict("Reservation.CurrentCatalogInvalid", Text("ReservationCurrentCatalogInvalid"));
+    public static Error RestoreBusinessDateEnded => Error.Conflict("Reservation.RestoreBusinessDateEnded", Text("ReservationRestoreBusinessDateEnded"));
     public static Error AccessDenied => Error.Security("Reservation.AccessDenied", Text("ReservationAccessDenied"));
 }

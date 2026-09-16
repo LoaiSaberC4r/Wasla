@@ -322,6 +322,11 @@ internal sealed class WaslaSecuritySeeder(
             }
         }
 
+        var legacyLinks = await dbContext.ReceptionPracticeAssignmentPermissions
+            .Where(item => assignmentIds.Contains(item.AssignmentId) && item.PermissionId == legacyId)
+            .ToArrayAsync(cancellationToken);
+        dbContext.ReceptionPracticeAssignmentPermissions.RemoveRange(legacyLinks);
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

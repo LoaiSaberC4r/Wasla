@@ -1020,8 +1020,10 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             join patient in dbContext.Patients.AsNoTracking() on reservation.PatientId equals patient.Id
             join doctor in dbContext.Doctors.AsNoTracking() on reservation.DoctorId equals doctor.Id
             join practice in dbContext.DoctorPractices.AsNoTracking() on reservation.DoctorPracticeId equals practice.Id
+            join configuration in dbContext.DoctorPracticeConfigurations.AsNoTracking()
+                on reservation.DoctorPracticeId equals configuration.DoctorPracticeId
             where reservation.Id == reservationId
-            select new ReservationViewRecord(reservation, patient, doctor, practice))
+            select new ReservationViewRecord(reservation, patient, doctor, practice, configuration))
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<ReservationViewPage> ListReservationViewsAsync(
@@ -1032,9 +1034,11 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
         ReservationBookingSource? bookingSource,
         DateOnly? fromDate,
         DateOnly? toDate,
+        DateTime? scheduledFromUtc,
+        DateTime? scheduledBeforeUtc,
         Guid? segmentId,
         bool? isLate,
-        DateTime lateThresholdUtc,
+        DateTime utcNow,
         string? search,
         int pageNumber,
         int pageSize,
@@ -1045,7 +1049,9 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             join patient in dbContext.Patients.AsNoTracking() on reservation.PatientId equals patient.Id
             join doctor in dbContext.Doctors.AsNoTracking() on reservation.DoctorId equals doctor.Id
             join practice in dbContext.DoctorPractices.AsNoTracking() on reservation.DoctorPracticeId equals practice.Id
-            select new ReservationViewRecord(reservation, patient, doctor, practice);
+            join configuration in dbContext.DoctorPracticeConfigurations.AsNoTracking()
+                on reservation.DoctorPracticeId equals configuration.DoctorPracticeId
+            select new ReservationViewRecord(reservation, patient, doctor, practice, configuration);
 
         if (patientIds is { Count: > 0 })
         {
@@ -1083,6 +1089,16 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             query = query.Where(item => item.Reservation.BusinessDate <= toDate.Value);
         }
 
+        if (scheduledFromUtc.HasValue)
+        {
+            query = query.Where(item => item.Reservation.ScheduledStartUtc >= scheduledFromUtc.Value);
+        }
+
+        if (scheduledBeforeUtc.HasValue)
+        {
+            query = query.Where(item => item.Reservation.ScheduledStartUtc < scheduledBeforeUtc.Value);
+        }
+
         if (segmentId.HasValue)
         {
             query = query.Where(item => item.Reservation.SegmentId == segmentId.Value);
@@ -1092,9 +1108,11 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
         {
             query = isLate.Value
                 ? query.Where(item => item.Reservation.Status == ReservationStatus.Active &&
-                                      item.Reservation.ScheduledStartUtc < lateThresholdUtc)
+                                      utcNow > item.Reservation.ScheduledStartUtc.AddMinutes(
+                                          item.Configuration.CheckInGracePeriodMinutes))
                 : query.Where(item => item.Reservation.Status != ReservationStatus.Active ||
-                                      item.Reservation.ScheduledStartUtc >= lateThresholdUtc);
+                                      utcNow <= item.Reservation.ScheduledStartUtc.AddMinutes(
+                                          item.Configuration.CheckInGracePeriodMinutes));
         }
 
         var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
@@ -1114,7 +1132,8 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
                 Total = group.LongCount(),
                 Active = group.LongCount(item => item.Reservation.Status == ReservationStatus.Active),
                 Late = group.LongCount(item => item.Reservation.Status == ReservationStatus.Active &&
-                                               item.Reservation.ScheduledStartUtc < lateThresholdUtc),
+                                               utcNow > item.Reservation.ScheduledStartUtc.AddMinutes(
+                                                   item.Configuration.CheckInGracePeriodMinutes)),
                 NoShow = group.LongCount(item => item.Reservation.Status == ReservationStatus.NoShow),
                 Cancelled = group.LongCount(item => item.Reservation.Status == ReservationStatus.Cancelled),
                 Converted = group.LongCount(item => item.Reservation.Status == ReservationStatus.ConvertedToTicket),
@@ -1193,6 +1212,29 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             sameDayNoShow);
     }
 
+    public async Task<IReadOnlyList<ReservationAvailabilityConflictRecord>>
+        ListReservationAvailabilityConflictsAsync(
+            Guid patientId,
+            DateOnly fromDate,
+            DateOnly throughDate,
+            Guid excludingReservationId,
+            CancellationToken cancellationToken)
+        => await dbContext.Reservations.AsNoTracking()
+            .Where(item => item.PatientId == patientId && item.Id != excludingReservationId &&
+                           item.BusinessDate >= fromDate && item.BusinessDate <= throughDate &&
+                           (item.Status == ReservationStatus.Active ||
+                            item.Status == ReservationStatus.NoShow))
+            .Select(item => new ReservationAvailabilityConflictRecord(
+                item.Id,
+                item.DoctorId,
+                item.DoctorPracticeId,
+                item.BusinessDate,
+                item.ScheduledStartUtc,
+                item.ScheduledStartUtc.AddMinutes(item.SlotDurationMinutesSnapshot),
+                item.Status,
+                item.VisitTypeCodeSnapshot))
+            .ToArrayAsync(cancellationToken);
+
     public Task<bool> ReservationReferenceExistsAsync(
         string reservationReference,
         CancellationToken cancellationToken)
@@ -1257,6 +1299,26 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             cancellationToken);
     }
 
+    public async Task AcquireReservationReferenceLockAsync(
+        string reservationReference,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(
+                dbContext.Database.ProviderName,
+                "Microsoft.EntityFrameworkCore.SqlServer",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        // Reference is deliberately last in the Create lock order:
+        // Patient -> Practice/date -> Idempotency -> Reference.
+        var resource = $"Wasla:Reservation:Reference:{reservationReference}";
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"DECLARE @r int; EXEC @r = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r < 0 THROW 51005, 'Could not acquire reservation reference lock.', 1;",
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Reservation>> ListDueActiveReservationsAsync(
         DateTime utcNow,
         int batchSize,
@@ -1303,6 +1365,68 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
                   orderby reservation.ScheduledStartUtc
                   select new ReservationPatientRecord(reservation, patient))
             .ToArrayAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<ReservationNotificationRecipientRecord>> ListReservationNotificationRecipientsAsync(
+        IReadOnlyCollection<Guid> patientIds,
+        IReadOnlyCollection<Guid> bookingActorApplicationUserIds,
+        DateOnly today,
+        CancellationToken cancellationToken)
+    {
+        var targetPatientIds = patientIds.Distinct().ToArray();
+        var actorIds = bookingActorApplicationUserIds.Distinct().ToArray();
+        var recipients = new List<ReservationNotificationRecipientRecord>();
+
+        recipients.AddRange(await dbContext.Patients.AsNoTracking()
+            .Where(patient => targetPatientIds.Contains(patient.Id) && patient.Email != null)
+            .Select(patient => new ReservationNotificationRecipientRecord(patient.Id, null, patient.Email!))
+            .ToArrayAsync(cancellationToken));
+
+        recipients.AddRange(await (
+                from contact in dbContext.PatientContacts.AsNoTracking()
+                join responsible in dbContext.Patients.AsNoTracking()
+                    on contact.LinkedPatientId equals responsible.Id
+                where targetPatientIds.Contains(contact.PatientId) &&
+                      contact.IsPrimary &&
+                      contact.LinkedPatientId != null &&
+                      responsible.Email != null &&
+                      (contact.RelationshipType == PatientContactRelationshipType.Father ||
+                       contact.RelationshipType == PatientContactRelationshipType.Mother ||
+                       contact.RelationshipType == PatientContactRelationshipType.Guardian ||
+                       contact.RelationshipType == PatientContactRelationshipType.LegalGuardian)
+                select new ReservationNotificationRecipientRecord(contact.PatientId, null, responsible.Email!))
+            .ToArrayAsync(cancellationToken));
+
+        var adultCutoff = today.AddYears(-18);
+        recipients.AddRange(await (
+                from subjectMember in dbContext.FamilyMembers.AsNoTracking()
+                join family in dbContext.Families.AsNoTracking()
+                    on subjectMember.FamilyId equals family.Id
+                join subjectPatient in dbContext.Patients.AsNoTracking()
+                    on subjectMember.PatientId equals subjectPatient.Id
+                join responsibleMember in dbContext.FamilyMembers.AsNoTracking()
+                    on subjectMember.FamilyId equals responsibleMember.FamilyId
+                join responsiblePatient in dbContext.Patients.AsNoTracking()
+                    on responsibleMember.PatientId equals responsiblePatient.Id
+                where targetPatientIds.Contains(subjectMember.PatientId) &&
+                      family.Status == FamilyStatus.Active &&
+                      subjectMember.IsActive && responsibleMember.IsActive &&
+                      subjectMember.Role == FamilyMemberRole.Child &&
+                      subjectPatient.DateOfBirth > adultCutoff &&
+                      responsiblePatient.Email != null &&
+                      (responsibleMember.Role == FamilyMemberRole.Father ||
+                       responsibleMember.Role == FamilyMemberRole.Mother ||
+                       responsibleMember.Role == FamilyMemberRole.LegalGuardian)
+                select new ReservationNotificationRecipientRecord(
+                    subjectMember.PatientId, null, responsiblePatient.Email!))
+            .ToArrayAsync(cancellationToken));
+
+        recipients.AddRange(await dbContext.ApplicationUsers.AsNoTracking()
+            .Where(user => actorIds.Contains(user.Id) && user.IsActive)
+            .Select(user => new ReservationNotificationRecipientRecord(null, user.Id, user.Email))
+            .ToArrayAsync(cancellationToken));
+
+        return recipients;
+    }
 
     public void Add<TEntity>(TEntity entity) where TEntity : class
         => dbContext.Set<TEntity>().Add(entity);

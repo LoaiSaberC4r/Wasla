@@ -92,8 +92,13 @@ public sealed record ReservationViewRecord(
     Reservation Reservation,
     Patient Patient,
     Doctor Doctor,
-    DoctorPractice Practice);
+    DoctorPractice Practice,
+    DoctorPracticeConfiguration Configuration);
 public sealed record ReservationPatientRecord(Reservation Reservation, Patient Patient);
+public sealed record ReservationNotificationRecipientRecord(
+    Guid? PatientId,
+    Guid? BookingActorApplicationUserId,
+    string Email);
 public sealed record ReservationViewPage(
     IReadOnlyList<ReservationViewRecord> Items,
     long TotalCount,
@@ -111,6 +116,15 @@ public sealed record ReservationConflictSnapshot(
     bool PatientAppointmentOverlap,
     bool FutureConsultationAlreadyExists,
     bool SameDayNoShowExists);
+public sealed record ReservationAvailabilityConflictRecord(
+    Guid ReservationId,
+    Guid DoctorId,
+    Guid DoctorPracticeId,
+    DateOnly BusinessDate,
+    DateTime ScheduledStartUtc,
+    DateTime ScheduledEndUtc,
+    ReservationStatus Status,
+    string VisitTypeCodeSnapshot);
 
 public interface IWaslaDataStore
 {
@@ -318,9 +332,11 @@ public interface IWaslaDataStore
         ReservationBookingSource? bookingSource,
         DateOnly? fromDate,
         DateOnly? toDate,
+        DateTime? scheduledFromUtc,
+        DateTime? scheduledBeforeUtc,
         Guid? segmentId,
         bool? isLate,
-        DateTime lateThresholdUtc,
+        DateTime utcNow,
         string? search,
         int pageNumber,
         int pageSize,
@@ -335,6 +351,12 @@ public interface IWaslaDataStore
         DateTime scheduledEndUtc,
         DateTime utcNow,
         Guid? excludingReservationId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<ReservationAvailabilityConflictRecord>> ListReservationAvailabilityConflictsAsync(
+        Guid patientId,
+        DateOnly fromDate,
+        DateOnly throughDate,
+        Guid excludingReservationId,
         CancellationToken cancellationToken);
     Task<bool> ReservationReferenceExistsAsync(string reservationReference, CancellationToken cancellationToken);
     Task<ReservationIdempotencyRecord?> FindReservationIdempotencyAsync(
@@ -352,6 +374,9 @@ public interface IWaslaDataStore
         string operation,
         string idempotencyKey,
         CancellationToken cancellationToken);
+    Task AcquireReservationReferenceLockAsync(
+        string reservationReference,
+        CancellationToken cancellationToken);
     Task<IReadOnlyList<Reservation>> ListDueActiveReservationsAsync(
         DateTime utcNow,
         int batchSize,
@@ -367,6 +392,11 @@ public interface IWaslaDataStore
     Task<IReadOnlyList<ReservationPatientRecord>> ListFutureActiveReservationPatientsByPracticeAsync(
         Guid practiceId,
         DateTime utcNow,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<ReservationNotificationRecipientRecord>> ListReservationNotificationRecipientsAsync(
+        IReadOnlyCollection<Guid> patientIds,
+        IReadOnlyCollection<Guid> bookingActorApplicationUserIds,
+        DateOnly today,
         CancellationToken cancellationToken);
     void Add<TEntity>(TEntity entity) where TEntity : class;
     void Remove<TEntity>(TEntity entity) where TEntity : class;

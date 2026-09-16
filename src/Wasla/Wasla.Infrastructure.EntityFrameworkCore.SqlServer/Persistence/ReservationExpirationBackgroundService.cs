@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
+using Wasla.Application.Features.Reservations;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -46,6 +47,8 @@ internal sealed class ReservationExpirationBackgroundService(
         await using var scope = scopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
         var clock = scope.ServiceProvider.GetRequiredService<IDateTimeProvider>();
+        var projectionOutbox = scope.ServiceProvider
+            .GetRequiredService<IReservationProjectionInvalidationOutbox>();
         var nowUtc = EnsureUtc(clock.UtcNow);
         var candidates = await dbContext.Reservations
             .Include(item => item.History)
@@ -89,7 +92,7 @@ internal sealed class ReservationExpirationBackgroundService(
                 continue;
             }
 
-            var timeZone = TimeZoneInfo.FindSystemTimeZoneById(configuration.TimeZoneId);
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById(reservation.TimeZoneIdSnapshot);
             var localEnd = DateTime.SpecifyKind(
                 reservation.BusinessDate.ToDateTime(effective.Max(item => item.EndTime)),
                 DateTimeKind.Unspecified);
@@ -97,6 +100,12 @@ internal sealed class ReservationExpirationBackgroundService(
             if (nowUtc >= operationalEndUtc && reservation.Expire(nowUtc).IsSuccess)
             {
                 changed = true;
+                await projectionOutbox.QueueAsync(new QueueReservationProjectionInvalidation(
+                    $"reservation-expired:{reservation.Id:N}:{reservation.History.Last().Id:N}",
+                    reservation.DoctorPracticeId,
+                    reservation.DoctorId,
+                    RefreshAvailability: true,
+                    RefreshPopularity: true), cancellationToken);
             }
         }
 

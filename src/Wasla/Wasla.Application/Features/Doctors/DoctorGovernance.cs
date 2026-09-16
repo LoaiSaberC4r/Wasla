@@ -5,6 +5,7 @@ using BuildingBlock.Application.Time;
 using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Email;
+using Wasla.Application.Features.Reservations;
 using Wasla.Application.Media;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
@@ -364,11 +365,12 @@ internal sealed class GetDoctorSuspensionImpactQueryHandler(
 
         var reservations = await dataStore.ListFutureActiveReservationsByDoctorAsync(
             request.DoctorId, clock.UtcNow, cancellationToken);
+        var practices = (await dataStore.ListDoctorPracticesAsync(request.DoctorId, cancellationToken))
+            .ToDictionary(item => item.Practice.Id, item => item.Practice);
         var summaries = new List<DoctorSuspensionPracticeImpactResponse>();
         foreach (var group in reservations.GroupBy(item => item.DoctorPracticeId))
         {
-            var practice = await dataStore.FindDoctorPracticeAsync(group.Key, cancellationToken);
-            if (practice is not null)
+            if (practices.TryGetValue(group.Key, out var practice))
             {
                 summaries.Add(new DoctorSuspensionPracticeImpactResponse(
                     practice.Id,
@@ -407,7 +409,9 @@ internal sealed class DoctorLifecycleService(
     IEmailNotificationFactory emailFactory,
     IEmailOutbox emailOutbox,
     ICurrentUser currentUser,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    IReservationNotificationRecipientResolver recipientResolver,
+    IReservationProjectionInvalidationOutbox projectionOutbox)
 {
     public async Task<Result<DoctorLifecycleResponse>> ExecuteAsync(
         Guid doctorId,
@@ -494,6 +498,8 @@ internal sealed class DoctorLifecycleService(
         {
             var futureReservations = await dataStore.ListFutureActiveReservationsByDoctorAsync(
                 doctor.Id, now, cancellationToken);
+            var reservationRecipients = await recipientResolver.ResolveAsync(
+                futureReservations, cancellationToken);
             foreach (var reservation in futureReservations)
             {
                 var cancelled = reservation.Cancel(
@@ -509,22 +515,7 @@ internal sealed class DoctorLifecycleService(
                 }
 
                 cancelledReservationCount++;
-                var patient = await dataStore.FindPatientByIdAsync(reservation.PatientId, cancellationToken);
-                var recipients = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                if (!string.IsNullOrWhiteSpace(patient?.Email))
-                {
-                    recipients.Add(patient.Email);
-                }
-
-                if (reservation.BookingSource == ReservationBookingSource.FamilyMember)
-                {
-                    var bookingActor = await dataStore.FindUserByIdAsync(
-                        reservation.CreatedByApplicationUserId, cancellationToken);
-                    if (!string.IsNullOrWhiteSpace(bookingActor?.Email))
-                    {
-                        recipients.Add(bookingActor.Email);
-                    }
-                }
+                var recipients = reservationRecipients.GetValueOrDefault(reservation.Id) ?? [];
 
                 foreach (var recipient in recipients)
                 {
@@ -540,6 +531,13 @@ internal sealed class DoctorLifecycleService(
                         $"Reservation {reservation.ReservationReference} was cancelled because the doctor was suspended."),
                         cancellationToken);
                 }
+
+                await projectionOutbox.QueueAsync(new QueueReservationProjectionInvalidation(
+                    $"reservation-doctor-suspended:{reservation.Id:N}:{reservation.History.Last().Id:N}",
+                    reservation.DoctorPracticeId,
+                    reservation.DoctorId,
+                    RefreshAvailability: true,
+                    RefreshPopularity: true), cancellationToken);
             }
         }
         await dataStore.SaveChangesAsync(cancellationToken);

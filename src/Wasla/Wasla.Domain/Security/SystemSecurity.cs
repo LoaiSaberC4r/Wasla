@@ -231,7 +231,6 @@ public static class PermissionNames
         [
             PatientsSearchBasic,
             PatientsRegister,
-            PracticeReservationsManage,
             PracticeReservationsView,
             PracticeReservationsCreate,
             PracticeReservationsCancel,

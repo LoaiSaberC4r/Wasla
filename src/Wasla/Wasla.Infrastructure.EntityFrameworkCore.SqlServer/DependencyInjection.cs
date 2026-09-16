@@ -1,6 +1,7 @@
 using Wasla.Application.Email;
 using Wasla.Application.Persistence;
 using Wasla.Application.Features.PublicDiscovery;
+using Wasla.Application.Features.Reservations;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
@@ -63,15 +64,19 @@ public static class DependencyInjection
         services.AddScoped<IPublicDoctorPopularityReader>(provider => provider.GetRequiredService<ReservationPublicReaders>());
         services.AddScoped<IPublicDiscoveryRankingProjectionRefresher,
             PublicDiscoveryRankingProjectionRefresher>();
+        services.AddScoped<IReservationProjectionInvalidationOutbox,
+            ReservationProjectionInvalidationOutbox>();
         services.AddScoped<WaslaSecuritySeeder>();
         services.AddScoped<MedicalSpecializationSeeder>();
         services.AddScoped<EgyptLocationSeedCoordinator>();
         services.AddScoped<EmailOutboxProcessor>();
+        services.AddScoped<ReservationProjectionInvalidationProcessor>();
         services.AddSingleton<IDatabaseMigrationService, EfCoreDatabaseMigrationService>();
         services.AddHostedService<DatabaseInitializationHostedService>();
         services.AddHostedService<PublicDiscoveryProjectionMaintenanceHostedService>();
         services.AddHostedService<EmailOutboxBackgroundService>();
         services.AddHostedService<ReservationExpirationBackgroundService>();
+        services.AddHostedService<ReservationProjectionInvalidationBackgroundService>();
 
         services.AddDbContext<WaslaDbContext>((serviceProvider, options) =>
             options

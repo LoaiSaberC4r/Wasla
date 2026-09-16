@@ -50,6 +50,8 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<ReservationHistory> ReservationHistories => Set<ReservationHistory>();
     public DbSet<ReservationIdempotencyRecord> ReservationIdempotencyRecords => Set<ReservationIdempotencyRecord>();
+    public DbSet<ReservationProjectionInvalidation> ReservationProjectionInvalidations
+        => Set<ReservationProjectionInvalidation>();
     public DbSet<DoctorPracticeBranding> DoctorPracticeBrandings => Set<DoctorPracticeBranding>();
     public DbSet<DoctorPracticeSchedulePeriod> DoctorPracticeSchedulePeriods => Set<DoctorPracticeSchedulePeriod>();
     public DbSet<DoctorPracticeScheduleException> DoctorPracticeScheduleExceptions => Set<DoctorPracticeScheduleException>();
