@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Api.Security;
+using Wasla.Api.ProblemDetails;
 using Wasla.Application.Features.Practices;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Security;
@@ -81,9 +82,13 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
         Guid practiceId,
         DoctorPracticeRowVersionRequest request,
         CancellationToken cancellationToken)
-        => (await sender.Send(
-            new DeactivateDoctorPracticeCommand(practiceId, request.RowVersion), cancellationToken))
-            .ToIActionResult(cancellationToken);
+    {
+        var result = await sender.Send(
+            new DeactivateDoctorPracticeCommand(practiceId, request.RowVersion), cancellationToken);
+        return result.IsSuccess
+            ? NoContent()
+            : result.Errors.ToWaslaActionProblem(cancellationToken);
+    }
 
     [HttpGet("{practiceId:guid}/configuration")]
     [Permission(PermissionNames.DoctorPracticeConfigurationViewOwn)]
@@ -200,9 +205,12 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
         Guid periodId,
         UpdateDoctorPracticeSchedulePeriodRequest request,
         CancellationToken cancellationToken)
-        => (await sender.Send(new UpdateDoctorPracticeSchedulePeriodCommand(
+    {
+        var result = await sender.Send(new UpdateDoctorPracticeSchedulePeriodCommand(
             practiceId, periodId, request.DayOfWeek, request.StartTime, request.EndTime,
-            request.SlotDurationMinutes, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+            request.SlotDurationMinutes, request.RowVersion), cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : result.Errors.ToWaslaActionProblem(cancellationToken);
+    }
 
     [HttpDelete("{practiceId:guid}/schedule/periods/{periodId:guid}")]
     [Permission(PermissionNames.DoctorPracticeScheduleManageOwn)]
@@ -211,8 +219,11 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
         Guid periodId,
         [FromBody] DoctorPracticeRowVersionRequest request,
         CancellationToken cancellationToken)
-        => (await sender.Send(new DeleteDoctorPracticeSchedulePeriodCommand(
-            practiceId, periodId, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+    {
+        var result = await sender.Send(new DeleteDoctorPracticeSchedulePeriodCommand(
+            practiceId, periodId, request.RowVersion), cancellationToken);
+        return result.IsSuccess ? NoContent() : result.Errors.ToWaslaActionProblem(cancellationToken);
+    }
 
     [HttpPost("{practiceId:guid}/schedule/exceptions")]
     [Permission(PermissionNames.DoctorPracticeScheduleManageOwn)]
@@ -226,7 +237,7 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
             request.SlotDurationMinutes), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
-            : result.Errors.ToActionProblem(cancellationToken);
+            : result.Errors.ToWaslaActionProblem(cancellationToken);
     }
 
     [HttpPut("{practiceId:guid}/schedule/exceptions/{exceptionId:guid}")]
@@ -236,9 +247,12 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
         Guid exceptionId,
         UpdateDoctorPracticeScheduleExceptionRequest request,
         CancellationToken cancellationToken)
-        => (await sender.Send(new UpdateDoctorPracticeScheduleExceptionCommand(
+    {
+        var result = await sender.Send(new UpdateDoctorPracticeScheduleExceptionCommand(
             practiceId, exceptionId, request.Date, request.Type, request.StartTime, request.EndTime,
-            request.SlotDurationMinutes, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+            request.SlotDurationMinutes, request.RowVersion), cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : result.Errors.ToWaslaActionProblem(cancellationToken);
+    }
 
     [HttpDelete("{practiceId:guid}/schedule/exceptions/{exceptionId:guid}")]
     [Permission(PermissionNames.DoctorPracticeScheduleManageOwn)]
@@ -247,8 +261,11 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
         Guid exceptionId,
         [FromBody] DoctorPracticeRowVersionRequest request,
         CancellationToken cancellationToken)
-        => (await sender.Send(new DeleteDoctorPracticeScheduleExceptionCommand(
-            practiceId, exceptionId, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+    {
+        var result = await sender.Send(new DeleteDoctorPracticeScheduleExceptionCommand(
+            practiceId, exceptionId, request.RowVersion), cancellationToken);
+        return result.IsSuccess ? NoContent() : result.Errors.ToWaslaActionProblem(cancellationToken);
+    }
 
     [HttpGet("{practiceId:guid}/segments")]
     [Permission(PermissionNames.DoctorPracticeSegmentsViewOwn)]

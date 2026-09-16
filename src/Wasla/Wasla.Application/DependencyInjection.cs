@@ -35,6 +35,9 @@ public static class DependencyInjection
         services.AddSingleton<IPublicDoctorPopularityReader, EmptyPublicDoctorPopularityReader>();
         services.AddSingleton<IPublicDiscoveryRankingProjectionRefresher,
             EmptyPublicDiscoveryRankingProjectionRefresher>();
+        services.AddScoped<IReservationNotificationRecipientResolver,
+            ReservationNotificationRecipientResolver>();
+        services.AddSingleton<IReservationReferenceGenerator, ReservationReferenceGenerator>();
         services.AddSingleton<IPatientAccessPolicy, PatientAccessPolicy>();
         services.AddSingleton<IEmailNotificationFactory, BilingualEmailNotificationFactory>();
 

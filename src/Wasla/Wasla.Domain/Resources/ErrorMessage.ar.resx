@@ -220,6 +220,11 @@
   <data name="ReservationConcurrencyConflict" xml:space="preserve"><value>تم تعديل الحجز بواسطة طلب آخر.</value></data>
   <data name="ReservationReferenceConflict" xml:space="preserve"><value>تعذر إنشاء مرجع حجز فريد.</value></data>
   <data name="ReservationIdempotencyKeyReused" xml:space="preserve"><value>تم استخدام مفتاح منع التكرار سابقاً مع طلب مختلف.</value></data>
+  <data name="ReservationIdempotencyKeyRequired" xml:space="preserve"><value>يجب إرسال ترويسة Idempotency-Key.</value></data>
+  <data name="ReservationIdempotencyKeyInvalid" xml:space="preserve"><value>ترويسة Idempotency-Key غير صحيحة أو أطول من الحد المسموح.</value></data>
+  <data name="ReservationRescheduleTargetUnchanged" xml:space="preserve"><value>الموعد المحدد لم يتغير.</value></data>
+  <data name="ReservationCurrentCatalogInvalid" xml:space="preserve"><value>لم تعد تركيبة الشريحة ونوع الزيارة والتسعير الحالية صالحة للحجز.</value></data>
+  <data name="ReservationRestoreBusinessDateEnded" xml:space="preserve"><value>انتهى تاريخ العمل أو اليوم التشغيلي الخاص بالحجز.</value></data>
   <data name="ReservationAccessDenied" xml:space="preserve"><value>ليس لديك صلاحية الوصول إلى هذا الحجز.</value></data>
   <data name="DoctorPracticeFutureReservationsExist" xml:space="preserve"><value>يجب إعادة جدولة الحجوزات النشطة المستقبلية أو إلغاؤها قبل إلغاء تفعيل العيادة.</value></data>
 </root>

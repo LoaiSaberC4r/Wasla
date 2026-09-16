@@ -307,7 +307,6 @@ internal sealed class ReservationMutationValidator : AbstractValidator<CreateRes
         RuleFor(item => item.SegmentId).NotEmpty();
         RuleFor(item => item.VisitTypeId).NotEmpty();
         RuleFor(item => item.BookingNote).MaximumLength(ReservationPolicy.BookingNoteMaxLength);
-        RuleFor(item => item.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
@@ -320,7 +319,6 @@ internal sealed class CreatePracticeReservationCommandValidator : AbstractValida
         RuleFor(item => item.SegmentId).NotEmpty();
         RuleFor(item => item.VisitTypeId).NotEmpty();
         RuleFor(item => item.BookingNote).MaximumLength(ReservationPolicy.BookingNoteMaxLength);
-        RuleFor(item => item.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
@@ -332,7 +330,6 @@ internal sealed class ReservationRowVersionValidator : AbstractValidator<CancelM
         RuleFor(item => item.ReasonCode).NotEmpty().MaximumLength(100);
         RuleFor(item => item.Comment).MaximumLength(ReservationPolicy.ReasonMaxLength);
         RuleFor(item => item.RowVersion).Must(RowVersionCodec.IsValid);
-        RuleFor(item => item.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
@@ -346,7 +343,6 @@ internal sealed class CancelPracticeReservationCommandValidator
         RuleFor(item => item.ReasonCode).NotEmpty().MaximumLength(100);
         RuleFor(item => item.Comment).MaximumLength(ReservationPolicy.ReasonMaxLength);
         RuleFor(item => item.RowVersion).Must(RowVersionCodec.IsValid);
-        RuleFor(item => item.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
@@ -358,7 +354,6 @@ internal sealed class RescheduleMineReservationCommandValidator
         RuleFor(item => item.ReservationId).NotEmpty();
         RuleFor(item => item.BusinessDate).NotEmpty();
         RuleFor(item => item.RowVersion).Must(RowVersionCodec.IsValid);
-        RuleFor(item => item.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
@@ -372,7 +367,6 @@ internal sealed class ReschedulePracticeReservationCommandValidator
         RuleFor(item => item.BusinessDate).NotEmpty();
         RuleFor(item => item.Reason).MaximumLength(ReservationPolicy.ReasonMaxLength);
         RuleFor(item => item.RowVersion).Must(RowVersionCodec.IsValid);
-        RuleFor(item => item.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
@@ -384,7 +378,6 @@ internal sealed class RestorePracticeNoShowReservationCommandValidator
         RuleFor(item => item.PracticeId).NotEmpty();
         RuleFor(item => item.ReservationId).NotEmpty();
         RuleFor(item => item.RowVersion).Must(RowVersionCodec.IsValid);
-        RuleFor(item => item.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
@@ -577,7 +570,8 @@ internal sealed class RestorePracticeNoShowReservationCommandHandler(Reservation
 
 internal sealed class ExpireReservationCommandHandler(
     IWaslaDataStore dataStore,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    IReservationProjectionInvalidationOutbox projectionOutbox)
     : ICommandHandler<ExpireReservationCommand>
 {
     public async Task<Result> Handle(
@@ -603,7 +597,7 @@ internal sealed class ExpireReservationCommandHandler(
 
         var effective = DoctorPracticeAvailabilityCalculator.GetEffectiveWorkingPeriods(
             reservation.BusinessDate, periods, exceptions);
-        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(configuration.TimeZoneId);
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(reservation.TimeZoneIdSnapshot);
         var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(clock.UtcNow), timeZone);
         if (effective.Count == 0 || localNow.DateTime <
             reservation.BusinessDate.ToDateTime(effective.Max(item => item.EndTime)))
@@ -614,6 +608,8 @@ internal sealed class ExpireReservationCommandHandler(
         var result = reservation.Expire(clock.UtcNow);
         if (result.IsSuccess)
         {
+            await ReservationProjectionInvalidations.QueueAsync(
+                projectionOutbox, reservation, "expired", refreshAvailability: true, cancellationToken);
             await dataStore.SaveChangesAsync(cancellationToken);
         }
 
@@ -623,7 +619,8 @@ internal sealed class ExpireReservationCommandHandler(
 
 internal sealed class MarkReservationNoShowCommandHandler(
     IWaslaDataStore dataStore,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    IReservationProjectionInvalidationOutbox projectionOutbox)
     : ICommandHandler<MarkReservationNoShowCommand>
 {
     public async Task<Result> Handle(
@@ -648,6 +645,8 @@ internal sealed class MarkReservationNoShowCommandHandler(
         var result = reservation.MarkNoShow(request.ActorApplicationUserId, clock.UtcNow);
         if (result.IsSuccess)
         {
+            await ReservationProjectionInvalidations.QueueAsync(
+                projectionOutbox, reservation, "no-show", refreshAvailability: true, cancellationToken);
             await dataStore.SaveChangesAsync(cancellationToken);
         }
 
@@ -658,7 +657,7 @@ internal sealed class MarkReservationNoShowCommandHandler(
 internal sealed class ConvertReservationToTicketCommandHandler(
     IWaslaDataStore dataStore,
     IDateTimeProvider clock,
-    IPublicDiscoveryRankingProjectionRefresher rankingRefresher)
+    IReservationProjectionInvalidationOutbox projectionOutbox)
     : ICommandHandler<ConvertReservationToTicketCommand>
 {
     public async Task<Result> Handle(
@@ -674,13 +673,30 @@ internal sealed class ConvertReservationToTicketCommandHandler(
         var result = reservation.ConvertToTicket(request.ActorApplicationUserId, clock.UtcNow);
         if (result.IsSuccess)
         {
+            await ReservationProjectionInvalidations.QueueAsync(
+                projectionOutbox, reservation, "converted", refreshAvailability: false, cancellationToken);
             await dataStore.SaveChangesAsync(cancellationToken);
-            await rankingRefresher.RefreshDoctorsAsync(
-                [reservation.DoctorId], cancellationToken);
         }
 
         return result;
     }
+
+}
+
+internal static class ReservationProjectionInvalidations
+{
+    public static Task QueueAsync(
+        IReservationProjectionInvalidationOutbox outbox,
+        Reservation reservation,
+        string eventName,
+        bool refreshAvailability,
+        CancellationToken cancellationToken)
+        => outbox.QueueAsync(new QueueReservationProjectionInvalidation(
+            $"reservation-{eventName}:{reservation.Id:N}:{reservation.History.Last().Id:N}",
+            reservation.DoctorPracticeId,
+            reservation.DoctorId,
+            refreshAvailability,
+            RefreshPopularity: true), cancellationToken);
 }
 
 internal enum ReservationOperationScope
@@ -713,12 +729,18 @@ internal sealed class ReservationApplicationService(
     IPatientAccessPolicy patientAccessPolicy,
     IReceptionPracticeAuthorizationService receptionAuthorization,
     IEmailOutbox emailOutbox,
-    IPracticeReservationOccupancyReader occupancyReader)
+    IPracticeReservationOccupancyReader occupancyReader,
+    IReservationProjectionInvalidationOutbox projectionOutbox,
+    IReservationNotificationRecipientResolver recipientResolver,
+    IReservationReferenceGenerator referenceGenerator)
 {
     public async Task<Result<IReadOnlyList<BookablePatientResponse>>> ListBookablePatientsAsync(
         CancellationToken cancellationToken)
     {
-        var accessible = await ResolveAccessiblePatientsAsync(cancellationToken);
+        var accessible = await ResolveAccessiblePatientsAsync(
+            PermissionNames.ReservationsCreateOwn,
+            PermissionNames.ReservationsCreateDependents,
+            cancellationToken);
         return accessible.IsFailure
             ? Result<IReadOnlyList<BookablePatientResponse>>.Fail(accessible.Errors)
             : Result<IReadOnlyList<BookablePatientResponse>>.Ok(accessible.Value);
@@ -736,6 +758,13 @@ internal sealed class ReservationApplicationService(
         ReservationOperationScope scope,
         CancellationToken cancellationToken)
     {
+        var validatedKey = ValidateIdempotencyKey(idempotencyKey);
+        if (validatedKey.IsFailure)
+        {
+            return Result<ReservationDetailsResponse>.Fail(validatedKey.Errors);
+        }
+
+        idempotencyKey = validatedKey.Value;
         var actor = await ResolveCreateActorAsync(patientId, practiceId, scope, cancellationToken);
         if (actor.IsFailure)
         {
@@ -835,6 +864,7 @@ internal sealed class ReservationApplicationService(
         dataStore.Add(created.Value);
         idempotency.Value.Record!.Complete(created.Value.Id, created.Value.ReservationReference, clock.UtcNow);
         await QueueNotificationAsync(created.Value, "created", cancellationToken);
+        await QueueProjectionInvalidationAsync(created.Value, "created", cancellationToken);
         await dataStore.SaveChangesAsync(cancellationToken);
         return await GetDetailsForActorAsync(
             created.Value.Id, scope, practiceId, includeBookingNote: true, cancellationToken);
@@ -850,6 +880,13 @@ internal sealed class ReservationApplicationService(
         ReservationOperationScope scope,
         CancellationToken cancellationToken)
     {
+        var validatedKey = ValidateIdempotencyKey(idempotencyKey);
+        if (validatedKey.IsFailure)
+        {
+            return Result<ReservationDetailsResponse>.Fail(validatedKey.Errors);
+        }
+
+        idempotencyKey = validatedKey.Value;
         var reservation = await dataStore.FindReservationAsync(reservationId, cancellationToken);
         if (reservation is null || routePracticeId.HasValue && reservation.DoctorPracticeId != routePracticeId.Value)
         {
@@ -940,6 +977,7 @@ internal sealed class ReservationApplicationService(
         dataStore.SetOriginalRowVersion(reservation, supplied.Value);
         idempotency.Value.Record!.Complete(reservation.Id, reservation.ReservationReference, clock.UtcNow);
         await QueueNotificationAsync(reservation, "cancelled", cancellationToken);
+        await QueueProjectionInvalidationAsync(reservation, "cancelled", cancellationToken);
         await dataStore.SaveChangesAsync(cancellationToken);
         return await GetDetailsForActorAsync(
             reservation.Id, scope, reservation.DoctorPracticeId, includeBookingNote: true, cancellationToken);
@@ -957,6 +995,13 @@ internal sealed class ReservationApplicationService(
         ReservationOperationScope scope,
         CancellationToken cancellationToken)
     {
+        var validatedKey = ValidateIdempotencyKey(idempotencyKey);
+        if (validatedKey.IsFailure)
+        {
+            return Result<ReservationDetailsResponse>.Fail(validatedKey.Errors);
+        }
+
+        idempotencyKey = validatedKey.Value;
         var reservation = await dataStore.FindReservationAsync(reservationId, cancellationToken);
         if (reservation is null || routePracticeId.HasValue && reservation.DoctorPracticeId != routePracticeId.Value)
         {
@@ -976,12 +1021,20 @@ internal sealed class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(actor.Errors);
         }
 
-        var configuration = await dataStore.FindDoctorPracticeConfigurationAsync(
-            reservation.DoctorPracticeId, cancellationToken);
-        var segment = await dataStore.FindDoctorPracticeSegmentAsync(reservation.SegmentId, cancellationToken);
-        if (configuration is null || segment is null)
+        var catalog = await LoadBookingContextAsync(
+            reservation.DoctorPracticeId,
+            reservation.SegmentId,
+            reservation.VisitTypeId,
+            cancellationToken);
+        if (catalog.IsFailure)
         {
-            return Result<ReservationDetailsResponse>.Fail(ReservationErrors.InvalidState);
+            return Result<ReservationDetailsResponse>.Fail(ReservationErrors.CurrentCatalogInvalid);
+        }
+
+        var (_, _, configuration, segment, _, _) = catalog.Value;
+        if (scope == ReservationOperationScope.Patient && !configuration.AllowOnlineBooking)
+        {
+            return Result<ReservationDetailsResponse>.Fail(ReservationErrors.OnlineBookingDisabled);
         }
 
         var targetSlot = await ResolveSlotAsync(
@@ -1055,6 +1108,7 @@ internal sealed class ReservationApplicationService(
             targetSlot.Value.LocalDateTime,
             businessDate,
             targetSlot.Value.DurationMinutes,
+            configuration.TimeZoneId,
             actor.Value.ActionInitiator,
             actor.Value.ActorApplicationUserId,
             patientConsentConfirmed,
@@ -1068,6 +1122,7 @@ internal sealed class ReservationApplicationService(
         dataStore.SetOriginalRowVersion(reservation, supplied.Value);
         idempotency.Value.Record!.Complete(reservation.Id, reservation.ReservationReference, clock.UtcNow);
         await QueueNotificationAsync(reservation, "rescheduled", cancellationToken);
+        await QueueProjectionInvalidationAsync(reservation, "rescheduled", cancellationToken);
         await dataStore.SaveChangesAsync(cancellationToken);
         return await GetDetailsForActorAsync(
             reservation.Id, scope, reservation.DoctorPracticeId, includeBookingNote: true, cancellationToken);
@@ -1080,6 +1135,13 @@ internal sealed class ReservationApplicationService(
         string idempotencyKey,
         CancellationToken cancellationToken)
     {
+        var validatedKey = ValidateIdempotencyKey(idempotencyKey);
+        if (validatedKey.IsFailure)
+        {
+            return Result<ReservationDetailsResponse>.Fail(validatedKey.Errors);
+        }
+
+        idempotencyKey = validatedKey.Value;
         var reservation = await dataStore.FindReservationAsync(reservationId, cancellationToken);
         if (reservation is null || reservation.DoctorPracticeId != practiceId)
         {
@@ -1099,27 +1161,19 @@ internal sealed class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(actor.Errors);
         }
 
+        var practice = await dataStore.FindDoctorPracticeAsync(practiceId, cancellationToken);
         var configuration = await dataStore.FindDoctorPracticeConfigurationAsync(practiceId, cancellationToken);
         var segment = await dataStore.FindDoctorPracticeSegmentAsync(reservation.SegmentId, cancellationToken);
-        if (configuration is null || segment is null || reservation.Status != ReservationStatus.NoShow)
+        if (practice is null || configuration is null || segment is null)
         {
             return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NoShowRestoreNotAllowed);
         }
 
-        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(configuration.TimeZoneId);
-        var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(EnsureUtc(clock.UtcNow)), timeZone);
-        if (DateOnly.FromDateTime(localNow.DateTime) != reservation.BusinessDate)
+        var restoreEligibility = await EvaluateRestoreEligibilityAsync(
+            reservation, practice, configuration, segment, includeCapacity: false, cancellationToken);
+        if (restoreEligibility.IsFailure)
         {
-            return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NoShowRestoreNotAllowed);
-        }
-
-        var periods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(practiceId, cancellationToken);
-        var exceptions = await dataStore.ListDoctorPracticeScheduleExceptionsAsync(practiceId, cancellationToken);
-        var effective = DoctorPracticeAvailabilityCalculator.GetEffectiveWorkingPeriods(
-            reservation.BusinessDate, periods, exceptions);
-        if (effective.Count == 0 || localNow.TimeOfDay >= effective.Max(item => item.EndTime).ToTimeSpan())
-        {
-            return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NoShowRestoreNotAllowed);
+            return Result<ReservationDetailsResponse>.Fail(restoreEligibility.Errors);
         }
 
         await dataStore.AcquireReservationLocksAsync(
@@ -1146,28 +1200,19 @@ internal sealed class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(supplied.Errors);
         }
 
-        var generatedCount = effective.Sum(item =>
-            DoctorPracticeAvailabilityCalculator.CalculateSlotStarts(item).Count);
-        var slot = new ResolvedReservationSlot(
-            reservation.ScheduledStartUtc,
-            reservation.ScheduledLocalDateTime,
-            reservation.SlotDurationMinutesSnapshot,
-            timeZone,
-            effective,
-            configuration.EffectiveDailyCapacity(generatedCount));
         var capacity = await ValidateCapacityAndConflictsAsync(
             reservation.PatientId,
             reservation.DoctorId,
             practiceId,
             segment,
             reservation.BusinessDate,
-            slot,
+            restoreEligibility.Value,
             configuration,
             reservation.Id,
             cancellationToken);
         if (capacity.IsFailure)
         {
-            return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NoShowRestoreCapacityUnavailable);
+            return Result<ReservationDetailsResponse>.Fail(capacity.Errors);
         }
 
         var transition = reservation.RestoreFromNoShow(actor.Value.ActorApplicationUserId, clock.UtcNow);
@@ -1178,6 +1223,7 @@ internal sealed class ReservationApplicationService(
 
         dataStore.SetOriginalRowVersion(reservation, supplied.Value);
         idempotency.Value.Record!.Complete(reservation.Id, reservation.ReservationReference, clock.UtcNow);
+        await QueueProjectionInvalidationAsync(reservation, "restored", cancellationToken);
         await dataStore.SaveChangesAsync(cancellationToken);
         return await GetDetailsForActorAsync(
             reservation.Id, ReservationOperationScope.Reception, practiceId, true, cancellationToken);
@@ -1187,7 +1233,10 @@ internal sealed class ReservationApplicationService(
         ListMineReservationsQuery request,
         CancellationToken cancellationToken)
     {
-        var accessible = await ResolveAccessiblePatientsAsync(cancellationToken);
+        var accessible = await ResolveAccessiblePatientsAsync(
+            PermissionNames.ReservationsViewOwn,
+            PermissionNames.ReservationsViewDependents,
+            cancellationToken);
         if (accessible.IsFailure)
         {
             return Result<ReservationPagedResponse>.Fail(accessible.Errors);
@@ -1200,16 +1249,17 @@ internal sealed class ReservationApplicationService(
         }
 
         var patientIds = request.PatientId.HasValue ? [request.PatientId.Value] : accessibleIds;
-        var today = DateOnly.FromDateTime(clock.UtcNow);
         var fromDate = request.FromDate;
         var toDate = request.ToDate;
+        DateTime? scheduledFromUtc = null;
+        DateTime? scheduledBeforeUtc = null;
         if (string.Equals(request.View, "Upcoming", StringComparison.OrdinalIgnoreCase))
         {
-            fromDate ??= today;
+            scheduledFromUtc = clock.UtcNow;
         }
         else if (string.Equals(request.View, "History", StringComparison.OrdinalIgnoreCase))
         {
-            toDate ??= today.AddDays(-1);
+            scheduledBeforeUtc = clock.UtcNow;
         }
 
         var records = await dataStore.ListReservationViewsAsync(
@@ -1220,9 +1270,11 @@ internal sealed class ReservationApplicationService(
             null,
             fromDate,
             toDate,
+            scheduledFromUtc,
+            scheduledBeforeUtc,
             null,
             null,
-            clock.UtcNow.AddMinutes(-DoctorPracticePlatformDefaults.CheckInGracePeriodMinutes),
+            clock.UtcNow,
             null,
             request.PageNumber,
             request.PageSize,
@@ -1252,11 +1304,6 @@ internal sealed class ReservationApplicationService(
             return Result<ReservationPagedResponse>.Fail(access.Errors);
         }
 
-        var configuration = await dataStore.FindDoctorPracticeConfigurationAsync(
-            request.PracticeId,
-            cancellationToken);
-        var graceMinutes = configuration?.CheckInGracePeriodMinutes ??
-                           DoctorPracticePlatformDefaults.CheckInGracePeriodMinutes;
         var records = await dataStore.ListReservationViewsAsync(
             null,
             null,
@@ -1265,15 +1312,17 @@ internal sealed class ReservationApplicationService(
             request.BookingSource,
             request.FromDate,
             request.ToDate,
+            null,
+            null,
             request.SegmentId,
             request.IsLate,
-            clock.UtcNow.AddMinutes(-graceMinutes),
+            clock.UtcNow,
             request.Search,
             request.PageNumber,
             request.PageSize,
             cancellationToken);
         return Result<ReservationPagedResponse>.Ok(
-            MapPage(records, request.PageNumber, request.PageSize, graceMinutes));
+            MapPage(records, request.PageNumber, request.PageSize));
     }
 
     public Task<Result<ReservationDetailsResponse>> GetPracticeAsync(
@@ -1308,7 +1357,9 @@ internal sealed class ReservationApplicationService(
             request.ToDate,
             null,
             null,
-            clock.UtcNow.AddMinutes(-DoctorPracticePlatformDefaults.CheckInGracePeriodMinutes),
+            null,
+            null,
+            clock.UtcNow,
             request.Search,
             request.PageNumber,
             request.PageSize,
@@ -1364,20 +1415,26 @@ internal sealed class ReservationApplicationService(
         ReservationAvailabilityChannel channel,
         CancellationToken cancellationToken)
     {
+        if (reservationId.HasValue)
+        {
+            var availability = await BuildRescheduleAvailabilityAsync(
+                practiceId, reservationId.Value, channel, cancellationToken);
+            return availability.IsFailure
+                ? Result<IReadOnlyList<ReservationAvailableDateResponse>>.Fail(availability.Errors)
+                : Result<IReadOnlyList<ReservationAvailableDateResponse>>.Ok(
+                    availability.Value.Select(item => new ReservationAvailableDateResponse(
+                        item.Key, item.Value.Count > 0)).ToArray());
+        }
+
         if (channel is ReservationAvailabilityChannel.Reception or ReservationAvailabilityChannel.Doctor)
         {
-            var isReschedule = reservationId.HasValue;
             var access = await AuthorizePracticeAsync(
                 practiceId,
                 channel == ReservationAvailabilityChannel.Doctor
                     ? ReservationOperationScope.Doctor
                     : ReservationOperationScope.Reception,
-                isReschedule
-                    ? PermissionNames.PracticeReservationsReschedule
-                    : PermissionNames.PracticeReservationsCreate,
-                isReschedule
-                    ? PermissionNames.DoctorPracticeReservationsRescheduleOwn
-                    : PermissionNames.DoctorPracticeReservationsViewOwn,
+                PermissionNames.PracticeReservationsCreate,
+                PermissionNames.DoctorPracticeReservationsViewOwn,
                 cancellationToken);
             if (access.IsFailure)
             {
@@ -1394,34 +1451,6 @@ internal sealed class ReservationApplicationService(
                 ReservationErrors.OnlineBookingDisabled);
         }
 
-        Reservation? movingReservation = null;
-        if (reservationId.HasValue)
-        {
-            movingReservation = await dataStore.FindReservationAsync(reservationId.Value, cancellationToken);
-            if (movingReservation is null || movingReservation.DoctorPracticeId != practiceId)
-            {
-                return Result<IReadOnlyList<ReservationAvailableDateResponse>>.Fail(ReservationErrors.NotFound);
-            }
-
-            var access = await AuthorizeExistingAsync(
-                movingReservation,
-                channel switch
-                {
-                    ReservationAvailabilityChannel.Reception => ReservationOperationScope.Reception,
-                    ReservationAvailabilityChannel.Doctor => ReservationOperationScope.Doctor,
-                    _ => ReservationOperationScope.Patient
-                },
-                PermissionNames.PracticeReservationsReschedule,
-                PermissionNames.DoctorPracticeReservationsRescheduleOwn,
-                PermissionNames.ReservationsRescheduleOwn,
-                PermissionNames.ReservationsRescheduleDependents,
-                cancellationToken);
-            if (access.IsFailure)
-            {
-                return Result<IReadOnlyList<ReservationAvailableDateResponse>>.Fail(access.Errors);
-            }
-        }
-
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(configuration.TimeZoneId);
         var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(EnsureUtc(clock.UtcNow)), timeZone);
         var today = DateOnly.FromDateTime(localNow.DateTime);
@@ -1435,17 +1464,11 @@ internal sealed class ReservationApplicationService(
             var generated = DoctorPracticeAvailabilityCalculator.CalculateAvailableSlotStarts(date, periods, exceptions);
             var snapshot = occupancy.GetValueOrDefault((practiceId, date), PracticeOccupancySnapshot.Empty);
             var capacity = configuration.EffectiveDailyCapacity(generated.Count);
-            var movingOnDate = movingReservation?.Status == ReservationStatus.Active &&
-                               movingReservation.BusinessDate == date;
-            var movingTime = movingOnDate
-                ? TimeOnly.FromDateTime(movingReservation!.ScheduledLocalDateTime)
-                : (TimeOnly?)null;
             var hasFutureSlot = generated.Any(time =>
                 (date != today || time > TimeOnly.FromDateTime(localNow.DateTime)) &&
-                (!snapshot.OccupiedSlots.Contains(time) || movingTime == time));
-            var occupiedCount = snapshot.TotalReservations - (movingOnDate ? 1 : 0);
+                !snapshot.OccupiedSlots.Contains(time));
             response.Add(new ReservationAvailableDateResponse(
-                date, hasFutureSlot && occupiedCount < capacity));
+                date, hasFutureSlot && snapshot.TotalReservations < capacity));
         }
 
         return Result<IReadOnlyList<ReservationAvailableDateResponse>>.Ok(response);
@@ -1458,8 +1481,23 @@ internal sealed class ReservationApplicationService(
         ReservationAvailabilityChannel channel,
         CancellationToken cancellationToken)
     {
+        if (reservationId.HasValue)
+        {
+            var availability = await BuildRescheduleAvailabilityAsync(
+                practiceId, reservationId.Value, channel, cancellationToken);
+            if (availability.IsFailure)
+            {
+                return Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Fail(availability.Errors);
+            }
+
+            return availability.Value.TryGetValue(date, out var slots)
+                ? Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Ok(slots)
+                : Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Fail(
+                    ReservationErrors.BookingHorizonExceeded);
+        }
+
         var dates = await AvailableDatesAsync(
-            practiceId, reservationId, channel, cancellationToken);
+            practiceId, null, channel, cancellationToken);
         if (dates.IsFailure)
         {
             return Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Fail(dates.Errors);
@@ -1486,19 +1524,182 @@ internal sealed class ReservationApplicationService(
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(configuration!.TimeZoneId);
         var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(EnsureUtc(clock.UtcNow)), timeZone);
         var today = DateOnly.FromDateTime(localNow.DateTime);
-        Reservation? moving = null;
-        if (reservationId.HasValue)
-        {
-            moving = await dataStore.FindReservationAsync(reservationId.Value, cancellationToken);
-        }
-
         var result = generated.Where(item =>
                 (date != today || item.Time > TimeOnly.FromDateTime(localNow.DateTime)) &&
-                (!snapshot.OccupiedSlots.Contains(item.Time) ||
-                 moving is not null && moving.BusinessDate == date &&
-                 TimeOnly.FromDateTime(moving.ScheduledLocalDateTime) == item.Time))
+                !snapshot.OccupiedSlots.Contains(item.Time))
             .ToArray();
         return Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Ok(result);
+    }
+
+    private async Task<Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>>
+        BuildRescheduleAvailabilityAsync(
+            Guid practiceId,
+            Guid reservationId,
+            ReservationAvailabilityChannel channel,
+            CancellationToken cancellationToken)
+    {
+        var reservation = await dataStore.FindReservationAsync(reservationId, cancellationToken);
+        if (reservation is null || reservation.DoctorPracticeId != practiceId)
+        {
+            return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(
+                ReservationErrors.NotFound);
+        }
+
+        var scope = channel switch
+        {
+            ReservationAvailabilityChannel.Reception => ReservationOperationScope.Reception,
+            ReservationAvailabilityChannel.Doctor => ReservationOperationScope.Doctor,
+            _ => ReservationOperationScope.Patient
+        };
+        var access = await AuthorizeExistingAsync(
+            reservation,
+            scope,
+            PermissionNames.PracticeReservationsReschedule,
+            PermissionNames.DoctorPracticeReservationsRescheduleOwn,
+            PermissionNames.ReservationsRescheduleOwn,
+            PermissionNames.ReservationsRescheduleDependents,
+            cancellationToken);
+        if (access.IsFailure)
+        {
+            return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(
+                access.Errors);
+        }
+
+        if (reservation.Status != ReservationStatus.Active)
+        {
+            return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(
+                ReservationErrors.InvalidState);
+        }
+
+        var catalog = await LoadBookingContextAsync(
+            practiceId, reservation.SegmentId, reservation.VisitTypeId, cancellationToken);
+        if (catalog.IsFailure)
+        {
+            return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(
+                ReservationErrors.CurrentCatalogInvalid);
+        }
+
+        var (_, _, configuration, segment, _, _) = catalog.Value;
+        if (scope == ReservationOperationScope.Patient)
+        {
+            if (!configuration.AllowOnlineBooking)
+            {
+                return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(
+                    ReservationErrors.OnlineBookingDisabled);
+            }
+
+            if (clock.UtcNow > reservation.ScheduledStartUtc
+                    .AddMinutes(-configuration.PatientSelfCancellationCutoffMinutes) ||
+                reservation.IsLate(clock.UtcNow, configuration.CheckInGracePeriodMinutes))
+            {
+                return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(
+                    ReservationErrors.RescheduleCutoffReached);
+            }
+
+            if (reservation.PatientInitiatedRescheduleCount >=
+                ReservationPolicy.MaxPatientReschedulesPerReservation)
+            {
+                return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(
+                    ReservationErrors.RescheduleLimitReached);
+            }
+        }
+
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(configuration.TimeZoneId);
+        var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(EnsureUtc(clock.UtcNow)), timeZone);
+        var today = DateOnly.FromDateTime(localNow.DateTime);
+        var through = today.AddDays(ReservationPolicy.MaximumAdvanceBookingDays - 1);
+        var periods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(practiceId, cancellationToken);
+        var exceptions = await dataStore.ListDoctorPracticeScheduleExceptionsAsync(practiceId, cancellationToken);
+        var occupancy = await occupancyReader.ReadAsync([practiceId], today, through, cancellationToken);
+        var conflicts = await dataStore.ListReservationAvailabilityConflictsAsync(
+            reservation.PatientId, today, through, reservation.Id, cancellationToken);
+        var segments = await dataStore.ListDoctorPracticeSegmentsAsync(practiceId, cancellationToken);
+        var activeSegments = segments.Where(item => item.IsActive).ToArray();
+        var hasOtherFutureConsultation = conflicts.Any(item =>
+            item.Status == ReservationStatus.Active && item.DoctorId == reservation.DoctorId &&
+            item.ScheduledStartUtc > clock.UtcNow &&
+            item.VisitTypeCodeSnapshot == DoctorPracticeVisitTypeCode.NewConsultation.ToString());
+        var result = new SortedDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>();
+
+        for (var date = today; date <= through; date = date.AddDays(1))
+        {
+            var effective = DoctorPracticeAvailabilityCalculator.GetEffectiveWorkingPeriods(
+                date, periods, exceptions);
+            var generated = effective.SelectMany(period =>
+                    DoctorPracticeAvailabilityCalculator.CalculateSlotStarts(period)
+                        .Select(time => new ReservationAvailableSlotResponse(
+                            date, time, period.SlotDurationMinutes)))
+                .DistinctBy(item => item.Time)
+                .OrderBy(item => item.Time)
+                .ToArray();
+            var dayOccupancy = occupancy.GetValueOrDefault(
+                (practiceId, date), PracticeOccupancySnapshot.Empty);
+            var movingOnDate = reservation.BusinessDate == date;
+            var occupiedCount = dayOccupancy.TotalReservations - (movingOnDate ? 1 : 0);
+            var segmentCounts = dayOccupancy.SegmentReservationCounts.ToDictionary(item => item.Key, item => item.Value);
+            if (movingOnDate && segmentCounts.TryGetValue(reservation.SegmentId, out var movingSegmentCount))
+            {
+                segmentCounts[reservation.SegmentId] = Math.Max(0, movingSegmentCount - 1);
+            }
+
+            var dailyCapacity = configuration.EffectiveDailyCapacity(generated.Length);
+            var protectedUnused = activeSegments.Where(item => !item.IsDefault).Sum(item =>
+                item.ProtectedCapacity(
+                    segmentCounts.GetValueOrDefault(item.Id),
+                    date,
+                    effective,
+                    new DateTimeOffset(EnsureUtc(clock.UtcNow)),
+                    timeZone));
+            var generalRemaining = Math.Max(0, dailyCapacity - occupiedCount - protectedUnused);
+            var selectedProtected = segment.ProtectedCapacity(
+                segmentCounts.GetValueOrDefault(segment.Id),
+                date,
+                effective,
+                new DateTimeOffset(EnsureUtc(clock.UtcNow)),
+                timeZone);
+            var capacityAvailable = occupiedCount < dailyCapacity &&
+                                    (selectedProtected > 0 || generalRemaining > 0);
+            var dateBlocked = hasOtherFutureConsultation || conflicts.Any(item =>
+                item.DoctorPracticeId == practiceId && item.BusinessDate == date &&
+                item.Status is ReservationStatus.Active or ReservationStatus.NoShow);
+
+            var valid = capacityAvailable && !dateBlocked
+                ? generated.Where(candidate =>
+                {
+                    if (date == today && candidate.Time <= TimeOnly.FromDateTime(localNow.DateTime))
+                    {
+                        return false;
+                    }
+
+                    DateTime candidateStartUtc;
+                    try
+                    {
+                        candidateStartUtc = TimeZoneInfo.ConvertTimeToUtc(
+                            DateTime.SpecifyKind(date.ToDateTime(candidate.Time), DateTimeKind.Unspecified),
+                            timeZone);
+                    }
+                    catch (ArgumentException)
+                    {
+                        return false;
+                    }
+
+                    if (candidateStartUtc == reservation.ScheduledStartUtc ||
+                        dayOccupancy.OccupiedSlots.Contains(candidate.Time) &&
+                        !(movingOnDate && TimeOnly.FromDateTime(
+                            reservation.ScheduledLocalDateTime) == candidate.Time))
+                    {
+                        return false;
+                    }
+
+                    var candidateEndUtc = candidateStartUtc.AddMinutes(candidate.DurationMinutes);
+                    return conflicts.Where(item => item.Status == ReservationStatus.Active).All(item =>
+                        item.ScheduledStartUtc >= candidateEndUtc || candidateStartUtc >= item.ScheduledEndUtc);
+                }).ToArray()
+                : [];
+            result[date] = valid;
+        }
+
+        return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Ok(result);
     }
 
     public async Task<Result<ReservationBookingOptionsResponse>> BookingOptionsAsync(
@@ -1917,7 +2118,7 @@ internal sealed class ReservationApplicationService(
                 reservation.DoctorPracticeId, cancellationToken);
             return permission.IsFailure || doctor is null ||
                    doctor.ApprovalStatus != DoctorApprovalStatus.Approved ||
-                   practice is null || practice.DoctorId != doctor.Id
+                   practice is null || !practice.IsActive || practice.DoctorId != doctor.Id
                 ? Result<ReservationActorAccess>.Fail(ReservationErrors.AccessDenied)
                 : Result<ReservationActorAccess>.Ok(new ReservationActorAccess(
                     actorId,
@@ -1949,7 +2150,9 @@ internal sealed class ReservationApplicationService(
             var permission = await RequirePermissionAsync(doctorPermission, cancellationToken);
             var doctor = await dataStore.FindDoctorByUserIdAsync(actorId, cancellationToken);
             var practice = await dataStore.FindDoctorPracticeAsync(practiceId, cancellationToken);
-            return permission.IsSuccess && doctor is not null && practice?.DoctorId == doctor.Id
+            return permission.IsSuccess && doctor is not null &&
+                   doctor.ApprovalStatus == DoctorApprovalStatus.Approved &&
+                   practice is { IsActive: true } && practice.DoctorId == doctor.Id
                 ? Result.Ok()
                 : Result.Fail(ReservationErrors.AccessDenied);
         }
@@ -1975,6 +2178,8 @@ internal sealed class ReservationApplicationService(
     }
 
     private async Task<Result<IReadOnlyList<BookablePatientResponse>>> ResolveAccessiblePatientsAsync(
+        string ownPermission,
+        string dependentPermission,
         CancellationToken cancellationToken)
     {
         if (!currentUser.IsAuthenticated || currentUser.UserId is not { } actorId)
@@ -1988,7 +2193,7 @@ internal sealed class ReservationApplicationService(
             ? null
             : await dataStore.FindPatientByIdAsync(link.PatientId, cancellationToken);
         if (snapshot is null || !snapshot.User.IsActive || link is null || patient is null ||
-            !snapshot.Permissions.Contains(PermissionNames.ReservationsViewOwn, StringComparer.OrdinalIgnoreCase))
+            !snapshot.Permissions.Contains(ownPermission, StringComparer.OrdinalIgnoreCase))
         {
             return Result<IReadOnlyList<BookablePatientResponse>>.Fail(ReservationErrors.AccessDenied);
         }
@@ -1997,8 +2202,7 @@ internal sealed class ReservationApplicationService(
         {
             new(patient.Id, patient.NameAr, patient.NameEn, patient.DateOfBirth, patient.Gender, true, null)
         };
-        if (!snapshot.Permissions.Contains(PermissionNames.ReservationsViewDependents, StringComparer.OrdinalIgnoreCase) &&
-            !snapshot.Permissions.Contains(PermissionNames.ReservationsCreateDependents, StringComparer.OrdinalIgnoreCase))
+        if (!snapshot.Permissions.Contains(dependentPermission, StringComparer.OrdinalIgnoreCase))
         {
             return Result<IReadOnlyList<BookablePatientResponse>>.Ok(result);
         }
@@ -2066,13 +2270,34 @@ internal sealed class ReservationApplicationService(
         CancellationToken cancellationToken)
     {
         var reservation = record.Reservation;
-        var configuration = await dataStore.FindDoctorPracticeConfigurationAsync(
-            reservation.DoctorPracticeId, cancellationToken);
-        var grace = configuration?.CheckInGracePeriodMinutes ?? DoctorPracticePlatformDefaults.CheckInGracePeriodMinutes;
-        var cutoff = configuration?.PatientSelfCancellationCutoffMinutes ??
-                     DoctorPracticePlatformDefaults.PatientSelfCancellationCutoffMinutes;
+        var configuration = record.Configuration;
+        var grace = configuration.CheckInGracePeriodMinutes;
+        var cutoff = configuration.PatientSelfCancellationCutoffMinutes;
         var isLate = reservation.IsLate(clock.UtcNow, grace);
-        var capabilities = BuildCapabilities(reservation, scope, cutoff, grace);
+        var currentCatalog = await LoadBookingContextAsync(
+            reservation.DoctorPracticeId,
+            reservation.SegmentId,
+            reservation.VisitTypeId,
+            cancellationToken);
+        var restoreEligibility = scope == ReservationOperationScope.Reception &&
+                                 reservation.Status == ReservationStatus.NoShow
+            ? await EvaluateRestoreEligibilityAsync(
+                reservation,
+                record.Practice,
+                configuration,
+                await dataStore.FindDoctorPracticeSegmentAsync(reservation.SegmentId, cancellationToken),
+                includeCapacity: true,
+                cancellationToken)
+            : Result<ResolvedReservationSlot>.Fail(ReservationErrors.InvalidState);
+        var capabilities = BuildCapabilities(
+            reservation,
+            scope,
+            cutoff,
+            grace,
+            configuration.AllowOnlineBooking,
+            currentCatalog.IsSuccess,
+            restoreEligibility.IsSuccess,
+            restoreEligibility.IsFailure ? restoreEligibility.Errors[0].Code : null);
         var timeline = reservation.History
             .OrderBy(item => item.OccurredOnUtc)
             .ThenBy(item => item.Id)
@@ -2141,7 +2366,11 @@ internal sealed class ReservationApplicationService(
         Reservation reservation,
         ReservationOperationScope scope,
         int cutoffMinutes,
-        int graceMinutes)
+        int graceMinutes,
+        bool allowOnlineBooking,
+        bool currentCatalogValid,
+        bool restoreEligible,
+        string? restoreBlockedReason)
     {
         var active = reservation.Status == ReservationStatus.Active;
         var patient = scope == ReservationOperationScope.Patient;
@@ -2149,21 +2378,22 @@ internal sealed class ReservationApplicationService(
         var beforeCutoff = clock.UtcNow <= reservation.ScheduledStartUtc.AddMinutes(-cutoffMinutes);
         var late = reservation.IsLate(clock.UtcNow, graceMinutes);
         var canCancel = active && (provider || patient && beforeCutoff);
-        var canReschedule = active &&
-            (provider || patient && beforeCutoff && !late &&
+        var canReschedule = active && currentCatalogValid &&
+            (provider || patient && allowOnlineBooking && beforeCutoff && !late &&
              reservation.PatientInitiatedRescheduleCount < ReservationPolicy.MaxPatientReschedulesPerReservation);
-        var canRestore = scope == ReservationOperationScope.Reception &&
-                         reservation.Status == ReservationStatus.NoShow;
+        var canRestore = scope == ReservationOperationScope.Reception && restoreEligible;
         return new ReservationCapabilitiesResponse(
             canCancel,
             canCancel ? null : active ? "Reservation.CancellationCutoffReached" : "Reservation.InvalidState",
             canReschedule,
             canReschedule ? null : !active ? "Reservation.InvalidState" :
+                !currentCatalogValid ? "Reservation.CurrentCatalogInvalid" :
+                patient && !allowOnlineBooking ? "Reservation.OnlineBookingDisabled" :
                 reservation.PatientInitiatedRescheduleCount >= ReservationPolicy.MaxPatientReschedulesPerReservation
                     ? "Reservation.RescheduleLimitReached"
                     : "Reservation.RescheduleCutoffReached",
             canRestore,
-            canRestore ? null : "Reservation.NoShowRestoreNotAllowed",
+            canRestore ? null : restoreBlockedReason ?? "Reservation.NoShowRestoreNotAllowed",
             patient ? reservation.ScheduledStartUtc.AddMinutes(-cutoffMinutes) : null,
             patient ? reservation.ScheduledStartUtc.AddMinutes(-cutoffMinutes) : null,
             reservation.PatientInitiatedRescheduleCount,
@@ -2171,18 +2401,77 @@ internal sealed class ReservationApplicationService(
                         reservation.PatientInitiatedRescheduleCount));
     }
 
+    private async Task<Result<ResolvedReservationSlot>> EvaluateRestoreEligibilityAsync(
+        Reservation reservation,
+        DoctorPractice practice,
+        DoctorPracticeConfiguration configuration,
+        DoctorPracticeSegment? segment,
+        bool includeCapacity,
+        CancellationToken cancellationToken)
+    {
+        if (reservation.Status != ReservationStatus.NoShow)
+        {
+            return Result<ResolvedReservationSlot>.Fail(ReservationErrors.InvalidState);
+        }
+
+        if (!practice.IsActive || segment is null || segment.DoctorPracticeId != practice.Id)
+        {
+            return Result<ResolvedReservationSlot>.Fail(ReservationErrors.NoShowRestoreNotAllowed);
+        }
+
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(reservation.TimeZoneIdSnapshot);
+        var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(EnsureUtc(clock.UtcNow)), timeZone);
+        var periods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(practice.Id, cancellationToken);
+        var exceptions = await dataStore.ListDoctorPracticeScheduleExceptionsAsync(practice.Id, cancellationToken);
+        var effective = DoctorPracticeAvailabilityCalculator.GetEffectiveWorkingPeriods(
+            reservation.BusinessDate, periods, exceptions);
+        if (DateOnly.FromDateTime(localNow.DateTime) != reservation.BusinessDate ||
+            effective.Count == 0 ||
+            localNow.TimeOfDay >= effective.Max(item => item.EndTime).ToTimeSpan())
+        {
+            return Result<ResolvedReservationSlot>.Fail(ReservationErrors.RestoreBusinessDateEnded);
+        }
+
+        var generatedCount = effective.Sum(item =>
+            DoctorPracticeAvailabilityCalculator.CalculateSlotStarts(item).Count);
+        var slot = new ResolvedReservationSlot(
+            reservation.ScheduledStartUtc,
+            reservation.ScheduledLocalDateTime,
+            reservation.SlotDurationMinutesSnapshot,
+            timeZone,
+            effective,
+            configuration.EffectiveDailyCapacity(generatedCount));
+        if (!includeCapacity)
+        {
+            return Result<ResolvedReservationSlot>.Ok(slot);
+        }
+
+        var capacity = await ValidateCapacityAndConflictsAsync(
+            reservation.PatientId,
+            reservation.DoctorId,
+            practice.Id,
+            segment,
+            reservation.BusinessDate,
+            slot,
+            configuration,
+            reservation.Id,
+            cancellationToken);
+        return capacity.IsFailure
+            ? Result<ResolvedReservationSlot>.Fail(capacity.Errors)
+            : Result<ResolvedReservationSlot>.Ok(slot);
+    }
+
     private ReservationPagedResponse MapPage(
         ReservationViewPage records,
         int pageNumber,
-        int pageSize,
-        int graceMinutes = DoctorPracticePlatformDefaults.CheckInGracePeriodMinutes)
+        int pageSize)
     {
         var items = records.Items.Select(record =>
         {
             var reservation = record.Reservation;
             var isLate = reservation.Status == ReservationStatus.Active &&
                          clock.UtcNow > reservation.ScheduledStartUtc.AddMinutes(
-                             graceMinutes);
+                             record.Configuration.CheckInGracePeriodMinutes);
             return new ReservationListItemResponse(
                 reservation.Id,
                 reservation.ReservationReference,
@@ -2228,11 +2517,7 @@ internal sealed class ReservationApplicationService(
         string fingerprint,
         CancellationToken cancellationToken)
     {
-        var normalizedKey = idempotencyKey?.Trim() ?? string.Empty;
-        if (normalizedKey.Length is 0 or > 200)
-        {
-            return Result<IdempotencyStart>.Fail(ReservationErrors.IdempotencyKeyReused);
-        }
+        var normalizedKey = idempotencyKey.Trim();
 
         var existing = await dataStore.FindReservationIdempotencyAsync(
             actorApplicationUserId, operation, normalizedKey, cancellationToken);
@@ -2264,16 +2549,10 @@ internal sealed class ReservationApplicationService(
 
     private async Task<string?> CreateUniqueReferenceAsync(CancellationToken cancellationToken)
     {
-        const string alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-        var suffix = new char[6];
         for (var attempt = 0; attempt < 8; attempt++)
         {
-            for (var index = 0; index < suffix.Length; index++)
-            {
-                suffix[index] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];
-            }
-
-            var reference = $"WSL-R-{new string(suffix)}";
+            var reference = referenceGenerator.Generate();
+            await dataStore.AcquireReservationReferenceLockAsync(reference, cancellationToken);
             if (!await dataStore.ReservationReferenceExistsAsync(reference, cancellationToken))
             {
                 return reference;
@@ -2288,12 +2567,6 @@ internal sealed class ReservationApplicationService(
         string eventName,
         CancellationToken cancellationToken)
     {
-        var patient = await dataStore.FindPatientByIdAsync(reservation.PatientId, cancellationToken);
-        if (patient is null)
-        {
-            return;
-        }
-
         var localTime = TimeOnly.FromDateTime(reservation.ScheduledLocalDateTime);
         var subject = eventName switch
         {
@@ -2308,21 +2581,8 @@ internal sealed class ReservationApplicationService(
         var html = $"<p dir=\"rtl\">مرجع الحجز: {safeReference}<br>الموعد: {safeDate} {safeTime}</p>" +
                    $"<p>Reservation reference: {safeReference}<br>Appointment: {safeDate} {safeTime}</p>";
         var historyId = reservation.History.OrderBy(item => item.OccurredOnUtc).Last().Id;
-        var recipients = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(patient.Email))
-        {
-            recipients.Add(patient.Email);
-        }
-
-        if (reservation.BookingSource == ReservationBookingSource.FamilyMember)
-        {
-            var bookingActor = await dataStore.FindUserByIdAsync(
-                reservation.CreatedByApplicationUserId, cancellationToken);
-            if (!string.IsNullOrWhiteSpace(bookingActor?.Email))
-            {
-                recipients.Add(bookingActor.Email);
-            }
-        }
+        var resolved = await recipientResolver.ResolveAsync([reservation], cancellationToken);
+        var recipients = resolved.GetValueOrDefault(reservation.Id) ?? [];
 
         foreach (var recipient in recipients)
         {
@@ -2336,6 +2596,17 @@ internal sealed class ReservationApplicationService(
         }
     }
 
+    private Task QueueProjectionInvalidationAsync(
+        Reservation reservation,
+        string eventName,
+        CancellationToken cancellationToken)
+        => projectionOutbox.QueueAsync(new QueueReservationProjectionInvalidation(
+            $"reservation-{eventName}:{reservation.Id:N}:{reservation.History.Last().Id:N}",
+            reservation.DoctorPracticeId,
+            reservation.DoctorId,
+            RefreshAvailability: true,
+            RefreshPopularity: true), cancellationToken);
+
     private static string Fingerprint(params object?[] values)
     {
         var canonical = string.Join('\u001F', values.Select(value => value switch
@@ -2347,6 +2618,23 @@ internal sealed class ReservationApplicationService(
             _ => value.ToString()?.Trim() ?? string.Empty
         }));
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+    }
+
+    private static Result<string> ValidateIdempotencyKey(string? idempotencyKey)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            return Result<string>.Fail(ReservationErrors.IdempotencyKeyRequired);
+        }
+
+        var normalized = idempotencyKey.Trim();
+        if (normalized.Length > 200 || normalized.Any(character =>
+                !char.IsAsciiLetterOrDigit(character) && character is not ('-' or '_' or '.' or ':')))
+        {
+            return Result<string>.Fail(ReservationErrors.IdempotencyKeyInvalid);
+        }
+
+        return Result<string>.Ok(normalized);
     }
 
     private static DateTime EnsureUtc(DateTime value)

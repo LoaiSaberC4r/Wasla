@@ -478,7 +478,7 @@ public sealed class PublicDiscoveryApiTests
             var configuration = DoctorPracticeConfiguration.CreateDefault(
                 Guid.NewGuid(), practiceId, actorId).Value;
             Assert.True(configuration.Update(
-                true, true, 20, 15, 120, maximumDailyPatients, 3, "Africa/Cairo", actorId).IsSuccess);
+                bookable, true, 20, 15, 120, maximumDailyPatients, 3, "Africa/Cairo", actorId).IsSuccess);
             var branding = DoctorPracticeBranding.CreateDefault(Guid.NewGuid(), practiceId, actorId).Value;
             Assert.True(branding.ReplaceLogo($"logos/{practiceId:N}.png", actorId).IsSuccess);
             if (active)

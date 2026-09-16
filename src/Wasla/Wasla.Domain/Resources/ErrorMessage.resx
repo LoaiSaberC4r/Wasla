@@ -220,6 +220,11 @@
   <data name="ReservationConcurrencyConflict" xml:space="preserve"><value>The reservation was changed by another request.</value></data>
   <data name="ReservationReferenceConflict" xml:space="preserve"><value>A unique reservation reference could not be generated.</value></data>
   <data name="ReservationIdempotencyKeyReused" xml:space="preserve"><value>The idempotency key was already used with a different request.</value></data>
+  <data name="ReservationIdempotencyKeyRequired" xml:space="preserve"><value>An Idempotency-Key header is required.</value></data>
+  <data name="ReservationIdempotencyKeyInvalid" xml:space="preserve"><value>The Idempotency-Key header is invalid or too long.</value></data>
+  <data name="ReservationRescheduleTargetUnchanged" xml:space="preserve"><value>The selected appointment is unchanged.</value></data>
+  <data name="ReservationCurrentCatalogInvalid" xml:space="preserve"><value>The reservation's current segment, visit type, or pricing combination is no longer bookable.</value></data>
+  <data name="ReservationRestoreBusinessDateEnded" xml:space="preserve"><value>The reservation's business date or operational day has ended.</value></data>
   <data name="ReservationAccessDenied" xml:space="preserve"><value>You do not have access to this reservation.</value></data>
   <data name="DoctorPracticeFutureReservationsExist" xml:space="preserve"><value>Future active reservations must be rescheduled or cancelled before this practice can be deactivated.</value></data>
 </root>

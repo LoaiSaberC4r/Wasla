@@ -16,11 +16,6 @@ namespace Wasla.Api.Controllers;
 [Authorize(Roles = SystemRoleNames.Patient)]
 public sealed class ReservationsController(ISender sender) : ControllerBase
 {
-    [HttpGet("metadata")]
-    public async Task<IActionResult> Metadata(CancellationToken cancellationToken)
-        => (await sender.Send(new GetReservationMetadataQuery(), cancellationToken))
-            .ToIActionResult(cancellationToken);
-
     [HttpGet("bookable-patients")]
     public async Task<IActionResult> BookablePatients(CancellationToken cancellationToken)
         => (await sender.Send(new ListBookablePatientsQuery(), cancellationToken))
@@ -29,7 +24,7 @@ public sealed class ReservationsController(ISender sender) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new CreateReservationCommand(
@@ -40,7 +35,7 @@ public sealed class ReservationsController(ISender sender) : ControllerBase
             request.SegmentId,
             request.VisitTypeId,
             request.BookingNote,
-            idempotencyKey), cancellationToken);
+            idempotencyKey ?? string.Empty), cancellationToken);
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetMine), new { reservationId = result.Value.ReservationId, version = "1.0" }, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -69,14 +64,14 @@ public sealed class ReservationsController(ISender sender) : ControllerBase
     public async Task<IActionResult> CancelMine(
         Guid reservationId,
         CancelReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new CancelMineReservationCommand(
             reservationId,
             request.ReasonCode,
             request.Comment,
             request.RowVersion,
-            idempotencyKey), cancellationToken)).ToIActionResult(cancellationToken);
+            idempotencyKey ?? string.Empty), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpGet("mine/{reservationId:guid}/reschedule/available-dates")]
     public async Task<IActionResult> MineRescheduleDates(
@@ -112,14 +107,26 @@ public sealed class ReservationsController(ISender sender) : ControllerBase
     public async Task<IActionResult> RescheduleMine(
         Guid reservationId,
         RescheduleReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new RescheduleMineReservationCommand(
             reservationId,
             request.BusinessDate,
             request.SlotStartTime,
             request.RowVersion,
-            idempotencyKey), cancellationToken)).ToIActionResult(cancellationToken);
+            idempotencyKey ?? string.Empty), cancellationToken)).ToIActionResult(cancellationToken);
+}
+
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/reservations/metadata")]
+[Authorize]
+public sealed class ReservationMetadataController(ISender sender) : ControllerBase
+{
+    [HttpGet]
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+        => (await sender.Send(new GetReservationMetadataQuery(), cancellationToken))
+            .ToIActionResult(cancellationToken);
 }
 
 [ApiController]
@@ -157,7 +164,7 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
     public async Task<IActionResult> Create(
         Guid practiceId,
         CreatePracticeReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new CreatePracticeReservationCommand(
@@ -168,7 +175,7 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
             request.SegmentId,
             request.VisitTypeId,
             request.BookingNote,
-            idempotencyKey), cancellationToken);
+            idempotencyKey ?? string.Empty), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -209,11 +216,11 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
         Guid practiceId,
         Guid reservationId,
         CancelReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new CancelPracticeReservationCommand(
             practiceId, reservationId, request.ReasonCode, request.Comment,
-            request.RowVersion, idempotencyKey, false), cancellationToken)).ToIActionResult(cancellationToken);
+            request.RowVersion, idempotencyKey ?? string.Empty, false), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpGet("reservations/{reservationId:guid}/reschedule/available-dates")]
     public async Task<IActionResult> RescheduleDates(
@@ -239,22 +246,22 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
         Guid practiceId,
         Guid reservationId,
         ProviderRescheduleReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new ReschedulePracticeReservationCommand(
             practiceId, reservationId, request.BusinessDate, request.SlotStartTime,
             request.PatientConsentConfirmed, request.Reason, request.RowVersion,
-            idempotencyKey, false), cancellationToken)).ToIActionResult(cancellationToken);
+            idempotencyKey ?? string.Empty, false), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpPost("reservations/{reservationId:guid}/restore-no-show")]
     public async Task<IActionResult> RestoreNoShow(
         Guid practiceId,
         Guid reservationId,
         ReservationRowVersionRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new RestorePracticeNoShowReservationCommand(
-            practiceId, reservationId, request.RowVersion, idempotencyKey), cancellationToken))
+            practiceId, reservationId, request.RowVersion, idempotencyKey ?? string.Empty), cancellationToken))
             .ToIActionResult(cancellationToken);
 }
 
@@ -300,11 +307,11 @@ public sealed class DoctorReservationsController(ISender sender) : ControllerBas
         Guid practiceId,
         Guid reservationId,
         CancelReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new CancelPracticeReservationCommand(
             practiceId, reservationId, request.ReasonCode, request.Comment,
-            request.RowVersion, idempotencyKey, true), cancellationToken)).ToIActionResult(cancellationToken);
+            request.RowVersion, idempotencyKey ?? string.Empty, true), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpGet("{reservationId:guid}/reschedule/available-dates")]
     [Permission(PermissionNames.DoctorPracticeReservationsRescheduleOwn)]
@@ -333,12 +340,12 @@ public sealed class DoctorReservationsController(ISender sender) : ControllerBas
         Guid practiceId,
         Guid reservationId,
         ProviderRescheduleReservationRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new ReschedulePracticeReservationCommand(
             practiceId, reservationId, request.BusinessDate, request.SlotStartTime,
             request.PatientConsentConfirmed, request.Reason, request.RowVersion,
-            idempotencyKey, true), cancellationToken)).ToIActionResult(cancellationToken);
+            idempotencyKey ?? string.Empty, true), cancellationToken)).ToIActionResult(cancellationToken);
 }
 
 [ApiController]

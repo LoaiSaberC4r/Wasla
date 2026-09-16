@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: "Wasla_CI_Only_2026!"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Wasla_CI_Only_2026!' -C -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      WASLA_SQLSERVER_CONNECTION_STRING: "Server=localhost,1433;Database=master;User ID=sa;Password=Wasla_CI_Only_2026!;TrustServerCertificate=True;Encrypt=True"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore Wasla.sln
+      - run: dotnet build Wasla.sln --configuration Release --no-restore
+      - name: Unit tests
+        run: dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --configuration Release --no-build
+      - name: Integration tests
+        run: dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --configuration Release --no-build --filter "Category!=SQLServerConcurrency"
+      - name: SQL Server reservation concurrency tests
+        run: dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --configuration Release --no-build --filter "Category=SQLServerConcurrency"
+      - name: Architecture tests
+        run: dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --configuration Release --no-build

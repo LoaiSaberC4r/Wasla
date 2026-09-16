@@ -48,7 +48,7 @@ internal sealed class ReservationConfiguration : IWriteEntityConfiguration<Reser
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.CreatedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.ModifiedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.CancelledByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasMany(item => item.History).WithOne().HasForeignKey(item => item.ReservationId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(item => item.History).WithOne().HasForeignKey(item => item.ReservationId).OnDelete(DeleteBehavior.Restrict);
         builder.Navigation(item => item.History).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasIndex(item => item.ReservationReference).IsUnique()

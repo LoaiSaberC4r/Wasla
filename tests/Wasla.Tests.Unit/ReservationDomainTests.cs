@@ -81,6 +81,7 @@ public sealed class ReservationDomainTests
             DateTime.SpecifyKind(new DateTime(2026, 9, 18, 18, 0, 0), DateTimeKind.Unspecified),
             new DateOnly(2026, 9, 18),
             30,
+            "Africa/Cairo",
             ReservationActionInitiator.Doctor,
             Guid.NewGuid(),
             false,
@@ -93,6 +94,7 @@ public sealed class ReservationDomainTests
             DateTime.SpecifyKind(new DateTime(2026, 9, 18, 18, 0, 0), DateTimeKind.Unspecified),
             new DateOnly(2026, 9, 18),
             30,
+            "Africa/Cairo",
             ReservationActionInitiator.Doctor,
             Guid.NewGuid(),
             true,
@@ -100,6 +102,31 @@ public sealed class ReservationDomainTests
             OccurredOnUtc.AddHours(1)).IsSuccess);
         Assert.Equal(0, reservation.PatientInitiatedRescheduleCount);
         Assert.True(reservation.History.Last().PatientConsentConfirmed);
+    }
+
+    [Fact]
+    public void Reschedule_to_same_effective_appointment_is_rejected_without_mutation()
+    {
+        var reservation = CreateReservation();
+        var historyCount = reservation.History.Count;
+        var rescheduleCount = reservation.PatientInitiatedRescheduleCount;
+        var result = reservation.Reschedule(
+            reservation.ScheduledStartUtc,
+            reservation.ScheduledLocalDateTime,
+            reservation.BusinessDate,
+            reservation.SlotDurationMinutesSnapshot,
+            reservation.TimeZoneIdSnapshot,
+            ReservationActionInitiator.Patient,
+            Guid.NewGuid(),
+            true,
+            null,
+            OccurredOnUtc.AddMinutes(5));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Reservation.RescheduleTargetUnchanged", result.Errors[0].Code);
+        Assert.Equal(historyCount, reservation.History.Count);
+        Assert.Equal(rescheduleCount, reservation.PatientInitiatedRescheduleCount);
+        Assert.Null(reservation.LastRescheduledOnUtc);
     }
 
     [Fact]
@@ -148,6 +175,7 @@ public sealed class ReservationDomainTests
         Assert.Contains(PermissionNames.PracticeReservationsCancel, PermissionNames.ReceptionAssignmentScoped);
         Assert.Contains(PermissionNames.PracticeReservationsReschedule, PermissionNames.ReceptionAssignmentScoped);
         Assert.Contains(PermissionNames.PracticeReservationsRestoreNoShow, PermissionNames.ReceptionAssignmentScoped);
+        Assert.DoesNotContain(PermissionNames.PracticeReservationsManage, PermissionNames.ReceptionAssignmentScoped);
         Assert.DoesNotContain(PermissionNames.PermissionsView, PermissionNames.ReceptionAssignmentScoped);
     }
 
@@ -184,6 +212,7 @@ public sealed class ReservationDomainTests
             DateTime.SpecifyKind(new DateTime(2026, 9, 17 + days, 19, 0, 0), DateTimeKind.Unspecified),
             new DateOnly(2026, 9, 17 + days),
             25,
+            "Africa/Cairo",
             ReservationActionInitiator.Patient,
             Guid.NewGuid(),
             true,
