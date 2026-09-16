@@ -5,6 +5,7 @@ using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Families;
 using Wasla.Domain.Practices;
+using Wasla.Domain.Reservations;
 
 namespace Wasla.Application.Persistence;
 
@@ -87,6 +88,29 @@ public sealed record FamilyRelationshipRequestQueueRecord(
     int CurrentRevisionNumber,
     DateTime SubmittedOnUtc,
     byte[] RowVersion);
+public sealed record ReservationViewRecord(
+    Reservation Reservation,
+    Patient Patient,
+    Doctor Doctor,
+    DoctorPractice Practice);
+public sealed record ReservationPatientRecord(Reservation Reservation, Patient Patient);
+public sealed record ReservationViewPage(
+    IReadOnlyList<ReservationViewRecord> Items,
+    long TotalCount,
+    long ActiveCount,
+    long LateCount,
+    long NoShowCount,
+    long CancelledCount,
+    long ConvertedToTicketCount,
+    long ExpiredCount);
+public sealed record ReservationConflictSnapshot(
+    bool SlotOccupied,
+    int ConsumedDailyCapacity,
+    IReadOnlyDictionary<Guid, int> SegmentConsumedCounts,
+    bool PatientPracticeDateConflict,
+    bool PatientAppointmentOverlap,
+    bool FutureConsultationAlreadyExists,
+    bool SameDayNoShowExists);
 
 public interface IWaslaDataStore
 {
@@ -283,6 +307,66 @@ public interface IWaslaDataStore
         Guid applicationUserId,
         Guid practiceId,
         string permissionName,
+        CancellationToken cancellationToken);
+    Task<Reservation?> FindReservationAsync(Guid reservationId, CancellationToken cancellationToken);
+    Task<ReservationViewRecord?> GetReservationViewAsync(Guid reservationId, CancellationToken cancellationToken);
+    Task<ReservationViewPage> ListReservationViewsAsync(
+        IReadOnlyCollection<Guid>? patientIds,
+        Guid? doctorId,
+        Guid? practiceId,
+        ReservationStatus? status,
+        ReservationBookingSource? bookingSource,
+        DateOnly? fromDate,
+        DateOnly? toDate,
+        Guid? segmentId,
+        bool? isLate,
+        DateTime lateThresholdUtc,
+        string? search,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken);
+    Task<ReservationConflictSnapshot> GetReservationConflictSnapshotAsync(
+        Guid patientId,
+        Guid doctorId,
+        Guid practiceId,
+        Guid segmentId,
+        DateOnly businessDate,
+        DateTime scheduledStartUtc,
+        DateTime scheduledEndUtc,
+        DateTime utcNow,
+        Guid? excludingReservationId,
+        CancellationToken cancellationToken);
+    Task<bool> ReservationReferenceExistsAsync(string reservationReference, CancellationToken cancellationToken);
+    Task<ReservationIdempotencyRecord?> FindReservationIdempotencyAsync(
+        Guid actorApplicationUserId,
+        string operation,
+        string idempotencyKey,
+        CancellationToken cancellationToken);
+    Task AcquireReservationLocksAsync(
+        Guid patientId,
+        Guid practiceId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken);
+    Task AcquireReservationIdempotencyLockAsync(
+        Guid actorApplicationUserId,
+        string operation,
+        string idempotencyKey,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<Reservation>> ListDueActiveReservationsAsync(
+        DateTime utcNow,
+        int batchSize,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<Reservation>> ListFutureActiveReservationsByDoctorAsync(
+        Guid doctorId,
+        DateTime utcNow,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<Reservation>> ListFutureActiveReservationsByPracticeAsync(
+        Guid practiceId,
+        DateTime utcNow,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<ReservationPatientRecord>> ListFutureActiveReservationPatientsByPracticeAsync(
+        Guid practiceId,
+        DateTime utcNow,
         CancellationToken cancellationToken);
     void Add<TEntity>(TEntity entity) where TEntity : class;
     void Remove<TEntity>(TEntity entity) where TEntity : class;

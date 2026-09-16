@@ -2,6 +2,8 @@ using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Media;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Abstraction.Security;
+using BuildingBlock.Application.Time;
+using System.Text.Json;
 using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Doctors;
@@ -80,6 +82,7 @@ public sealed record DoctorPracticeConfigurationResponse(
     int PatientSelfCancellationCutoffMinutes,
     int? MaximumDailyPatients,
     int MaximumTicketCallAttempts,
+    int NoShowAfterPassedPatientsCount,
     string TimeZoneId,
     string RowVersion);
 
@@ -94,6 +97,7 @@ public sealed record UpdateDoctorPracticeConfigurationCommand(
     int PatientSelfCancellationCutoffMinutes,
     int? MaximumDailyPatients,
     int MaximumTicketCallAttempts,
+    int NoShowAfterPassedPatientsCount,
     string TimeZoneId,
     string RowVersion)
     : ICommand<DoctorPracticeConfigurationResponse>, ITransactionalCommand<WaslaWritePersistence>;
@@ -190,6 +194,7 @@ internal sealed class UpdateDoctorPracticeConfigurationCommandValidator
         RuleFor(command => command.MaximumDailyPatients).InclusiveBetween(1, 10000)
             .When(command => command.MaximumDailyPatients.HasValue);
         RuleFor(command => command.MaximumTicketCallAttempts).InclusiveBetween(1, 100);
+        RuleFor(command => command.NoShowAfterPassedPatientsCount).InclusiveBetween(1, 100);
         RuleFor(command => command.TimeZoneId).NotEmpty().MaximumLength(100);
         RuleFor(command => command.RowVersion).Must(RowVersionCodec.IsValid);
     }
@@ -406,7 +411,10 @@ internal sealed class ActivateDoctorPracticeCommandHandler(IWaslaDataStore dataS
     }
 }
 
-internal sealed class DeactivateDoctorPracticeCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class DeactivateDoctorPracticeCommandHandler(
+    IWaslaDataStore dataStore,
+    ICurrentUser currentUser,
+    IDateTimeProvider clock)
     : ICommandHandler<DeactivateDoctorPracticeCommand, DoctorPracticeResponse>
 {
     public async Task<Result<DoctorPracticeResponse>> Handle(
@@ -425,6 +433,28 @@ internal sealed class DeactivateDoctorPracticeCommandHandler(IWaslaDataStore dat
         if (supplied.IsFailure)
         {
             return Result<DoctorPracticeResponse>.Fail(supplied.Errors);
+        }
+
+        var futureReservations = await dataStore.ListFutureActiveReservationPatientsByPracticeAsync(
+            request.PracticeId, clock.UtcNow, cancellationToken);
+        if (futureReservations.Count > 0)
+        {
+            var details = JsonSerializer.Serialize(new
+            {
+                AffectedCount = futureReservations.Count,
+                Reservations = futureReservations.Select(item => new
+                {
+                    ReservationId = item.Reservation.Id,
+                    item.Reservation.ReservationReference,
+                    PatientId = item.Patient.Id,
+                    item.Patient.NameAr,
+                    item.Patient.NameEn,
+                    item.Reservation.BusinessDate,
+                    ScheduledTime = TimeOnly.FromDateTime(item.Reservation.ScheduledLocalDateTime)
+                })
+            });
+            return Result<DoctorPracticeResponse>.Fail(
+                DoctorPracticeErrors.FutureReservationsExist(details));
         }
 
         var deactivated = access.Value.Practice.Deactivate(access.Value.ActorId);
@@ -498,6 +528,7 @@ internal sealed class UpdateDoctorPracticeConfigurationCommandHandler(
             request.PatientSelfCancellationCutoffMinutes,
             request.MaximumDailyPatients,
             request.MaximumTicketCallAttempts,
+            request.NoShowAfterPassedPatientsCount,
             request.TimeZoneId,
             access.Value.ActorId);
         if (updated.IsFailure)
@@ -863,6 +894,7 @@ internal static class DoctorPracticeMapper
             item.PatientSelfCancellationCutoffMinutes,
             item.MaximumDailyPatients,
             item.MaximumTicketCallAttempts,
+            item.NoShowAfterPassedPatientsCount,
             item.TimeZoneId,
             RowVersionCodec.Encode(item.RowVersion));
 

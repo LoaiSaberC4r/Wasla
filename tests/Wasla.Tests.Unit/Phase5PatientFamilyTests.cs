@@ -178,6 +178,30 @@ public sealed class Phase5FamilyDomainTests
     }
 
     [Fact]
+    public void ReservationAuthority_AllowsParentOrLegalGuardianForMinorChildOnly()
+    {
+        var family = Family.Create(Guid.NewGuid(), Guid.NewGuid()).Value;
+        var father = Add(family, FamilyMemberRole.Father).Value;
+        var legalGuardian = Add(family, FamilyMemberRole.LegalGuardian).Value;
+        var ordinaryGuardian = Add(family, FamilyMemberRole.Guardian).Value;
+        var minorPatient = Patient.Create(
+            Guid.NewGuid(), "طفل", null, new DateOnly(2010, 9, 17), Gender.Male,
+            null, null, null, null, null, new DateOnly(2026, 9, 16)).Value;
+        var minor = Add(family, FamilyMemberRole.Child, minorPatient.Id).Value;
+        var adultPatient = Patient.Create(
+            Guid.NewGuid(), "ابن بالغ", null, new DateOnly(2000, 1, 1), Gender.Male,
+            null, null, null, null, null, new DateOnly(2026, 9, 16)).Value;
+        var adult = Add(family, FamilyMemberRole.Child, adultPatient.Id).Value;
+        var policy = new PatientAccessPolicy();
+        var today = new DateOnly(2026, 9, 16);
+
+        Assert.True(policy.CanBookReservation(father, minor, minorPatient, today));
+        Assert.True(policy.CanBookReservation(legalGuardian, minor, minorPatient, today));
+        Assert.False(policy.CanBookReservation(ordinaryGuardian, minor, minorPatient, today));
+        Assert.False(policy.CanBookReservation(father, adult, adultPatient, today));
+    }
+
+    [Fact]
     public void ContactOnlyFather_GrantsNoFamilyOrMedicalAccess()
     {
         var contact = PatientContact.Create(Guid.NewGuid(), Guid.NewGuid(), "أحمد", null, "0101",

@@ -96,6 +96,23 @@ public static class PermissionNames
     public const string PracticeQueueManage = "PracticeQueue.Manage";
     public const string PracticePaymentsRecord = "PracticePayments.Record";
     public const string PracticeWalkInsCreate = "PracticeWalkIns.Create";
+    public const string ReservationsViewOwn = "Reservations.ViewOwn";
+    public const string ReservationsCreateOwn = "Reservations.CreateOwn";
+    public const string ReservationsCancelOwn = "Reservations.CancelOwn";
+    public const string ReservationsRescheduleOwn = "Reservations.RescheduleOwn";
+    public const string ReservationsViewDependents = "Reservations.ViewDependents";
+    public const string ReservationsCreateDependents = "Reservations.CreateDependents";
+    public const string ReservationsCancelDependents = "Reservations.CancelDependents";
+    public const string ReservationsRescheduleDependents = "Reservations.RescheduleDependents";
+    public const string DoctorPracticeReservationsViewOwn = "DoctorPracticeReservations.ViewOwn";
+    public const string DoctorPracticeReservationsCancelOwn = "DoctorPracticeReservations.CancelOwn";
+    public const string DoctorPracticeReservationsRescheduleOwn = "DoctorPracticeReservations.RescheduleOwn";
+    public const string PracticeReservationsView = "PracticeReservations.View";
+    public const string PracticeReservationsCreate = "PracticeReservations.Create";
+    public const string PracticeReservationsCancel = "PracticeReservations.Cancel";
+    public const string PracticeReservationsReschedule = "PracticeReservations.Reschedule";
+    public const string PracticeReservationsRestoreNoShow = "PracticeReservations.RestoreNoShow";
+    public const string ReservationsViewAdministrative = "Reservations.ViewAdministrative";
 
     public static readonly IReadOnlySet<string> RootOnly = new HashSet<string>(
         [
@@ -189,7 +206,25 @@ public static class PermissionNames
         PracticePaymentsRecord,
         PracticeWalkInsCreate,
         DoctorProfileViewOwn,
-        DoctorProfileUpdateOwn
+        DoctorProfileUpdateOwn,
+        // SystemPermissionIds is position-derived. New permissions must remain append-only.
+        ReservationsViewOwn,
+        ReservationsCreateOwn,
+        ReservationsCancelOwn,
+        ReservationsRescheduleOwn,
+        ReservationsViewDependents,
+        ReservationsCreateDependents,
+        ReservationsCancelDependents,
+        ReservationsRescheduleDependents,
+        DoctorPracticeReservationsViewOwn,
+        DoctorPracticeReservationsCancelOwn,
+        DoctorPracticeReservationsRescheduleOwn,
+        PracticeReservationsView,
+        PracticeReservationsCreate,
+        PracticeReservationsCancel,
+        PracticeReservationsReschedule,
+        PracticeReservationsRestoreNoShow,
+        ReservationsViewAdministrative
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
@@ -197,6 +232,11 @@ public static class PermissionNames
             PatientsSearchBasic,
             PatientsRegister,
             PracticeReservationsManage,
+            PracticeReservationsView,
+            PracticeReservationsCreate,
+            PracticeReservationsCancel,
+            PracticeReservationsReschedule,
+            PracticeReservationsRestoreNoShow,
             PracticeQueueManage,
             PracticePaymentsRecord,
             PracticeWalkInsCreate

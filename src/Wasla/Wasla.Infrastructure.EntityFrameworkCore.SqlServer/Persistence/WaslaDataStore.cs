@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
@@ -7,6 +9,7 @@ using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Families;
 using Wasla.Domain.Practices;
+using Wasla.Domain.Reservations;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -1004,6 +1007,302 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
                          rolePermission.PermissionId == permission.Id
                    select userRole.ApplicationUserId).Any()
             select assignment.Id).AnyAsync(cancellationToken);
+
+    public Task<Reservation?> FindReservationAsync(Guid reservationId, CancellationToken cancellationToken)
+        => dbContext.Reservations
+            .Include(item => item.History)
+            .SingleOrDefaultAsync(item => item.Id == reservationId, cancellationToken);
+
+    public Task<ReservationViewRecord?> GetReservationViewAsync(
+        Guid reservationId,
+        CancellationToken cancellationToken)
+        => (from reservation in dbContext.Reservations.AsNoTracking().Include(item => item.History)
+            join patient in dbContext.Patients.AsNoTracking() on reservation.PatientId equals patient.Id
+            join doctor in dbContext.Doctors.AsNoTracking() on reservation.DoctorId equals doctor.Id
+            join practice in dbContext.DoctorPractices.AsNoTracking() on reservation.DoctorPracticeId equals practice.Id
+            where reservation.Id == reservationId
+            select new ReservationViewRecord(reservation, patient, doctor, practice))
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<ReservationViewPage> ListReservationViewsAsync(
+        IReadOnlyCollection<Guid>? patientIds,
+        Guid? doctorId,
+        Guid? practiceId,
+        ReservationStatus? status,
+        ReservationBookingSource? bookingSource,
+        DateOnly? fromDate,
+        DateOnly? toDate,
+        Guid? segmentId,
+        bool? isLate,
+        DateTime lateThresholdUtc,
+        string? search,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query =
+            from reservation in dbContext.Reservations.AsNoTracking()
+            join patient in dbContext.Patients.AsNoTracking() on reservation.PatientId equals patient.Id
+            join doctor in dbContext.Doctors.AsNoTracking() on reservation.DoctorId equals doctor.Id
+            join practice in dbContext.DoctorPractices.AsNoTracking() on reservation.DoctorPracticeId equals practice.Id
+            select new ReservationViewRecord(reservation, patient, doctor, practice);
+
+        if (patientIds is { Count: > 0 })
+        {
+            var ids = patientIds.Distinct().ToArray();
+            query = query.Where(item => ids.Contains(item.Reservation.PatientId));
+        }
+
+        if (doctorId.HasValue)
+        {
+            query = query.Where(item => item.Reservation.DoctorId == doctorId.Value);
+        }
+
+        if (practiceId.HasValue)
+        {
+            query = query.Where(item => item.Reservation.DoctorPracticeId == practiceId.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(item => item.Reservation.Status == status.Value);
+        }
+
+        if (bookingSource.HasValue)
+        {
+            query = query.Where(item => item.Reservation.BookingSource == bookingSource.Value);
+        }
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(item => item.Reservation.BusinessDate >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(item => item.Reservation.BusinessDate <= toDate.Value);
+        }
+
+        if (segmentId.HasValue)
+        {
+            query = query.Where(item => item.Reservation.SegmentId == segmentId.Value);
+        }
+
+        if (isLate.HasValue)
+        {
+            query = isLate.Value
+                ? query.Where(item => item.Reservation.Status == ReservationStatus.Active &&
+                                      item.Reservation.ScheduledStartUtc < lateThresholdUtc)
+                : query.Where(item => item.Reservation.Status != ReservationStatus.Active ||
+                                      item.Reservation.ScheduledStartUtc >= lateThresholdUtc);
+        }
+
+        var normalizedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+        if (normalizedSearch is not null)
+        {
+            query = query.Where(item =>
+                item.Reservation.ReservationReference.Contains(normalizedSearch) ||
+                item.Patient.NameAr.Contains(normalizedSearch) ||
+                item.Patient.NameEn != null && item.Patient.NameEn.Contains(normalizedSearch) ||
+                item.Patient.PhoneNumber != null && item.Patient.PhoneNumber.Contains(normalizedSearch));
+        }
+
+        var summary = await query
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                Total = group.LongCount(),
+                Active = group.LongCount(item => item.Reservation.Status == ReservationStatus.Active),
+                Late = group.LongCount(item => item.Reservation.Status == ReservationStatus.Active &&
+                                               item.Reservation.ScheduledStartUtc < lateThresholdUtc),
+                NoShow = group.LongCount(item => item.Reservation.Status == ReservationStatus.NoShow),
+                Cancelled = group.LongCount(item => item.Reservation.Status == ReservationStatus.Cancelled),
+                Converted = group.LongCount(item => item.Reservation.Status == ReservationStatus.ConvertedToTicket),
+                Expired = group.LongCount(item => item.Reservation.Status == ReservationStatus.Expired)
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        var items = await query
+            .OrderBy(item => item.Reservation.ScheduledStartUtc)
+            .ThenBy(item => item.Reservation.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToArrayAsync(cancellationToken);
+        return new ReservationViewPage(
+            items,
+            summary?.Total ?? 0,
+            summary?.Active ?? 0,
+            summary?.Late ?? 0,
+            summary?.NoShow ?? 0,
+            summary?.Cancelled ?? 0,
+            summary?.Converted ?? 0,
+            summary?.Expired ?? 0);
+    }
+
+    public async Task<ReservationConflictSnapshot> GetReservationConflictSnapshotAsync(
+        Guid patientId,
+        Guid doctorId,
+        Guid practiceId,
+        Guid segmentId,
+        DateOnly businessDate,
+        DateTime scheduledStartUtc,
+        DateTime scheduledEndUtc,
+        DateTime utcNow,
+        Guid? excludingReservationId,
+        CancellationToken cancellationToken)
+    {
+        var excluding = excludingReservationId ?? Guid.Empty;
+        var consuming = dbContext.Reservations.AsNoTracking().Where(item =>
+            item.Id != excluding &&
+            (item.Status == ReservationStatus.Active || item.Status == ReservationStatus.ConvertedToTicket));
+        var slotOccupied = await consuming.AnyAsync(item =>
+            item.DoctorPracticeId == practiceId && item.ScheduledStartUtc == scheduledStartUtc,
+            cancellationToken);
+        var dayQuery = consuming.Where(item =>
+            item.DoctorPracticeId == practiceId && item.BusinessDate == businessDate);
+        var consumedDailyCapacity = await dayQuery.CountAsync(cancellationToken);
+        var segmentCounts = await dayQuery
+            .GroupBy(item => item.SegmentId)
+            .Select(group => new { SegmentId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.SegmentId, item => item.Count, cancellationToken);
+
+        var active = dbContext.Reservations.AsNoTracking().Where(item =>
+            item.Id != excluding && item.Status == ReservationStatus.Active && item.PatientId == patientId);
+        var practiceDateConflict = await active.AnyAsync(item =>
+            item.DoctorPracticeId == practiceId && item.BusinessDate == businessDate,
+            cancellationToken);
+        var overlap = await active.AnyAsync(item =>
+            item.ScheduledStartUtc < scheduledEndUtc &&
+            scheduledStartUtc < item.ScheduledStartUtc.AddMinutes(item.SlotDurationMinutesSnapshot),
+            cancellationToken);
+        var futureConsultation = await active.AnyAsync(item =>
+            item.DoctorId == doctorId &&
+            item.VisitTypeCodeSnapshot == DoctorPracticeVisitTypeCode.NewConsultation.ToString() &&
+            item.ScheduledStartUtc > utcNow,
+            cancellationToken);
+        var sameDayNoShow = await dbContext.Reservations.AsNoTracking().AnyAsync(item =>
+            item.Id != excluding && item.PatientId == patientId && item.DoctorPracticeId == practiceId &&
+            item.BusinessDate == businessDate && item.Status == ReservationStatus.NoShow,
+            cancellationToken);
+        return new ReservationConflictSnapshot(
+            slotOccupied,
+            consumedDailyCapacity,
+            segmentCounts,
+            practiceDateConflict,
+            overlap,
+            futureConsultation,
+            sameDayNoShow);
+    }
+
+    public Task<bool> ReservationReferenceExistsAsync(
+        string reservationReference,
+        CancellationToken cancellationToken)
+        => dbContext.Reservations.AsNoTracking().AnyAsync(
+            item => item.ReservationReference == reservationReference,
+            cancellationToken);
+
+    public Task<ReservationIdempotencyRecord?> FindReservationIdempotencyAsync(
+        Guid actorApplicationUserId,
+        string operation,
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+        => dbContext.ReservationIdempotencyRecords.SingleOrDefaultAsync(item =>
+            item.ActorApplicationUserId == actorApplicationUserId &&
+            item.Operation == operation && item.IdempotencyKey == idempotencyKey,
+            cancellationToken);
+
+    public async Task AcquireReservationLocksAsync(
+        Guid patientId,
+        Guid practiceId,
+        DateOnly businessDate,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(
+                dbContext.Database.ProviderName,
+                "Microsoft.EntityFrameworkCore.SqlServer",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        // Patient first, then Practice/date is the deterministic lock order for every mutation.
+        var patientResource = $"Wasla:Reservation:Patient:{patientId:N}";
+        var practiceResource = $"Wasla:Reservation:Practice:{practiceId:N}:{businessDate:yyyyMMdd}";
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"DECLARE @r int; EXEC @r = sys.sp_getapplock @Resource={patientResource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r < 0 THROW 51002, 'Could not acquire reservation patient lock.', 1;",
+            cancellationToken);
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"DECLARE @r int; EXEC @r = sys.sp_getapplock @Resource={practiceResource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r < 0 THROW 51003, 'Could not acquire reservation practice lock.', 1;",
+            cancellationToken);
+    }
+
+    public async Task AcquireReservationIdempotencyLockAsync(
+        Guid actorApplicationUserId,
+        string operation,
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(
+                dbContext.Database.ProviderName,
+                "Microsoft.EntityFrameworkCore.SqlServer",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var keyHash = Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(idempotencyKey.Trim())));
+        var resource = $"Wasla:Reservation:Idempotency:{actorApplicationUserId:N}:{operation}:{keyHash}";
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"DECLARE @r int; EXEC @r = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r < 0 THROW 51004, 'Could not acquire reservation idempotency lock.', 1;",
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Reservation>> ListDueActiveReservationsAsync(
+        DateTime utcNow,
+        int batchSize,
+        CancellationToken cancellationToken)
+        => await dbContext.Reservations
+            .Include(item => item.History)
+            .Where(item => item.Status == ReservationStatus.Active && item.ScheduledStartUtc < utcNow)
+            .OrderBy(item => item.ScheduledStartUtc)
+            .Take(batchSize)
+            .ToArrayAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Reservation>> ListFutureActiveReservationsByDoctorAsync(
+        Guid doctorId,
+        DateTime utcNow,
+        CancellationToken cancellationToken)
+        => await dbContext.Reservations
+            .Include(item => item.History)
+            .Where(item => item.DoctorId == doctorId && item.Status == ReservationStatus.Active &&
+                           item.ScheduledStartUtc > utcNow)
+            .OrderBy(item => item.ScheduledStartUtc)
+            .ToArrayAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Reservation>> ListFutureActiveReservationsByPracticeAsync(
+        Guid practiceId,
+        DateTime utcNow,
+        CancellationToken cancellationToken)
+        => await dbContext.Reservations
+            .Include(item => item.History)
+            .Where(item => item.DoctorPracticeId == practiceId && item.Status == ReservationStatus.Active &&
+                           item.ScheduledStartUtc > utcNow)
+            .OrderBy(item => item.ScheduledStartUtc)
+            .ToArrayAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<ReservationPatientRecord>> ListFutureActiveReservationPatientsByPracticeAsync(
+        Guid practiceId,
+        DateTime utcNow,
+        CancellationToken cancellationToken)
+        => await (from reservation in dbContext.Reservations.AsNoTracking()
+                  join patient in dbContext.Patients.AsNoTracking()
+                      on reservation.PatientId equals patient.Id
+                  where reservation.DoctorPracticeId == practiceId &&
+                        reservation.Status == ReservationStatus.Active &&
+                        reservation.ScheduledStartUtc > utcNow
+                  orderby reservation.ScheduledStartUtc
+                  select new ReservationPatientRecord(reservation, patient))
+            .ToArrayAsync(cancellationToken);
 
     public void Add<TEntity>(TEntity entity) where TEntity : class
         => dbContext.Set<TEntity>().Add(entity);

@@ -10,7 +10,7 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Public Doctor/Practice Discovery and Availability (Phase 9)
+**Current Stage:** Reservation Lifecycle (Phase 10)
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root
@@ -22,8 +22,9 @@ The operational model is practice-scoped: one Doctor can own multiple
 branding/logo, schedule and exceptions, segments, visit types, pricing, and
 Reception assignments. Public discovery now exposes automatically eligible
 Doctors, all active Practices, exact base consultation pricing, Doctor-owned Bio
-and Qualifications, and Practice-local availability. Phase 10 Reservation is not
-implemented.
+and Qualifications, and Practice-local availability. Phase 10 adds confirmed
+Reservation booking, lifecycle, history, capacity protection, idempotency, and
+actor-scoped operations.
 
 The initial repository baseline is based on the reusable technical foundation from:
 

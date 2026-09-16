@@ -5,6 +5,7 @@ using Wasla.Domain.Security;
 using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Families;
 using Wasla.Domain.Practices;
+using Wasla.Domain.Reservations;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +47,9 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<DoctorPractice> DoctorPractices => Set<DoctorPractice>();
     public DbSet<DoctorPractice> DoctorPracticeLocations => Set<DoctorPractice>();
     public DbSet<DoctorPracticeConfiguration> DoctorPracticeConfigurations => Set<DoctorPracticeConfiguration>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<ReservationHistory> ReservationHistories => Set<ReservationHistory>();
+    public DbSet<ReservationIdempotencyRecord> ReservationIdempotencyRecords => Set<ReservationIdempotencyRecord>();
     public DbSet<DoctorPracticeBranding> DoctorPracticeBrandings => Set<DoctorPracticeBranding>();
     public DbSet<DoctorPracticeSchedulePeriod> DoctorPracticeSchedulePeriods => Set<DoctorPracticeSchedulePeriod>();
     public DbSet<DoctorPracticeScheduleException> DoctorPracticeScheduleExceptions => Set<DoctorPracticeScheduleException>();

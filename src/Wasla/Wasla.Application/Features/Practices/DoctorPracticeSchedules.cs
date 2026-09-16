@@ -5,6 +5,7 @@ using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Doctors;
 using Wasla.Application.Features.PublicDiscovery;
+using Wasla.Application.Features.Reservations;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Practices;
 
@@ -294,7 +295,8 @@ internal sealed class CreateDoctorPracticeSchedulePeriodCommandHandler(
 internal sealed class UpdateDoctorPracticeSchedulePeriodCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher,
+    ReservationScheduleGuard reservationGuard)
     : ICommandHandler<UpdateDoctorPracticeSchedulePeriodCommand, DoctorPracticeSchedulePeriodResponse>
 {
     public async Task<Result<DoctorPracticeSchedulePeriodResponse>> Handle(
@@ -346,6 +348,20 @@ internal sealed class UpdateDoctorPracticeSchedulePeriodCommandHandler(
             return Result<DoctorPracticeSchedulePeriodResponse>.Fail(updated.Errors);
         }
 
+        var finalPeriods = (await dataStore.ListDoctorPracticeSchedulePeriodsAsync(
+                request.PracticeId, cancellationToken))
+            .Where(item => item.Id != period.Id)
+            .Append(period)
+            .ToArray();
+        var finalExceptions = await dataStore.ListDoctorPracticeScheduleExceptionsAsync(
+            request.PracticeId, cancellationToken);
+        var reservationConflicts = await reservationGuard.EnsureFutureReservationsRemainValidAsync(
+            request.PracticeId, finalPeriods, finalExceptions, cancellationToken);
+        if (reservationConflicts.IsFailure)
+        {
+            return Result<DoctorPracticeSchedulePeriodResponse>.Fail(reservationConflicts.Errors);
+        }
+
         dataStore.SetOriginalRowVersion(period, supplied.Value);
         await dataStore.SaveChangesAsync(cancellationToken);
         await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
@@ -356,7 +372,8 @@ internal sealed class UpdateDoctorPracticeSchedulePeriodCommandHandler(
 internal sealed class DeleteDoctorPracticeSchedulePeriodCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher,
+    ReservationScheduleGuard reservationGuard)
     : ICommandHandler<DeleteDoctorPracticeSchedulePeriodCommand>
 {
     public async Task<Result> Handle(
@@ -383,6 +400,19 @@ internal sealed class DeleteDoctorPracticeSchedulePeriodCommandHandler(
             return Result.Fail(supplied.Errors);
         }
 
+        var finalPeriods = (await dataStore.ListDoctorPracticeSchedulePeriodsAsync(
+                request.PracticeId, cancellationToken))
+            .Where(item => item.Id != period.Id)
+            .ToArray();
+        var finalExceptions = await dataStore.ListDoctorPracticeScheduleExceptionsAsync(
+            request.PracticeId, cancellationToken);
+        var reservationConflicts = await reservationGuard.EnsureFutureReservationsRemainValidAsync(
+            request.PracticeId, finalPeriods, finalExceptions, cancellationToken);
+        if (reservationConflicts.IsFailure)
+        {
+            return Result.Fail(reservationConflicts.Errors);
+        }
+
         dataStore.SetOriginalRowVersion(period, supplied.Value);
         dataStore.Remove(period);
         await dataStore.SaveChangesAsync(cancellationToken);
@@ -394,7 +424,8 @@ internal sealed class DeleteDoctorPracticeSchedulePeriodCommandHandler(
 internal sealed class CreateDoctorPracticeScheduleExceptionCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher,
+    ReservationScheduleGuard reservationGuard)
     : ICommandHandler<CreateDoctorPracticeScheduleExceptionCommand, DoctorPracticeScheduleExceptionResponse>
 {
     public async Task<Result<DoctorPracticeScheduleExceptionResponse>> Handle(
@@ -429,6 +460,19 @@ internal sealed class CreateDoctorPracticeScheduleExceptionCommandHandler(
         if (crossPractice.IsFailure)
         {
             return Result<DoctorPracticeScheduleExceptionResponse>.Fail(crossPractice.Errors);
+        }
+
+        var finalPeriods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(
+            request.PracticeId, cancellationToken);
+        var finalExceptions = (await dataStore.ListDoctorPracticeScheduleExceptionsAsync(
+                request.PracticeId, cancellationToken))
+            .Append(exception.Value)
+            .ToArray();
+        var reservationConflicts = await reservationGuard.EnsureFutureReservationsRemainValidAsync(
+            request.PracticeId, finalPeriods, finalExceptions, cancellationToken);
+        if (reservationConflicts.IsFailure)
+        {
+            return Result<DoctorPracticeScheduleExceptionResponse>.Fail(reservationConflicts.Errors);
         }
 
         dataStore.Add(exception.Value);
@@ -512,7 +556,8 @@ internal sealed class CreateDoctorPracticeScheduleExceptionCommandHandler(
 internal sealed class UpdateDoctorPracticeScheduleExceptionCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher,
+    ReservationScheduleGuard reservationGuard)
     : ICommandHandler<UpdateDoctorPracticeScheduleExceptionCommand, DoctorPracticeScheduleExceptionResponse>
 {
     public async Task<Result<DoctorPracticeScheduleExceptionResponse>> Handle(
@@ -578,6 +623,20 @@ internal sealed class UpdateDoctorPracticeScheduleExceptionCommandHandler(
             return Result<DoctorPracticeScheduleExceptionResponse>.Fail(updated.Errors);
         }
 
+        var finalPeriods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(
+            request.PracticeId, cancellationToken);
+        var finalExceptions = (await dataStore.ListDoctorPracticeScheduleExceptionsAsync(
+                request.PracticeId, cancellationToken))
+            .Where(item => item.Id != exception.Id)
+            .Append(exception)
+            .ToArray();
+        var reservationConflicts = await reservationGuard.EnsureFutureReservationsRemainValidAsync(
+            request.PracticeId, finalPeriods, finalExceptions, cancellationToken);
+        if (reservationConflicts.IsFailure)
+        {
+            return Result<DoctorPracticeScheduleExceptionResponse>.Fail(reservationConflicts.Errors);
+        }
+
         dataStore.SetOriginalRowVersion(exception, supplied.Value);
         await dataStore.SaveChangesAsync(cancellationToken);
         await projectionRefresher.RefreshPracticesAsync([request.PracticeId], cancellationToken);
@@ -588,7 +647,8 @@ internal sealed class UpdateDoctorPracticeScheduleExceptionCommandHandler(
 internal sealed class DeleteDoctorPracticeScheduleExceptionCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher,
+    ReservationScheduleGuard reservationGuard)
     : ICommandHandler<DeleteDoctorPracticeScheduleExceptionCommand>
 {
     public async Task<Result> Handle(
@@ -614,6 +674,19 @@ internal sealed class DeleteDoctorPracticeScheduleExceptionCommandHandler(
         if (supplied.IsFailure)
         {
             return Result.Fail(supplied.Errors);
+        }
+
+        var finalPeriods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(
+            request.PracticeId, cancellationToken);
+        var finalExceptions = (await dataStore.ListDoctorPracticeScheduleExceptionsAsync(
+                request.PracticeId, cancellationToken))
+            .Where(item => item.Id != exception.Id)
+            .ToArray();
+        var reservationConflicts = await reservationGuard.EnsureFutureReservationsRemainValidAsync(
+            request.PracticeId, finalPeriods, finalExceptions, cancellationToken);
+        if (reservationConflicts.IsFailure)
+        {
+            return Result.Fail(reservationConflicts.Errors);
         }
 
         dataStore.SetOriginalRowVersion(exception, supplied.Value);

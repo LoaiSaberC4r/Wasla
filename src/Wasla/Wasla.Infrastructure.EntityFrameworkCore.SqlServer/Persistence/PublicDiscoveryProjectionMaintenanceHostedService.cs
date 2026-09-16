@@ -16,17 +16,17 @@ internal sealed partial class PublicDiscoveryProjectionMaintenanceHostedService(
     private CancellationTokenSource? stoppingSource;
     private Task? maintenanceLoop;
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
         if (!options.Value.Enabled)
         {
             MaintenanceDisabled(logger);
-            return;
+            return Task.CompletedTask;
         }
 
-        await RefreshAsync(cancellationToken);
         stoppingSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         maintenanceLoop = MaintainAsync(stoppingSource.Token);
+        return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -57,18 +57,26 @@ internal sealed partial class PublicDiscoveryProjectionMaintenanceHostedService(
             TimeSpan.FromHours(options.Value.RefreshIntervalHours));
         try
         {
-            while (await timer.WaitForNextTickAsync(cancellationToken))
+            do
             {
-                await RefreshAsync(cancellationToken);
+                try
+                {
+                    await RefreshAsync(cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception exception)
+                {
+                    MaintenanceFailed(logger, exception);
+                }
             }
+            while (await timer.WaitForNextTickAsync(cancellationToken));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             // Expected during host shutdown.
-        }
-        catch (Exception exception)
-        {
-            MaintenanceFailed(logger, exception);
         }
     }
 

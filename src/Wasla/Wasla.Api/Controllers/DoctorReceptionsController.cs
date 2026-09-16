@@ -15,6 +15,12 @@ namespace Wasla.Api.Controllers;
 [Authorize]
 public sealed class DoctorReceptionsController(ISender sender) : ControllerBase
 {
+    [HttpGet("assignable-permissions")]
+    [Permission(PermissionNames.ReceptionAssignmentsManageOwn)]
+    public async Task<IActionResult> AssignablePermissions(CancellationToken cancellationToken)
+        => (await sender.Send(new ListAssignableReceptionPermissionsQuery(), cancellationToken))
+            .ToIActionResult(cancellationToken);
+
     [HttpGet]
     [Permission(PermissionNames.ReceptionUsersViewOwn)]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
