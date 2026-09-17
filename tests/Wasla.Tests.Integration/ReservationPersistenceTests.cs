@@ -1,7 +1,11 @@
+using System.Data.Common;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Wasla.Application.Persistence;
 using Wasla.Domain.Reservations;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -146,4 +150,57 @@ public sealed class ReservationPersistenceTests
         Assert.DoesNotContain("DROP TABLE [ReservationHistories]", script, StringComparison.Ordinal);
         Assert.DoesNotContain("DROP TABLE [Reservations]", script, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Reservation_list_query_is_translatable_by_the_sql_server_provider()
+    {
+        var options = new DbContextOptionsBuilder<WaslaDbContext>()
+            .UseSqlServer(
+                "Server=translation-probe.invalid;Database=WaslaTranslationProbe;" +
+                "Trusted_Connection=True;TrustServerCertificate=True")
+            .AddInterceptors(new TranslationProbeConnectionInterceptor())
+            .Options;
+        await using var context = new WaslaDbContext(options);
+        var storeType = typeof(WaslaDbContext).Assembly.GetType(
+            "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.WaslaDataStore",
+            throwOnError: true)!;
+        var store = (IWaslaDataStore)Activator.CreateInstance(
+            storeType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: [context],
+            culture: null)!;
+
+        await Assert.ThrowsAsync<TranslationProbeReachedConnectionException>(() =>
+            store.ListReservationViewsAsync(
+                [Guid.NewGuid()],
+                doctorId: null,
+                practiceId: null,
+                status: null,
+                bookingSource: null,
+                fromDate: null,
+                toDate: null,
+                scheduledFromUtc: DateTime.UtcNow,
+                scheduledBeforeUtc: null,
+                segmentId: null,
+                isLate: null,
+                utcNow: DateTime.UtcNow,
+                search: null,
+                pageNumber: 1,
+                pageSize: 20,
+                cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    private sealed class TranslationProbeConnectionInterceptor : DbConnectionInterceptor
+    {
+        public override ValueTask<InterceptionResult> ConnectionOpeningAsync(
+            DbConnection connection,
+            ConnectionEventData eventData,
+            InterceptionResult result,
+            CancellationToken cancellationToken = default)
+            => ValueTask.FromException<InterceptionResult>(
+                new TranslationProbeReachedConnectionException());
+    }
+
+    private sealed class TranslationProbeReachedConnectionException : Exception;
 }
