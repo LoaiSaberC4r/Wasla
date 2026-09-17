@@ -83,6 +83,8 @@ public sealed record DoctorPracticeConfigurationResponse(
     int? MaximumDailyPatients,
     int MaximumTicketCallAttempts,
     int NoShowAfterPassedPatientsCount,
+    int CheckInOpenBeforeMinutes,
+    int TicketNoShowReturnFastTrackLimit,
     string TimeZoneId,
     string RowVersion);
 
@@ -99,7 +101,9 @@ public sealed record UpdateDoctorPracticeConfigurationCommand(
     int MaximumTicketCallAttempts,
     int NoShowAfterPassedPatientsCount,
     string TimeZoneId,
-    string RowVersion)
+    string RowVersion,
+    int CheckInOpenBeforeMinutes = DoctorPracticePlatformDefaults.CheckInOpenBeforeMinutes,
+    int TicketNoShowReturnFastTrackLimit = DoctorPracticePlatformDefaults.TicketNoShowReturnFastTrackLimit)
     : ICommand<DoctorPracticeConfigurationResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 public sealed record DoctorPracticeBrandingResponse(
@@ -195,6 +199,8 @@ internal sealed class UpdateDoctorPracticeConfigurationCommandValidator
             .When(command => command.MaximumDailyPatients.HasValue);
         RuleFor(command => command.MaximumTicketCallAttempts).InclusiveBetween(1, 100);
         RuleFor(command => command.NoShowAfterPassedPatientsCount).InclusiveBetween(1, 100);
+        RuleFor(command => command.CheckInOpenBeforeMinutes).InclusiveBetween(0, 1440);
+        RuleFor(command => command.TicketNoShowReturnFastTrackLimit).InclusiveBetween(0, 10000);
         RuleFor(command => command.TimeZoneId).NotEmpty().MaximumLength(100);
         RuleFor(command => command.RowVersion).Must(RowVersionCodec.IsValid);
     }
@@ -529,6 +535,8 @@ internal sealed class UpdateDoctorPracticeConfigurationCommandHandler(
             request.MaximumDailyPatients,
             request.MaximumTicketCallAttempts,
             request.NoShowAfterPassedPatientsCount,
+            request.CheckInOpenBeforeMinutes,
+            request.TicketNoShowReturnFastTrackLimit,
             request.TimeZoneId,
             access.Value.ActorId);
         if (updated.IsFailure)
@@ -895,6 +903,8 @@ internal static class DoctorPracticeMapper
             item.MaximumDailyPatients,
             item.MaximumTicketCallAttempts,
             item.NoShowAfterPassedPatientsCount,
+            item.CheckInOpenBeforeMinutes,
+            item.TicketNoShowReturnFastTrackLimit,
             item.TimeZoneId,
             RowVersionCodec.Encode(item.RowVersion));
 

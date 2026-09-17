@@ -2,6 +2,7 @@ using Wasla.Application.Email;
 using Wasla.Application.Persistence;
 using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Features.Reservations;
+using Wasla.Application.Features.Tickets.Common;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
@@ -66,6 +67,10 @@ public static class DependencyInjection
             PublicDiscoveryRankingProjectionRefresher>();
         services.AddScoped<IReservationProjectionInvalidationOutbox,
             ReservationProjectionInvalidationOutbox>();
+        services.AddScoped<ITicketQueueLock, TicketQueueLock>();
+        services.AddScoped<ITicketNumberAllocator, TicketNumberAllocator>();
+        services.AddScoped<ITicketQueueReader, TicketQueueReader>();
+        services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();
         services.AddScoped<MedicalSpecializationSeeder>();
         services.AddScoped<EgyptLocationSeedCoordinator>();
@@ -77,6 +82,7 @@ public static class DependencyInjection
         services.AddHostedService<EmailOutboxBackgroundService>();
         services.AddHostedService<ReservationExpirationBackgroundService>();
         services.AddHostedService<ReservationProjectionInvalidationBackgroundService>();
+        services.AddHostedService<TicketOperationalDayBackgroundService>();
 
         services.AddDbContext<WaslaDbContext>((serviceProvider, options) =>
             options

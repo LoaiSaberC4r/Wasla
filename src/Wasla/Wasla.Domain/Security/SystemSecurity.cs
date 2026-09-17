@@ -113,6 +113,24 @@ public static class PermissionNames
     public const string PracticeReservationsReschedule = "PracticeReservations.Reschedule";
     public const string PracticeReservationsRestoreNoShow = "PracticeReservations.RestoreNoShow";
     public const string ReservationsViewAdministrative = "Reservations.ViewAdministrative";
+    public const string PracticeTicketsView = "PracticeTickets.View";
+    public const string PracticeTicketsCheckIn = "PracticeTickets.CheckIn";
+    public const string PracticeTicketsForceCheckIn = "PracticeTickets.ForceCheckIn";
+    public const string PracticeTicketsCreateWalkIn = "PracticeTickets.CreateWalkIn";
+    public const string PracticeTicketsRecordPayment = "PracticeTickets.RecordPayment";
+    public const string PracticeTicketsCall = "PracticeTickets.Call";
+    public const string PracticeTicketsManualCall = "PracticeTickets.ManualCall";
+    public const string PracticeTicketsRestoreNoShow = "PracticeTickets.RestoreNoShow";
+    public const string PracticeTicketsCancel = "PracticeTickets.Cancel";
+    public const string DoctorPracticeTicketsViewOwn = "DoctorPracticeTickets.ViewOwn";
+    public const string DoctorPracticeTicketsCallOwn = "DoctorPracticeTickets.CallOwn";
+    public const string DoctorPracticeTicketsConfirmNoResponseOwn = "DoctorPracticeTickets.ConfirmNoResponseOwn";
+    public const string DoctorPracticeTicketsManualCallOwn = "DoctorPracticeTickets.ManualCallOwn";
+    public const string DoctorPracticeTicketsRestoreNoShowOwn = "DoctorPracticeTickets.RestoreNoShowOwn";
+    public const string DoctorPracticeTicketsCancelOwn = "DoctorPracticeTickets.CancelOwn";
+    public const string DoctorPracticeTicketsStartOwn = "DoctorPracticeTickets.StartOwn";
+    public const string DoctorPracticeTicketsCompleteOwn = "DoctorPracticeTickets.CompleteOwn";
+    public const string TicketsViewOwn = "Tickets.ViewOwn";
 
     public static readonly IReadOnlySet<string> RootOnly = new HashSet<string>(
         [
@@ -224,7 +242,25 @@ public static class PermissionNames
         PracticeReservationsCancel,
         PracticeReservationsReschedule,
         PracticeReservationsRestoreNoShow,
-        ReservationsViewAdministrative
+        ReservationsViewAdministrative,
+        PracticeTicketsView,
+        PracticeTicketsCheckIn,
+        PracticeTicketsForceCheckIn,
+        PracticeTicketsCreateWalkIn,
+        PracticeTicketsRecordPayment,
+        PracticeTicketsCall,
+        PracticeTicketsManualCall,
+        PracticeTicketsRestoreNoShow,
+        PracticeTicketsCancel,
+        DoctorPracticeTicketsViewOwn,
+        DoctorPracticeTicketsCallOwn,
+        DoctorPracticeTicketsConfirmNoResponseOwn,
+        DoctorPracticeTicketsManualCallOwn,
+        DoctorPracticeTicketsRestoreNoShowOwn,
+        DoctorPracticeTicketsCancelOwn,
+        DoctorPracticeTicketsStartOwn,
+        DoctorPracticeTicketsCompleteOwn,
+        TicketsViewOwn
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
@@ -238,7 +274,16 @@ public static class PermissionNames
             PracticeReservationsRestoreNoShow,
             PracticeQueueManage,
             PracticePaymentsRecord,
-            PracticeWalkInsCreate
+            PracticeWalkInsCreate,
+            PracticeTicketsView,
+            PracticeTicketsCheckIn,
+            PracticeTicketsForceCheckIn,
+            PracticeTicketsCreateWalkIn,
+            PracticeTicketsRecordPayment,
+            PracticeTicketsCall,
+            PracticeTicketsManualCall,
+            PracticeTicketsRestoreNoShow,
+            PracticeTicketsCancel
         ],
         StringComparer.OrdinalIgnoreCase);
 

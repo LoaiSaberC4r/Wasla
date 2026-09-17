@@ -14,6 +14,10 @@ internal sealed class DoctorPracticeOperationalConfiguration
         builder.ToTable("DoctorPracticeConfigurations");
         builder.HasKey(item => item.Id);
         builder.Property(item => item.TimeZoneId).HasMaxLength(100).IsRequired();
+        builder.Property(item => item.CheckInOpenBeforeMinutes)
+            .HasDefaultValue(DoctorPracticePlatformDefaults.CheckInOpenBeforeMinutes);
+        builder.Property(item => item.TicketNoShowReturnFastTrackLimit)
+            .HasDefaultValue(DoctorPracticePlatformDefaults.TicketNoShowReturnFastTrackLimit);
         builder.Property(item => item.RowVersion).IsRowVersion().IsConcurrencyToken();
         builder.HasIndex(item => item.DoctorPracticeId).IsUnique()
             .HasDatabaseName("UX_DoctorPracticeConfigurations_DoctorPracticeId");

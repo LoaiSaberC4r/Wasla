@@ -680,6 +680,15 @@ internal static class ReceptionPermissionCatalog
             PermissionNames.PracticeQueueManage => ("إدارة طابور العيادة", "Manage practice queue"),
             PermissionNames.PracticePaymentsRecord => ("تسجيل مدفوعات العيادة", "Record practice payments"),
             PermissionNames.PracticeWalkInsCreate => ("إنشاء زيارة بدون حجز", "Create practice walk-ins"),
+            PermissionNames.PracticeTicketsView => ("عرض التذاكر والطابور", "View tickets and queue"),
+            PermissionNames.PracticeTicketsCheckIn => ("تسجيل حضور الحجز", "Check in reservations"),
+            PermissionNames.PracticeTicketsForceCheckIn => ("تسجيل حضور مبكر استثنائي", "Force early check-in"),
+            PermissionNames.PracticeTicketsCreateWalkIn => ("إنشاء تذكرة بدون حجز", "Create walk-in tickets"),
+            PermissionNames.PracticeTicketsRecordPayment => ("تسجيل دفع التذكرة", "Record ticket payment"),
+            PermissionNames.PracticeTicketsCall => ("نداء وإعادة نداء المرضى", "Call and recall patients"),
+            PermissionNames.PracticeTicketsManualCall => ("نداء يدوي استثنائي", "Manually call a ticket"),
+            PermissionNames.PracticeTicketsRestoreNoShow => ("استعادة تذكرة عدم الحضور", "Restore no-show tickets"),
+            PermissionNames.PracticeTicketsCancel => ("إلغاء التذاكر", "Cancel tickets"),
             _ => (permission.Name, permission.Name)
         };
         var group = permission.Name.StartsWith("PracticeReservations.", StringComparison.Ordinal)
