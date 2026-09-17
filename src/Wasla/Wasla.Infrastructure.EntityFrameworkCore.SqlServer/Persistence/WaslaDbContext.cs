@@ -6,6 +6,8 @@ using Wasla.Domain.ReferenceData;
 using Wasla.Domain.Families;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
+using Wasla.Domain.Tickets;
+using Wasla.Domain.Payments;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +54,12 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<ReservationIdempotencyRecord> ReservationIdempotencyRecords => Set<ReservationIdempotencyRecord>();
     public DbSet<ReservationProjectionInvalidation> ReservationProjectionInvalidations
         => Set<ReservationProjectionInvalidation>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<TicketHistory> TicketHistories => Set<TicketHistory>();
+    public DbSet<TicketCallAttempt> TicketCallAttempts => Set<TicketCallAttempt>();
+    public DbSet<TicketDailyCounter> TicketDailyCounters => Set<TicketDailyCounter>();
+    public DbSet<TicketIdempotencyRecord> TicketIdempotencyRecords => Set<TicketIdempotencyRecord>();
+    public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<DoctorPracticeBranding> DoctorPracticeBrandings => Set<DoctorPracticeBranding>();
     public DbSet<DoctorPracticeSchedulePeriod> DoctorPracticeSchedulePeriods => Set<DoctorPracticeSchedulePeriod>();
     public DbSet<DoctorPracticeScheduleException> DoctorPracticeScheduleExceptions => Set<DoctorPracticeScheduleException>();

@@ -24,6 +24,7 @@ internal sealed class WaslaSecuritySeeder(
         await SeedPermissionsAsync(cancellationToken);
         await SeedRolePermissionsAsync(cancellationToken);
         await BackfillLegacyReceptionReservationPermissionsAsync(cancellationToken);
+        await BackfillLegacyReceptionTicketPermissionsAsync(cancellationToken);
         await SeedRootRoleAsync(cancellationToken);
     }
 
@@ -219,7 +220,15 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.ReceptionAssignmentsManageOwn,
                 PermissionNames.DoctorPracticeReservationsViewOwn,
                 PermissionNames.DoctorPracticeReservationsCancelOwn,
-                PermissionNames.DoctorPracticeReservationsRescheduleOwn
+                PermissionNames.DoctorPracticeReservationsRescheduleOwn,
+                PermissionNames.DoctorPracticeTicketsViewOwn,
+                PermissionNames.DoctorPracticeTicketsCallOwn,
+                PermissionNames.DoctorPracticeTicketsConfirmNoResponseOwn,
+                PermissionNames.DoctorPracticeTicketsManualCallOwn,
+                PermissionNames.DoctorPracticeTicketsRestoreNoShowOwn,
+                PermissionNames.DoctorPracticeTicketsCancelOwn,
+                PermissionNames.DoctorPracticeTicketsStartOwn,
+                PermissionNames.DoctorPracticeTicketsCompleteOwn
             ],
             [SystemRoleIds.Reception] =
             [
@@ -236,7 +245,16 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.PracticeReservationsRestoreNoShow,
                 PermissionNames.PracticeQueueManage,
                 PermissionNames.PracticePaymentsRecord,
-                PermissionNames.PracticeWalkInsCreate
+                PermissionNames.PracticeWalkInsCreate,
+                PermissionNames.PracticeTicketsView,
+                PermissionNames.PracticeTicketsCheckIn,
+                PermissionNames.PracticeTicketsForceCheckIn,
+                PermissionNames.PracticeTicketsCreateWalkIn,
+                PermissionNames.PracticeTicketsRecordPayment,
+                PermissionNames.PracticeTicketsCall,
+                PermissionNames.PracticeTicketsManualCall,
+                PermissionNames.PracticeTicketsRestoreNoShow,
+                PermissionNames.PracticeTicketsCancel
             ],
             [SystemRoleIds.Patient] =
             [
@@ -256,7 +274,8 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.ReservationsViewDependents,
                 PermissionNames.ReservationsCreateDependents,
                 PermissionNames.ReservationsCancelDependents,
-                PermissionNames.ReservationsRescheduleDependents
+                PermissionNames.ReservationsRescheduleDependents,
+                PermissionNames.TicketsViewOwn
             ]
         };
         foreach (var (roleId, permissionNames) in mappings)
@@ -343,6 +362,63 @@ internal sealed class WaslaSecuritySeeder(
                 SystemRoleIds.SuperAdmin));
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private async Task BackfillLegacyReceptionTicketPermissionsAsync(CancellationToken cancellationToken)
+    {
+        var legacyToGranular = new Dictionary<Guid, Guid[]>
+        {
+            [SystemPermissionIds.For(PermissionNames.PracticeQueueManage)] =
+            [
+                SystemPermissionIds.For(PermissionNames.PracticeTicketsView),
+                SystemPermissionIds.For(PermissionNames.PracticeTicketsCall),
+                SystemPermissionIds.For(PermissionNames.PracticeTicketsManualCall),
+                SystemPermissionIds.For(PermissionNames.PracticeTicketsRestoreNoShow),
+                SystemPermissionIds.For(PermissionNames.PracticeTicketsCancel)
+            ],
+            [SystemPermissionIds.For(PermissionNames.PracticePaymentsRecord)] =
+            [SystemPermissionIds.For(PermissionNames.PracticeTicketsRecordPayment)],
+            [SystemPermissionIds.For(PermissionNames.PracticeWalkInsCreate)] =
+            [SystemPermissionIds.For(PermissionNames.PracticeTicketsCreateWalkIn)],
+            [SystemPermissionIds.For(PermissionNames.PracticeReservationsCreate)] =
+            [
+                SystemPermissionIds.For(PermissionNames.PracticeTicketsCheckIn),
+                SystemPermissionIds.For(PermissionNames.PracticeTicketsForceCheckIn)
+            ]
+        };
+        var legacyIds = legacyToGranular.Keys.ToArray();
+        var legacyLinks = await dbContext.ReceptionPracticeAssignmentPermissions
+            .Where(item => legacyIds.Contains(item.PermissionId))
+            .Select(item => new { item.AssignmentId, item.PermissionId })
+            .ToArrayAsync(cancellationToken);
+        if (legacyLinks.Length == 0)
+        {
+            return;
+        }
+
+        var targetIds = legacyToGranular.Values.SelectMany(item => item).Distinct().ToArray();
+        var assignmentIds = legacyLinks.Select(item => item.AssignmentId).Distinct().ToArray();
+        var existing = await dbContext.ReceptionPracticeAssignmentPermissions
+            .Where(item => assignmentIds.Contains(item.AssignmentId) && targetIds.Contains(item.PermissionId))
+            .Select(item => new { item.AssignmentId, item.PermissionId })
+            .ToArrayAsync(cancellationToken);
+        var existingKeys = existing.Select(item => (item.AssignmentId, item.PermissionId)).ToHashSet();
+        var now = DateTime.UtcNow;
+        foreach (var legacyLink in legacyLinks)
+        {
+            foreach (var permissionId in legacyToGranular[legacyLink.PermissionId])
+            {
+                if (existingKeys.Add((legacyLink.AssignmentId, permissionId)))
+                {
+                    dbContext.ReceptionPracticeAssignmentPermissions.Add(
+                        new ReceptionPracticeAssignmentPermission(
+                            Guid.NewGuid(), legacyLink.AssignmentId, permissionId,
+                            SystemSeedIds.RootApplicationUserId, now));
+                }
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private void ValidateRootOptions()

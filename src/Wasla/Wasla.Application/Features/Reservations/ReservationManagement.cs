@@ -236,12 +236,9 @@ public sealed record RestorePracticeNoShowReservationCommand(
     string RowVersion,
     string IdempotencyKey)
     : ICommand<ReservationDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
-// Phase 11 integration seams. These are deliberately internal and have no HTTP endpoints in Phase 10.
+// Internal operational-day expiration seam. Reservation-to-Ticket conversion and runtime NoShow
+// now occur only inside the atomic Phase 11 Ticket workflows.
 internal sealed record ExpireReservationCommand(Guid ReservationId)
-    : ICommand, ITransactionalCommand<WaslaWritePersistence>;
-internal sealed record MarkReservationNoShowCommand(Guid ReservationId, Guid? ActorApplicationUserId)
-    : ICommand, ITransactionalCommand<WaslaWritePersistence>;
-internal sealed record ConvertReservationToTicketCommand(Guid ReservationId, Guid? ActorApplicationUserId)
     : ICommand, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record ListMineReservationsQuery(
     Guid? PatientId,
@@ -615,72 +612,6 @@ internal sealed class ExpireReservationCommandHandler(
 
         return result;
     }
-}
-
-internal sealed class MarkReservationNoShowCommandHandler(
-    IWaslaDataStore dataStore,
-    IDateTimeProvider clock,
-    IReservationProjectionInvalidationOutbox projectionOutbox)
-    : ICommandHandler<MarkReservationNoShowCommand>
-{
-    public async Task<Result> Handle(
-        MarkReservationNoShowCommand request,
-        CancellationToken cancellationToken)
-    {
-        var reservation = await dataStore.FindReservationAsync(request.ReservationId, cancellationToken);
-        if (reservation is null)
-        {
-            return Result.Fail(ReservationErrors.NotFound);
-        }
-
-        var configuration = await dataStore.FindDoctorPracticeConfigurationAsync(
-            reservation.DoctorPracticeId, cancellationToken);
-        if (configuration is null ||
-            !reservation.IsLate(clock.UtcNow, configuration.CheckInGracePeriodMinutes))
-        {
-            return Result.Fail(ReservationErrors.InvalidState);
-        }
-
-        // Phase 11 invokes this seam only after its ticket progression rule reaches the configured count.
-        var result = reservation.MarkNoShow(request.ActorApplicationUserId, clock.UtcNow);
-        if (result.IsSuccess)
-        {
-            await ReservationProjectionInvalidations.QueueAsync(
-                projectionOutbox, reservation, "no-show", refreshAvailability: true, cancellationToken);
-            await dataStore.SaveChangesAsync(cancellationToken);
-        }
-
-        return result;
-    }
-}
-
-internal sealed class ConvertReservationToTicketCommandHandler(
-    IWaslaDataStore dataStore,
-    IDateTimeProvider clock,
-    IReservationProjectionInvalidationOutbox projectionOutbox)
-    : ICommandHandler<ConvertReservationToTicketCommand>
-{
-    public async Task<Result> Handle(
-        ConvertReservationToTicketCommand request,
-        CancellationToken cancellationToken)
-    {
-        var reservation = await dataStore.FindReservationAsync(request.ReservationId, cancellationToken);
-        if (reservation is null)
-        {
-            return Result.Fail(ReservationErrors.NotFound);
-        }
-
-        var result = reservation.ConvertToTicket(request.ActorApplicationUserId, clock.UtcNow);
-        if (result.IsSuccess)
-        {
-            await ReservationProjectionInvalidations.QueueAsync(
-                projectionOutbox, reservation, "converted", refreshAvailability: false, cancellationToken);
-            await dataStore.SaveChangesAsync(cancellationToken);
-        }
-
-        return result;
-    }
-
 }
 
 internal static class ReservationProjectionInvalidations

@@ -113,7 +113,9 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
             request.MaximumTicketCallAttempts,
             request.NoShowAfterPassedPatientsCount,
             request.TimeZoneId,
-            request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+            request.RowVersion,
+            request.CheckInOpenBeforeMinutes,
+            request.TicketNoShowReturnFastTrackLimit), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpGet("{practiceId:guid}/branding")]
     [Permission(PermissionNames.DoctorPracticeBrandingViewOwn)]
@@ -390,7 +392,9 @@ public sealed record DoctorPracticeConfigurationRequest(
     int MaximumTicketCallAttempts,
     int NoShowAfterPassedPatientsCount,
     string TimeZoneId,
-    string RowVersion);
+    string RowVersion,
+    int CheckInOpenBeforeMinutes = DoctorPracticePlatformDefaults.CheckInOpenBeforeMinutes,
+    int TicketNoShowReturnFastTrackLimit = DoctorPracticePlatformDefaults.TicketNoShowReturnFastTrackLimit);
 public sealed record DoctorPracticeBrandingRequest(
     string? PrimaryColor,
     string? SecondaryColor,
