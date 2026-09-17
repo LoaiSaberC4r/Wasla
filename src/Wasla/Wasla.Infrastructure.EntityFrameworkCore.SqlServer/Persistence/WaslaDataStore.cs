@@ -1051,7 +1051,14 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             join practice in dbContext.DoctorPractices.AsNoTracking() on reservation.DoctorPracticeId equals practice.Id
             join configuration in dbContext.DoctorPracticeConfigurations.AsNoTracking()
                 on reservation.DoctorPracticeId equals configuration.DoctorPracticeId
-            select new ReservationViewRecord(reservation, patient, doctor, practice, configuration);
+            select new
+            {
+                Reservation = reservation,
+                Patient = patient,
+                Doctor = doctor,
+                Practice = practice,
+                Configuration = configuration
+            };
 
         if (patientIds is { Count: > 0 })
         {
@@ -1145,6 +1152,12 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             .ThenBy(item => item.Reservation.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .Select(item => new ReservationViewRecord(
+                item.Reservation,
+                item.Patient,
+                item.Doctor,
+                item.Practice,
+                item.Configuration))
             .ToArrayAsync(cancellationToken);
         return new ReservationViewPage(
             items,
