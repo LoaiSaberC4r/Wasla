@@ -18,24 +18,48 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
             migrationBuilder.Sql(
                 """
                 DECLARE @LegacyPermissionId uniqueidentifier = '20000000-0000-0000-0000-000000000073';
+                DECLARE @Now datetime2 = SYSUTCDATETIME();
 
-                INSERT INTO [ReceptionPracticeAssignmentPermissions] ([Id], [ReceptionPracticeAssignmentId], [PermissionId])
-                SELECT NEWID(), legacy.[ReceptionPracticeAssignmentId], granular.[PermissionId]
+                INSERT INTO [ReceptionPracticeAssignmentPermissions]
+                (
+                    [Id],
+                    [AssignmentId],
+                    [PermissionId],
+                    [CreatedByApplicationUserId],
+                    [CreatedOnUtc]
+                )
+                SELECT
+                    NEWID(),
+                    legacy.[AssignmentId],
+                    granular.[PermissionId],
+                    assignment.[CreatedByApplicationUserId],
+                    @Now
                 FROM [ReceptionPracticeAssignmentPermissions] legacy
-                CROSS APPLY (VALUES
-                    (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000090')),
-                    (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000091')),
-                    (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000092')),
-                    (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000093')),
-                    (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000094'))
+                INNER JOIN [ReceptionPracticeAssignments] assignment
+                    ON assignment.[Id] = legacy.[AssignmentId]
+                CROSS APPLY
+                (
+                    VALUES
+                        (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000090')),
+                        (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000091')),
+                        (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000092')),
+                        (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000093')),
+                        (CONVERT(uniqueidentifier, '20000000-0000-0000-0000-000000000094'))
                 ) granular([PermissionId])
                 WHERE legacy.[PermissionId] = @LegacyPermissionId
-                  AND EXISTS (SELECT 1 FROM [Permissions] permission WHERE permission.[Id] = granular.[PermissionId])
-                  AND NOT EXISTS (
+                  AND EXISTS
+                  (
+                      SELECT 1
+                      FROM [Permissions] permission
+                      WHERE permission.[Id] = granular.[PermissionId]
+                  )
+                  AND NOT EXISTS
+                  (
                       SELECT 1
                       FROM [ReceptionPracticeAssignmentPermissions] existing
-                      WHERE existing.[ReceptionPracticeAssignmentId] = legacy.[ReceptionPracticeAssignmentId]
-                        AND existing.[PermissionId] = granular.[PermissionId]);
+                      WHERE existing.[AssignmentId] = legacy.[AssignmentId]
+                        AND existing.[PermissionId] = granular.[PermissionId]
+                  );
 
                 DELETE FROM [ReceptionPracticeAssignmentPermissions]
                 WHERE [PermissionId] = @LegacyPermissionId;
