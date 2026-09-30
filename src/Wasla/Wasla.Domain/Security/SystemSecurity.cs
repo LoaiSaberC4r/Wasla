@@ -131,6 +131,15 @@ public static class PermissionNames
     public const string DoctorPracticeTicketsStartOwn = "DoctorPracticeTickets.StartOwn";
     public const string DoctorPracticeTicketsCompleteOwn = "DoctorPracticeTickets.CompleteOwn";
     public const string TicketsViewOwn = "Tickets.ViewOwn";
+    public const string PracticePaymentsView = "PracticePayments.View";
+    public const string PracticePaymentsCorrect = "PracticePayments.Correct";
+    public const string PracticePaymentsRefund = "PracticePayments.Refund";
+    public const string DoctorPracticePaymentsViewOwn = "DoctorPracticePayments.ViewOwn";
+    public const string DoctorPracticePaymentsCorrectOwn = "DoctorPracticePayments.CorrectOwn";
+    public const string DoctorPracticePaymentsRefundOwn = "DoctorPracticePayments.RefundOwn";
+    public const string DoctorRevenueViewOwn = "DoctorRevenue.ViewOwn";
+    public const string PaymentsViewOwn = "Payments.ViewOwn";
+    public const string PlatformRevenueViewAggregates = "PlatformRevenue.ViewAggregates";
 
     public static readonly IReadOnlySet<string> RootOnly = new HashSet<string>(
         [
@@ -260,7 +269,16 @@ public static class PermissionNames
         DoctorPracticeTicketsCancelOwn,
         DoctorPracticeTicketsStartOwn,
         DoctorPracticeTicketsCompleteOwn,
-        TicketsViewOwn
+        TicketsViewOwn,
+        PracticePaymentsView,
+        PracticePaymentsCorrect,
+        PracticePaymentsRefund,
+        DoctorPracticePaymentsViewOwn,
+        DoctorPracticePaymentsCorrectOwn,
+        DoctorPracticePaymentsRefundOwn,
+        DoctorRevenueViewOwn,
+        PaymentsViewOwn,
+        PlatformRevenueViewAggregates
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
@@ -283,7 +301,10 @@ public static class PermissionNames
             PracticeTicketsCall,
             PracticeTicketsManualCall,
             PracticeTicketsRestoreNoShow,
-            PracticeTicketsCancel
+            PracticeTicketsCancel,
+            PracticePaymentsView,
+            PracticePaymentsCorrect,
+            PracticePaymentsRefund
         ],
         StringComparer.OrdinalIgnoreCase);
 

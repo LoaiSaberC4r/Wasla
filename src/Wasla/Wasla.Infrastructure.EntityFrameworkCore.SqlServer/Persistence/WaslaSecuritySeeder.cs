@@ -189,7 +189,8 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.FamilyRelationshipRequestsApprove,
                 PermissionNames.FamilyRelationshipRequestsReject,
                 PermissionNames.FamilyRelationshipRequestsRequestModification,
-                PermissionNames.ReservationsViewAdministrative
+                PermissionNames.ReservationsViewAdministrative,
+                PermissionNames.PlatformRevenueViewAggregates
             ],
             [SystemRoleIds.Doctor] =
             [
@@ -228,7 +229,11 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.DoctorPracticeTicketsRestoreNoShowOwn,
                 PermissionNames.DoctorPracticeTicketsCancelOwn,
                 PermissionNames.DoctorPracticeTicketsStartOwn,
-                PermissionNames.DoctorPracticeTicketsCompleteOwn
+                PermissionNames.DoctorPracticeTicketsCompleteOwn,
+                PermissionNames.DoctorPracticePaymentsViewOwn,
+                PermissionNames.DoctorPracticePaymentsCorrectOwn,
+                PermissionNames.DoctorPracticePaymentsRefundOwn,
+                PermissionNames.DoctorRevenueViewOwn
             ],
             [SystemRoleIds.Reception] =
             [
@@ -254,7 +259,10 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.PracticeTicketsCall,
                 PermissionNames.PracticeTicketsManualCall,
                 PermissionNames.PracticeTicketsRestoreNoShow,
-                PermissionNames.PracticeTicketsCancel
+                PermissionNames.PracticeTicketsCancel,
+                PermissionNames.PracticePaymentsView,
+                PermissionNames.PracticePaymentsCorrect,
+                PermissionNames.PracticePaymentsRefund
             ],
             [SystemRoleIds.Patient] =
             [
@@ -275,7 +283,8 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.ReservationsCreateDependents,
                 PermissionNames.ReservationsCancelDependents,
                 PermissionNames.ReservationsRescheduleDependents,
-                PermissionNames.TicketsViewOwn
+                PermissionNames.TicketsViewOwn,
+                PermissionNames.PaymentsViewOwn
             ]
         };
         foreach (var (roleId, permissionNames) in mappings)

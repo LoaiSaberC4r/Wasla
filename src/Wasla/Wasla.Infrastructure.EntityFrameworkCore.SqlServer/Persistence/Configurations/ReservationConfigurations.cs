@@ -74,6 +74,7 @@ internal sealed class ReservationHistoryConfiguration : IWriteEntityConfiguratio
     {
         builder.ToTable("ReservationHistories");
         builder.HasKey(item => item.Id);
+        builder.Property(item => item.Id).ValueGeneratedNever();
         builder.Property(item => item.OccurredOnUtc).HasColumnType("datetime2(3)").IsRequired();
         builder.Property(item => item.ReasonCode).HasMaxLength(100);
         builder.Property(item => item.Reason).HasMaxLength(ReservationPolicy.ReasonMaxLength);

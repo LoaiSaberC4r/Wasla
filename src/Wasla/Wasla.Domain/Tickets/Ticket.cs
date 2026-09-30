@@ -323,7 +323,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         DateTime occurredOnUtc)
     {
         var normalizedReason = Normalize(reason);
-        if (Status is not TicketStatus.Waiting and not TicketStatus.Called ||
+        if (Status is not TicketStatus.Waiting and not TicketStatus.Called and not TicketStatus.NoShow ||
             actorApplicationUserId == Guid.Empty || normalizedReason is null ||
             normalizedReason.Length > TicketPolicy.ReasonMaxLength)
         {
@@ -654,6 +654,8 @@ public static class TicketErrors
         "Ticket.PracticeUnavailable", "The doctor practice is not operationally available.");
     public static Error PaymentRequired => Error.Conflict(
         "Ticket.PaymentRequired", "Full payment is required before queue admission.");
+    public static Error RefundedTicketCannotBeRestored => Error.Conflict(
+        "Ticket.RefundedTicketCannotBeRestored", Wasla.Domain.Resources.ErrorMessage.GetString("TicketRefundedCannotRestore"));
     public static Error CheckInWindowNotOpen => Error.Conflict(
         "Ticket.CheckInWindowNotOpen", "The reservation check-in window is not open.");
     public static Error BusinessDateMismatch => Error.Conflict(

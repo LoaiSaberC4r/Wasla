@@ -87,7 +87,7 @@ internal sealed class CancelTicketCommandHandler(
 
         if (idempotency.Value.ExistingTicketId is { } replayId)
         {
-            return await DetailsAsync(replayId, cancellationToken);
+            return await DetailsAsync(replayId, request.PracticeId, cancellationToken);
         }
 
         if (!TicketRowVersion.Matches(ticket.RowVersion, request.RowVersion))
@@ -103,17 +103,31 @@ internal sealed class CancelTicketCommandHandler(
 
         idempotency.Value.Record!.Complete(ticket.Id, nowUtc);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return await DetailsAsync(ticket.Id, cancellationToken);
+        return await DetailsAsync(ticket.Id, request.PracticeId, cancellationToken);
     }
 
     private async Task<Result<TicketDetailsResponse>> DetailsAsync(
         Guid ticketId,
+        Guid practiceId,
         CancellationToken cancellationToken)
     {
         var details = await queueReader.GetDetailsAsync(ticketId, cancellationToken);
-        return details is null
-            ? Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound)
-            : Result<TicketDetailsResponse>.Ok(details);
+        if (details is null)
+        {
+            return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
+        }
+
+        if (details.RefundableAmount > 0 &&
+            (await access.AuthorizeDoctorOrReceptionAsync(
+                practiceId,
+                PermissionNames.DoctorPracticePaymentsRefundOwn,
+                PermissionNames.PracticePaymentsRefund,
+                cancellationToken)).IsSuccess)
+        {
+            details = details with { CanRefund = true };
+        }
+
+        return Result<TicketDetailsResponse>.Ok(details);
     }
 
     private static DateTime EnsureUtc(DateTime value)

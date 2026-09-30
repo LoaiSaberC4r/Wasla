@@ -4,6 +4,8 @@ using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Tickets.Common;
 using Wasla.Application.Persistence;
+using Wasla.Domain.Payments;
+using Wasla.Domain.Resources;
 
 namespace Wasla.Application.Features.Tickets.CheckInReservation;
 
@@ -11,7 +13,10 @@ public sealed record CheckInReservationCommand(
     Guid PracticeId,
     Guid ReservationId,
     decimal PaidAmount,
-    string IdempotencyKey)
+    string IdempotencyKey,
+    PaymentMethod PaymentMethod = PaymentMethod.LegacyUnspecified,
+    string? ReferenceNumber = null,
+    string? Notes = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CheckInReservationCommandValidator
@@ -22,6 +27,11 @@ internal sealed class CheckInReservationCommandValidator
         RuleFor(command => command.PracticeId).NotEmpty();
         RuleFor(command => command.ReservationId).NotEmpty();
         RuleFor(command => command.PaidAmount).GreaterThan(0);
+        RuleFor(command => command.PaymentMethod)
+            .Must(FinancialPolicy.IsSelectableMethod)
+            .WithMessage(_ => ErrorMessage.GetString("PaymentUnsupportedMethod"));
+        RuleFor(command => command.ReferenceNumber).MaximumLength(200);
+        RuleFor(command => command.Notes).MaximumLength(1000);
         RuleFor(command => command.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
@@ -39,5 +49,8 @@ internal sealed class CheckInReservationCommandHandler(ReservationCheckInWorkflo
             force: false,
             reason: null,
             request.IdempotencyKey,
-            cancellationToken);
+            cancellationToken,
+            request.PaymentMethod,
+            request.ReferenceNumber,
+            request.Notes);
 }

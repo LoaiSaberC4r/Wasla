@@ -19,6 +19,7 @@ using Wasla.Application.Features.Tickets.Recall;
 using Wasla.Application.Features.Tickets.RestoreNoShow;
 using Wasla.Application.Features.Tickets.StartVisit;
 using Wasla.Domain.Security;
+using Wasla.Domain.Payments;
 
 namespace Wasla.Api.Controllers;
 
@@ -37,7 +38,8 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new CheckInReservationCommand(
-            practiceId, reservationId, request.PaidAmount, idempotencyKey ?? string.Empty),
+            practiceId, reservationId, request.PaidAmount, idempotencyKey ?? string.Empty,
+            request.PaymentMethod, request.ReferenceNumber, request.Notes),
             cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
@@ -54,7 +56,8 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
     {
         var result = await sender.Send(new ForceCheckInReservationCommand(
             practiceId, reservationId, request.PaidAmount, request.Reason,
-            idempotencyKey ?? string.Empty), cancellationToken);
+            idempotencyKey ?? string.Empty, request.PaymentMethod,
+            request.ReferenceNumber, request.Notes), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -73,7 +76,8 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
             request.SegmentId,
             request.VisitTypeId,
             request.PaidAmount,
-            idempotencyKey ?? string.Empty), cancellationToken);
+            idempotencyKey ?? string.Empty, request.PaymentMethod,
+            request.ReferenceNumber, request.Notes), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -196,12 +200,24 @@ public sealed class MyTicketsController(ISender sender) : ControllerBase
             .ToIActionResult(cancellationToken);
 }
 
-public sealed record PaidTicketRequest(decimal PaidAmount);
-public sealed record ForceCheckInTicketRequest(decimal PaidAmount, string Reason);
+public sealed record PaidTicketRequest(
+    decimal PaidAmount,
+    PaymentMethod PaymentMethod = PaymentMethod.LegacyUnspecified,
+    string? ReferenceNumber = null,
+    string? Notes = null);
+public sealed record ForceCheckInTicketRequest(
+    decimal PaidAmount,
+    string Reason,
+    PaymentMethod PaymentMethod = PaymentMethod.LegacyUnspecified,
+    string? ReferenceNumber = null,
+    string? Notes = null);
 public sealed record CreateWalkInTicketRequest(
     Guid PatientId,
     Guid SegmentId,
     Guid VisitTypeId,
-    decimal PaidAmount);
+    decimal PaidAmount,
+    PaymentMethod PaymentMethod = PaymentMethod.LegacyUnspecified,
+    string? ReferenceNumber = null,
+    string? Notes = null);
 public sealed record TicketMutationRequest(string RowVersion);
 public sealed record ReasonedTicketMutationRequest(string Reason, string RowVersion);

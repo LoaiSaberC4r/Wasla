@@ -39,8 +39,21 @@ internal sealed class GetTicketDetailsQueryHandler(
         }
 
         var details = await queueReader.GetDetailsAsync(request.TicketId, cancellationToken);
-        return details is null || details.DoctorPracticeId != request.PracticeId
-            ? Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound)
-            : Result<TicketDetailsResponse>.Ok(details);
+        if (details is null || details.DoctorPracticeId != request.PracticeId)
+        {
+            return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
+        }
+
+        if (details.RefundableAmount > 0 &&
+            (await access.AuthorizeDoctorOrReceptionAsync(
+                request.PracticeId,
+                PermissionNames.DoctorPracticePaymentsRefundOwn,
+                PermissionNames.PracticePaymentsRefund,
+                cancellationToken)).IsSuccess)
+        {
+            details = details with { CanRefund = true };
+        }
+
+        return Result<TicketDetailsResponse>.Ok(details);
     }
 }
