@@ -60,6 +60,11 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<TicketDailyCounter> TicketDailyCounters => Set<TicketDailyCounter>();
     public DbSet<TicketIdempotencyRecord> TicketIdempotencyRecords => Set<TicketIdempotencyRecord>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Refund> Refunds => Set<Refund>();
+    public DbSet<PaymentCorrectionHistory> PaymentCorrectionHistories => Set<PaymentCorrectionHistory>();
+    public DbSet<RefundCorrectionHistory> RefundCorrectionHistories => Set<RefundCorrectionHistory>();
+    public DbSet<FinancialDailyCounter> FinancialDailyCounters => Set<FinancialDailyCounter>();
+    public DbSet<FinancialIdempotencyRecord> FinancialIdempotencyRecords => Set<FinancialIdempotencyRecord>();
     public DbSet<DoctorPracticeBranding> DoctorPracticeBrandings => Set<DoctorPracticeBranding>();
     public DbSet<DoctorPracticeSchedulePeriod> DoctorPracticeSchedulePeriods => Set<DoctorPracticeSchedulePeriod>();
     public DbSet<DoctorPracticeScheduleException> DoctorPracticeScheduleExceptions => Set<DoctorPracticeScheduleException>();
@@ -75,6 +80,7 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
+        EnsureFinancialHistoryIsAppendOnly();
         PrepareSqliteRowVersions();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
@@ -83,8 +89,27 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
         bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default)
     {
+        EnsureFinancialHistoryIsAppendOnly();
         PrepareSqliteRowVersions();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void EnsureFinancialHistoryIsAppendOnly()
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State == EntityState.Deleted &&
+                entry.Entity is Payment or Refund or PaymentCorrectionHistory or RefundCorrectionHistory)
+            {
+                throw new InvalidOperationException("Financial transaction history cannot be deleted.");
+            }
+
+            if (entry.State == EntityState.Modified &&
+                entry.Entity is PaymentCorrectionHistory or RefundCorrectionHistory)
+            {
+                throw new InvalidOperationException("Financial correction history cannot be modified.");
+            }
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

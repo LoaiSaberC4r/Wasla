@@ -227,4 +227,26 @@
   <data name="ReservationRestoreBusinessDateEnded" xml:space="preserve"><value>The reservation's business date or operational day has ended.</value></data>
   <data name="ReservationAccessDenied" xml:space="preserve"><value>You do not have access to this reservation.</value></data>
   <data name="DoctorPracticeFutureReservationsExist" xml:space="preserve"><value>Future active reservations must be rescheduled or cancelled before this practice can be deactivated.</value></data>
+  <data name="PaymentInvalid" xml:space="preserve"><value>The paid amount must equal the ticket price and payment details must be valid.</value></data>
+  <data name="PaymentUnsupportedMethod" xml:space="preserve"><value>Choose Cash, Card, or Wallet as the payment method.</value></data>
+  <data name="PaymentAlreadyRefunded" xml:space="preserve"><value>Payment cannot be corrected after a refund exists.</value></data>
+  <data name="PaymentInvalidCorrection" xml:space="preserve"><value>Payment correction details are invalid.</value></data>
+  <data name="PaymentCorrectionNoChanges" xml:space="preserve"><value>Correction contains no changes.</value></data>
+  <data name="RefundInvalid" xml:space="preserve"><value>Refund details must be valid and the refund must equal the full payment.</value></data>
+  <data name="RefundAlreadyExists" xml:space="preserve"><value>Payment has already been refunded.</value></data>
+  <data name="RefundReasonRequired" xml:space="preserve"><value>A reason is required when the refund reason code is Other.</value></data>
+  <data name="RefundInvalidCorrection" xml:space="preserve"><value>Refund correction details are invalid.</value></data>
+  <data name="RefundCorrectionNoChanges" xml:space="preserve"><value>Correction contains no changes.</value></data>
+  <data name="FinanceNotFound" xml:space="preserve"><value>The financial transaction was not found.</value></data>
+  <data name="FinanceAccessDenied" xml:space="preserve"><value>You are not authorized for this financial transaction or practice.</value></data>
+  <data name="FinanceInvalidFilter" xml:space="preserve"><value>The financial date range or page parameters are invalid.</value></data>
+  <data name="FinanceIdempotencyKeyRequired" xml:space="preserve"><value>A valid Idempotency-Key is required.</value></data>
+  <data name="FinanceIdempotencyKeyReused" xml:space="preserve"><value>The Idempotency-Key was already used with different data.</value></data>
+  <data name="FinanceConcurrentModification" xml:space="preserve"><value>The financial record was modified by another request.</value></data>
+  <data name="FinanceTicketMustBeCancelled" xml:space="preserve"><value>The ticket must be cancelled before refund.</value></data>
+  <data name="FinanceServiceAlreadyStarted" xml:space="preserve"><value>A refund is not allowed after medical service started.</value></data>
+  <data name="FinanceAlreadyRefunded" xml:space="preserve"><value>The payment has already been refunded.</value></data>
+  <data name="FinanceInvalidPayment" xml:space="preserve"><value>The payment does not match the ticket or EGP amount.</value></data>
+  <data name="FinanceReplayUnavailable" xml:space="preserve"><value>The previous financial operation could not be replayed.</value></data>
+  <data name="TicketRefundedCannotRestore" xml:space="preserve"><value>A refunded NoShow ticket cannot be restored to the queue.</value></data>
 </root>

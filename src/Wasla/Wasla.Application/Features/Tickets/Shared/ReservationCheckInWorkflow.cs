@@ -2,6 +2,7 @@ using BuildingBlock.Application.Repositories;
 using BuildingBlock.Application.Time;
 using BuildingBlock.Domain.Results;
 using Wasla.Application.Features.Reservations;
+using Wasla.Application.Features.Finance.Common;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
@@ -19,6 +20,7 @@ internal sealed class ReservationCheckInWorkflow(
     IReadRepository<Reservation, WaslaReadPersistence> reservationReader,
     ITicketQueueLock queueLock,
     ITicketNumberAllocator numberAllocator,
+    IFinancialNumberAllocator financialNumberAllocator,
     ITicketQueueReader queueReader,
     IReservationProjectionInvalidationOutbox projectionOutbox,
     IDateTimeProvider clock)
@@ -30,7 +32,10 @@ internal sealed class ReservationCheckInWorkflow(
         bool force,
         string? reason,
         string idempotencyKey,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        PaymentMethod paymentMethod = PaymentMethod.LegacyUnspecified,
+        string? referenceNumber = null,
+        string? notes = null)
     {
         var permission = force
             ? PermissionNames.PracticeTicketsForceCheckIn
@@ -57,6 +62,12 @@ internal sealed class ReservationCheckInWorkflow(
         if (force && string.IsNullOrWhiteSpace(reason))
         {
             return Result<TicketDetailsResponse>.Fail(TicketErrors.InvalidCreation);
+        }
+
+        if (paymentMethod is not PaymentMethod.Cash and not PaymentMethod.Card and not PaymentMethod.Wallet ||
+            referenceNumber?.Length > 200 || notes?.Length > 1000)
+        {
+            return Result<TicketDetailsResponse>.Fail(PaymentErrors.Invalid);
         }
 
         var reservationSnapshot = await reservationReader.GetByIdAsync(reservationId, cancellationToken);
@@ -99,8 +110,9 @@ internal sealed class ReservationCheckInWorkflow(
         }
 
         var operation = force ? "ForceCheckInReservation" : "CheckInReservation";
-        var fingerprint = TicketIdempotency.Fingerprint(
-            practiceId, reservationId, paidAmount, force, reason?.Trim());
+        var fingerprint = FinancialWriteIdempotency.Fingerprint(
+            practiceId, reservationId, paidAmount, force, reason?.Trim(),
+            paymentMethod, referenceNumber?.Trim(), notes?.Trim());
         await queueLock.AcquirePatientPracticeAsync(
             reservationSnapshot.PatientId, practiceId, cancellationToken);
         await queueLock.AcquirePracticeDayAsync(practiceId, businessDate, cancellationToken);
@@ -154,6 +166,8 @@ internal sealed class ReservationCheckInWorkflow(
 
         var ticketNumber = await numberAllocator.AllocateNextAsync(
             practiceId, businessDate, cancellationToken);
+        var paymentNumber = await financialNumberAllocator.AllocateNextAsync(
+            practiceId, businessDate, FinancialTransactionType.Payment, cancellationToken);
         var ticketId = Guid.NewGuid();
         var ticketResult = Ticket.CreateFromReservation(new TicketCreationSnapshot(
             ticketId,
@@ -184,10 +198,12 @@ internal sealed class ReservationCheckInWorkflow(
             return Result<TicketDetailsResponse>.Fail(ticketResult.Errors);
         }
 
-        var paymentResult = Payment.RecordPaid(
+        var paymentResult = Payment.RecordPaid(new PaymentRecordSnapshot(
             Guid.NewGuid(), reservation.DoctorId, practiceId, reservation.PatientId,
             reservation.Id, ticketId, paidAmount, reservation.PriceSnapshot,
-            actor.Value.ApplicationUserId, nowUtc);
+            paymentNumber.TransactionNumber, paymentNumber.SequenceNumber,
+            businessDate, paymentMethod, referenceNumber, notes,
+            actor.Value.ApplicationUserId, nowUtc));
         if (paymentResult.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(paymentResult.Errors);

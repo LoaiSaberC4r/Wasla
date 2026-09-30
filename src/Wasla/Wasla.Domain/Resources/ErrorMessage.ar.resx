@@ -227,4 +227,26 @@
   <data name="ReservationRestoreBusinessDateEnded" xml:space="preserve"><value>انتهى تاريخ العمل أو اليوم التشغيلي الخاص بالحجز.</value></data>
   <data name="ReservationAccessDenied" xml:space="preserve"><value>ليس لديك صلاحية الوصول إلى هذا الحجز.</value></data>
   <data name="DoctorPracticeFutureReservationsExist" xml:space="preserve"><value>يجب إعادة جدولة الحجوزات النشطة المستقبلية أو إلغاؤها قبل إلغاء تفعيل العيادة.</value></data>
+  <data name="PaymentInvalid" xml:space="preserve"><value>يجب أن يساوي المبلغ المدفوع سعر التذكرة وأن تكون بيانات الدفع صحيحة.</value></data>
+  <data name="PaymentUnsupportedMethod" xml:space="preserve"><value>اختر النقد أو البطاقة أو المحفظة كطريقة للدفع.</value></data>
+  <data name="PaymentAlreadyRefunded" xml:space="preserve"><value>لا يمكن تصحيح بيانات الدفع بعد تسجيل استرداد.</value></data>
+  <data name="PaymentInvalidCorrection" xml:space="preserve"><value>بيانات تصحيح الدفع غير صحيحة.</value></data>
+  <data name="PaymentCorrectionNoChanges" xml:space="preserve"><value>لا يحتوي التصحيح على أي تغييرات.</value></data>
+  <data name="RefundInvalid" xml:space="preserve"><value>بيانات الاسترداد غير صحيحة ويجب أن يساوي مبلغ الاسترداد كامل مبلغ الدفع.</value></data>
+  <data name="RefundAlreadyExists" xml:space="preserve"><value>تم استرداد هذا الدفع بالفعل.</value></data>
+  <data name="RefundReasonRequired" xml:space="preserve"><value>يجب إدخال السبب عند اختيار سبب الاسترداد «أخرى».</value></data>
+  <data name="RefundInvalidCorrection" xml:space="preserve"><value>بيانات تصحيح الاسترداد غير صحيحة.</value></data>
+  <data name="RefundCorrectionNoChanges" xml:space="preserve"><value>لا يحتوي التصحيح على أي تغييرات.</value></data>
+  <data name="FinanceNotFound" xml:space="preserve"><value>المعاملة المالية غير موجودة.</value></data>
+  <data name="FinanceAccessDenied" xml:space="preserve"><value>ليست لديك صلاحية لهذه المعاملة المالية أو العيادة.</value></data>
+  <data name="FinanceInvalidFilter" xml:space="preserve"><value>نطاق التواريخ أو معلمات الصفحة المالية غير صحيحة.</value></data>
+  <data name="FinanceIdempotencyKeyRequired" xml:space="preserve"><value>يجب إرسال مفتاح Idempotency-Key صالح.</value></data>
+  <data name="FinanceIdempotencyKeyReused" xml:space="preserve"><value>استُخدم مفتاح Idempotency-Key سابقًا مع بيانات مختلفة.</value></data>
+  <data name="FinanceConcurrentModification" xml:space="preserve"><value>عُدّل السجل المالي بواسطة طلب آخر.</value></data>
+  <data name="FinanceTicketMustBeCancelled" xml:space="preserve"><value>يجب إلغاء التذكرة قبل الاسترداد.</value></data>
+  <data name="FinanceServiceAlreadyStarted" xml:space="preserve"><value>لا يُسمح بالاسترداد بعد بدء الخدمة الطبية.</value></data>
+  <data name="FinanceAlreadyRefunded" xml:space="preserve"><value>تم استرداد مبلغ الدفع بالفعل.</value></data>
+  <data name="FinanceInvalidPayment" xml:space="preserve"><value>بيانات الدفع لا تطابق التذكرة أو مبلغ الجنيه المصري.</value></data>
+  <data name="FinanceReplayUnavailable" xml:space="preserve"><value>تعذرت إعادة نتيجة العملية المالية السابقة.</value></data>
+  <data name="TicketRefundedCannotRestore" xml:space="preserve"><value>لا يمكن إعادة تذكرة متغيب مستردة إلى قائمة الانتظار.</value></data>
 </root>

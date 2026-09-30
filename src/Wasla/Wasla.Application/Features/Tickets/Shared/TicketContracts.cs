@@ -53,7 +53,15 @@ public sealed record TicketDetailsResponse(
     bool IsFastTrack,
     DateTime LastUpdatedOnUtc,
     IReadOnlyList<TicketAttemptResponse> CallAttempts,
-    string RowVersion);
+    string RowVersion,
+    bool CanRefund,
+    bool IsRefunded,
+    decimal RefundableAmount,
+    string CurrencyCode,
+    Guid? PaymentId,
+    string? PaymentTransactionNumber,
+    Guid? RefundId,
+    string? RefundTransactionNumber);
 
 public sealed record PracticeQueueTicketResponse(
     Guid TicketId,
@@ -187,6 +195,7 @@ internal sealed record TicketActor(Guid ApplicationUserId, bool IsDoctor, bool I
 internal sealed class TicketAccessService(
     ICurrentUser currentUser,
     IReceptionPracticeAuthorizationService receptionAuthorization,
+    IReadRepository<ApplicationUser, WaslaReadPersistence> users,
     IReadRepository<Doctor, WaslaReadPersistence> doctors,
     IReadRepository<DoctorPractice, WaslaReadPersistence> practices,
     IReadRepository<PatientAccountLink, WaslaReadPersistence> patientLinks)
@@ -215,6 +224,12 @@ internal sealed class TicketAccessService(
     {
         if (!TryGetActor(out var actorId) || !HasRole(SystemRoleNames.Doctor) ||
             !currentUser.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase))
+        {
+            return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
+        }
+
+        var user = await users.GetByIdAsync(actorId, cancellationToken);
+        if (user is null || !user.IsActive || user.IsFirstLogin)
         {
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         }

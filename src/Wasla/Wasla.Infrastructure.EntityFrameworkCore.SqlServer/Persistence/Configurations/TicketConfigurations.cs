@@ -86,13 +86,13 @@ internal sealed class TicketConfiguration : IWriteEntityConfiguration<Ticket>
         builder.HasIndex(item => new { item.PatientId, item.Status, item.LastUpdatedOnUtc });
     }
 }
-
 internal sealed class TicketHistoryConfiguration : IWriteEntityConfiguration<TicketHistory>
 {
     public void ConfigureAggregate(EntityTypeBuilder<TicketHistory> builder)
     {
         builder.ToTable("TicketHistories");
         builder.HasKey(item => item.Id);
+        builder.Property(item => item.Id).ValueGeneratedNever();
         builder.Property(item => item.OccurredOnUtc).HasColumnType("datetime2(3)").IsRequired();
         builder.Property(item => item.ReasonCode).HasMaxLength(TicketPolicy.ReasonCodeMaxLength);
         builder.Property(item => item.Reason).HasMaxLength(TicketPolicy.ReasonMaxLength);
@@ -113,6 +113,7 @@ internal sealed class TicketCallAttemptConfiguration : IWriteEntityConfiguration
             table.HasCheckConstraint("CK_TicketCallAttempts_Number", "[AttemptNumber] > 0");
         });
         builder.HasKey(item => item.Id);
+        builder.Property(item => item.Id).ValueGeneratedNever();
         builder.Property(item => item.CalledOnUtc).HasColumnType("datetime2(3)").IsRequired();
         builder.Property(item => item.OutcomeRecordedOnUtc).HasColumnType("datetime2(3)");
         builder.HasIndex(item => new { item.TicketId, item.CallCycle, item.AttemptNumber }).IsUnique()
@@ -152,31 +153,5 @@ internal sealed class TicketIdempotencyRecordConfiguration
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(item => new { item.ActorApplicationUserId, item.Operation, item.IdempotencyKey })
             .IsUnique().HasDatabaseName("UX_TicketIdempotency_ActorOperationKey");
-    }
-}
-
-internal sealed class PaymentConfiguration : IWriteEntityConfiguration<Payment>
-{
-    public void ConfigureAggregate(EntityTypeBuilder<Payment> builder)
-    {
-        builder.ToTable("Payments", table =>
-        {
-            table.HasCheckConstraint("CK_Payments_Status", "[Status] = 1");
-            table.HasCheckConstraint("CK_Payments_Amount", "[Amount] > 0");
-        });
-        builder.HasKey(item => item.Id);
-        builder.Property(item => item.Amount).HasPrecision(18, 2).IsRequired();
-        builder.Property(item => item.CollectedOnUtc).HasColumnType("datetime2(3)").IsRequired();
-        builder.HasOne<Doctor>().WithMany().HasForeignKey(item => item.DoctorId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<DoctorPractice>().WithMany().HasForeignKey(item => item.DoctorPracticeId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Patient>().WithMany().HasForeignKey(item => item.PatientId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Reservation>().WithMany().HasForeignKey(item => item.ReservationId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Ticket>().WithMany().HasForeignKey(item => item.TicketId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.CollectedByApplicationUserId)
-            .OnDelete(DeleteBehavior.Restrict);
-        builder.HasIndex(item => item.TicketId).IsUnique().HasDatabaseName("UX_Payments_TicketId");
-        builder.HasIndex(item => item.ReservationId).IsUnique()
-            .HasFilter("[ReservationId] IS NOT NULL")
-            .HasDatabaseName("UX_Payments_ReservationId");
     }
 }

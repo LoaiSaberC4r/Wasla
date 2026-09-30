@@ -6,6 +6,7 @@ using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Tickets.Common;
 using Wasla.Application.Persistence;
+using Wasla.Domain.Payments;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
@@ -64,6 +65,12 @@ internal sealed class RestoreNoShowTicketCommandHandler(
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId || !ticket.NoShowOnUtc.HasValue)
         {
             return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
+        }
+
+        if (await unitOfWork.WriteRepository<Refund>().GetByPropertyAsync(
+                item => item.TicketId == ticket.Id, cancellationToken) is not null)
+        {
+            return Result<TicketDetailsResponse>.Fail(TicketErrors.RefundedTicketCannotBeRestored);
         }
 
         var configuration = await unitOfWork.WriteRepository<DoctorPracticeConfiguration>()

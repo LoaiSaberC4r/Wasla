@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Features.Tickets.Common;
+using Wasla.Domain.Payments;
 using Wasla.Domain.Tickets;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
@@ -85,6 +86,25 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
                 DoctorNameEn = doctor.NameEn
             }).SingleAsync(cancellationToken);
         var patientsAhead = await CountPatientsAheadAsync(ticket, cancellationToken);
+        var payment = await dbContext.Payments.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.TicketId == ticket.Id, cancellationToken);
+        var refund = payment is null
+            ? null
+            : await dbContext.Refunds.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.PaymentId == payment.Id, cancellationToken);
+        var neverStarted = ticket.Status == TicketStatus.Cancelled &&
+            ticket.InProgressOnUtc is null &&
+            !await dbContext.TicketHistories.AsNoTracking().AnyAsync(
+                item => item.TicketId == ticket.Id &&
+                        item.EventType == TicketHistoryEventType.InProgress,
+                cancellationToken);
+        var refundableAmount = payment is not null && refund is null &&
+                               ticket.Status == TicketStatus.Cancelled && neverStarted &&
+                               payment.Status == PaymentStatus.Paid && payment.Amount > 0 &&
+                               payment.Amount == ticket.PriceSnapshot &&
+                               payment.CurrencyCode == "EGP"
+            ? payment.Amount
+            : 0m;
         return new TicketDetailsResponse(
             ticket.Id,
             ticket.TicketNumber,
@@ -125,7 +145,15 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
                     item.CalledOnUtc,
                     item.OutcomeRecordedOnUtc))
                 .ToArray(),
-            TicketRowVersion(ticket.RowVersion));
+            TicketRowVersion(ticket.RowVersion),
+            CanRefund: false,
+            IsRefunded: refund is not null,
+            RefundableAmount: refundableAmount,
+            CurrencyCode: payment?.CurrencyCode ?? "EGP",
+            PaymentId: payment?.Id,
+            PaymentTransactionNumber: payment?.TransactionNumber,
+            RefundId: refund?.Id,
+            RefundTransactionNumber: refund?.TransactionNumber);
     }
 
     public async Task<PracticeQueueResponse> GetPracticeQueueAsync(

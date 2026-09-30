@@ -10,7 +10,7 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Reservation Lifecycle (Phase 10) — DONE
+**Current Stage:** Payments, Refunds & Doctor Revenue (Phase 12) — DONE
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root
@@ -24,7 +24,10 @@ Reception assignments. Public discovery now exposes automatically eligible
 Doctors, all active Practices, exact base consultation pricing, Doctor-owned Bio
 and Qualifications, and Practice-local availability. Phase 10 adds confirmed
 Reservation booking, lifecycle, history, capacity protection, idempotency, and
-actor-scoped operations.
+actor-scoped operations. Phase 11 adds paid Ticket admission and the practice
+queue. Phase 12 records EGP Payments and full Refunds as separate auditable
+transactions, supports financial corrections and receipt-ready data, and
+exposes scoped finance views and Doctor revenue datasets.
 
 The initial repository baseline is based on the reusable technical foundation from:
 

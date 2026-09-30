@@ -5,11 +5,13 @@ using BuildingBlock.Application.Time;
 using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Features.Tickets.Common;
+using Wasla.Application.Features.Finance.Common;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Payments;
+using Wasla.Domain.Resources;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Security;
@@ -23,7 +25,10 @@ public sealed record CreateWalkInCommand(
     Guid SegmentId,
     Guid VisitTypeId,
     decimal PaidAmount,
-    string IdempotencyKey)
+    string IdempotencyKey,
+    PaymentMethod PaymentMethod = PaymentMethod.LegacyUnspecified,
+    string? ReferenceNumber = null,
+    string? Notes = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CreateWalkInCommandValidator : AbstractValidator<CreateWalkInCommand>
@@ -35,6 +40,11 @@ internal sealed class CreateWalkInCommandValidator : AbstractValidator<CreateWal
         RuleFor(command => command.SegmentId).NotEmpty();
         RuleFor(command => command.VisitTypeId).NotEmpty();
         RuleFor(command => command.PaidAmount).GreaterThan(0);
+        RuleFor(command => command.PaymentMethod)
+            .Must(FinancialPolicy.IsSelectableMethod)
+            .WithMessage(_ => ErrorMessage.GetString("PaymentUnsupportedMethod"));
+        RuleFor(command => command.ReferenceNumber).MaximumLength(200);
+        RuleFor(command => command.Notes).MaximumLength(1000);
         RuleFor(command => command.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
@@ -44,6 +54,7 @@ internal sealed class CreateWalkInCommandHandler(
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketNumberAllocator numberAllocator,
+    IFinancialNumberAllocator financialNumberAllocator,
     ITicketQueueReader queueReader,
     IReservationNoShowRuntimeReader reservationNoShowReader,
     IDateTimeProvider clock)
@@ -127,9 +138,10 @@ internal sealed class CreateWalkInCommandHandler(
             actor.Value.ApplicationUserId,
             "CreateWalkIn",
             key.Value,
-            TicketIdempotency.Fingerprint(
+            FinancialWriteIdempotency.Fingerprint(
                 request.PracticeId, request.PatientId, request.SegmentId,
-                request.VisitTypeId, request.PaidAmount),
+                request.VisitTypeId, request.PaidAmount, request.PaymentMethod,
+                request.ReferenceNumber?.Trim(), request.Notes?.Trim()),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)
@@ -156,6 +168,8 @@ internal sealed class CreateWalkInCommandHandler(
 
         var ticketNumber = await numberAllocator.AllocateNextAsync(
             request.PracticeId, businessDate, cancellationToken);
+        var paymentNumber = await financialNumberAllocator.AllocateNextAsync(
+            request.PracticeId, businessDate, FinancialTransactionType.Payment, cancellationToken);
         var ticketId = Guid.NewGuid();
         var ticket = Ticket.CreateWalkIn(new TicketCreationSnapshot(
             ticketId,
@@ -186,10 +200,12 @@ internal sealed class CreateWalkInCommandHandler(
             return Result<TicketDetailsResponse>.Fail(ticket.Errors);
         }
 
-        var payment = Payment.RecordPaid(
+        var payment = Payment.RecordPaid(new PaymentRecordSnapshot(
             Guid.NewGuid(), practice.DoctorId, request.PracticeId, request.PatientId,
             null, ticketId, request.PaidAmount, price.Price,
-            actor.Value.ApplicationUserId, nowUtc);
+            paymentNumber.TransactionNumber, paymentNumber.SequenceNumber,
+            businessDate, request.PaymentMethod, request.ReferenceNumber, request.Notes,
+            actor.Value.ApplicationUserId, nowUtc));
         if (payment.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(payment.Errors);
