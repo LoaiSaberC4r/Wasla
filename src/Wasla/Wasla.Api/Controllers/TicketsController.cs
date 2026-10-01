@@ -14,6 +14,7 @@ using Wasla.Application.Features.Tickets.GetMyActiveTickets;
 using Wasla.Application.Features.Tickets.GetMyTicketDetails;
 using Wasla.Application.Features.Tickets.GetPracticeQueue;
 using Wasla.Application.Features.Tickets.GetTicketDetails;
+using Wasla.Application.Features.Tickets.GetWalkInOptions;
 using Wasla.Application.Features.Tickets.ManualCall;
 using Wasla.Application.Features.Tickets.Recall;
 using Wasla.Application.Features.Tickets.RestoreNoShow;
@@ -181,6 +182,18 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
         => (await sender.Send(new CancelTicketCommand(
             practiceId, ticketId, request.Reason, request.RowVersion,
             idempotencyKey ?? string.Empty), cancellationToken)).ToIActionResult(cancellationToken);
+}
+
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/reception/practices/{practiceId:guid}")]
+[Authorize(Roles = SystemRoleNames.Reception)]
+public sealed class ReceptionPracticeTicketsController(ISender sender) : ControllerBase
+{
+    [HttpGet("walk-in/options")]
+    public async Task<IActionResult> WalkInOptions(Guid practiceId, CancellationToken cancellationToken)
+        => (await sender.Send(new GetWalkInOptionsQuery(practiceId), cancellationToken))
+            .ToIActionResult(cancellationToken);
 }
 
 [ApiController]

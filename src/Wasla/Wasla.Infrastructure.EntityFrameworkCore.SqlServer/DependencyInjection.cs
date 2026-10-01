@@ -3,6 +3,7 @@ using Wasla.Application.Persistence;
 using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Features.Reservations;
 using Wasla.Application.Features.Tickets.Common;
+using Wasla.Application.Features.Tickets.GetWalkInOptions;
 using Wasla.Application.Features.Finance;
 using Wasla.Application.Features.Finance.Common;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email;
@@ -73,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<ITicketNumberAllocator, TicketNumberAllocator>();
         services.AddScoped<IFinancialNumberAllocator, FinancialNumberAllocator>();
         services.AddScoped<ITicketQueueReader, TicketQueueReader>();
+        services.AddScoped<IWalkInOptionsReader, WalkInOptionsReader>();
         services.AddScoped<IFinanceReadService, FinanceReadService>();
         services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();
