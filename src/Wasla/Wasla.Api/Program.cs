@@ -47,8 +47,8 @@ builder.Services.AddBuildingBlockSwagger(options =>
 builder.Services.AddBuildingBlockLocalization(builder.Configuration);
 builder.Services.AddBuildingBlockProblemDetails();
 builder.Services.PostConfigure<LogRedactionOptions>(options =>
-    options.SensitivePropertyNames = [.. options.SensitivePropertyNames, "ClinicalNotes", "DisplayText", "Notes",
-        "BeforeSnapshot", "AfterSnapshot", "Reason", "Changes", "Search"]);
+    options.SensitivePropertyNames = [.. options.SensitivePropertyNames, "ClinicalNotes", "DisplayText", "Notes", "Prescription", "ResponseJson", "Current", "Draft", "Versions", "Items", "Clinical", "Data", "NewMedication", "Medication", "DoctorNote", "Dose", "DoseText", "FrequencyText", "Instructions", "PrnReason", "MinimumIntervalText", "MaxPer24HoursText", "Reason", "CorrectionReason", "VoidReason", "MedicationNameSnapshot", "MedicationName",
+        "BeforeSnapshot", "AfterSnapshot", "Changes", "Search"]);
 builder.Services.AddWaslaCors(builder.Configuration);
 builder.Services.AddWaslaApplication();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);

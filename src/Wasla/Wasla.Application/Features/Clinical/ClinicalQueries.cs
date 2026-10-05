@@ -67,7 +67,7 @@ internal sealed class GetDoctorEncounterHandler(ClinicalAccessService access, IC
         var details = await reader.DoctorDetailsAsync(actor.Value.DoctorId, r.PracticeId, r.Id, r.ByTicket, ct);
         if (details is null) return Result<EncounterDetailsResponse>.Fail(ClinicalErrors.NotFound);
         await reader.AuditReadAsync(details.EncounterId, actor.Value.UserId, clock.UtcNow, ct);
-        return Result<EncounterDetailsResponse>.Ok(details with { Capabilities = ClinicalCapabilities.For(details, access) });
+        return Result<EncounterDetailsResponse>.Ok(ClinicalCapabilities.Apply(details, access));
     }
 }
 internal sealed class ListMyEncountersHandler(ClinicalAccessService access, IClinicalReadService reader)

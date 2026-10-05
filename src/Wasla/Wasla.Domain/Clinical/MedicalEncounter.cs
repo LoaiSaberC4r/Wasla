@@ -103,7 +103,7 @@ public sealed class MedicalEncounter : AggregateRoot<Guid>, IAuditableEntity
         return Result.Ok();
     }
 
-    public Result Complete(Ticket ticket, Guid actor, DateTime nowUtc)
+    public Result ValidateCompletion(Ticket ticket)
     {
         ArgumentNullException.ThrowIfNull(ticket);
         if (Status != EncounterStatus.InProgress || ticket.Status != TicketStatus.InProgress ||
@@ -111,6 +111,13 @@ public sealed class MedicalEncounter : AggregateRoot<Guid>, IAuditableEntity
             ticket.DoctorPracticeId != DoctorPracticeId) return Result.Fail(ClinicalErrors.InvalidState);
         if (string.IsNullOrWhiteSpace(ClinicalNotes)) return Result.Fail(ClinicalErrors.NotesRequired);
         var valid = ValidateDiagnoses(_diagnoses.Where(d => !d.IsVoided).Select(d => d.Snapshot()));
+        if (valid.IsFailure) return valid;
+        return Result.Ok();
+    }
+
+    public Result Complete(Ticket ticket, Guid actor, DateTime nowUtc)
+    {
+        var valid = ValidateCompletion(ticket);
         if (valid.IsFailure) return valid;
         Status = EncounterStatus.Completed;
         CompletedAtUtc = nowUtc;

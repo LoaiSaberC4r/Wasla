@@ -64,7 +64,8 @@ public sealed record TicketDetailsResponse(
     string? RefundTransactionNumber,
     Guid? MedicalEncounterId = null,
     Guid? FollowUpEligibilityId = null,
-    string? MedicalEncounterRowVersion = null);
+    string? MedicalEncounterRowVersion = null,
+    Guid? PrescriptionId = null);
 
 public sealed record PracticeQueueTicketResponse(
     Guid TicketId,

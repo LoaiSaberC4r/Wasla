@@ -277,4 +277,57 @@
   <data name="FollowUpAlreadyReserved" xml:space="preserve"><value>أهلية المتابعة محجوزة بالفعل.</value></data>
   <data name="FollowUpAlreadyConsumed" xml:space="preserve"><value>تم استخدام أهلية المتابعة بالفعل.</value></data>
   <data name="FollowUpConcurrencyConflict" xml:space="preserve"><value>تم تغيير أهلية المتابعة. يرجى التحديث وإعادة المحاولة.</value></data>
+  <data name="Prescription.NotFound" xml:space="preserve"><value>لم يتم العثور على الروشتة.</value></data>
+  <data name="Prescription.AccessDenied" xml:space="preserve"><value>ليس لديك صلاحية الوصول إلى هذه الروشتة.</value></data>
+  <data name="Prescription.InvalidState" xml:space="preserve"><value>لا يمكن تنفيذ هذا الإجراء في الحالة الحالية للروشتة.</value></data>
+  <data name="Prescription.ConcurrencyConflict" xml:space="preserve"><value>تم تعديل الروشتة. حدّث البيانات قبل إعادة المحاولة.</value></data>
+  <data name="Prescription.AlreadyExistsForEncounter" xml:space="preserve"><value>يسمح بروشتة واحدة فقط لكل زيارة طبية.</value></data>
+  <data name="Prescription.NoCurrentVersion" xml:space="preserve"><value>يلزم وجود نسخة حالية نهائية للروشتة.</value></data>
+  <data name="Prescription.CorrectionDraftAlreadyExists" xml:space="preserve"><value>تخلّص من مسودة التصحيح أو أكملها قبل إلغاء الروشتة.</value></data>
+  <data name="Prescription.CorrectionReasonRequired" xml:space="preserve"><value>سبب التصحيح مطلوب بحد أقصى ١٠٠٠ حرف.</value></data>
+  <data name="Prescription.VoidReasonRequired" xml:space="preserve"><value>سبب إلغاء الروشتة مطلوب بحد أقصى ١٠٠٠ حرف.</value></data>
+  <data name="Prescription.ItemsRequired" xml:space="preserve"><value>يلزم إضافة دواء واحد على الأقل.</value></data>
+  <data name="DrugCatalog.NotFound" xml:space="preserve"><value>لم يتم العثور على الدواء في الكتالوج.</value></data>
+  <data name="DrugCatalog.NotActive" xml:space="preserve"><value>هذا الدواء غير نشط. حدّث نتائج البحث.</value></data>
+  <data name="DrugCatalog.InvalidState" xml:space="preserve"><value>إجراء الكتالوج غير مسموح في الحالة الحالية.</value></data>
+  <data name="DrugCatalog.ConcurrencyConflict" xml:space="preserve"><value>تم تعديل الدواء. حدّث البيانات قبل إعادة المحاولة.</value></data>
+  <data name="DrugCatalog.MergeTargetInvalid" xml:space="preserve"><value>يجب أن يكون الدواء المستهدف بالدمج نشطاً.</value></data>
+  <data name="DrugCatalog.CannotMergeIntoSelf" xml:space="preserve"><value>لا يمكن دمج الدواء مع نفسه.</value></data>
+  <data name="DrugCatalog.AlreadyMerged" xml:space="preserve"><value>تم دمج هذا الدواء بالفعل.</value></data>
+  <data name="DrugCatalog.ChangeReasonRequired" xml:space="preserve"><value>سبب تعديل الكتالوج مطلوب.</value></data>
+  <data name="DrugCatalog.DeactivationReasonRequired" xml:space="preserve"><value>سبب تعطيل الدواء مطلوب.</value></data>
+  <data name="DrugCatalog.InvalidData" xml:space="preserve"><value>بيانات الدواء غير صحيحة أو تجاوزت الحدود المسموحة.</value></data>
+  <data name="DrugCatalog.AccessDenied" xml:space="preserve"><value>يلزم الحصول على صلاحية إدارة كتالوج الأدوية.</value></data>
+  <data name="DrugCatalogRequest.NotFound" xml:space="preserve"><value>لم يتم العثور على طلب إضافة الدواء.</value></data>
+  <data name="DrugCatalogRequest.AccessDenied" xml:space="preserve"><value>لا يمكنك الوصول إلى طلب إضافة الدواء.</value></data>
+  <data name="DrugCatalogRequest.InvalidState" xml:space="preserve"><value>لا يمكن تعديل طلب إضافة الدواء في حالته الحالية.</value></data>
+  <data name="DrugCatalogRequest.ConcurrencyConflict" xml:space="preserve"><value>تم تعديل طلب الدواء. حدّث البيانات قبل إعادة المحاولة.</value></data>
+  <data name="DrugCatalogRequest.MedicationNameRequired" xml:space="preserve"><value>اسم الدواء مطلوب.</value></data>
+  <data name="DrugCatalogRequest.MoreInfoReasonRequired" xml:space="preserve"><value>وضّح المعلومات الإضافية المطلوبة.</value></data>
+  <data name="DrugCatalogRequest.RejectionReasonRequired" xml:space="preserve"><value>سبب الرفض مطلوب.</value></data>
+  <data name="DrugCatalogRequest.AlreadyApproved" xml:space="preserve"><value>تمت الموافقة على طلب الدواء بالفعل.</value></data>
+  <data name="DrugCatalogRequest.AlreadyRejected" xml:space="preserve"><value>تم رفض طلب الدواء بالفعل.</value></data>
+  <data name="DrugCatalogRequest.InvalidData" xml:space="preserve"><value>بيانات طلب إضافة الدواء غير صحيحة.</value></data>
+  <data name="DrugCatalogImport.InvalidFile" xml:space="preserve"><value>ارفع ملف JSON غير فارغ بحجم لا يتجاوز ٢٠ ميجابايت.</value></data>
+  <data name="DrugCatalogImport.InvalidSchema" xml:space="preserve"><value>الملف لا يطابق مخطط بيانات MedicianDB المعتمد.</value></data>
+  <data name="DrugCatalogImport.Empty" xml:space="preserve"><value>يجب أن يحتوي الاستيراد على سجل مصدر واحد على الأقل.</value></data>
+  <data name="DrugCatalogImport.BatchNotFound" xml:space="preserve"><value>لم يتم العثور على دفعة الاستيراد.</value></data>
+  <data name="DrugCatalogImport.BatchNotReady" xml:space="preserve"><value>دفعة الاستيراد غير جاهزة للتطبيق.</value></data>
+  <data name="DrugCatalogImport.ConcurrencyConflict" xml:space="preserve"><value>تم تعديل الكتالوج بعد المعاينة. أنشئ معاينة جديدة.</value></data>
+  <data name="Medication.IdempotencyKeyRequired" xml:space="preserve"><value>ترويسة Idempotency-Key صالحة مطلوبة.</value></data>
+  <data name="Medication.IdempotencyKeyReused" xml:space="preserve"><value>تم استخدام مفتاح منع التكرار لطلب مختلف.</value></data>
+  <data name="PrescriptionItem.NotFound" xml:space="preserve"><value>لم يتم العثور على عنصر الروشتة.</value></data>
+  <data name="PrescriptionItem.InvalidData" xml:space="preserve"><value>تجاوزت حقول عنصر الروشتة الحدود المسموحة.</value></data>
+  <data name="PrescriptionItem.DurationInvalid" xml:space="preserve"><value>اختر مدة محددة صالحة أو علاجاً مستمراً دون قيمة أو وحدة مدة.</value></data>
+  <data name="PrescriptionItem.QuantityInvalid" xml:space="preserve"><value>يجب أن تكون الكمية موجبة مع تحديد الوحدة.</value></data>
+  <data name="PrescriptionItem.MedicationRequired" xml:space="preserve"><value>الدواء مطلوب.</value></data>
+  <data name="PrescriptionItem.StrengthRequired" xml:space="preserve"><value>تركيز الدواء مطلوب.</value></data>
+  <data name="PrescriptionItem.DosageFormRequired" xml:space="preserve"><value>الشكل الدوائي مطلوب.</value></data>
+  <data name="PrescriptionItem.RouteRequired" xml:space="preserve"><value>طريقة استخدام صالحة مطلوب.</value></data>
+  <data name="PrescriptionItem.DoseRequired" xml:space="preserve"><value>الجرعة مطلوب.</value></data>
+  <data name="PrescriptionItem.FrequencyRequired" xml:space="preserve"><value>تكرار الجرعة مطلوب.</value></data>
+  <data name="PrescriptionItem.DurationRequired" xml:space="preserve"><value>نوع مدة العلاج مطلوب.</value></data>
+  <data name="PrescriptionItem.DurationValueRequired" xml:space="preserve"><value>مدة علاج محددة موجبة مطلوب.</value></data>
+  <data name="PrescriptionItem.PrnReasonRequired" xml:space="preserve"><value>سبب الاستخدام عند الحاجة مطلوب.</value></data>
+  <data name="PrescriptionItem.MinimumIntervalRequired" xml:space="preserve"><value>الحد الأدنى للفاصل بين الجرعات مطلوب.</value></data>
 </root>

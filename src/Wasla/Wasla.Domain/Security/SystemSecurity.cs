@@ -6,6 +6,7 @@ public static class SystemRoleNames
     public const string Doctor = "Doctor";
     public const string Reception = "Reception";
     public const string Patient = "Patient";
+    public const string DrugCatalogManager = "DrugCatalogManager";
 }
 
 public static class SystemRoleIds
@@ -14,10 +15,39 @@ public static class SystemRoleIds
     public static readonly Guid Doctor = Guid.Parse("10000000-0000-0000-0000-000000000002");
     public static readonly Guid Reception = Guid.Parse("10000000-0000-0000-0000-000000000003");
     public static readonly Guid Patient = Guid.Parse("10000000-0000-0000-0000-000000000004");
+    public static readonly Guid DrugCatalogManager = Guid.Parse("10000000-0000-0000-0000-000000000005");
 }
 
 public static class PermissionNames
 {
+    public const string DrugCatalogView = "DrugCatalog.View";
+    public const string DrugCatalogCreate = "DrugCatalog.Create";
+    public const string DrugCatalogUpdate = "DrugCatalog.Update";
+    public const string DrugCatalogActivate = "DrugCatalog.Activate";
+    public const string DrugCatalogDeactivate = "DrugCatalog.Deactivate";
+    public const string DrugCatalogMerge = "DrugCatalog.Merge";
+    public const string DrugCatalogImport = "DrugCatalog.Import";
+    public const string DrugCatalogImportHistory = "DrugCatalog.ImportHistory";
+    public const string DrugCatalogRequestsView = "DrugCatalogRequests.View";
+    public const string DrugCatalogRequestsReview = "DrugCatalogRequests.Review";
+    public const string DrugCatalogSearchActive = "DrugCatalog.SearchActive";
+    public const string DrugCatalogRequestsCreateOwn = "DrugCatalogRequests.CreateOwn";
+    public const string DrugCatalogRequestsViewOwn = "DrugCatalogRequests.ViewOwn";
+    public const string DrugCatalogRequestsUpdateOwn = "DrugCatalogRequests.UpdateOwn";
+    public const string PrescriptionsViewOwn = "Prescriptions.ViewOwn";
+    public const string PrescriptionsManageOwnDraft = "Prescriptions.ManageOwnDraft";
+    public const string PrescriptionsCorrectOwn = "Prescriptions.CorrectOwn";
+    public const string PrescriptionsVoidOwn = "Prescriptions.VoidOwn";
+    public const string PrescriptionsViewOwnCompleted = "Prescriptions.ViewOwnCompleted";
+    public const string DrugCatalogManagersViewAll = "DrugCatalogManagers.ViewAll";
+    public const string DrugCatalogManagersViewDetails = "DrugCatalogManagers.ViewDetails";
+    public const string DrugCatalogManagersCreate = "DrugCatalogManagers.Create";
+    public const string DrugCatalogManagersUpdate = "DrugCatalogManagers.Update";
+    public const string DrugCatalogManagersActivate = "DrugCatalogManagers.Activate";
+    public const string DrugCatalogManagersDeactivate = "DrugCatalogManagers.Deactivate";
+
+    public static readonly IReadOnlyList<string> DrugCatalogManagerDefaults = [DrugCatalogView, DrugCatalogCreate, DrugCatalogUpdate, DrugCatalogActivate, DrugCatalogDeactivate, DrugCatalogMerge, DrugCatalogImport, DrugCatalogImportHistory, DrugCatalogRequestsView, DrugCatalogRequestsReview];
+    public static readonly IReadOnlyList<string> PrescriptionDoctorDefaults = [DrugCatalogSearchActive, DrugCatalogRequestsCreateOwn, DrugCatalogRequestsViewOwn, DrugCatalogRequestsUpdateOwn, PrescriptionsViewOwn, PrescriptionsManageOwnDraft, PrescriptionsCorrectOwn, PrescriptionsVoidOwn];
     public const string DoctorsViewAll = "Doctors.ViewAll";
     public const string DoctorsViewDetails = "Doctors.ViewDetails";
     public const string DoctorsApprove = "Doctors.Approve";
@@ -150,7 +180,13 @@ public static class PermissionNames
             SuperAdminsActivate,
             SuperAdminsDeactivate,
             SuperAdminsDelete,
-            SuperAdminsRestore
+            SuperAdminsRestore,
+            DrugCatalogManagersViewAll,
+            DrugCatalogManagersViewDetails,
+            DrugCatalogManagersCreate,
+            DrugCatalogManagersUpdate,
+            DrugCatalogManagersActivate,
+            DrugCatalogManagersDeactivate,
         ],
         StringComparer.OrdinalIgnoreCase);
 
@@ -303,7 +339,32 @@ public static class PermissionNames
         FollowUpEligibilityCreateOwn,
         FollowUpEligibilityViewBookingEligibility,
         MedicalEncountersViewOwnCompleted,
-        DiagnosesViewOwnCompleted
+        DiagnosesViewOwnCompleted,
+        DrugCatalogView,
+        DrugCatalogCreate,
+        DrugCatalogUpdate,
+        DrugCatalogActivate,
+        DrugCatalogDeactivate,
+        DrugCatalogMerge,
+        DrugCatalogImport,
+        DrugCatalogImportHistory,
+        DrugCatalogRequestsView,
+        DrugCatalogRequestsReview,
+        DrugCatalogSearchActive,
+        DrugCatalogRequestsCreateOwn,
+        DrugCatalogRequestsViewOwn,
+        DrugCatalogRequestsUpdateOwn,
+        PrescriptionsViewOwn,
+        PrescriptionsManageOwnDraft,
+        PrescriptionsCorrectOwn,
+        PrescriptionsVoidOwn,
+        PrescriptionsViewOwnCompleted,
+        DrugCatalogManagersViewAll,
+        DrugCatalogManagersViewDetails,
+        DrugCatalogManagersCreate,
+        DrugCatalogManagersUpdate,
+        DrugCatalogManagersActivate,
+        DrugCatalogManagersDeactivate,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

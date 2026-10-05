@@ -112,6 +112,7 @@ internal sealed class LoginCommandHandler(
             UserType.Doctor => snapshot.DoctorId.HasValue,
             UserType.Patient => snapshot.PatientId.HasValue,
             UserType.Reception => true,
+            UserType.DrugCatalogManager => snapshot.Roles.Contains(SystemRoleNames.DrugCatalogManager),
             _ => false
         };
 

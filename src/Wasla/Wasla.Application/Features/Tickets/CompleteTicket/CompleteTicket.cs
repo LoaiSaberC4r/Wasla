@@ -11,6 +11,8 @@ using Wasla.Domain.Tickets;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Practices;
 using Wasla.Application.Features.Clinical;
+using Wasla.Application.Features.Medications;
+using Wasla.Domain.Medications;
 
 namespace Wasla.Application.Features.Tickets.CompleteTicket;
 
@@ -19,7 +21,8 @@ public sealed record CompleteTicketCommand(
     Guid TicketId,
     string TicketRowVersion,
     string EncounterRowVersion,
-    string IdempotencyKey)
+    string IdempotencyKey,
+    string? PrescriptionRowVersion = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CompleteTicketCommandValidator : AbstractValidator<CompleteTicketCommand>
@@ -81,7 +84,7 @@ internal sealed class CompleteTicketCommandHandler(
             actor.Value.ApplicationUserId,
             "CompleteTicket",
             key.Value,
-            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion),
+            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)
@@ -106,8 +109,24 @@ internal sealed class CompleteTicketCommandHandler(
             return Result<TicketDetailsResponse>.Fail(ClinicalErrors.ConcurrencyConflict);
         var practice = await unitOfWork.WriteRepository<DoctorPractice>().GetByIdAsync(request.PracticeId, cancellationToken);
         if (practice?.DoctorId != ticket.DoctorId) return Result<TicketDetailsResponse>.Fail(ClinicalErrors.AccessDenied);
-        var clinicalCompletion = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc);
-        if (clinicalCompletion.IsFailure) return Result<TicketDetailsResponse>.Fail(clinicalCompletion.Errors);
+        await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase14:EncounterPrescription", encounter.Id.ToString("N"), cancellationToken);
+        var prescription = await unitOfWork.WriteRepository<Prescription>().FirstOrDefaultAsync(new PrescriptionForUpdate(encounter.Id, true), cancellationToken);
+        if (prescription is not null && !TicketRowVersion.Matches(prescription.RowVersion, request.PrescriptionRowVersion ?? string.Empty) ||
+            prescription is null && !string.IsNullOrWhiteSpace(request.PrescriptionRowVersion))
+            return Result<TicketDetailsResponse>.Fail(MedicationErrors.Conflict("Prescription.ConcurrencyConflict"));
+        var validationErrors = new List<Error>();
+        if (prescription is not null) validationErrors.AddRange(prescription.FinalizationErrors());
+        var clinicalCompletion = encounter.ValidateCompletion(ticket);
+        if (clinicalCompletion.IsFailure) validationErrors.AddRange(clinicalCompletion.Errors);
+        if (validationErrors.Count > 0) return Result<TicketDetailsResponse>.Fail(validationErrors);
+        if (prescription is not null)
+        {
+            // Validation and all three lifecycle transitions commit in the existing transaction.
+            var finalized = prescription.FinalizeInitial(encounter, actor.Value.ApplicationUserId, nowUtc);
+            if (finalized.IsFailure) return Result<TicketDetailsResponse>.Fail(finalized.Errors);
+        }
+        var encounterCompleted = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc);
+        if (encounterCompleted.IsFailure) return Result<TicketDetailsResponse>.Fail(encounterCompleted.Errors);
         if (ticket.FollowUpEligibilityId is { } eligibilityId)
         {
             var eligibility = await followUp.FindAsync(eligibilityId, cancellationToken);

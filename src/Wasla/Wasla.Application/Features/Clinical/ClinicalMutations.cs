@@ -8,6 +8,7 @@ using Wasla.Application.Features.Tickets.Common;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Security;
+using Wasla.Application.Features.Medications;
 
 namespace Wasla.Application.Features.Clinical;
 
@@ -77,22 +78,31 @@ internal sealed class ClinicalMutationService(ClinicalAccessService access, IUni
     {
         var details = await reader.DoctorDetailsAsync(doctorId, practiceId, encounterId, false, ct);
         return details is null ? Result<EncounterDetailsResponse>.Fail(ClinicalErrors.NotFound)
-            : Result<EncounterDetailsResponse>.Ok(details with { Capabilities = ClinicalCapabilities.For(details, access) });
+            : Result<EncounterDetailsResponse>.Ok(ClinicalCapabilities.Apply(details, access));
     }
     public DateTime Now => clock.UtcNow;
 }
 
 internal static class ClinicalCapabilities
 {
+    public static EncounterDetailsResponse Apply(EncounterDetailsResponse d, ClinicalAccessService access)
+    {
+        var permissions = PermissionNames.All.Where(access.HasPermission).ToArray();
+        var prescription = access.HasPermission(PermissionNames.PrescriptionsViewOwn) && d.Prescription is { } state
+            ? PrescriptionCapabilities.For(state, new MedicationActor(access.ActorId, d.Doctor.Id, permissions), d.Status == EncounterStatus.InProgress) : null;
+        return d with { Prescription = prescription, Capabilities = For(d, access) };
+    }
     public static EncounterCapabilitiesResponse For(EncounterDetailsResponse d, ClinicalAccessService access)
     {
         var draft = d.Status == EncounterStatus.InProgress;
         return new(draft && access.HasPermission(PermissionNames.MedicalEncountersUpdateOwn),
             draft && access.HasPermission(PermissionNames.DiagnosesManageOwn),
-            draft && !string.IsNullOrWhiteSpace(d.ClinicalNotes) && access.HasPermission(PermissionNames.MedicalEncountersCompleteOwn) &&
+            draft && d.CompletionBlockers is not { Count: > 0 } && !string.IsNullOrWhiteSpace(d.ClinicalNotes) && access.HasPermission(PermissionNames.MedicalEncountersCompleteOwn) &&
                 access.HasPermission(PermissionNames.DoctorPracticeTicketsCompleteOwn),
             !draft && access.HasPermission(PermissionNames.MedicalEncountersAmendOwn),
-            !draft && d.FollowUpEligibility is null && access.HasPermission(PermissionNames.FollowUpEligibilityCreateOwn));
+            !draft && d.FollowUpEligibility is null && access.HasPermission(PermissionNames.FollowUpEligibilityCreateOwn),
+            draft && access.HasPermission(PermissionNames.PrescriptionsManageOwnDraft),
+            draft && access.HasPermission(PermissionNames.PrescriptionsManageOwnDraft) && access.HasPermission(PermissionNames.DrugCatalogRequestsCreateOwn));
     }
 }
 

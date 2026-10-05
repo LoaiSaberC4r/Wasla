@@ -5,7 +5,8 @@ public enum UserType
     SuperAdmin = 1,
     Doctor = 2,
     Reception = 3,
-    Patient = 4
+    Patient = 4,
+    DrugCatalogManager = 5
 }
 
 public enum Gender

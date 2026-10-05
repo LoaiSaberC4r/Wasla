@@ -8,6 +8,7 @@ using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Tickets;
 using Wasla.Domain.Clinical;
+using Wasla.Domain.Medications;
 using Wasla.Domain.Payments;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
@@ -55,6 +56,17 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<ReservationIdempotencyRecord> ReservationIdempotencyRecords => Set<ReservationIdempotencyRecord>();
     public DbSet<ReservationProjectionInvalidation> ReservationProjectionInvalidations
         => Set<ReservationProjectionInvalidation>();
+    public DbSet<DrugCatalog> DrugCatalogs => Set<DrugCatalog>();
+    public DbSet<DrugCatalogHistory> DrugCatalogHistories => Set<DrugCatalogHistory>();
+    public DbSet<DrugCatalogRequest> DrugCatalogRequests => Set<DrugCatalogRequest>();
+    public DbSet<DrugCatalogRequestHistory> DrugCatalogRequestHistories => Set<DrugCatalogRequestHistory>();
+    public DbSet<DrugCatalogImportBatch> DrugCatalogImportBatches => Set<DrugCatalogImportBatch>();
+    public DbSet<DrugCatalogImportRecord> DrugCatalogImportRecords => Set<DrugCatalogImportRecord>();
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<PrescriptionVersion> PrescriptionVersions => Set<PrescriptionVersion>();
+    public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
+    public DbSet<PrescriptionAuditEvent> PrescriptionAuditEvents => Set<PrescriptionAuditEvent>();
+    public DbSet<MedicationIdempotencyRecord> MedicationIdempotencyRecords => Set<MedicationIdempotencyRecord>();
     public DbSet<MedicalEncounter> MedicalEncounters => Set<MedicalEncounter>();
     public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
     public DbSet<EncounterAmendment> EncounterAmendments => Set<EncounterAmendment>();
@@ -87,23 +99,67 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
         => Set<ReceptionPracticeAssignmentPermission>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
-    {
-        SynchronizeFollowUpReleasesAsync(CancellationToken.None).GetAwaiter().GetResult();
-        GuardCompletedDiagnosisDeletionAsync(CancellationToken.None).GetAwaiter().GetResult();
-        EnsureFinancialHistoryIsAppendOnly();
-        PrepareSqliteRowVersions();
-        return base.SaveChanges(acceptAllChangesOnSuccess);
-    }
+        => SaveChangesAsync(acceptAllChangesOnSuccess, CancellationToken.None).GetAwaiter().GetResult();
 
-    public override async Task<int> SaveChangesAsync(
-        bool acceptAllChangesOnSuccess,
-        CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         await SynchronizeFollowUpReleasesAsync(cancellationToken);
         await GuardCompletedDiagnosisDeletionAsync(cancellationToken);
+        await GuardPrescriptionHistoryAsync(cancellationToken);
         EnsureFinancialHistoryIsAppendOnly();
+        AddPrescriptionAuditEvents();
         PrepareSqliteRowVersions();
-        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        // Release the filtered current-version key before acquiring it for the correction.
+        var superseded = ChangeTracker.Entries<PrescriptionVersion>().Where(e => e.State == EntityState.Modified &&
+            e.Property(v => v.Status).OriginalValue == PrescriptionVersionStatus.Finalized && e.Entity.Status == PrescriptionVersionStatus.Superseded).ToArray();
+        await using var ownedTransaction = superseded.Length > 0 && Database.CurrentTransaction is null
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        foreach (var entry in superseded)
+        {
+            var affected = await Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE [PrescriptionVersions] SET [Status] = 3 WHERE [Id] = {entry.Entity.Id} AND [Status] = 2", cancellationToken);
+            if (affected != 1) throw new DbUpdateConcurrencyException("Prescription.ConcurrencyConflict");
+            entry.Property(v => v.Status).OriginalValue = PrescriptionVersionStatus.Superseded;
+            entry.Property(v => v.Status).IsModified = false;
+        }
+        var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (ownedTransaction is not null) await ownedTransaction.CommitAsync(cancellationToken);
+        return result;
+    }
+
+    private void AddPrescriptionAuditEvents()
+    {
+        var tracked = ChangeTracker.Entries<PrescriptionAuditEvent>().Select(e => e.Entity.Id).ToHashSet();
+        var events = ChangeTracker.Entries<Prescription>().SelectMany(e => e.Entity.AuditEvents)
+            .Where(e => !tracked.Contains(e.Id)).ToArray();
+        PrescriptionAuditEvents.AddRange(events);
+    }
+
+    private async Task GuardPrescriptionHistoryAsync(CancellationToken ct)
+    {
+        var roots = ChangeTracker.Entries<Prescription>().Where(e => e.State == EntityState.Deleted).ToArray();
+        foreach (var root in roots)
+            if (!root.Entity.IsEmptyInitialDraft || await PrescriptionVersions.IgnoreAutoIncludes().AsNoTracking()
+                .AnyAsync(v => v.PrescriptionId == root.Entity.Id && v.Status != PrescriptionVersionStatus.Draft, ct))
+                throw new InvalidOperationException("Finalized prescriptions cannot be deleted.");
+        foreach (var entry in ChangeTracker.Entries<PrescriptionVersion>())
+        {
+            var original = entry.Property(v => v.Status).OriginalValue;
+            if (entry.State == EntityState.Deleted && original != PrescriptionVersionStatus.Draft)
+                throw new InvalidOperationException("Finalized prescription versions cannot be deleted.");
+            if (entry.State != EntityState.Modified || original == PrescriptionVersionStatus.Draft) continue;
+            var allowed = original == PrescriptionVersionStatus.Finalized && entry.Entity.Status is PrescriptionVersionStatus.Superseded or PrescriptionVersionStatus.Voided;
+            var allowedFields = entry.Entity.Status == PrescriptionVersionStatus.Voided
+                ? new[] { nameof(PrescriptionVersion.Status), nameof(PrescriptionVersion.VoidReason), nameof(PrescriptionVersion.VoidedAtUtc), nameof(PrescriptionVersion.VoidedByApplicationUserId) }
+                : [nameof(PrescriptionVersion.Status)];
+            if (!allowed || entry.Properties.Any(p => p.IsModified && !allowedFields.Contains(p.Metadata.Name)))
+                throw new InvalidOperationException("Finalized prescription content is immutable.");
+        }
+        var itemVersionIds = ChangeTracker.Entries<PrescriptionItem>().Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .Select(e => e.Entity.PrescriptionVersionId).Distinct().ToArray();
+        if (itemVersionIds.Length > 0 && await PrescriptionVersions.IgnoreAutoIncludes().AsNoTracking()
+            .AnyAsync(v => itemVersionIds.Contains(v.Id) && v.Status != PrescriptionVersionStatus.Draft, ct))
+            throw new InvalidOperationException("Finalized prescription items are immutable.");
     }
 
     // Every operational cancellation/no-show/expiration path (including governance and background
@@ -160,13 +216,13 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
         foreach (var entry in ChangeTracker.Entries())
         {
             if (entry.State == EntityState.Deleted &&
-                entry.Entity is Payment or Refund or PaymentCorrectionHistory or RefundCorrectionHistory or MedicalEncounter or EncounterAmendment or EncounterAmendmentChange or EncounterAuditEvent or FollowUpEligibility or FollowUpEligibilityHistory)
+                entry.Entity is DrugCatalog or DrugCatalogRequest or DrugCatalogImportBatch or MedicationIdempotencyRecord or Payment or Refund or PaymentCorrectionHistory or RefundCorrectionHistory or MedicalEncounter or EncounterAmendment or EncounterAmendmentChange or EncounterAuditEvent or FollowUpEligibility or FollowUpEligibilityHistory or DrugCatalogHistory or DrugCatalogRequestHistory or DrugCatalogImportRecord or PrescriptionAuditEvent)
             {
                 throw new InvalidOperationException("Financial and clinical history cannot be deleted.");
             }
 
             if (entry.State == EntityState.Modified &&
-                entry.Entity is PaymentCorrectionHistory or RefundCorrectionHistory or EncounterAmendment or EncounterAmendmentChange or EncounterAuditEvent or FollowUpEligibilityHistory)
+                entry.Entity is PaymentCorrectionHistory or RefundCorrectionHistory or EncounterAmendment or EncounterAmendmentChange or EncounterAuditEvent or FollowUpEligibilityHistory or DrugCatalogHistory or DrugCatalogRequestHistory or DrugCatalogImportRecord or PrescriptionAuditEvent)
             {
                 throw new InvalidOperationException("Financial and clinical correction history cannot be modified.");
             }
