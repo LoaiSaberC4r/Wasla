@@ -10,6 +10,8 @@ using Wasla.Domain.Payments;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Application.Features.Clinical;
+using BuildingBlock.Application.Time;
 
 namespace Wasla.Application.Features.Tickets.GetWalkInOptions;
 
@@ -36,10 +38,11 @@ public interface IWalkInOptionsReader
 {
     Task<IReadOnlyList<WalkInSegmentOptionResponse>> ListAsync(
         Guid practiceId,
+        DoctorPracticeVisitTypeCode visitType = DoctorPracticeVisitTypeCode.NewConsultation,
         CancellationToken cancellationToken = default);
 }
 
-public sealed record GetWalkInOptionsQuery(Guid PracticeId) : IQuery<WalkInOptionsResponse>;
+public sealed record GetWalkInOptionsQuery(Guid PracticeId, Guid? PatientId = null, Guid? FollowUpEligibilityId = null) : IQuery<WalkInOptionsResponse>;
 
 internal sealed class GetWalkInOptionsQueryValidator : AbstractValidator<GetWalkInOptionsQuery>
 {
@@ -51,6 +54,8 @@ internal sealed class GetWalkInOptionsQueryValidator : AbstractValidator<GetWalk
 
 internal sealed class GetWalkInOptionsQueryHandler(
     TicketAccessService access,
+    FollowUpWorkflow followUp,
+    IDateTimeProvider clock,
     IReadRepository<DoctorPractice, WaslaReadPersistence> practices,
     IReadRepository<Doctor, WaslaReadPersistence> doctors,
     IReadRepository<DoctorPracticeConfiguration, WaslaReadPersistence> configurations,
@@ -85,7 +90,19 @@ internal sealed class GetWalkInOptionsQueryHandler(
             return Result<WalkInOptionsResponse>.Fail(TicketErrors.WalkInNotAllowed);
         }
 
-        var segments = await reader.ListAsync(request.PracticeId, cancellationToken);
+        var type = DoctorPracticeVisitTypeCode.NewConsultation;
+        if (request.FollowUpEligibilityId.HasValue)
+        {
+            var permission = await access.AuthorizeReceptionAsync(request.PracticeId,
+                PermissionNames.FollowUpEligibilityViewBookingEligibility, cancellationToken);
+            if (permission.IsFailure) return Result<WalkInOptionsResponse>.Fail(permission.Errors);
+            var today = TicketBusinessClock.CurrentBusinessDate(clock.UtcNow, configuration.TimeZoneId);
+            var eligibility = await followUp.ValidateSelectionAsync(request.FollowUpEligibilityId, DoctorPracticeVisitTypeCode.FollowUp,
+                request.PatientId.GetValueOrDefault(), request.PracticeId, doctor.Id, today, cancellationToken);
+            if (eligibility.IsFailure) return Result<WalkInOptionsResponse>.Fail(eligibility.Errors);
+            type = DoctorPracticeVisitTypeCode.FollowUp;
+        }
+        var segments = await reader.ListAsync(request.PracticeId, type, cancellationToken);
         return Result<WalkInOptionsResponse>.Ok(new WalkInOptionsResponse(
             request.PracticeId, FinancialPolicy.CurrencyCode, segments));
     }

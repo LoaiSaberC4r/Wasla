@@ -1,4 +1,5 @@
 using Wasla.Application.Email;
+using Wasla.Application.Features.Clinical;
 using Wasla.Application.Persistence;
 using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Features.Reservations;
@@ -14,6 +15,7 @@ using BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using BuildingBlock.Application.Exceptions;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer;
 
@@ -36,6 +38,7 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "Unable to resolve the migrations assembly name.");
 
+        services.Insert(0, ServiceDescriptor.Singleton<IExceptionToErrorMapper, ClinicalPersistenceErrorMapper>());
         services.AddBuildingBlockEntityFrameworkCore<WaslaWritePersistence>();
         services.AddBuildingBlockInterceptors();
         services.AddBuildingBlockSqlServerExceptionMapping();
@@ -76,6 +79,7 @@ public static class DependencyInjection
         services.AddScoped<ITicketQueueReader, TicketQueueReader>();
         services.AddScoped<IWalkInOptionsReader, WalkInOptionsReader>();
         services.AddScoped<IFinanceReadService, FinanceReadService>();
+        services.AddScoped<IClinicalReadService, ClinicalReadService>();
         services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();
         services.AddScoped<MedicalSpecializationSeeder>();

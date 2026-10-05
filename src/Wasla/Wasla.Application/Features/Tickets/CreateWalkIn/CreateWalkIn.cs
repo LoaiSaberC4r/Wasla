@@ -16,6 +16,8 @@ using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Domain.Clinical;
+using Wasla.Application.Features.Clinical;
 
 namespace Wasla.Application.Features.Tickets.CreateWalkIn;
 
@@ -28,7 +30,9 @@ public sealed record CreateWalkInCommand(
     string IdempotencyKey,
     PaymentMethod PaymentMethod = PaymentMethod.LegacyUnspecified,
     string? ReferenceNumber = null,
-    string? Notes = null)
+    string? Notes = null,
+    Guid? FollowUpEligibilityId = null,
+    string? FollowUpEligibilityRowVersion = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CreateWalkInCommandValidator : AbstractValidator<CreateWalkInCommand>
@@ -51,6 +55,7 @@ internal sealed class CreateWalkInCommandValidator : AbstractValidator<CreateWal
 
 internal sealed class CreateWalkInCommandHandler(
     TicketAccessService access,
+    FollowUpWorkflow followUp,
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketNumberAllocator numberAllocator,
@@ -113,7 +118,7 @@ internal sealed class CreateWalkInCommandHandler(
         if (patient is null || segment is null || !segment.IsActive ||
             segment.DoctorPracticeId != request.PracticeId || visitType is null || !visitType.IsActive ||
             visitType.DoctorPracticeId != request.PracticeId ||
-            visitType.Type != DoctorPracticeVisitTypeCode.NewConsultation || price is null)
+            !Enum.IsDefined(visitType.Type) || price is null)
         {
             return Result<TicketDetailsResponse>.Fail(TicketErrors.InvalidCatalog);
         }
@@ -141,7 +146,7 @@ internal sealed class CreateWalkInCommandHandler(
             FinancialWriteIdempotency.Fingerprint(
                 request.PracticeId, request.PatientId, request.SegmentId,
                 request.VisitTypeId, request.PaidAmount, request.PaymentMethod,
-                request.ReferenceNumber?.Trim(), request.Notes?.Trim()),
+                request.ReferenceNumber?.Trim(), request.Notes?.Trim(), request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)
@@ -152,6 +157,19 @@ internal sealed class CreateWalkInCommandHandler(
         if (idempotency.Value.ExistingTicketId is { } existingId)
         {
             return await LoadDetailsAsync(existingId, cancellationToken);
+        }
+
+        var followUpSelection = await followUp.ValidateSelectionAsync(request.FollowUpEligibilityId, visitType.Type,
+            request.PatientId, request.PracticeId, doctor.Id, businessDate, cancellationToken);
+        if (followUpSelection.IsFailure) return Result<TicketDetailsResponse>.Fail(followUpSelection.Errors);
+        if (followUpSelection.Value is { } selectedEligibility)
+        {
+            var eligibilityAccess = await access.AuthorizeReceptionAsync(request.PracticeId,
+                PermissionNames.FollowUpEligibilityViewBookingEligibility, cancellationToken);
+            if (eligibilityAccess.IsFailure) return Result<TicketDetailsResponse>.Fail(eligibilityAccess.Errors);
+            if (request.FollowUpEligibilityRowVersion is not null &&
+                !TicketRowVersion.Matches(selectedEligibility.RowVersion, request.FollowUpEligibilityRowVersion))
+                return Result<TicketDetailsResponse>.Fail(FollowUpErrors.ConcurrencyConflict);
         }
 
         if (await reservationNoShowReader.HasSameDayNoShowAsync(
@@ -194,7 +212,7 @@ internal sealed class CreateWalkInCommandHandler(
             nowUtc,
             CheckInMode.WalkIn,
             actor.Value.ApplicationUserId,
-            null));
+            null, request.FollowUpEligibilityId));
         if (ticket.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(ticket.Errors);
@@ -211,6 +229,11 @@ internal sealed class CreateWalkInCommandHandler(
             return Result<TicketDetailsResponse>.Fail(payment.Errors);
         }
 
+        if (followUpSelection.Value is { } eligibility)
+        {
+            var claim = eligibility.Reserve(null, ticketId, businessDate, businessDate, actor.Value.ApplicationUserId, nowUtc);
+            if (claim.IsFailure) return Result<TicketDetailsResponse>.Fail(claim.Errors);
+        }
         await unitOfWork.WriteRepository<Ticket>().AddAsync(ticket.Value, cancellationToken);
         await unitOfWork.WriteRepository<Payment>().AddAsync(payment.Value, cancellationToken);
         idempotency.Value.Record!.Complete(ticketId, nowUtc);

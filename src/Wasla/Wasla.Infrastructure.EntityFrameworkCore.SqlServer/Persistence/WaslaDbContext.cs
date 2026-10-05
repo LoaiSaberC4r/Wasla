@@ -7,6 +7,7 @@ using Wasla.Domain.Families;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Tickets;
+using Wasla.Domain.Clinical;
 using Wasla.Domain.Payments;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
@@ -54,6 +55,13 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<ReservationIdempotencyRecord> ReservationIdempotencyRecords => Set<ReservationIdempotencyRecord>();
     public DbSet<ReservationProjectionInvalidation> ReservationProjectionInvalidations
         => Set<ReservationProjectionInvalidation>();
+    public DbSet<MedicalEncounter> MedicalEncounters => Set<MedicalEncounter>();
+    public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
+    public DbSet<EncounterAmendment> EncounterAmendments => Set<EncounterAmendment>();
+    public DbSet<EncounterAmendmentChange> EncounterAmendmentChanges => Set<EncounterAmendmentChange>();
+    public DbSet<EncounterAuditEvent> EncounterAuditEvents => Set<EncounterAuditEvent>();
+    public DbSet<FollowUpEligibility> FollowUpEligibilities => Set<FollowUpEligibility>();
+    public DbSet<FollowUpEligibilityHistory> FollowUpEligibilityHistories => Set<FollowUpEligibilityHistory>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<TicketHistory> TicketHistories => Set<TicketHistory>();
     public DbSet<TicketCallAttempt> TicketCallAttempts => Set<TicketCallAttempt>();
@@ -80,18 +88,71 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
+        SynchronizeFollowUpReleasesAsync(CancellationToken.None).GetAwaiter().GetResult();
+        GuardCompletedDiagnosisDeletionAsync(CancellationToken.None).GetAwaiter().GetResult();
         EnsureFinancialHistoryIsAppendOnly();
         PrepareSqliteRowVersions();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
-    public override Task<int> SaveChangesAsync(
+    public override async Task<int> SaveChangesAsync(
         bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default)
     {
+        await SynchronizeFollowUpReleasesAsync(cancellationToken);
+        await GuardCompletedDiagnosisDeletionAsync(cancellationToken);
         EnsureFinancialHistoryIsAppendOnly();
         PrepareSqliteRowVersions();
-        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    // Every operational cancellation/no-show/expiration path (including governance and background
+    // processing) releases its matching claim in the same SaveChanges transaction. A stale writer
+    // still fails on the eligibility rowversion, rolling back the entire operational transition.
+    private async Task SynchronizeFollowUpReleasesAsync(CancellationToken ct)
+    {
+        var reservations = ChangeTracker.Entries<Reservation>()
+            .Where(e => e.State == EntityState.Modified && e.Entity.FollowUpEligibilityId != null &&
+                e.Property(r => r.Status).IsModified && e.Entity.Status is
+                    ReservationStatus.Cancelled or ReservationStatus.NoShow or ReservationStatus.Expired)
+            .Select(e => e.Entity).ToArray();
+        var tickets = ChangeTracker.Entries<Ticket>()
+            .Where(e => e.State == EntityState.Modified && e.Entity.FollowUpEligibilityId != null &&
+                e.Property(t => t.Status).IsModified && e.Entity.Status is TicketStatus.Cancelled or TicketStatus.NoShow)
+            .Select(e => e.Entity).ToArray();
+        foreach (var reservation in reservations)
+            await ReleaseAsync(reservation.FollowUpEligibilityId!.Value, reservation.Id, null,
+                reservation.TimeZoneIdSnapshot, reservation.ModifiedByApplicationUserId,
+                reservation.ModifiedOnUtc ?? DateTime.UtcNow, ct);
+        foreach (var ticket in tickets)
+            await ReleaseAsync(ticket.FollowUpEligibilityId!.Value, null, ticket.Id,
+                ticket.PracticeTimeZoneIdSnapshot, ticket.ModifiedByApplicationUserId,
+                ticket.LastUpdatedOnUtc, ct);
+    }
+
+    private async Task ReleaseAsync(Guid id, Guid? reservationId, Guid? ticketId, string timeZoneId,
+        Guid? actor, DateTime nowUtc, CancellationToken ct)
+    {
+        var eligibility = await FollowUpEligibilities.SingleOrDefaultAsync(e => e.Id == id, ct);
+        if (eligibility is null) throw new InvalidOperationException("Follow-up linkage is missing.");
+        if (eligibility.Status != FollowUpEligibilityStatus.Reserved ||
+            eligibility.ReservedReservationId != reservationId || eligibility.ReservedTicketId != ticketId) return;
+        var config = await DoctorPracticeConfigurations.AsNoTracking()
+            .SingleOrDefaultAsync(c => c.DoctorPracticeId == eligibility.DoctorPracticeId, ct);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(nowUtc, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(config?.TimeZoneId ?? timeZoneId)));
+        var release = eligibility.Release(reservationId, ticketId, today, actor, nowUtc);
+        if (release.IsFailure) throw new InvalidOperationException("Follow-up claim could not be released.");
+    }
+
+    private async Task GuardCompletedDiagnosisDeletionAsync(CancellationToken ct)
+    {
+        var encounterIds = ChangeTracker.Entries<Diagnosis>().Where(e => e.State == EntityState.Deleted)
+            .Select(e => e.Entity.MedicalEncounterId).Distinct().ToArray();
+        if (encounterIds.Length == 0) return;
+        if (ChangeTracker.Entries<MedicalEncounter>().Any(e => encounterIds.Contains(e.Entity.Id) && e.Entity.Status == EncounterStatus.Completed) ||
+            await MedicalEncounters.AsNoTracking().AnyAsync(e => encounterIds.Contains(e.Id) && e.Status == EncounterStatus.Completed, ct))
+            throw new InvalidOperationException("Completed diagnoses must be corrected or voided through an amendment.");
     }
 
     private void EnsureFinancialHistoryIsAppendOnly()
@@ -99,15 +160,15 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
         foreach (var entry in ChangeTracker.Entries())
         {
             if (entry.State == EntityState.Deleted &&
-                entry.Entity is Payment or Refund or PaymentCorrectionHistory or RefundCorrectionHistory)
+                entry.Entity is Payment or Refund or PaymentCorrectionHistory or RefundCorrectionHistory or MedicalEncounter or EncounterAmendment or EncounterAmendmentChange or EncounterAuditEvent or FollowUpEligibility or FollowUpEligibilityHistory)
             {
-                throw new InvalidOperationException("Financial transaction history cannot be deleted.");
+                throw new InvalidOperationException("Financial and clinical history cannot be deleted.");
             }
 
             if (entry.State == EntityState.Modified &&
-                entry.Entity is PaymentCorrectionHistory or RefundCorrectionHistory)
+                entry.Entity is PaymentCorrectionHistory or RefundCorrectionHistory or EncounterAmendment or EncounterAmendmentChange or EncounterAuditEvent or FollowUpEligibilityHistory)
             {
-                throw new InvalidOperationException("Financial correction history cannot be modified.");
+                throw new InvalidOperationException("Financial and clinical correction history cannot be modified.");
             }
         }
     }
@@ -124,6 +185,8 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
                 StringComparison.Ordinal))
         {
             ConfigureSqliteConcurrencyFallback(modelBuilder);
+            modelBuilder.Entity<MedicalEncounter>().ToTable("MedicalEncounters", table =>
+                table.HasCheckConstraint("CK_MedicalEncounters_Completion", "([Status] = 1 AND [CompletedAtUtc] IS NULL) OR ([Status] = 2 AND [CompletedAtUtc] IS NOT NULL AND length(trim([ClinicalNotes])) > 0 AND [ClinicalNotes] IS NOT NULL)"));
         }
     }
 

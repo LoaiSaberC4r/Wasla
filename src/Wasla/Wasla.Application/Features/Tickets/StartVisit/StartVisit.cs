@@ -11,6 +11,7 @@ using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Domain.Clinical;
 
 namespace Wasla.Application.Features.Tickets.StartVisit;
 
@@ -52,6 +53,10 @@ internal sealed class StartVisitCommandHandler(
         {
             return Result<TicketDetailsResponse>.Fail(actor.Errors);
         }
+
+        var clinicalAccess = await access.AuthorizeDoctorAsync(
+            request.PracticeId, PermissionNames.MedicalEncountersStartOwn, cancellationToken);
+        if (clinicalAccess.IsFailure) return Result<TicketDetailsResponse>.Fail(clinicalAccess.Errors);
 
         var key = TicketIdempotency.ValidateKey(request.IdempotencyKey);
         if (key.IsFailure)
@@ -113,12 +118,21 @@ internal sealed class StartVisitCommandHandler(
             return Result<TicketDetailsResponse>.Fail(TicketErrors.QueueBusy);
         }
 
+        var encounters = unitOfWork.WriteRepository<MedicalEncounter>();
+        if (await encounters.GetByPropertyAsync(e => e.TicketId == ticket.Id, cancellationToken) is not null)
+            return Result<TicketDetailsResponse>.Fail(ClinicalErrors.AlreadyExists);
+        var practice = await unitOfWork.WriteRepository<DoctorPractice>().GetByIdAsync(request.PracticeId, cancellationToken);
+        if (practice?.DoctorId != ticket.DoctorId) return Result<TicketDetailsResponse>.Fail(ClinicalErrors.AccessDenied);
+
         var started = ticket.StartVisit(actor.Value.ApplicationUserId, nowUtc);
         if (started.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(started.Errors);
         }
 
+        var encounter = MedicalEncounter.Start(ticket, actor.Value.ApplicationUserId, nowUtc);
+        if (encounter.IsFailure) return Result<TicketDetailsResponse>.Fail(encounter.Errors);
+        await encounters.AddAsync(encounter.Value, cancellationToken);
         idempotency.Value.Record!.Complete(ticket.Id, nowUtc);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

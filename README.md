@@ -10,7 +10,7 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Payments, Refunds & Doctor Revenue (Phase 12) — DONE
+**Current Stage:** Clinical Encounter, Diagnosis & Follow-Up Eligibility (Phase 13) — DONE
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root
@@ -27,7 +27,15 @@ Reservation booking, lifecycle, history, capacity protection, idempotency, and
 actor-scoped operations. Phase 11 adds paid Ticket admission and the practice
 queue. Phase 12 records EGP Payments and full Refunds as separate auditable
 transactions, supports financial corrections and receipt-ready data, and
-exposes scoped finance views and Doctor revenue datasets.
+exposes scoped finance views and Doctor revenue datasets. Phase 13 adds separate
+clinical encounters, notes, diagnoses, immutable completed-record amendments,
+patient-owned completed views, and single-use follow-up eligibility integrated
+with patient/reception reservations, paid admission and Walk-In. Start and
+Complete Visit commit clinical and operational state atomically.
+
+Phase 13 frontend contracts, verification and decision implementation status:
+[API changes](PHASE-13-API-CHANGES.md), [closure report](PHASE-13-CLOSURE-REPORT.md),
+and [source-of-truth implementation addendum](SOURCE-OF-TRUTH-PHASE-13-ADDENDUM.md).
 
 The initial repository baseline is based on the reusable technical foundation from:
 
@@ -284,7 +292,7 @@ Business and domain decisions must be resolved before implementation proceeds in
 
 The project follows an explicit source-priority model:
 
-1. `Healthcare-Platform-Master-Source-of-Truth-v1.0`
+1. `Healthcare-Platform-Master-Source-of-Truth-v1.2-Updated` (including DEC-056–069)
 2. Approved decision/change log
 3. `Healthcare-Platform-Business-Blueprint`
 4. `BuildingBlockWithNET10`

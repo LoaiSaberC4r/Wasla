@@ -154,6 +154,19 @@ public static class PermissionNames
         ],
         StringComparer.OrdinalIgnoreCase);
 
+    public const string MedicalEncountersViewOwn = "MedicalEncounters.ViewOwn";
+    public const string MedicalEncountersStartOwn = "MedicalEncounters.StartOwn";
+    public const string MedicalEncountersUpdateOwn = "MedicalEncounters.UpdateOwn";
+    public const string MedicalEncountersCompleteOwn = "MedicalEncounters.CompleteOwn";
+    public const string MedicalEncountersAmendOwn = "MedicalEncounters.AmendOwn";
+    public const string DiagnosesViewOwn = "Diagnoses.ViewOwn";
+    public const string DiagnosesManageOwn = "Diagnoses.ManageOwn";
+    public const string FollowUpEligibilityViewOwn = "FollowUpEligibility.ViewOwn";
+    public const string FollowUpEligibilityCreateOwn = "FollowUpEligibility.CreateOwn";
+    public const string FollowUpEligibilityViewBookingEligibility = "FollowUpEligibility.ViewBookingEligibility";
+    public const string MedicalEncountersViewOwnCompleted = "MedicalEncounters.ViewOwnCompleted";
+    public const string DiagnosesViewOwnCompleted = "Diagnoses.ViewOwnCompleted";
+
     public static readonly IReadOnlyList<string> All =
     [
         DoctorsViewAll,
@@ -278,7 +291,19 @@ public static class PermissionNames
         DoctorPracticePaymentsRefundOwn,
         DoctorRevenueViewOwn,
         PaymentsViewOwn,
-        PlatformRevenueViewAggregates
+        PlatformRevenueViewAggregates,
+        MedicalEncountersViewOwn,
+        MedicalEncountersStartOwn,
+        MedicalEncountersUpdateOwn,
+        MedicalEncountersCompleteOwn,
+        MedicalEncountersAmendOwn,
+        DiagnosesViewOwn,
+        DiagnosesManageOwn,
+        FollowUpEligibilityViewOwn,
+        FollowUpEligibilityCreateOwn,
+        FollowUpEligibilityViewBookingEligibility,
+        MedicalEncountersViewOwnCompleted,
+        DiagnosesViewOwnCompleted
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
@@ -304,7 +329,8 @@ public static class PermissionNames
             PracticeTicketsCancel,
             PracticePaymentsView,
             PracticePaymentsCorrect,
-            PracticePaymentsRefund
+            PracticePaymentsRefund,
+            FollowUpEligibilityViewBookingEligibility
         ],
         StringComparer.OrdinalIgnoreCase);
 

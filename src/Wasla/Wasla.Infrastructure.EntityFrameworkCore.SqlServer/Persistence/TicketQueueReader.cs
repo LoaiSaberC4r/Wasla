@@ -105,6 +105,8 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
                                payment.CurrencyCode == "EGP"
             ? payment.Amount
             : 0m;
+        var encounter = await dbContext.MedicalEncounters.AsNoTracking().Where(e => e.TicketId == ticket.Id)
+            .Select(e => new { e.Id, e.RowVersion }).SingleOrDefaultAsync(cancellationToken);
         return new TicketDetailsResponse(
             ticket.Id,
             ticket.TicketNumber,
@@ -153,7 +155,10 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
             PaymentId: payment?.Id,
             PaymentTransactionNumber: payment?.TransactionNumber,
             RefundId: refund?.Id,
-            RefundTransactionNumber: refund?.TransactionNumber);
+            RefundTransactionNumber: refund?.TransactionNumber,
+            MedicalEncounterId: encounter?.Id,
+            FollowUpEligibilityId: ticket.FollowUpEligibilityId,
+            MedicalEncounterRowVersion: encounter is null ? null : Convert.ToBase64String(encounter.RowVersion));
     }
 
     public async Task<PracticeQueueResponse> GetPracticeQueueAsync(

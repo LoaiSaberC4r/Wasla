@@ -10,6 +10,7 @@ using Wasla.Domain.Payments;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Application.Features.Clinical;
 
 namespace Wasla.Application.Features.Tickets.RestoreNoShow;
 
@@ -34,6 +35,7 @@ internal sealed class RestoreNoShowTicketCommandValidator
 
 internal sealed class RestoreNoShowTicketCommandHandler(
     TicketAccessService access,
+    FollowUpWorkflow followUp,
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketQueueReader queueReader,
@@ -114,6 +116,9 @@ internal sealed class RestoreNoShowTicketCommandHandler(
         {
             return Result<TicketDetailsResponse>.Fail(TicketErrors.ConcurrencyConflict);
         }
+
+        var reclaimed = await followUp.RestoreTicketAsync(ticket, actor.Value.ApplicationUserId, cancellationToken);
+        if (reclaimed.IsFailure) return Result<TicketDetailsResponse>.Fail(reclaimed.Errors);
 
         var passedPatients = await queueReader.CountInProgressTransitionsAfterAsync(
             request.PracticeId,

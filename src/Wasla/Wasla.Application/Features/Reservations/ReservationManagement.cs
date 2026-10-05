@@ -20,6 +20,8 @@ using Wasla.Domain.Patients;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Security;
+using Wasla.Domain.Clinical;
+using Wasla.Application.Features.Clinical;
 
 namespace Wasla.Application.Features.Reservations;
 
@@ -111,7 +113,10 @@ public sealed record ReservationDetailsResponse(
     DateTime? CancelledOnUtc,
     ReservationCapabilitiesResponse Capabilities,
     IReadOnlyList<ReservationTimelineItemResponse> Timeline,
-    string RowVersion);
+    string RowVersion,
+    Guid? FollowUpEligibilityId = null,
+    FollowUpEligibilityStatus? FollowUpEligibilityStatus = null,
+    DateOnly? FollowUpValidUntil = null);
 public sealed record ReservationListItemResponse(
     Guid ReservationId,
     string ReservationReference,
@@ -184,7 +189,9 @@ public sealed record CreateReservationCommand(
     Guid SegmentId,
     Guid VisitTypeId,
     string? BookingNote,
-    string IdempotencyKey)
+    string IdempotencyKey,
+    Guid? FollowUpEligibilityId = null,
+    string? FollowUpEligibilityRowVersion = null)
     : ICommand<ReservationDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record CreatePracticeReservationCommand(
     Guid PracticeId,
@@ -194,7 +201,9 @@ public sealed record CreatePracticeReservationCommand(
     Guid SegmentId,
     Guid VisitTypeId,
     string? BookingNote,
-    string IdempotencyKey)
+    string IdempotencyKey,
+    Guid? FollowUpEligibilityId = null,
+    string? FollowUpEligibilityRowVersion = null)
     : ICommand<ReservationDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record CancelMineReservationCommand(
     Guid ReservationId,
@@ -279,19 +288,25 @@ public sealed record GetReservationFilterOptionsQuery(Guid PracticeId, bool IsDo
 public sealed record GetBookingAvailableDatesQuery(
     Guid PracticeId,
     Guid? ReservationId,
-    ReservationAvailabilityChannel Channel)
+    ReservationAvailabilityChannel Channel,
+    Guid? PatientId = null,
+    Guid? FollowUpEligibilityId = null)
     : IQuery<IReadOnlyList<ReservationAvailableDateResponse>>;
 public sealed record GetBookingAvailableSlotsQuery(
     Guid PracticeId,
     DateOnly Date,
     Guid? ReservationId,
-    ReservationAvailabilityChannel Channel)
+    ReservationAvailabilityChannel Channel,
+    Guid? PatientId = null,
+    Guid? FollowUpEligibilityId = null)
     : IQuery<IReadOnlyList<ReservationAvailableSlotResponse>>;
 public sealed record GetReservationBookingOptionsQuery(
     Guid PracticeId,
     DateOnly Date,
     TimeOnly Time,
-    ReservationAvailabilityChannel Channel)
+    ReservationAvailabilityChannel Channel,
+    Guid? PatientId = null,
+    Guid? FollowUpEligibilityId = null)
     : IQuery<ReservationBookingOptionsResponse>;
 
 internal sealed class ReservationMutationValidator : AbstractValidator<CreateReservationCommand>
@@ -457,7 +472,7 @@ internal sealed class CreateReservationCommandHandler(ReservationApplicationServ
             request.BookingNote,
             request.IdempotencyKey,
             ReservationOperationScope.Patient,
-            cancellationToken);
+            cancellationToken, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion);
 }
 
 internal sealed class CreatePracticeReservationCommandHandler(ReservationApplicationService service)
@@ -476,7 +491,7 @@ internal sealed class CreatePracticeReservationCommandHandler(ReservationApplica
             request.BookingNote,
             request.IdempotencyKey,
             ReservationOperationScope.Reception,
-            cancellationToken);
+            cancellationToken, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion);
 }
 
 internal sealed class CancelMineReservationCommandHandler(ReservationApplicationService service)
@@ -653,8 +668,9 @@ internal sealed record ResolvedReservationSlot(
     IReadOnlyList<PracticeWorkingPeriod> EffectivePeriods,
     int DailyCapacity);
 
-internal sealed class ReservationApplicationService(
+internal sealed partial class ReservationApplicationService(
     IWaslaDataStore dataStore,
+    FollowUpWorkflow followUp,
     ICurrentUser currentUser,
     IDateTimeProvider clock,
     IPatientAccessPolicy patientAccessPolicy,
@@ -687,7 +703,9 @@ internal sealed class ReservationApplicationService(
         string? bookingNote,
         string idempotencyKey,
         ReservationOperationScope scope,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? followUpEligibilityId = null,
+        string? followUpEligibilityRowVersion = null)
     {
         var validatedKey = ValidateIdempotencyKey(idempotencyKey);
         if (validatedKey.IsFailure)
@@ -724,7 +742,7 @@ internal sealed class ReservationApplicationService(
         await dataStore.AcquireReservationIdempotencyLockAsync(
             actor.Value.ActorApplicationUserId, "Create", idempotencyKey, cancellationToken);
         var fingerprint = Fingerprint(
-            patientId, practiceId, businessDate, slotStartTime, segmentId, visitTypeId, bookingNote);
+            patientId, practiceId, businessDate, slotStartTime, segmentId, visitTypeId, bookingNote, followUpEligibilityId, followUpEligibilityRowVersion);
         var idempotency = await BeginIdempotentOperationAsync(
             actor.Value.ActorApplicationUserId,
             "Create",
@@ -739,6 +757,19 @@ internal sealed class ReservationApplicationService(
         if (idempotency.Value.ExistingReservationId is { } existingId)
         {
             return await GetDetailsForActorAsync(existingId, scope, practiceId, includeBookingNote: true, cancellationToken);
+        }
+
+        var followUpSelection = await followUp.ValidateSelectionAsync(followUpEligibilityId, visitType.Type,
+            patientId, practiceId, doctor.Id, businessDate, cancellationToken);
+        if (followUpSelection.IsFailure) return Result<ReservationDetailsResponse>.Fail(followUpSelection.Errors);
+        if (followUpSelection.Value is { } selectedEligibility && followUpEligibilityRowVersion is not null &&
+            !Wasla.Application.Features.Tickets.Common.TicketRowVersion.Matches(selectedEligibility.RowVersion, followUpEligibilityRowVersion))
+            return Result<ReservationDetailsResponse>.Fail(FollowUpErrors.ConcurrencyConflict);
+        if (followUpEligibilityId.HasValue && scope == ReservationOperationScope.Reception)
+        {
+            var eligibilityAccess = await receptionAuthorization.AuthorizeAsync(practiceId,
+                PermissionNames.FollowUpEligibilityViewBookingEligibility, cancellationToken);
+            if (eligibilityAccess.IsFailure) return Result<ReservationDetailsResponse>.Fail(eligibilityAccess.Errors);
         }
 
         var conflicts = await ValidateCapacityAndConflictsAsync(
@@ -786,12 +817,18 @@ internal sealed class ReservationApplicationService(
             visitType.NameEn,
             price.Price,
             bookingNote,
-            clock.UtcNow));
+            clock.UtcNow, followUpEligibilityId));
         if (created.IsFailure)
         {
             return Result<ReservationDetailsResponse>.Fail(created.Errors);
         }
 
+        if (followUpSelection.Value is { } eligibility)
+        {
+            var claim = eligibility.Reserve(created.Value.Id, null, await followUp.TodayAsync(practiceId, cancellationToken),
+                businessDate, actor.Value.ActorApplicationUserId, clock.UtcNow);
+            if (claim.IsFailure) return Result<ReservationDetailsResponse>.Fail(claim.Errors);
+        }
         dataStore.Add(created.Value);
         idempotency.Value.Record!.Complete(created.Value.Id, created.Value.ReservationReference, clock.UtcNow);
         await QueueNotificationAsync(created.Value, "created", cancellationToken);
@@ -1034,6 +1071,8 @@ internal sealed class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(capacity.Errors);
         }
 
+        var followUpCheck = await followUp.ValidateReservationAsync(reservation, businessDate, restore: false, cancellationToken);
+        if (followUpCheck.IsFailure) return Result<ReservationDetailsResponse>.Fail(followUpCheck.Errors);
         var transition = reservation.Reschedule(
             targetSlot.Value.StartUtc,
             targetSlot.Value.LocalDateTime,
@@ -1146,6 +1185,14 @@ internal sealed class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(capacity.Errors);
         }
 
+        var followUpCheck = await followUp.ValidateReservationAsync(reservation, reservation.BusinessDate, restore: true, cancellationToken);
+        if (followUpCheck.IsFailure) return Result<ReservationDetailsResponse>.Fail(followUpCheck.Errors);
+        if (followUpCheck.Value is { } eligibility)
+        {
+            var claim = eligibility.Reserve(reservation.Id, null, await followUp.TodayAsync(practiceId, cancellationToken),
+                reservation.BusinessDate, actor.Value.ActorApplicationUserId, clock.UtcNow);
+            if (claim.IsFailure) return Result<ReservationDetailsResponse>.Fail(claim.Errors);
+        }
         var transition = reservation.RestoreFromNoShow(actor.Value.ActorApplicationUserId, clock.UtcNow);
         if (transition.IsFailure)
         {
@@ -1344,8 +1391,17 @@ internal sealed class ReservationApplicationService(
         Guid practiceId,
         Guid? reservationId,
         ReservationAvailabilityChannel channel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? patientId = null,
+        Guid? followUpEligibilityId = null)
     {
+        if (followUpEligibilityId.HasValue)
+        {
+            var availability = await BuildFollowUpAvailabilityAsync(practiceId, patientId, followUpEligibilityId.Value, channel, cancellationToken);
+            return availability.IsFailure ? Result<IReadOnlyList<ReservationAvailableDateResponse>>.Fail(availability.Errors)
+                : Result<IReadOnlyList<ReservationAvailableDateResponse>>.Ok(availability.Value.Select(d =>
+                    new ReservationAvailableDateResponse(d.Key, d.Value.Count > 0)).ToArray());
+        }
         if (reservationId.HasValue)
         {
             var availability = await BuildRescheduleAvailabilityAsync(
@@ -1410,8 +1466,18 @@ internal sealed class ReservationApplicationService(
         DateOnly date,
         Guid? reservationId,
         ReservationAvailabilityChannel channel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? patientId = null,
+        Guid? followUpEligibilityId = null)
     {
+        if (followUpEligibilityId.HasValue)
+        {
+            var availability = await BuildFollowUpAvailabilityAsync(practiceId, patientId, followUpEligibilityId.Value, channel, cancellationToken);
+            if (availability.IsFailure) return Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Fail(availability.Errors);
+            return availability.Value.TryGetValue(date, out var followUpSlots)
+                ? Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Ok(followUpSlots)
+                : Result<IReadOnlyList<ReservationAvailableSlotResponse>>.Fail(FollowUpErrors.DateOutsideEligibility);
+        }
         if (reservationId.HasValue)
         {
             var availability = await BuildRescheduleAvailabilityAsync(
@@ -1539,6 +1605,10 @@ internal sealed class ReservationApplicationService(
         var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(EnsureUtc(clock.UtcNow)), timeZone);
         var today = DateOnly.FromDateTime(localNow.DateTime);
         var through = today.AddDays(ReservationPolicy.MaximumAdvanceBookingDays - 1);
+        var followUpCheck = await followUp.ValidateReservationAsync(reservation, today, restore: false, cancellationToken);
+        if (followUpCheck.IsFailure)
+            return Result<IReadOnlyDictionary<DateOnly, IReadOnlyList<ReservationAvailableSlotResponse>>>.Fail(followUpCheck.Errors);
+        if (followUpCheck.Value is { } eligibility && eligibility.ValidUntil < through) through = eligibility.ValidUntil;
         var periods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(practiceId, cancellationToken);
         var exceptions = await dataStore.ListDoctorPracticeScheduleExceptionsAsync(practiceId, cancellationToken);
         var occupancy = await occupancyReader.ReadAsync([practiceId], today, through, cancellationToken);
@@ -1638,9 +1708,11 @@ internal sealed class ReservationApplicationService(
         DateOnly date,
         TimeOnly time,
         ReservationAvailabilityChannel channel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? patientId = null,
+        Guid? followUpEligibilityId = null)
     {
-        var slots = await AvailableSlotsAsync(practiceId, date, null, channel, cancellationToken);
+        var slots = await AvailableSlotsAsync(practiceId, date, null, channel, cancellationToken, patientId, followUpEligibilityId);
         if (slots.IsFailure || !slots.Value.Any(item => item.Time == time))
         {
             return Result<ReservationBookingOptionsResponse>.Fail(
@@ -1681,7 +1753,8 @@ internal sealed class ReservationApplicationService(
             0,
             effectiveCapacity - dayOccupancy.TotalReservations - protectedCapacity);
         var consultationIds = visitTypes
-            .Where(item => item.IsActive && item.Type == DoctorPracticeVisitTypeCode.NewConsultation)
+            .Where(item => item.IsActive && item.Type == (followUpEligibilityId.HasValue
+                ? DoctorPracticeVisitTypeCode.FollowUp : DoctorPracticeVisitTypeCode.NewConsultation))
             .Select(item => item.Id)
             .ToHashSet();
         var result = activeSegments
@@ -1754,13 +1827,6 @@ internal sealed class ReservationApplicationService(
         {
             return Result<(DoctorPractice, Doctor, DoctorPracticeConfiguration, DoctorPracticeSegment,
                 DoctorPracticeVisitType, DoctorPracticeSegmentVisitTypePrice)>.Fail(ReservationErrors.InvalidState);
-        }
-
-        if (visitType.Type == DoctorPracticeVisitTypeCode.FollowUp)
-        {
-            return Result<(DoctorPractice, Doctor, DoctorPracticeConfiguration, DoctorPracticeSegment,
-                DoctorPracticeVisitType, DoctorPracticeSegmentVisitTypePrice)>.Fail(
-                    ReservationErrors.FollowUpNotBookable);
         }
 
         return Result<(DoctorPractice, Doctor, DoctorPracticeConfiguration, DoctorPracticeSegment,
@@ -2220,13 +2286,17 @@ internal sealed class ReservationApplicationService(
                 includeCapacity: true,
                 cancellationToken)
             : Result<ResolvedReservationSlot>.Fail(ReservationErrors.InvalidState);
+        var followUpState = reservation.FollowUpEligibilityId is { } eligibilityId
+            ? await followUp.FindAsync(eligibilityId, cancellationToken) : null;
+        var liveClaim = await followUp.ValidateReservationAsync(reservation, reservation.BusinessDate,
+            restore: false, cancellationToken);
         var capabilities = BuildCapabilities(
             reservation,
             scope,
             cutoff,
             grace,
             configuration.AllowOnlineBooking,
-            currentCatalog.IsSuccess,
+            currentCatalog.IsSuccess && liveClaim.IsSuccess,
             restoreEligibility.IsSuccess,
             restoreEligibility.IsFailure ? restoreEligibility.Errors[0].Code : null);
         var timeline = reservation.History
@@ -2290,7 +2360,9 @@ internal sealed class ReservationApplicationService(
             reservation.CancelledOnUtc,
             capabilities,
             timeline,
-            RowVersionCodec.Encode(reservation.RowVersion));
+            RowVersionCodec.Encode(reservation.RowVersion), reservation.FollowUpEligibilityId,
+            followUpState?.EffectiveStatus(await followUp.TodayAsync(reservation.DoctorPracticeId, cancellationToken)),
+            followUpState?.ValidUntil);
     }
 
     private ReservationCapabilitiesResponse BuildCapabilities(
@@ -2350,6 +2422,9 @@ internal sealed class ReservationApplicationService(
             return Result<ResolvedReservationSlot>.Fail(ReservationErrors.NoShowRestoreNotAllowed);
         }
 
+        var followUpRestore = await followUp.ValidateReservationAsync(reservation, reservation.BusinessDate,
+            restore: true, cancellationToken);
+        if (followUpRestore.IsFailure) return Result<ResolvedReservationSlot>.Fail(followUpRestore.Errors);
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(reservation.TimeZoneIdSnapshot);
         var localNow = TimeZoneInfo.ConvertTime(new DateTimeOffset(EnsureUtc(clock.UtcNow)), timeZone);
         var periods = await dataStore.ListDoctorPracticeSchedulePeriodsAsync(practice.Id, cancellationToken);
@@ -2697,7 +2772,7 @@ internal sealed class GetBookingAvailableDatesQueryHandler(ReservationApplicatio
         GetBookingAvailableDatesQuery request,
         CancellationToken cancellationToken)
         => service.AvailableDatesAsync(
-            request.PracticeId, request.ReservationId, request.Channel, cancellationToken);
+            request.PracticeId, request.ReservationId, request.Channel, cancellationToken, request.PatientId, request.FollowUpEligibilityId);
 }
 
 internal sealed class GetBookingAvailableSlotsQueryHandler(ReservationApplicationService service)
@@ -2707,7 +2782,7 @@ internal sealed class GetBookingAvailableSlotsQueryHandler(ReservationApplicatio
         GetBookingAvailableSlotsQuery request,
         CancellationToken cancellationToken)
         => service.AvailableSlotsAsync(
-            request.PracticeId, request.Date, request.ReservationId, request.Channel, cancellationToken);
+            request.PracticeId, request.Date, request.ReservationId, request.Channel, cancellationToken, request.PatientId, request.FollowUpEligibilityId);
 }
 
 internal sealed class GetReservationBookingOptionsQueryHandler(ReservationApplicationService service)
@@ -2717,5 +2792,5 @@ internal sealed class GetReservationBookingOptionsQueryHandler(ReservationApplic
         GetReservationBookingOptionsQuery request,
         CancellationToken cancellationToken)
         => service.BookingOptionsAsync(
-            request.PracticeId, request.Date, request.Time, request.Channel, cancellationToken);
+            request.PracticeId, request.Date, request.Time, request.Channel, cancellationToken, request.PatientId, request.FollowUpEligibilityId);
 }

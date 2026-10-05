@@ -249,4 +249,32 @@
   <data name="FinanceInvalidPayment" xml:space="preserve"><value>بيانات الدفع لا تطابق التذكرة أو مبلغ الجنيه المصري.</value></data>
   <data name="FinanceReplayUnavailable" xml:space="preserve"><value>تعذرت إعادة نتيجة العملية المالية السابقة.</value></data>
   <data name="TicketRefundedCannotRestore" xml:space="preserve"><value>لا يمكن إعادة تذكرة متغيب مستردة إلى قائمة الانتظار.</value></data>
+  <data name="EncounterNotFound" xml:space="preserve"><value>لم يتم العثور على الزيارة الطبية.</value></data>
+  <data name="EncounterAccessDenied" xml:space="preserve"><value>غير مسموح بالوصول إلى البيانات الطبية.</value></data>
+  <data name="EncounterAlreadyExists" xml:space="preserve"><value>توجد زيارة طبية لهذه التذكرة بالفعل.</value></data>
+  <data name="EncounterInvalidState" xml:space="preserve"><value>حالة الزيارة الطبية لا تسمح بهذه العملية.</value></data>
+  <data name="EncounterNotesRequired" xml:space="preserve"><value>الملاحظات الطبية مطلوبة قبل إكمال الزيارة.</value></data>
+  <data name="EncounterNotesTooLong" xml:space="preserve"><value>يجب ألا تتجاوز الملاحظات الطبية 8000 حرف.</value></data>
+  <data name="EncounterConcurrencyConflict" xml:space="preserve"><value>تم تغيير الزيارة الطبية. يرجى التحديث وإعادة المحاولة بأحدث إصدار.</value></data>
+  <data name="DiagnosisNotFound" xml:space="preserve"><value>لم يتم العثور على التشخيص.</value></data>
+  <data name="DiagnosisInvalid" xml:space="preserve"><value>نوع التشخيص أو نصه غير صالح أو تجاوز الحد المسموح.</value></data>
+  <data name="DiagnosisDuplicate" xml:space="preserve"><value>يوجد تشخيص نشط بنفس النص بالفعل.</value></data>
+  <data name="DiagnosisPrimaryRequired" xml:space="preserve"><value>التشخيصات النشطة تتطلب تشخيصاً أساسياً واحداً.</value></data>
+  <data name="DiagnosisMultiplePrimary" xml:space="preserve"><value>يُسمح بتشخيص أساسي نشط واحد فقط.</value></data>
+  <data name="AmendmentInvalidState" xml:space="preserve"><value>يمكن تصحيح زيارة مكتملة فقط.</value></data>
+  <data name="AmendmentReasonRequired" xml:space="preserve"><value>سبب التصحيح مطلوب بحد أقصى 1000 حرف.</value></data>
+  <data name="AmendmentInvalidChange" xml:space="preserve"><value>يجب أن يحتوي التصحيح على تغييرات طبية صحيحة وفعلية.</value></data>
+  <data name="FollowUpNotFound" xml:space="preserve"><value>لم يتم العثور على أهلية المتابعة.</value></data>
+  <data name="FollowUpAlreadyExists" xml:space="preserve"><value>توجد أهلية متابعة لهذه الزيارة بالفعل.</value></data>
+  <data name="FollowUpNotAvailable" xml:space="preserve"><value>أهلية المتابعة غير متاحة لهذه العملية.</value></data>
+  <data name="FollowUpExpired" xml:space="preserve"><value>انتهت صلاحية أهلية المتابعة.</value></data>
+  <data name="FollowUpInvalidPatient" xml:space="preserve"><value>المريض لا يطابق أهلية المتابعة.</value></data>
+  <data name="FollowUpInvalidPractice" xml:space="preserve"><value>العيادة لا تطابق أهلية المتابعة.</value></data>
+  <data name="FollowUpInvalidDoctor" xml:space="preserve"><value>الطبيب لا يطابق أهلية المتابعة.</value></data>
+  <data name="FollowUpInvalidVisitType" xml:space="preserve"><value>المتابعة تتطلب أهلية، والكشف الجديد لا يسمح بأهلية متابعة.</value></data>
+  <data name="FollowUpInvalidDate" xml:space="preserve"><value>تاريخ انتهاء الصلاحية مطلوب ويجب ألا يسبق تاريخ عمل العيادة.</value></data>
+  <data name="FollowUpDateOutside" xml:space="preserve"><value>يجب ألا يتجاوز تاريخ الزيارة تاريخ انتهاء صلاحية المتابعة.</value></data>
+  <data name="FollowUpAlreadyReserved" xml:space="preserve"><value>أهلية المتابعة محجوزة بالفعل.</value></data>
+  <data name="FollowUpAlreadyConsumed" xml:space="preserve"><value>تم استخدام أهلية المتابعة بالفعل.</value></data>
+  <data name="FollowUpConcurrencyConflict" xml:space="preserve"><value>تم تغيير أهلية المتابعة. يرجى التحديث وإعادة المحاولة.</value></data>
 </root>

@@ -11,11 +11,13 @@ using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Application.Features.Clinical;
 
 namespace Wasla.Application.Features.Tickets.Common;
 
 internal sealed class ReservationCheckInWorkflow(
     TicketAccessService access,
+    FollowUpWorkflow followUp,
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     IReadRepository<Reservation, WaslaReadPersistence> reservationReader,
     ITicketQueueLock queueLock,
@@ -192,7 +194,7 @@ internal sealed class ReservationCheckInWorkflow(
             nowUtc,
             force ? CheckInMode.Force : CheckInMode.Normal,
             actor.Value.ApplicationUserId,
-            reason));
+            reason, reservation.FollowUpEligibilityId));
         if (ticketResult.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(ticketResult.Errors);
@@ -207,6 +209,14 @@ internal sealed class ReservationCheckInWorkflow(
         if (paymentResult.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(paymentResult.Errors);
+        }
+
+        var followUpCheck = await followUp.ValidateReservationAsync(reservation, businessDate, restore: false, cancellationToken);
+        if (followUpCheck.IsFailure) return Result<TicketDetailsResponse>.Fail(followUpCheck.Errors);
+        if (followUpCheck.Value is { } eligibility)
+        {
+            var transfer = eligibility.TransferToTicket(reservation.Id, ticketId, businessDate, actor.Value.ApplicationUserId, nowUtc);
+            if (transfer.IsFailure) return Result<TicketDetailsResponse>.Fail(transfer.Errors);
         }
 
         var conversion = reservation.ConvertToTicket(actor.Value.ApplicationUserId, nowUtc);

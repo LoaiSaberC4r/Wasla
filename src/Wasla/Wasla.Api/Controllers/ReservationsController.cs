@@ -35,7 +35,7 @@ public sealed class ReservationsController(ISender sender) : ControllerBase
             request.SegmentId,
             request.VisitTypeId,
             request.BookingNote,
-            idempotencyKey ?? string.Empty), cancellationToken);
+            idempotencyKey ?? string.Empty, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion), cancellationToken);
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetMine), new { reservationId = result.Value.ReservationId, version = "1.0" }, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -136,18 +136,20 @@ public sealed class ReservationMetadataController(ISender sender) : ControllerBa
 public sealed class ReceptionReservationsController(ISender sender) : ControllerBase
 {
     [HttpGet("booking/available-dates")]
-    public async Task<IActionResult> AvailableDates(Guid practiceId, CancellationToken cancellationToken)
+    public async Task<IActionResult> AvailableDates(Guid practiceId, [FromQuery] Guid? patientId, [FromQuery] Guid? followUpEligibilityId, CancellationToken cancellationToken)
         => (await sender.Send(new GetBookingAvailableDatesQuery(
-            practiceId, null, ReservationAvailabilityChannel.Reception), cancellationToken))
+            practiceId, null, ReservationAvailabilityChannel.Reception, patientId, followUpEligibilityId), cancellationToken))
             .ToIActionResult(cancellationToken);
 
     [HttpGet("booking/available-slots")]
     public async Task<IActionResult> AvailableSlots(
         Guid practiceId,
         [FromQuery] DateOnly date,
+        [FromQuery] Guid? patientId,
+        [FromQuery] Guid? followUpEligibilityId,
         CancellationToken cancellationToken)
         => (await sender.Send(new GetBookingAvailableSlotsQuery(
-            practiceId, date, null, ReservationAvailabilityChannel.Reception), cancellationToken))
+            practiceId, date, null, ReservationAvailabilityChannel.Reception, patientId, followUpEligibilityId), cancellationToken))
             .ToIActionResult(cancellationToken);
 
     [HttpGet("booking/options")]
@@ -155,9 +157,11 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
         Guid practiceId,
         [FromQuery] DateOnly date,
         [FromQuery] TimeOnly time,
+        [FromQuery] Guid? patientId,
+        [FromQuery] Guid? followUpEligibilityId,
         CancellationToken cancellationToken)
         => (await sender.Send(new GetReservationBookingOptionsQuery(
-            practiceId, date, time, ReservationAvailabilityChannel.Reception), cancellationToken))
+            practiceId, date, time, ReservationAvailabilityChannel.Reception, patientId, followUpEligibilityId), cancellationToken))
             .ToIActionResult(cancellationToken);
 
     [HttpPost("reservations")]
@@ -175,7 +179,7 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
             request.SegmentId,
             request.VisitTypeId,
             request.BookingNote,
-            idempotencyKey ?? string.Empty), cancellationToken);
+            idempotencyKey ?? string.Empty, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -384,14 +388,18 @@ public sealed record CreateReservationRequest(
     TimeOnly SlotStartTime,
     Guid SegmentId,
     Guid VisitTypeId,
-    string? BookingNote);
+    string? BookingNote,
+    Guid? FollowUpEligibilityId = null,
+    string? FollowUpEligibilityRowVersion = null);
 public sealed record CreatePracticeReservationRequest(
     Guid PatientId,
     DateOnly BusinessDate,
     TimeOnly SlotStartTime,
     Guid SegmentId,
     Guid VisitTypeId,
-    string? BookingNote);
+    string? BookingNote,
+    Guid? FollowUpEligibilityId = null,
+    string? FollowUpEligibilityRowVersion = null);
 public sealed record CancelReservationRequest(string ReasonCode, string? Comment, string RowVersion);
 public sealed record RescheduleReservationRequest(
     DateOnly BusinessDate,
