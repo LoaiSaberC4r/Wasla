@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using BuildingBlock.Application.Time;
 using Wasla.Application.Features.Clinical;
 using Wasla.Domain.Clinical;
+using Wasla.Application.Features.Medications;
+using Wasla.Domain.Medications;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
-internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider clock) : IClinicalReadService
+internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider clock, IMedicationReadService medications) : IClinicalReadService
 {
     public async Task<ClinicalPage<EncounterSummaryResponse>> ListEncountersAsync(Guid? doctorId, Guid? practiceId,
         Guid? patientId, EncounterStatus? status, DateTime? fromUtc, DateTime? throughUtc, string? search,
@@ -54,9 +56,13 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
                 Practice = new ClinicalPartyResponse(practice.Id, practice.NameAr, practice.NameEn),
                 Patient = new ClinicalPartyResponse(patient.Id, patient.NameAr, patient.NameEn) }).SingleOrDefaultAsync(ct);
         if (row is null) return null;
+        var prescription = await medications.PrescriptionAsync(null, row.Id, doctorId, ct);
+        var blockers = (prescription?.CompletionBlockers ?? []).ToList();
+        if (row.Status == EncounterStatus.InProgress && string.IsNullOrWhiteSpace(row.ClinicalNotes))
+            blockers.Add(new("MedicalEncounter.ClinicalNotesRequired", null, "clinicalNotes"));
         return new(row.Id, row.TicketId, row.Doctor, row.Practice, row.Patient, row.Status, row.StartedAtUtc, row.CompletedAtUtc,
             row.ClinicalNotes, await DiagnosesAsync(row.Id, ct), await SourceEligibilityAsync(row.Id, row.Patient.Id, ct),
-            new(false, false, false, false, false), Convert.ToBase64String(row.RowVersion));
+            new(false, false, false, false, false), Convert.ToBase64String(row.RowVersion), prescription, blockers);
     }
 
     public async Task<PatientEncounterDetailsResponse?> PatientDetailsAsync(Guid patientId, Guid id, CancellationToken ct)

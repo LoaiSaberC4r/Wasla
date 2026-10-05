@@ -1,5 +1,7 @@
 using Wasla.Application.Email;
 using Wasla.Application.Features.Clinical;
+using Wasla.Application.Features.Medications;
+using Wasla.Application.Features.Governance;
 using Wasla.Application.Persistence;
 using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Features.Reservations;
@@ -79,6 +81,10 @@ public static class DependencyInjection
         services.AddScoped<ITicketQueueReader, TicketQueueReader>();
         services.AddScoped<IWalkInOptionsReader, WalkInOptionsReader>();
         services.AddScoped<IFinanceReadService, FinanceReadService>();
+        services.AddScoped<MedicationReadService>();
+        services.AddScoped<IMedicationReadService>(provider => provider.GetRequiredService<MedicationReadService>());
+        services.AddScoped<IDrugCatalogManagerReader>(provider => provider.GetRequiredService<MedicationReadService>());
+        services.AddScoped<IDrugCatalogImportService, DrugCatalogImportService>();
         services.AddScoped<IClinicalReadService, ClinicalReadService>();
         services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();

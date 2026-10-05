@@ -418,7 +418,7 @@ public sealed class TrustAccessApiTests
         await (Task)seedMethod.Invoke(seeder, [TestContext.Current.CancellationToken])!;
         db.ChangeTracker.Clear();
 
-        Assert.Equal(4, await db.Roles.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(5, await db.Roles.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(PermissionNames.All.Count, await db.Permissions.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(1, await db.SuperAdmins.IgnoreQueryFilters().CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(1, await db.SuperAdmins.CountAsync(

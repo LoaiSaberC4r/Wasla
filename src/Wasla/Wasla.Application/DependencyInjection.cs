@@ -11,6 +11,8 @@ using Wasla.Application.Features.Reservations;
 using Wasla.Application.Features.Tickets.Common;
 using Wasla.Domain.Families;
 using Wasla.Application.Features.Clinical;
+using Wasla.Application.Features.Medications;
+using Wasla.Application.Features.Governance;
 
 namespace Wasla.Application;
 
@@ -35,6 +37,9 @@ public static class DependencyInjection
         services.AddScoped<ReservationScheduleGuard>();
         services.AddScoped<TicketAccessService>();
         services.AddScoped<FollowUpWorkflow>();
+        services.AddScoped<DrugCatalogManagerAccounts>();
+        services.AddScoped<MedicationAccess>();
+        services.AddScoped<MedicationIdempotency>();
         services.AddScoped<ClinicalAccessService>();
         services.AddScoped<ClinicalMutationService>();
         services.AddScoped<ReservationCheckInWorkflow>();

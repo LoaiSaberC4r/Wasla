@@ -2,17 +2,20 @@ using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Clinical;
+using Wasla.Domain.Medications;
+using Wasla.Application.Features.Medications;
 
 namespace Wasla.Application.Features.Clinical;
 
 public sealed record ClinicalPartyResponse(Guid Id, string NameAr, string? NameEn);
 public sealed record DiagnosisResponse(Guid DiagnosisId, DiagnosisType Type, string DisplayText, string? Notes);
 public sealed record EncounterCapabilitiesResponse(bool CanEditClinicalNotes, bool CanManageDiagnoses,
-    bool CanComplete, bool CanAmend, bool CanCreateFollowUpEligibility);
+    bool CanComplete, bool CanAmend, bool CanCreateFollowUpEligibility, bool CanManagePrescription = false, bool CanRequestNewMedication = false);
 public sealed record EncounterDetailsResponse(Guid EncounterId, Guid TicketId, ClinicalPartyResponse Doctor,
     ClinicalPartyResponse Practice, ClinicalPartyResponse Patient, EncounterStatus Status, DateTime StartedAtUtc,
     DateTime? CompletedAtUtc, string? ClinicalNotes, IReadOnlyList<DiagnosisResponse> Diagnoses,
-    FollowUpEligibilityResponse? FollowUpEligibility, EncounterCapabilitiesResponse Capabilities, string RowVersion);
+    FollowUpEligibilityResponse? FollowUpEligibility, EncounterCapabilitiesResponse Capabilities, string RowVersion, PrescriptionStateResponse? Prescription = null,
+    IReadOnlyList<PrescriptionCompletionBlocker>? CompletionBlockers = null);
 public sealed record PatientEncounterDetailsResponse(Guid EncounterId, Guid TicketId, ClinicalPartyResponse Doctor,
     ClinicalPartyResponse Practice, DateTime StartedAtUtc, DateTime CompletedAtUtc,
     IReadOnlyList<DiagnosisResponse> CurrentActiveDiagnoses, FollowUpEligibilityResponse? FollowUpEligibility);

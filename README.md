@@ -10,7 +10,7 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Clinical Encounter, Diagnosis & Follow-Up Eligibility (Phase 13) — DONE
+**Current Stage:** Phase 14 — Drug Catalog & Prescriptions — DONE
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root
@@ -32,6 +32,18 @@ clinical encounters, notes, diagnoses, immutable completed-record amendments,
 patient-owned completed views, and single-use follow-up eligibility integrated
 with patient/reception reservations, paid admission and Walk-In. Start and
 Complete Visit commit clinical and operational state atomically.
+
+Phase 14 adds Root-managed DrugCatalogManager accounts, a central drug catalog
+with controlled offline imports and medication request review, separate
+prescriptions with drafts and immutable versions, correction/discard/void,
+patient-owned completed outputs, and atomic prescription finalization during
+Complete Visit. Catalog search is server-side; missing medication can be
+requested and added in one call without waiting for catalog review.
+
+Phase 14 frontend contracts, decisions and verification (130 unit, 116
+integration and 16 architecture tests passed; zero build warnings/errors):
+[API changes](PHASE-14-API-CHANGES.md), [closure report](PHASE-14-CLOSURE-REPORT.md),
+and [source-of-truth implementation addendum](SOURCE-OF-TRUTH-PHASE-14-ADDENDUM.md).
 
 Phase 13 frontend contracts, verification and decision implementation status:
 [API changes](PHASE-13-API-CHANGES.md), [closure report](PHASE-13-CLOSURE-REPORT.md),
@@ -111,6 +123,12 @@ Operates only within explicitly assigned Doctor Practices and handles the capabi
 ### Patient
 
 A platform-global patient profile that is not owned by one Doctor and can accumulate a longitudinal medical record across permitted healthcare encounters.
+
+### DrugCatalogManager
+
+A Root-managed platform account that maintains medication reference data,
+reviews offline imports and Doctor medication requests, and has no access to
+patient clinical records or prescriptions.
 
 ---
 

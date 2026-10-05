@@ -158,7 +158,8 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
             RefundTransactionNumber: refund?.TransactionNumber,
             MedicalEncounterId: encounter?.Id,
             FollowUpEligibilityId: ticket.FollowUpEligibilityId,
-            MedicalEncounterRowVersion: encounter is null ? null : Convert.ToBase64String(encounter.RowVersion));
+            MedicalEncounterRowVersion: encounter is null ? null : Convert.ToBase64String(encounter.RowVersion),
+            PrescriptionId: encounter is null ? null : await dbContext.Prescriptions.AsNoTracking().Where(p => p.MedicalEncounterId == encounter.Id).Select(p => (Guid?)p.Id).SingleOrDefaultAsync(cancellationToken));
     }
 
     public async Task<PracticeQueueResponse> GetPracticeQueueAsync(

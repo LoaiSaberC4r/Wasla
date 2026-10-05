@@ -105,7 +105,8 @@ internal sealed class WaslaSecuritySeeder(
             (SystemRoleIds.SuperAdmin, SystemRoleNames.SuperAdmin),
             (SystemRoleIds.Doctor, SystemRoleNames.Doctor),
             (SystemRoleIds.Reception, SystemRoleNames.Reception),
-            (SystemRoleIds.Patient, SystemRoleNames.Patient)
+            (SystemRoleIds.Patient, SystemRoleNames.Patient),
+            (SystemRoleIds.DrugCatalogManager, SystemRoleNames.DrugCatalogManager)
         };
         foreach (var (id, name) in roles)
         {
@@ -160,6 +161,7 @@ internal sealed class WaslaSecuritySeeder(
     {
         var mappings = new Dictionary<Guid, IReadOnlyList<string>>
         {
+            [SystemRoleIds.DrugCatalogManager] = PermissionNames.DrugCatalogManagerDefaults,
             [SystemRoleIds.SuperAdmin] =
             [
                 PermissionNames.DoctorsViewAll,
@@ -242,7 +244,15 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.DiagnosesViewOwn,
                 PermissionNames.DiagnosesManageOwn,
                 PermissionNames.FollowUpEligibilityViewOwn,
-                PermissionNames.FollowUpEligibilityCreateOwn
+                PermissionNames.FollowUpEligibilityCreateOwn,
+                PermissionNames.DrugCatalogSearchActive,
+                PermissionNames.DrugCatalogRequestsCreateOwn,
+                PermissionNames.DrugCatalogRequestsViewOwn,
+                PermissionNames.DrugCatalogRequestsUpdateOwn,
+                PermissionNames.PrescriptionsViewOwn,
+                PermissionNames.PrescriptionsManageOwnDraft,
+                PermissionNames.PrescriptionsCorrectOwn,
+                PermissionNames.PrescriptionsVoidOwn,
             ],
             [SystemRoleIds.Reception] =
             [
@@ -297,6 +307,7 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.PaymentsViewOwn,
                 PermissionNames.MedicalEncountersViewOwnCompleted,
                 PermissionNames.DiagnosesViewOwnCompleted,
+                PermissionNames.PrescriptionsViewOwnCompleted,
                 PermissionNames.FollowUpEligibilityViewOwn
             ]
         };

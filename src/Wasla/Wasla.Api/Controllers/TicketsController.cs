@@ -162,6 +162,7 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
             cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpPost("tickets/{ticketId:guid}/complete")]
+    [ProducesResponseType<Wasla.Application.Features.Tickets.Common.TicketDetailsResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Complete(
         Guid practiceId,
         Guid ticketId,
@@ -169,7 +170,7 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new CompleteTicketCommand(
-            practiceId, ticketId, request.TicketRowVersion, request.EncounterRowVersion, idempotencyKey ?? string.Empty),
+            practiceId, ticketId, request.TicketRowVersion, request.EncounterRowVersion, idempotencyKey ?? string.Empty, request.PrescriptionRowVersion),
             cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpPost("tickets/{ticketId:guid}/cancel")]
@@ -237,4 +238,4 @@ public sealed record CreateWalkInTicketRequest(
 public sealed record TicketMutationRequest(string RowVersion);
 public sealed record ReasonedTicketMutationRequest(string Reason, string RowVersion);
 
-public sealed record CompleteVisitRequest(string TicketRowVersion, string EncounterRowVersion);
+public sealed record CompleteVisitRequest(string TicketRowVersion, string EncounterRowVersion, string? PrescriptionRowVersion = null);

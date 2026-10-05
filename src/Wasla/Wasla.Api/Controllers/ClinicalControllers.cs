@@ -22,9 +22,11 @@ public sealed class DoctorEncountersController(ISender sender) : ControllerBase
         [FromQuery] string? search = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
         => (await sender.Send(new ListDoctorEncountersQuery(practiceId, patientId, status, fromDate, toDate, search, pageNumber, pageSize), cancellationToken)).ToIActionResult(cancellationToken);
     [HttpGet("encounters/{encounterId:guid}")]
+    [ProducesResponseType<EncounterDetailsResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Details(Guid practiceId, Guid encounterId, CancellationToken cancellationToken)
         => (await sender.Send(new GetDoctorEncounterQuery(practiceId, encounterId), cancellationToken)).ToIActionResult(cancellationToken);
     [HttpGet("tickets/{ticketId:guid}/encounter")]
+    [ProducesResponseType<EncounterDetailsResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ByTicket(Guid practiceId, Guid ticketId, CancellationToken cancellationToken)
         => (await sender.Send(new GetDoctorEncounterQuery(practiceId, ticketId, true), cancellationToken)).ToIActionResult(cancellationToken);
     [HttpPatch("encounters/{encounterId:guid}/clinical-notes")]

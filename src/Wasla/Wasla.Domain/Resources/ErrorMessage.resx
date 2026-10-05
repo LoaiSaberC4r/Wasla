@@ -277,4 +277,57 @@
   <data name="FollowUpAlreadyReserved" xml:space="preserve"><value>Follow-up eligibility is already reserved.</value></data>
   <data name="FollowUpAlreadyConsumed" xml:space="preserve"><value>Follow-up eligibility has already been consumed.</value></data>
   <data name="FollowUpConcurrencyConflict" xml:space="preserve"><value>Follow-up eligibility has changed. Refresh and retry.</value></data>
+  <data name="Prescription.NotFound" xml:space="preserve"><value>Prescription was not found.</value></data>
+  <data name="Prescription.AccessDenied" xml:space="preserve"><value>You do not have access to this prescription.</value></data>
+  <data name="Prescription.InvalidState" xml:space="preserve"><value>This prescription action is not allowed in the current state.</value></data>
+  <data name="Prescription.ConcurrencyConflict" xml:space="preserve"><value>Prescription has changed. Refresh before retrying.</value></data>
+  <data name="Prescription.AlreadyExistsForEncounter" xml:space="preserve"><value>An encounter can have only one prescription.</value></data>
+  <data name="Prescription.NoCurrentVersion" xml:space="preserve"><value>A current finalized prescription is required.</value></data>
+  <data name="Prescription.CorrectionDraftAlreadyExists" xml:space="preserve"><value>Discard or resolve the correction draft before voiding.</value></data>
+  <data name="Prescription.CorrectionReasonRequired" xml:space="preserve"><value>A correction reason is required (maximum 1000 characters).</value></data>
+  <data name="Prescription.VoidReasonRequired" xml:space="preserve"><value>A void reason is required (maximum 1000 characters).</value></data>
+  <data name="Prescription.ItemsRequired" xml:space="preserve"><value>At least one medication is required.</value></data>
+  <data name="DrugCatalog.NotFound" xml:space="preserve"><value>Catalog medication was not found.</value></data>
+  <data name="DrugCatalog.NotActive" xml:space="preserve"><value>This medication is no longer active. Refresh the search.</value></data>
+  <data name="DrugCatalog.InvalidState" xml:space="preserve"><value>The catalog action is not allowed in the current state.</value></data>
+  <data name="DrugCatalog.ConcurrencyConflict" xml:space="preserve"><value>Catalog medication has changed. Refresh before retrying.</value></data>
+  <data name="DrugCatalog.MergeTargetInvalid" xml:space="preserve"><value>The merge target must be an active medication.</value></data>
+  <data name="DrugCatalog.CannotMergeIntoSelf" xml:space="preserve"><value>A medication cannot be merged into itself.</value></data>
+  <data name="DrugCatalog.AlreadyMerged" xml:space="preserve"><value>This medication has already been merged.</value></data>
+  <data name="DrugCatalog.ChangeReasonRequired" xml:space="preserve"><value>A reason is required for this catalog change.</value></data>
+  <data name="DrugCatalog.DeactivationReasonRequired" xml:space="preserve"><value>A deactivation reason is required.</value></data>
+  <data name="DrugCatalog.InvalidData" xml:space="preserve"><value>Medication data is invalid or exceeds the allowed limits.</value></data>
+  <data name="DrugCatalog.AccessDenied" xml:space="preserve"><value>Catalog management permission is required.</value></data>
+  <data name="DrugCatalogRequest.NotFound" xml:space="preserve"><value>Medication request was not found.</value></data>
+  <data name="DrugCatalogRequest.AccessDenied" xml:space="preserve"><value>You cannot access this medication request.</value></data>
+  <data name="DrugCatalogRequest.InvalidState" xml:space="preserve"><value>The medication request cannot be changed in its current state.</value></data>
+  <data name="DrugCatalogRequest.ConcurrencyConflict" xml:space="preserve"><value>Medication request has changed. Refresh before retrying.</value></data>
+  <data name="DrugCatalogRequest.MedicationNameRequired" xml:space="preserve"><value>Medication name is required.</value></data>
+  <data name="DrugCatalogRequest.MoreInfoReasonRequired" xml:space="preserve"><value>Explain the additional information required.</value></data>
+  <data name="DrugCatalogRequest.RejectionReasonRequired" xml:space="preserve"><value>A rejection reason is required.</value></data>
+  <data name="DrugCatalogRequest.AlreadyApproved" xml:space="preserve"><value>This medication request has already been approved.</value></data>
+  <data name="DrugCatalogRequest.AlreadyRejected" xml:space="preserve"><value>This medication request has already been rejected.</value></data>
+  <data name="DrugCatalogRequest.InvalidData" xml:space="preserve"><value>Medication request data is invalid.</value></data>
+  <data name="DrugCatalogImport.InvalidFile" xml:space="preserve"><value>Upload a nonempty JSON file no larger than 20 MB.</value></data>
+  <data name="DrugCatalogImport.InvalidSchema" xml:space="preserve"><value>The file does not match the approved MedicianDB schema.</value></data>
+  <data name="DrugCatalogImport.Empty" xml:space="preserve"><value>The import must contain at least one source record.</value></data>
+  <data name="DrugCatalogImport.BatchNotFound" xml:space="preserve"><value>Import batch was not found.</value></data>
+  <data name="DrugCatalogImport.BatchNotReady" xml:space="preserve"><value>This import batch is not ready to apply.</value></data>
+  <data name="DrugCatalogImport.ConcurrencyConflict" xml:space="preserve"><value>Catalog changed after preview. Stage a fresh preview.</value></data>
+  <data name="Medication.IdempotencyKeyRequired" xml:space="preserve"><value>A valid Idempotency-Key header is required.</value></data>
+  <data name="Medication.IdempotencyKeyReused" xml:space="preserve"><value>This idempotency key was already used for a different request.</value></data>
+  <data name="PrescriptionItem.NotFound" xml:space="preserve"><value>Prescription item was not found.</value></data>
+  <data name="PrescriptionItem.InvalidData" xml:space="preserve"><value>Prescription item fields exceed the allowed limits.</value></data>
+  <data name="PrescriptionItem.DurationInvalid" xml:space="preserve"><value>Choose a valid fixed duration or ongoing duration without a value/unit.</value></data>
+  <data name="PrescriptionItem.QuantityInvalid" xml:space="preserve"><value>Quantity must be positive and include a unit.</value></data>
+  <data name="PrescriptionItem.MedicationRequired" xml:space="preserve"><value>Medication is required.</value></data>
+  <data name="PrescriptionItem.StrengthRequired" xml:space="preserve"><value>Strength is required.</value></data>
+  <data name="PrescriptionItem.DosageFormRequired" xml:space="preserve"><value>Dosage form is required.</value></data>
+  <data name="PrescriptionItem.RouteRequired" xml:space="preserve"><value>A usable route is required.</value></data>
+  <data name="PrescriptionItem.DoseRequired" xml:space="preserve"><value>Dose is required.</value></data>
+  <data name="PrescriptionItem.FrequencyRequired" xml:space="preserve"><value>Frequency is required.</value></data>
+  <data name="PrescriptionItem.DurationRequired" xml:space="preserve"><value>Duration type is required.</value></data>
+  <data name="PrescriptionItem.DurationValueRequired" xml:space="preserve"><value>A positive fixed duration is required.</value></data>
+  <data name="PrescriptionItem.PrnReasonRequired" xml:space="preserve"><value>As-needed reason is required.</value></data>
+  <data name="PrescriptionItem.MinimumIntervalRequired" xml:space="preserve"><value>Minimum interval between doses is required.</value></data>
 </root>

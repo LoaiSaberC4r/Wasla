@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Wasla.Application.Features.Tickets.GetWalkInOptions;
 using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
@@ -263,6 +264,8 @@ public sealed class ReceptionWalkInOptionsTests
                 }));
             builder.ConfigureServices(services =>
             {
+                // This fixture owns initialization and has no background-processing scenarios.
+                services.RemoveAll<IHostedService>();
                 services.RemoveAll<DbContextOptions<WaslaDbContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<WaslaDbContext>>();
                 services.RemoveAll<WaslaDbContext>();
