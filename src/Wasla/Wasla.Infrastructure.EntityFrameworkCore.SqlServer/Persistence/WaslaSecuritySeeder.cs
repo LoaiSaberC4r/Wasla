@@ -233,7 +233,16 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.DoctorPracticePaymentsViewOwn,
                 PermissionNames.DoctorPracticePaymentsCorrectOwn,
                 PermissionNames.DoctorPracticePaymentsRefundOwn,
-                PermissionNames.DoctorRevenueViewOwn
+                PermissionNames.DoctorRevenueViewOwn,
+                PermissionNames.MedicalEncountersViewOwn,
+                PermissionNames.MedicalEncountersStartOwn,
+                PermissionNames.MedicalEncountersUpdateOwn,
+                PermissionNames.MedicalEncountersCompleteOwn,
+                PermissionNames.MedicalEncountersAmendOwn,
+                PermissionNames.DiagnosesViewOwn,
+                PermissionNames.DiagnosesManageOwn,
+                PermissionNames.FollowUpEligibilityViewOwn,
+                PermissionNames.FollowUpEligibilityCreateOwn
             ],
             [SystemRoleIds.Reception] =
             [
@@ -262,7 +271,8 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.PracticeTicketsCancel,
                 PermissionNames.PracticePaymentsView,
                 PermissionNames.PracticePaymentsCorrect,
-                PermissionNames.PracticePaymentsRefund
+                PermissionNames.PracticePaymentsRefund,
+                PermissionNames.FollowUpEligibilityViewBookingEligibility
             ],
             [SystemRoleIds.Patient] =
             [
@@ -284,7 +294,10 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.ReservationsCancelDependents,
                 PermissionNames.ReservationsRescheduleDependents,
                 PermissionNames.TicketsViewOwn,
-                PermissionNames.PaymentsViewOwn
+                PermissionNames.PaymentsViewOwn,
+                PermissionNames.MedicalEncountersViewOwnCompleted,
+                PermissionNames.DiagnosesViewOwnCompleted,
+                PermissionNames.FollowUpEligibilityViewOwn
             ]
         };
         foreach (var (roleId, permissionNames) in mappings)

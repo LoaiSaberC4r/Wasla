@@ -8,13 +8,17 @@ using Wasla.Application.Features.Tickets.Common;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Domain.Clinical;
+using Wasla.Domain.Practices;
+using Wasla.Application.Features.Clinical;
 
 namespace Wasla.Application.Features.Tickets.CompleteTicket;
 
 public sealed record CompleteTicketCommand(
     Guid PracticeId,
     Guid TicketId,
-    string RowVersion,
+    string TicketRowVersion,
+    string EncounterRowVersion,
     string IdempotencyKey)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
@@ -24,13 +28,15 @@ internal sealed class CompleteTicketCommandValidator : AbstractValidator<Complet
     {
         RuleFor(command => command.PracticeId).NotEmpty();
         RuleFor(command => command.TicketId).NotEmpty();
-        RuleFor(command => command.RowVersion).Must(TicketRowVersion.IsValid);
+        RuleFor(command => command.TicketRowVersion).Must(TicketRowVersion.IsValid);
+        RuleFor(command => command.EncounterRowVersion).Must(TicketRowVersion.IsValid);
         RuleFor(command => command.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
 
 internal sealed class CompleteTicketCommandHandler(
     TicketAccessService access,
+    FollowUpWorkflow followUp,
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketQueueReader queueReader,
@@ -47,6 +53,10 @@ internal sealed class CompleteTicketCommandHandler(
         {
             return Result<TicketDetailsResponse>.Fail(actor.Errors);
         }
+
+        var clinicalAccess = await access.AuthorizeDoctorAsync(
+            request.PracticeId, PermissionNames.MedicalEncountersCompleteOwn, cancellationToken);
+        if (clinicalAccess.IsFailure) return Result<TicketDetailsResponse>.Fail(clinicalAccess.Errors);
 
         var key = TicketIdempotency.ValidateKey(request.IdempotencyKey);
         if (key.IsFailure)
@@ -71,7 +81,7 @@ internal sealed class CompleteTicketCommandHandler(
             actor.Value.ApplicationUserId,
             "CompleteTicket",
             key.Value,
-            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.RowVersion),
+            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)
@@ -84,9 +94,27 @@ internal sealed class CompleteTicketCommandHandler(
             return await DetailsAsync(replayId, cancellationToken);
         }
 
-        if (!TicketRowVersion.Matches(ticket.RowVersion, request.RowVersion))
+        if (!TicketRowVersion.Matches(ticket.RowVersion, request.TicketRowVersion))
         {
             return Result<TicketDetailsResponse>.Fail(TicketErrors.ConcurrencyConflict);
+        }
+
+        var encounter = await unitOfWork.WriteRepository<MedicalEncounter>().FirstOrDefaultAsync(
+            new EncounterForUpdateSpecification(ticket.Id, byTicket: true), cancellationToken);
+        if (encounter is null) return Result<TicketDetailsResponse>.Fail(ClinicalErrors.NotFound);
+        if (!TicketRowVersion.Matches(encounter.RowVersion, request.EncounterRowVersion))
+            return Result<TicketDetailsResponse>.Fail(ClinicalErrors.ConcurrencyConflict);
+        var practice = await unitOfWork.WriteRepository<DoctorPractice>().GetByIdAsync(request.PracticeId, cancellationToken);
+        if (practice?.DoctorId != ticket.DoctorId) return Result<TicketDetailsResponse>.Fail(ClinicalErrors.AccessDenied);
+        var clinicalCompletion = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc);
+        if (clinicalCompletion.IsFailure) return Result<TicketDetailsResponse>.Fail(clinicalCompletion.Errors);
+        if (ticket.FollowUpEligibilityId is { } eligibilityId)
+        {
+            var eligibility = await followUp.FindAsync(eligibilityId, cancellationToken);
+            if (eligibility is null) return Result<TicketDetailsResponse>.Fail(FollowUpErrors.NotFound);
+            var consumed = eligibility.Consume(encounter, await followUp.TodayAsync(request.PracticeId, cancellationToken),
+                actor.Value.ApplicationUserId, nowUtc);
+            if (consumed.IsFailure) return Result<TicketDetailsResponse>.Fail(consumed.Errors);
         }
 
         var completed = ticket.Complete(actor.Value.ApplicationUserId, nowUtc);

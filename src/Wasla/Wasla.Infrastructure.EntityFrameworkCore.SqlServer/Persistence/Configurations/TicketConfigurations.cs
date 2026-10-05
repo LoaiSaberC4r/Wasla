@@ -8,6 +8,7 @@ using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
 using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Domain.Clinical;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Configurations;
 
@@ -25,6 +26,7 @@ internal sealed class TicketConfiguration : IWriteEntityConfiguration<Ticket>
                 "CK_Tickets_ReservationSource",
                 "([Source] = 1 AND [ReservationId] IS NOT NULL) OR ([Source] = 2 AND [ReservationId] IS NULL)");
         });
+        builder.HasOne<FollowUpEligibility>().WithMany().HasForeignKey(item => item.FollowUpEligibilityId).OnDelete(DeleteBehavior.Restrict);
         builder.HasKey(item => item.Id);
         builder.Property(item => item.BusinessDate).HasColumnType("date").IsRequired();
         builder.Property(item => item.SegmentNameArSnapshot).HasMaxLength(200).IsRequired();

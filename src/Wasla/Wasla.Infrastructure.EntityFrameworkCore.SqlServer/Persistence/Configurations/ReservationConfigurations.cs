@@ -5,6 +5,7 @@ using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Practices;
 using Wasla.Domain.Reservations;
+using Wasla.Domain.Clinical;
 using Wasla.Domain.Security;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Configurations;
@@ -20,6 +21,7 @@ internal sealed class ReservationConfiguration : IWriteEntityConfiguration<Reser
             table.HasCheckConstraint("CK_Reservations_Price", "[PriceSnapshot] > 0");
             table.HasCheckConstraint("CK_Reservations_RescheduleCount", "[PatientInitiatedRescheduleCount] >= 0 AND [PatientInitiatedRescheduleCount] <= 2");
         });
+        builder.HasOne<FollowUpEligibility>().WithMany().HasForeignKey(item => item.FollowUpEligibilityId).OnDelete(DeleteBehavior.Restrict);
         builder.HasKey(item => item.Id);
         builder.Property(item => item.ReservationReference).HasMaxLength(32).IsRequired();
         builder.Property(item => item.BookedOnBehalfRelationshipSnapshot).HasMaxLength(100);

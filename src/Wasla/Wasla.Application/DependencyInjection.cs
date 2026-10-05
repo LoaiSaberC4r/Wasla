@@ -10,6 +10,7 @@ using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Features.Reservations;
 using Wasla.Application.Features.Tickets.Common;
 using Wasla.Domain.Families;
+using Wasla.Application.Features.Clinical;
 
 namespace Wasla.Application;
 
@@ -33,6 +34,9 @@ public static class DependencyInjection
         services.AddScoped<ReservationApplicationService>();
         services.AddScoped<ReservationScheduleGuard>();
         services.AddScoped<TicketAccessService>();
+        services.AddScoped<FollowUpWorkflow>();
+        services.AddScoped<ClinicalAccessService>();
+        services.AddScoped<ClinicalMutationService>();
         services.AddScoped<ReservationCheckInWorkflow>();
         services.AddSingleton<IPracticeReservationOccupancyReader, EmptyPracticeReservationOccupancyReader>();
         services.AddSingleton<IPublicDoctorPopularityReader, EmptyPublicDoctorPopularityReader>();

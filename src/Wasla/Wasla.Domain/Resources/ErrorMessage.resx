@@ -249,4 +249,32 @@
   <data name="FinanceInvalidPayment" xml:space="preserve"><value>The payment does not match the ticket or EGP amount.</value></data>
   <data name="FinanceReplayUnavailable" xml:space="preserve"><value>The previous financial operation could not be replayed.</value></data>
   <data name="TicketRefundedCannotRestore" xml:space="preserve"><value>A refunded NoShow ticket cannot be restored to the queue.</value></data>
+  <data name="EncounterNotFound" xml:space="preserve"><value>Encounter was not found.</value></data>
+  <data name="EncounterAccessDenied" xml:space="preserve"><value>Clinical access is not permitted.</value></data>
+  <data name="EncounterAlreadyExists" xml:space="preserve"><value>A clinical encounter already exists for this ticket.</value></data>
+  <data name="EncounterInvalidState" xml:space="preserve"><value>The encounter state does not allow this operation.</value></data>
+  <data name="EncounterNotesRequired" xml:space="preserve"><value>Clinical notes are required before completion.</value></data>
+  <data name="EncounterNotesTooLong" xml:space="preserve"><value>Clinical notes must not exceed 8000 characters.</value></data>
+  <data name="EncounterConcurrencyConflict" xml:space="preserve"><value>The encounter has changed. Refresh and retry with its latest row version.</value></data>
+  <data name="DiagnosisNotFound" xml:space="preserve"><value>Diagnosis was not found.</value></data>
+  <data name="DiagnosisInvalid" xml:space="preserve"><value>Diagnosis type or text is invalid, or a length limit was exceeded.</value></data>
+  <data name="DiagnosisDuplicate" xml:space="preserve"><value>An active diagnosis with the same text already exists.</value></data>
+  <data name="DiagnosisPrimaryRequired" xml:space="preserve"><value>Active diagnoses require exactly one primary diagnosis.</value></data>
+  <data name="DiagnosisMultiplePrimary" xml:space="preserve"><value>Only one active primary diagnosis is allowed.</value></data>
+  <data name="AmendmentInvalidState" xml:space="preserve"><value>Only a completed encounter can be amended.</value></data>
+  <data name="AmendmentReasonRequired" xml:space="preserve"><value>An amendment reason of up to 1000 characters is required.</value></data>
+  <data name="AmendmentInvalidChange" xml:space="preserve"><value>The amendment must contain valid, actual clinical changes.</value></data>
+  <data name="FollowUpNotFound" xml:space="preserve"><value>Follow-up eligibility was not found.</value></data>
+  <data name="FollowUpAlreadyExists" xml:space="preserve"><value>This encounter already has a follow-up eligibility.</value></data>
+  <data name="FollowUpNotAvailable" xml:space="preserve"><value>Follow-up eligibility is not usable for this workflow.</value></data>
+  <data name="FollowUpExpired" xml:space="preserve"><value>Follow-up eligibility has expired.</value></data>
+  <data name="FollowUpInvalidPatient" xml:space="preserve"><value>The patient does not match the follow-up eligibility.</value></data>
+  <data name="FollowUpInvalidPractice" xml:space="preserve"><value>The practice does not match the follow-up eligibility.</value></data>
+  <data name="FollowUpInvalidDoctor" xml:space="preserve"><value>The doctor does not match the follow-up eligibility.</value></data>
+  <data name="FollowUpInvalidVisitType" xml:space="preserve"><value>Follow-up requires eligibility; a new consultation must not include eligibility.</value></data>
+  <data name="FollowUpInvalidDate" xml:space="preserve"><value>ValidUntil is required and must not precede the practice business date.</value></data>
+  <data name="FollowUpDateOutside" xml:space="preserve"><value>The visit date must be on or before ValidUntil.</value></data>
+  <data name="FollowUpAlreadyReserved" xml:space="preserve"><value>Follow-up eligibility is already reserved.</value></data>
+  <data name="FollowUpAlreadyConsumed" xml:space="preserve"><value>Follow-up eligibility has already been consumed.</value></data>
+  <data name="FollowUpConcurrencyConflict" xml:space="preserve"><value>Follow-up eligibility has changed. Refresh and retry.</value></data>
 </root>

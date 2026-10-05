@@ -669,6 +669,7 @@ internal static class ReceptionPermissionCatalog
     {
         var (nameAr, nameEn) = permission.Name switch
         {
+            PermissionNames.FollowUpEligibilityViewBookingEligibility => ("عرض أهلية حجز المتابعة", "View follow-up booking eligibility"),
             PermissionNames.PatientsSearchBasic => ("البحث الأساسي عن المرضى", "Search patients"),
             PermissionNames.PatientsRegister => ("تسجيل مريض", "Register patients"),
             PermissionNames.PracticeReservationsManage => ("إدارة حجوزات العيادة (قديم)", "Manage practice reservations (legacy)"),

@@ -87,7 +87,8 @@ public sealed record TicketCreationSnapshot(
     DateTime QueueOrderTimeUtc,
     CheckInMode CheckInMode,
     Guid CreatedByApplicationUserId,
-    string? Reason);
+    string? Reason,
+    Guid? FollowUpEligibilityId = null);
 
 public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
 {
@@ -112,6 +113,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         SegmentNameEnSnapshot = Normalize(snapshot.SegmentNameEn);
         SegmentPrioritySnapshot = snapshot.SegmentPriority;
         VisitTypeId = snapshot.VisitTypeId;
+        FollowUpEligibilityId = snapshot.FollowUpEligibilityId;
         VisitTypeCodeSnapshot = snapshot.VisitTypeCode.Trim();
         VisitTypeNameArSnapshot = snapshot.VisitTypeNameAr.Trim();
         VisitTypeNameEnSnapshot = Normalize(snapshot.VisitTypeNameEn);
@@ -156,6 +158,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
     public string? SegmentNameEnSnapshot { get; private set; }
     public int SegmentPrioritySnapshot { get; private set; }
     public Guid VisitTypeId { get; private set; }
+    public Guid? FollowUpEligibilityId { get; private set; }
     public string VisitTypeCodeSnapshot { get; private set; } = string.Empty;
     public string VisitTypeNameArSnapshot { get; private set; } = string.Empty;
     public string? VisitTypeNameEnSnapshot { get; private set; }
@@ -202,7 +205,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
     {
         if (Status != TicketStatus.Called || actorApplicationUserId == Guid.Empty ||
             maximumAttempts < 1 || CurrentCycleAttempts() >= maximumAttempts ||
-            _callAttempts.LastOrDefault()?.Outcome != TicketCallAttemptOutcome.NoResponse)
+            CurrentCallAttempt()?.Outcome != TicketCallAttemptOutcome.NoResponse)
         {
             return Result.Fail(TicketErrors.InvalidTransition);
         }
@@ -220,7 +223,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         int maximumAttempts,
         DateTime occurredOnUtc)
     {
-        var current = _callAttempts.LastOrDefault();
+        var current = CurrentCallAttempt();
         if (Status != TicketStatus.Called || actorApplicationUserId == Guid.Empty ||
             maximumAttempts < 1 || current is null || current.CallCycle != CallCycle ||
             current.Outcome != TicketCallAttemptOutcome.Pending)
@@ -278,7 +281,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
 
     public Result StartVisit(Guid doctorApplicationUserId, DateTime occurredOnUtc)
     {
-        var current = _callAttempts.LastOrDefault();
+        var current = CurrentCallAttempt();
         if (Status != TicketStatus.Called || doctorApplicationUserId == Guid.Empty ||
             current is null || current.CallCycle != CallCycle)
         {
@@ -354,7 +357,8 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         var validWalkIn = expectedSource == TicketSource.WalkIn &&
             snapshot.ReservationId is null && snapshot.CheckInMode == CheckInMode.WalkIn;
         var normalizedReason = Normalize(snapshot.Reason);
-        if (snapshot.Id == Guid.Empty || snapshot.DoctorId == Guid.Empty ||
+        if ((snapshot.VisitTypeCode == "FollowUp") != snapshot.FollowUpEligibilityId.HasValue ||
+            snapshot.FollowUpEligibilityId == Guid.Empty || snapshot.Id == Guid.Empty || snapshot.DoctorId == Guid.Empty ||
             snapshot.DoctorPracticeId == Guid.Empty || snapshot.PatientId == Guid.Empty ||
             snapshot.BusinessDate == default || snapshot.TicketNumber <= 0 ||
             snapshot.Source != expectedSource || (!validReservation && !validWalkIn) ||
@@ -427,6 +431,9 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
     private void AddCallAttempt(DateTime occurredOnUtc)
         => _callAttempts.Add(TicketCallAttempt.Create(
             Guid.NewGuid(), Id, CallCycle, CurrentCycleAttempts() + 1, occurredOnUtc));
+
+    private TicketCallAttempt? CurrentCallAttempt()
+        => _callAttempts.Where(a => a.CallCycle == CallCycle).MaxBy(a => a.AttemptNumber);
 
     private int CurrentCycleAttempts()
         => _callAttempts.Count(item => item.CallCycle == CallCycle);

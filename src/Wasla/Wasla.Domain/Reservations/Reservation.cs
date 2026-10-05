@@ -101,7 +101,8 @@ public sealed record ReservationCreationSnapshot(
     string? VisitTypeNameEnSnapshot,
     decimal PriceSnapshot,
     string? BookingNote,
-    DateTime OccurredOnUtc);
+    DateTime OccurredOnUtc,
+    Guid? FollowUpEligibilityId = null);
 
 public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
 {
@@ -119,6 +120,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         PatientId = snapshot.PatientId;
         SegmentId = snapshot.SegmentId;
         VisitTypeId = snapshot.VisitTypeId;
+        FollowUpEligibilityId = snapshot.FollowUpEligibilityId;
         BookingSource = snapshot.BookingSource;
         CreatedByApplicationUserId = snapshot.CreatedByApplicationUserId;
         BookedOnBehalfRelationshipSnapshot = snapshot.BookedOnBehalfRelationshipSnapshot;
@@ -153,6 +155,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
     public Guid PatientId { get; private set; }
     public Guid SegmentId { get; private set; }
     public Guid VisitTypeId { get; private set; }
+    public Guid? FollowUpEligibilityId { get; private set; }
     public ReservationBookingSource BookingSource { get; private set; }
     public Guid CreatedByApplicationUserId { get; private set; }
     public string? BookedOnBehalfRelationshipSnapshot { get; private set; }
@@ -197,7 +200,8 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
     public static Result<Reservation> Create(ReservationCreationSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
-        if (snapshot.Id == Guid.Empty || snapshot.DoctorId == Guid.Empty ||
+        if ((snapshot.VisitTypeCodeSnapshot == "FollowUp") != snapshot.FollowUpEligibilityId.HasValue ||
+            snapshot.FollowUpEligibilityId == Guid.Empty || snapshot.Id == Guid.Empty || snapshot.DoctorId == Guid.Empty ||
             snapshot.DoctorPracticeId == Guid.Empty || snapshot.PatientId == Guid.Empty ||
             snapshot.SegmentId == Guid.Empty || snapshot.VisitTypeId == Guid.Empty ||
             snapshot.CreatedByApplicationUserId == Guid.Empty ||

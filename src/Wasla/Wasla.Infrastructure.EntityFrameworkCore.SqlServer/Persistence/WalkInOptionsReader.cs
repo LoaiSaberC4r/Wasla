@@ -8,27 +8,28 @@ internal sealed class WalkInOptionsReader(WaslaDbContext dbContext) : IWalkInOpt
 {
     public async Task<IReadOnlyList<WalkInSegmentOptionResponse>> ListAsync(
         Guid practiceId,
+        DoctorPracticeVisitTypeCode visitType = DoctorPracticeVisitTypeCode.NewConsultation,
         CancellationToken cancellationToken = default)
     {
         var options = await (from price in dbContext.DoctorPracticeSegmentVisitTypePrices.AsNoTracking()
             join segment in dbContext.DoctorPracticeSegments.AsNoTracking()
                 on price.SegmentId equals segment.Id
-            join visitType in dbContext.DoctorPracticeVisitTypes.AsNoTracking()
-                on price.VisitTypeId equals visitType.Id
+            join catalogVisitType in dbContext.DoctorPracticeVisitTypes.AsNoTracking()
+                on price.VisitTypeId equals catalogVisitType.Id
             where price.DoctorPracticeId == practiceId &&
                   segment.DoctorPracticeId == practiceId && segment.IsActive &&
-                  visitType.DoctorPracticeId == practiceId && visitType.IsActive &&
-                  visitType.Type == DoctorPracticeVisitTypeCode.NewConsultation
-            orderby segment.Priority descending, segment.NameAr, segment.Id, visitType.Id
+                  catalogVisitType.DoctorPracticeId == practiceId && catalogVisitType.IsActive &&
+                  catalogVisitType.Type == visitType
+            orderby segment.Priority descending, segment.NameAr, segment.Id, catalogVisitType.Id
             select new
             {
                 SegmentId = segment.Id,
                 segment.NameAr,
                 segment.NameEn,
                 segment.Priority,
-                VisitTypeId = visitType.Id,
-                VisitTypeNameAr = visitType.NameAr,
-                VisitTypeNameEn = visitType.NameEn,
+                VisitTypeId = catalogVisitType.Id,
+                VisitTypeNameAr = catalogVisitType.NameAr,
+                VisitTypeNameEn = catalogVisitType.NameEn,
                 price.Price
             }).ToListAsync(cancellationToken);
 
@@ -39,7 +40,7 @@ internal sealed class WalkInOptionsReader(WaslaDbContext dbContext) : IWalkInOpt
             .Select(group => new WalkInSegmentOptionResponse(
                 group.Key.SegmentId, group.Key.NameAr, group.Key.NameEn, group.Key.Priority,
                 group.Select(option => new WalkInVisitTypeOptionResponse(
-                    option.VisitTypeId, DoctorPracticeVisitTypeCode.NewConsultation.ToString(),
+                    option.VisitTypeId, visitType.ToString(),
                     option.VisitTypeNameAr, option.VisitTypeNameEn, option.Price)).ToArray()))
             .ToArray();
     }

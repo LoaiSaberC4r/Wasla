@@ -78,7 +78,7 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
             request.VisitTypeId,
             request.PaidAmount,
             idempotencyKey ?? string.Empty, request.PaymentMethod,
-            request.ReferenceNumber, request.Notes), cancellationToken);
+            request.ReferenceNumber, request.Notes, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -165,11 +165,11 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
     public async Task<IActionResult> Complete(
         Guid practiceId,
         Guid ticketId,
-        TicketMutationRequest request,
+        CompleteVisitRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new CompleteTicketCommand(
-            practiceId, ticketId, request.RowVersion, idempotencyKey ?? string.Empty),
+            practiceId, ticketId, request.TicketRowVersion, request.EncounterRowVersion, idempotencyKey ?? string.Empty),
             cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpPost("tickets/{ticketId:guid}/cancel")]
@@ -191,8 +191,8 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
 public sealed class ReceptionPracticeTicketsController(ISender sender) : ControllerBase
 {
     [HttpGet("walk-in/options")]
-    public async Task<IActionResult> WalkInOptions(Guid practiceId, CancellationToken cancellationToken)
-        => (await sender.Send(new GetWalkInOptionsQuery(practiceId), cancellationToken))
+    public async Task<IActionResult> WalkInOptions(Guid practiceId, [FromQuery] Guid? patientId, [FromQuery] Guid? followUpEligibilityId, CancellationToken cancellationToken)
+        => (await sender.Send(new GetWalkInOptionsQuery(practiceId, patientId, followUpEligibilityId), cancellationToken))
             .ToIActionResult(cancellationToken);
 }
 
@@ -231,6 +231,10 @@ public sealed record CreateWalkInTicketRequest(
     decimal PaidAmount,
     PaymentMethod PaymentMethod = PaymentMethod.LegacyUnspecified,
     string? ReferenceNumber = null,
-    string? Notes = null);
+    string? Notes = null,
+    Guid? FollowUpEligibilityId = null,
+    string? FollowUpEligibilityRowVersion = null);
 public sealed record TicketMutationRequest(string RowVersion);
 public sealed record ReasonedTicketMutationRequest(string Reason, string RowVersion);
+
+public sealed record CompleteVisitRequest(string TicketRowVersion, string EncounterRowVersion);
