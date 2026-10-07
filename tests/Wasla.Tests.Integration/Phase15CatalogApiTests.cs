@@ -2,9 +2,13 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Wasla.Domain.Diagnostics;
+using Wasla.Domain.Labs;
+using Wasla.Domain.Radiology;
 using Wasla.Domain.Security;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
 using static Wasla.Tests.Integration.Phase15DiagnosticApiTests;
@@ -27,11 +31,12 @@ public sealed class Phase15CatalogApiTests
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, true))
         {
             void File(string path, string text) { using var writer = new StreamWriter(zip.CreateEntry(path).Open(), new UTF8Encoding(false)); writer.Write(text); }
+            File("AccessoryFiles/PanelsAndForms/Loinc.csv", "unrelated noncanonical content");
             File("LoincTable/Loinc.csv", "LOINC_NUM,COMPONENT,STATUS,CLASSTYPE,ORDER_OBS,LONG_COMMON_NAME,SHORTNAME\n" +
                 $"1234-5,Analyte,{status},1,Order,{name},Lab\n2345-6,Imaging,{status},2,Order,{name},Radio\n");
-            File("AccessoryFiles/UniversalLabOrders/LoincUniversalLabOrdersValueSet.csv", "LOINC_NUM\n1234-5\n");
-            File("LinguisticVariants/arJO32LinguisticVariant.csv", $"LOINC_NUM,LONG_COMMON_NAME\n1234-5,{arabic}\n2345-6,{arabic}\n");
-            File("AccessoryFiles/Radiology/LoincRsnaRadiologyPlaybook.csv", "LoincNumber,PartTypeName,PartName\n2345-6,Rad.Modality.Modality Type,XR\n2345-6,Rad.Anatomic Location.Region Imaged,Chest\n");
+            File("AccessoryFiles/LoincUniversalLabOrdersValueSet/LoincUniversalLabOrdersValueSet.csv", "LOINC_NUM\n1234-5\n");
+            File("AccessoryFiles/LinguisticVariants/arJO32LinguisticVariant.csv", $"LOINC_NUM,LONG_COMMON_NAME\n1234-5,{arabic}\n2345-6,{arabic}\n");
+            File("AccessoryFiles/LoincRsnaRadiologyPlaybook/LoincRsnaRadiologyPlaybook.csv", "LoincNumber,PartTypeName,PartName\n2345-6,Rad.Modality.Modality Type,XR\n2345-6,Rad.Anatomic Location.Region Imaged,Chest\n");
         }
         return stream.ToArray();
     }
@@ -43,6 +48,60 @@ public sealed class Phase15CatalogApiTests
         return await OkAsync(await manager.PostAsync($"/api/v1/admin/{kind}-catalog/imports/preview", form, TestContext.Current.CancellationToken));
     }
     internal static string ApplyUrl(string kind, JsonElement batch) => $"/api/v1/admin/{kind}-catalog/imports/{batch.GetProperty("batchId").GetGuid()}/apply";
+
+    [Theory]
+    [InlineData("lab")]
+    [InlineData("radiology")]
+    public async Task Streamed_official_layout_preview_ignores_unrelated_table_and_records_exact_package_hash(string kind)
+    {
+        await using var app = await Phase15DiagnosticApiTests.CreateAsync();
+        using var manager = await app.ClientAsync("medical-manager");
+        var bytes = Package();
+        var batch = await PreviewAsync(manager, kind, bytes);
+        Assert.Equal(1, batch.GetProperty("totalRecords").GetInt32());
+        Assert.Equal(Convert.ToHexString(SHA256.HashData(bytes)), batch.GetProperty("fileSha256").GetString());
+        var changes = await GetAsync(manager, $"/api/v1/admin/{kind}-catalog/imports/{batch.GetProperty("batchId").GetGuid()}/changes");
+        Assert.Equal(kind == "lab" ? "1234-5" : "2345-6", Assert.Single(changes.GetProperty("items").EnumerateArray()).GetProperty("loincCode").GetString());
+    }
+    [Theory]
+    [InlineData("lab")]
+    [InlineData("radiology")]
+    public async Task Persisted_preview_cannot_be_extended_with_new_source_records(string kind)
+    {
+        await using var app = await Phase15DiagnosticApiTests.CreateAsync();
+        using var manager = await app.ClientAsync("medical-manager");
+        var batch = await PreviewAsync(manager, kind);
+        var id = batch.GetProperty("batchId").GetGuid();
+        await app.WithDbAsync(async db =>
+        {
+            if (kind == "lab")
+            {
+                await db.LabCatalogImportBatches.SingleAsync(x => x.Id == id, TestContext.Current.CancellationToken);
+                var source = await db.LabCatalogImportRecords.SingleAsync(x => x.ImportBatchId == id, TestContext.Current.CancellationToken);
+                var temporary = LabCatalogImportBatch.Stage("2.83", "synthetic.zip", new string('A', 64), Guid.NewGuid(), DateTime.UtcNow);
+                temporary.Add(JsonSerializer.Deserialize<LoincSourceData>(source.SourceDataJson)! with { Code = "9999-9" }, source.SourceHash, DiagnosticImportDisposition.New, null, null);
+                var record = Assert.Single(temporary.Records);
+                db.Entry(record).Property(x => x.ImportBatchId).CurrentValue = id;
+                db.LabCatalogImportRecords.Add(record);
+            }
+            else
+            {
+                await db.RadiologyCatalogImportBatches.SingleAsync(x => x.Id == id, TestContext.Current.CancellationToken);
+                var source = await db.RadiologyCatalogImportRecords.SingleAsync(x => x.ImportBatchId == id, TestContext.Current.CancellationToken);
+                var temporary = RadiologyCatalogImportBatch.Stage("2.83", "synthetic.zip", new string('A', 64), Guid.NewGuid(), DateTime.UtcNow);
+                temporary.Add(JsonSerializer.Deserialize<LoincSourceData>(source.SourceDataJson)! with { Code = "9999-9" }, source.SourceHash, DiagnosticImportDisposition.New, null, null);
+                var record = Assert.Single(temporary.Records);
+                db.Entry(record).Property(x => x.ImportBatchId).CurrentValue = id;
+                db.RadiologyCatalogImportRecords.Add(record);
+            }
+            var error = await Assert.ThrowsAsync<InvalidOperationException>(() => db.SaveChangesAsync(TestContext.Current.CancellationToken));
+            Assert.Equal("Immutable diagnostic content cannot be extended after persistence.", error.Message);
+            db.ChangeTracker.Clear();
+            Assert.Equal(1, kind == "lab"
+                ? await db.LabCatalogImportRecords.CountAsync(x => x.ImportBatchId == id, TestContext.Current.CancellationToken)
+                : await db.RadiologyCatalogImportRecords.CountAsync(x => x.ImportBatchId == id, TestContext.Current.CancellationToken));
+        });
+    }
 
     [Theory]
     [InlineData("lab", false)]

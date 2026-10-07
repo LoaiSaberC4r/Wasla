@@ -22,20 +22,31 @@ public static partial class LoincPackageParser
 {
     [GeneratedRegex(@"^\d{1,7}-\d$")]
     private static partial Regex CodePattern();
-    public static Result<IReadOnlyList<ParsedLoincRow>> Parse(byte[] bytes, DiagnosticKind kind, string version, DiagnosticCatalogImportOptions options)
+    public static Result<IReadOnlyList<ParsedLoincRow>> Parse(byte[] bytes, DiagnosticKind kind, string version,
+        DiagnosticCatalogImportOptions options, CancellationToken ct = default)
     {
-        if (bytes.LongLength > options.MaxPackageBytes) return Failure("PackageTooLarge");
+        using var content = new MemoryStream(bytes, writable: false);
+        return Parse(content, kind, version, options, ct);
+    }
+    // The caller owns a seekable upload/file stream. Reject non-seekable input rather than letting ZipArchive buffer it.
+    public static Result<IReadOnlyList<ParsedLoincRow>> Parse(Stream content, DiagnosticKind kind, string version,
+        DiagnosticCatalogImportOptions options, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (!content.CanRead || !content.CanSeek) return Failure("InvalidArchive");
+        if (content.Length > options.MaxPackageBytes) return Failure("PackageTooLarge");
         if (!options.SupportedVersions.Contains(version, StringComparer.Ordinal)) return Failure("UnsupportedSourceVersion");
         try
         {
-            using var content = new MemoryStream(bytes, writable: false);
-            using var archive = new ZipArchive(content, ZipArchiveMode.Read);
+            content.Position = 0;
+            using var archive = new ZipArchive(content, ZipArchiveMode.Read, leaveOpen: true);
             if (archive.Entries.Count > options.MaxEntries) return Failure("UnsafeArchive");
             long expanded = 0;
             var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var entry in archive.Entries)
             {
-                var path = entry.FullName.Replace('\\', '/');
+                ct.ThrowIfCancellationRequested();
+                var path = NormalizePath(entry.FullName);
                 if (path.StartsWith('/') || path.Contains(':') || path.Contains('\0') || path.Split('/').Any(s => s is "." or "..") ||
                     !paths.Add(path) || ((entry.ExternalAttributes >> 16) & 0xF000) == 0xA000) return Failure("UnsafeArchive");
                 expanded = checked(expanded + entry.Length);
@@ -43,16 +54,27 @@ public static partial class LoincPackageParser
                     entry.Length > 1024 * 1024 && entry.Length / Math.Max(1, entry.CompressedLength) > options.MaxCompressionRatio)
                     return Failure("UnsafeArchive");
             }
-            ZipArchiveEntry? Find(string name, bool required)
+            ZipArchiveEntry FindExactPath(string path)
             {
-                var matches = archive.Entries.Where(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
+                var matches = archive.Entries.Where(e => string.Equals(NormalizePath(e.FullName), path, StringComparison.OrdinalIgnoreCase)).ToArray();
+                if (matches.Length > 1) throw new PackageException("UnsafeArchive");
+                if (matches.Length == 0) throw new PackageException("RequiredFileMissing");
+                return matches[0];
+            }
+            ZipArchiveEntry? FindAccessory(string officialPath, bool required)
+            {
+                var name = officialPath[(officialPath.LastIndexOf('/') + 1)..];
+                var matches = archive.Entries.Where(e => string.Equals(
+                    NormalizePath(e.FullName).Split('/')[^1], name, StringComparison.OrdinalIgnoreCase)).ToArray();
+                // Accessories in official 2.83 are unique. Preserve legacy safe layouts, but never pick an ambiguous basename.
                 if (matches.Length > 1) throw new PackageException("UnsafeArchive");
                 if (matches.Length == 0 && required) throw new PackageException("RequiredFileMissing");
+                var exact = matches.SingleOrDefault(e => string.Equals(NormalizePath(e.FullName), officialPath, StringComparison.OrdinalIgnoreCase));
+                if (exact is not null) return exact;
                 return matches.SingleOrDefault();
             }
-            var loincEntry = Find("Loinc.csv", true)!;
-            if (!loincEntry.FullName.Replace('\\', '/').EndsWith("LoincTable/Loinc.csv", StringComparison.OrdinalIgnoreCase)) return Failure("UnsafeArchive");
-            var rows = Read(loincEntry, options, "LOINC_NUM", "COMPONENT", "STATUS", "CLASSTYPE", "ORDER_OBS", "LONG_COMMON_NAME");
+            var loincEntry = FindExactPath("LoincTable/Loinc.csv");
+            var rows = Read(loincEntry, options, ct, "LOINC_NUM", "COMPONENT", "STATUS", "CLASSTYPE", "ORDER_OBS", "LONG_COMMON_NAME");
             var source = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
             foreach (var row in rows)
             {
@@ -60,10 +82,10 @@ public static partial class LoincPackageParser
                 if (!CodePattern().IsMatch(code) || !source.TryAdd(code, row)) return Failure("DuplicateSourceIdentity");
             }
             var arabic = new Dictionary<string, string>(StringComparer.Ordinal);
-            if (Find("arJO32LinguisticVariant.csv", false) is { } arEntry)
+            if (FindAccessory("AccessoryFiles/LinguisticVariants/arJO32LinguisticVariant.csv", false) is { } arEntry)
             {
                 var arabicCodes = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var row in Read(arEntry, options, "LOINC_NUM"))
+                foreach (var row in Read(arEntry, options, ct, "LOINC_NUM"))
                 {
                     if (!CodePattern().IsMatch(row["LOINC_NUM"]) || !arabicCodes.Add(row["LOINC_NUM"])) return Failure("DuplicateSourceIdentity");
                     var name = Get(row, "LONG_COMMON_NAME");
@@ -75,7 +97,7 @@ public static partial class LoincPackageParser
             var common = new HashSet<string>(StringComparer.Ordinal);
             if (kind == DiagnosticKind.Lab)
             {
-                foreach (var row in Read(Find("LoincUniversalLabOrdersValueSet.csv", true)!, options))
+                foreach (var row in Read(FindAccessory("AccessoryFiles/LoincUniversalLabOrdersValueSet/LoincUniversalLabOrdersValueSet.csv", true)!, options, ct))
                 {
                     var code = Get(row, "LOINC_NUM") ?? Get(row, "LoincNumber") ?? Get(row, "LOINC") ?? Get(row, "LOINC Code");
                     if (code is null) return Failure("InvalidHeaders");
@@ -86,7 +108,7 @@ public static partial class LoincPackageParser
             var radiologyRows = new Dictionary<string, List<IReadOnlyDictionary<string, string>>>(StringComparer.Ordinal);
             if (kind == DiagnosticKind.Radiology)
             {
-                foreach (var row in Read(Find("LoincRsnaRadiologyPlaybook.csv", true)!, options, "LoincNumber", "PartTypeName", "PartName"))
+                foreach (var row in Read(FindAccessory("AccessoryFiles/LoincRsnaRadiologyPlaybook/LoincRsnaRadiologyPlaybook.csv", true)!, options, ct, "LoincNumber", "PartTypeName", "PartName"))
                 {
                     var code = row["LoincNumber"];
                     if (!source.ContainsKey(code)) return Failure("InvalidArchive");
@@ -100,6 +122,7 @@ public static partial class LoincPackageParser
             var output = new List<ParsedLoincRow>();
             foreach (var (code, fields) in source.OrderBy(x => x.Key, StringComparer.Ordinal))
             {
+                ct.ThrowIfCancellationRequested();
                 if (kind == DiagnosticKind.Lab && !(fields["CLASSTYPE"] == "1" && fields["ORDER_OBS"] is "Order" or "Both")) continue;
                 if (kind == DiagnosticKind.Radiology && !attrs.ContainsKey(code)) continue;
                 var name = fields["LONG_COMMON_NAME"];
@@ -119,12 +142,14 @@ public static partial class LoincPackageParser
         catch (Exception ex) when (ex is InvalidDataException or IOException or OverflowException or ArgumentException or NotSupportedException)
         { return Failure("InvalidArchive"); }
     }
+    private static string NormalizePath(string path) => path.Replace('\\', '/');
     private static string? Get(Dictionary<string, string> row, string field) => row.TryGetValue(field, out var value) ? value : null;
     private static Result<IReadOnlyList<ParsedLoincRow>> Failure(string code)
         => Result<IReadOnlyList<ParsedLoincRow>>.Fail(DiagnosticErrors.Validation("DiagnosticCatalogImport." + code));
-    private static IEnumerable<Dictionary<string, string>> Read(ZipArchiveEntry entry, DiagnosticCatalogImportOptions options, params string[] required)
+    private static IEnumerable<Dictionary<string, string>> Read(ZipArchiveEntry entry, DiagnosticCatalogImportOptions options,
+        CancellationToken ct, params string[] required)
     {
-        using var stream = new BoundedEntryStream(entry.Open(), Math.Min(entry.Length, options.MaxExpandedBytes));
+        using var stream = new BoundedEntryStream(entry.Open(), Math.Min(entry.Length, options.MaxExpandedBytes), ct);
         // Official UTF-8 CSV only. Strict decoding rejects lossy replacement of source terminology.
         using var reader = new StreamReader(stream, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: false);
         using var records = Csv(reader).GetEnumerator();
@@ -135,6 +160,7 @@ public static partial class LoincPackageParser
         var count = 0;
         while (records.MoveNext())
         {
+            ct.ThrowIfCancellationRequested();
             if (++count > options.MaxRows) throw new PackageException("UnsafeArchive");
             var values = records.Current; if (values.Length == 1 && values[0].Length == 0) continue;
             if (values.Length != headers.Length) throw new PackageException("InvalidHeaders");
@@ -171,7 +197,7 @@ public static partial class LoincPackageParser
         }
     }
     private sealed class PackageException(string code) : Exception { public string Code { get; } = code; }
-    private sealed class BoundedEntryStream(Stream source, long limit) : Stream
+    private sealed class BoundedEntryStream(Stream source, long limit, CancellationToken ct) : Stream
     {
         private long _read;
         public override bool CanRead => true;
@@ -182,6 +208,7 @@ public static partial class LoincPackageParser
         public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
         public override int Read(Span<byte> buffer)
         {
+            ct.ThrowIfCancellationRequested();
             var count = source.Read(buffer); _read = checked(_read + count);
             if (_read > limit) throw new PackageException("UnsafeArchive");
             return count;

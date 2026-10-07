@@ -79,8 +79,14 @@ public sealed partial class WaslaDbContext
                 throw new InvalidOperationException("Closed import batches are immutable.");
             OnlyChanges(entry, "Status", "AppliedAtUtc", "AppliedByUserId", "DiscardedAtUtc", "DiscardedByUserId", "RowVersion");
         }
+        // A release preview adds tens of thousands of records. Do not rescan/detect the whole tracker for every row.
+        var newLabImportBatches = ChangeTracker.Entries<LabCatalogImportBatch>()
+            .Where(e => e.State == EntityState.Added).Select(e => e.Entity.Id).ToHashSet();
+        var newRadiologyImportBatches = ChangeTracker.Entries<RadiologyCatalogImportBatch>()
+            .Where(e => e.State == EntityState.Added).Select(e => e.Entity.Id).ToHashSet();
         foreach (var entry in ChangeTracker.Entries().Where(e => e.State == EntityState.Added))
         {
+            ct.ThrowIfCancellationRequested();
             // Children may only be appended together with their new immutable owner.
             var parent = entry.Entity switch
             {
@@ -90,8 +96,8 @@ public sealed partial class WaslaDbContext
                 RadiologyResultAttachment x => ChangeTracker.Entries<RadiologyResultVersion>().Any(e => e.Entity.Id == x.ResultVersionId && e.State == EntityState.Added),
                 PatientLabResultSubmissionAttachment x => ChangeTracker.Entries<PatientLabResultSubmission>().Any(e => e.Entity.Id == x.SubmissionId && e.State == EntityState.Added),
                 PatientRadiologyResultSubmissionAttachment x => ChangeTracker.Entries<PatientRadiologyResultSubmission>().Any(e => e.Entity.Id == x.SubmissionId && e.State == EntityState.Added),
-                LabCatalogImportRecord x => ChangeTracker.Entries<LabCatalogImportBatch>().Any(e => e.Entity.Id == x.ImportBatchId && e.State == EntityState.Added),
-                RadiologyCatalogImportRecord x => ChangeTracker.Entries<RadiologyCatalogImportBatch>().Any(e => e.Entity.Id == x.ImportBatchId && e.State == EntityState.Added),
+                LabCatalogImportRecord x => newLabImportBatches.Contains(x.ImportBatchId),
+                RadiologyCatalogImportRecord x => newRadiologyImportBatches.Contains(x.ImportBatchId),
                 _ => true
             };
             if (!parent) throw new InvalidOperationException("Immutable diagnostic content cannot be extended after persistence.");

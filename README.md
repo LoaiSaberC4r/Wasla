@@ -48,14 +48,20 @@ documents for the requesting Doctor to review; only Doctor acceptance or direct
 recording creates an official result. Document results can cover multiple items
 and support immutable correction/void history and scoped private downloads.
 
-Final Phase 15 verification: **174 unit, 147 integration and 20 architecture
-tests passed (341 total; zero failures/skips)**, including **79 focused Phase 15
-tests**; the solution builds with **zero warnings/errors**. SQL Server tests
+Final Phase 15 verification, including the real LOINC hotfix: **196 unit, 151
+integration and 20 architecture tests passed (367 total; zero failures/skips)**,
+including **105 focused Phase 15 tests**; the solution builds with **zero
+warnings/errors**. SQL Server tests
 verify concurrency, transaction rollback and private-file compensation.
+The supplied local official LOINC 2.83 ZIP passes both parsers and authenticated
+SQL Server preview endpoints: **47,977 Lab concepts (43,465 active; 883 with
+official Arabic)** and **7,016 Radiology procedures (6,941 active)**. Canonical
+table selection uses its exact path, the upload boundary uses a stream, and
+`_local-data/` remains ignored. API contracts and clinical rules are unchanged.
 [API changes](PHASE-15-API-CHANGES.md), [closure report](PHASE-15-CLOSURE-REPORT.md),
 [source-of-truth addendum](SOURCE-OF-TRUTH-PHASE-15-ADDENDUM.md) and
 [terminology source/license notice](LOINC-SOURCE-NOTICE.md) record the contracts,
-decisions, actual verification and full-release import limitations.
+decisions, actual verification and remaining full-apply/production load limits.
 
 Phase 14 frontend contracts, decisions and verification (130 unit, 116
 integration and 16 architecture tests passed; zero build warnings/errors):

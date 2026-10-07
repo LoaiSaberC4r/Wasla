@@ -97,7 +97,7 @@ public sealed record ReadDiagnosticQuery(DiagnosticKind Kind, DiagnosticReadReso
     Guid? Id = null, Guid? PracticeId = null, Guid? EncounterId = null, int? VersionNumber = null, DiagnosticFilter? Filter = null) : IQuery<object>;
 public sealed record DiagnosticMediaQuery(DiagnosticKind Kind, bool Patient, bool Submission, Guid Id, Guid AttachmentId,
     int? VersionNumber = null) : IQuery<Wasla.Application.Media.PrivateMedia>;
-public sealed record PreviewDiagnosticImportCommand(DiagnosticKind Kind, byte[] File, string FileName, string SourceVersion)
+public sealed record PreviewDiagnosticImportCommand(DiagnosticKind Kind, Stream File, string FileName, string SourceVersion)
     : ICommand<DiagnosticImportBatchResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record MutateDiagnosticImportCommand(DiagnosticKind Kind, Guid BatchId, bool Apply, string RowVersion, string? IdempotencyKey = null, bool SkipPossibleConflicts = false)
     : ICommand<DiagnosticImportBatchResponse>, ITransactionalCommand<WaslaWritePersistence>;

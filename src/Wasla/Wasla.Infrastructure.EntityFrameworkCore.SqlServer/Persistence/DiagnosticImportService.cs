@@ -20,9 +20,30 @@ internal sealed class DiagnosticImportService(WaslaDbContext db, IDiagnosticRead
     {
         if (r.FileName.Length > 255 || Path.GetFileName(r.FileName) != r.FileName || !r.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             return Result<DiagnosticImportBatchResponse>.Fail(DiagnosticErrors.Validation("DiagnosticCatalogImport.InvalidArchive"));
-        var parsed = LoincPackageParser.Parse(r.File, r.Kind, r.SourceVersion, options.Value);
+        if (!r.File.CanRead || !r.File.CanSeek)
+            return Result<DiagnosticImportBatchResponse>.Fail(DiagnosticErrors.Validation("DiagnosticCatalogImport.InvalidArchive"));
+        if (r.File.Length > options.Value.MaxPackageBytes)
+            return Result<DiagnosticImportBatchResponse>.Fail(DiagnosticErrors.Validation("DiagnosticCatalogImport.PackageTooLarge"));
+        var fileHash = await HashPackageAsync(r.File, options.Value.MaxPackageBytes, ct);
+        if (fileHash.IsFailure) return Result<DiagnosticImportBatchResponse>.Fail(fileHash.Errors);
+        var parsed = LoincPackageParser.Parse(r.File, r.Kind, r.SourceVersion, options.Value, ct);
         if (parsed.IsFailure) return Result<DiagnosticImportBatchResponse>.Fail(parsed.Errors);
-        return r.Kind == DiagnosticKind.Lab ? await StageLabAsync(r, parsed.Value, actor, now, ct) : await StageRadiologyAsync(r, parsed.Value, actor, now, ct);
+        return r.Kind == DiagnosticKind.Lab ? await StageLabAsync(r, parsed.Value, fileHash.Value, actor, now, ct) : await StageRadiologyAsync(r, parsed.Value, fileHash.Value, actor, now, ct);
+    }
+    private static async Task<Result<string>> HashPackageAsync(Stream package, long limit, CancellationToken ct)
+    {
+        package.Position = 0;
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var buffer = new byte[81920];
+        long total = 0;
+        int count;
+        while ((count = await package.ReadAsync(buffer, ct)) > 0)
+        {
+            total = checked(total + count);
+            if (total > limit) return Result<string>.Fail(DiagnosticErrors.Validation("DiagnosticCatalogImport.PackageTooLarge"));
+            hash.AppendData(buffer, 0, count);
+        }
+        return Result<string>.Ok(Convert.ToHexString(hash.GetHashAndReset()));
     }
     public Task<Result<DiagnosticImportBatchResponse>> MutateAsync(MutateDiagnosticImportCommand r, Guid actor, DateTime now, CancellationToken ct)
         => r.Kind == DiagnosticKind.Lab ? MutateLabAsync(r, actor, now, ct) : MutateRadiologyAsync(r, actor, now, ct);
@@ -30,15 +51,16 @@ internal sealed class DiagnosticImportService(WaslaDbContext db, IDiagnosticRead
         => hash == row.Hash ? DiagnosticImportDisposition.Unchanged : status != row.Data.Status ? DiagnosticImportDisposition.ExternalStatusChanged :
             arabic is null && row.Data.OfficialNameAr is not null ? DiagnosticImportDisposition.ArabicAdded : arabic != row.Data.OfficialNameAr ? DiagnosticImportDisposition.ArabicChanged : DiagnosticImportDisposition.Changed;
 
-    private async Task<Result<DiagnosticImportBatchResponse>> StageLabAsync(PreviewDiagnosticImportCommand r, IReadOnlyList<ParsedLoincRow> rows, Guid actor, DateTime now, CancellationToken ct)
+    private async Task<Result<DiagnosticImportBatchResponse>> StageLabAsync(PreviewDiagnosticImportCommand r, IReadOnlyList<ParsedLoincRow> rows, string fileHash, Guid actor, DateTime now, CancellationToken ct)
     {
         // Controlled import projection only; normal search stays filtered and paged in SQL.
         var existing = await db.Set<LabTestCatalog>().IgnoreAutoIncludes().AsNoTracking().Select(c => new { c.Id, c.LoincCode, c.NormalizedName, c.SourceHash, c.OfficialNameAr, c.ExternalStatus, c.RowVersion, c.Source, c.Status }).ToArrayAsync(ct);
         var codes = existing.Where(c => c.LoincCode is not null).ToDictionary(c => c.LoincCode!, StringComparer.Ordinal);
         var names = existing.Where(c => c.Source == MedicalCatalogSource.Wasla && c.Status != MedicalCatalogStatus.Merged).Select(c => c.NormalizedName).ToHashSet(StringComparer.Ordinal);
-        var batch = LabCatalogImportBatch.Stage(r.SourceVersion, r.FileName, Convert.ToHexString(SHA256.HashData(r.File)), actor, now);
+        var batch = LabCatalogImportBatch.Stage(r.SourceVersion, r.FileName, fileHash, actor, now);
         foreach (var row in rows)
         {
+            ct.ThrowIfCancellationRequested();
             codes.TryGetValue(row.Data.Code, out var match);
             var disposition = match is not null ? Classify(match.SourceHash, match.OfficialNameAr, match.ExternalStatus, row) :
                 names.Contains(DiagnosticText.Normalize(row.Data.NameEn)) ? DiagnosticImportDisposition.PossibleConflict : DiagnosticImportDisposition.New;
@@ -89,15 +111,16 @@ internal sealed class DiagnosticImportService(WaslaDbContext db, IDiagnosticRead
     }
 
 
-    private async Task<Result<DiagnosticImportBatchResponse>> StageRadiologyAsync(PreviewDiagnosticImportCommand r, IReadOnlyList<ParsedLoincRow> rows, Guid actor, DateTime now, CancellationToken ct)
+    private async Task<Result<DiagnosticImportBatchResponse>> StageRadiologyAsync(PreviewDiagnosticImportCommand r, IReadOnlyList<ParsedLoincRow> rows, string fileHash, Guid actor, DateTime now, CancellationToken ct)
     {
         // Controlled import projection only; normal search stays filtered and paged in SQL.
         var existing = await db.Set<RadiologyProcedureCatalog>().IgnoreAutoIncludes().AsNoTracking().Select(c => new { c.Id, c.LoincCode, c.NormalizedName, c.SourceHash, c.OfficialNameAr, c.ExternalStatus, c.RowVersion, c.Source, c.Status }).ToArrayAsync(ct);
         var codes = existing.Where(c => c.LoincCode is not null).ToDictionary(c => c.LoincCode!, StringComparer.Ordinal);
         var names = existing.Where(c => c.Source == MedicalCatalogSource.Wasla && c.Status != MedicalCatalogStatus.Merged).Select(c => c.NormalizedName).ToHashSet(StringComparer.Ordinal);
-        var batch = RadiologyCatalogImportBatch.Stage(r.SourceVersion, r.FileName, Convert.ToHexString(SHA256.HashData(r.File)), actor, now);
+        var batch = RadiologyCatalogImportBatch.Stage(r.SourceVersion, r.FileName, fileHash, actor, now);
         foreach (var row in rows)
         {
+            ct.ThrowIfCancellationRequested();
             codes.TryGetValue(row.Data.Code, out var match);
             var disposition = match is not null ? Classify(match.SourceHash, match.OfficialNameAr, match.ExternalStatus, row) :
                 names.Contains(DiagnosticText.Normalize(row.Data.NameEn)) ? DiagnosticImportDisposition.PossibleConflict : DiagnosticImportDisposition.New;

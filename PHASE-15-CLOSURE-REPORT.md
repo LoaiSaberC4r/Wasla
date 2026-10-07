@@ -1,6 +1,6 @@
 # Phase 15 closure report — 2026-10-07
 
-**Status: DONE.** Branch: `codex/phase15-diagnostic-orders-results`. Baseline: clean `main` at `2181b40b54d0884fe1362563423b184f6c5b174d`. Implementation and documentation are local branch changes. No production database migration, deployment, terminology download, push or pull request was performed.
+**Phase 15 status: DONE.** Branch: `codex/phase15-diagnostic-orders-results`. Original baseline: clean `main` at `2181b40b54d0884fe1362563423b184f6c5b174d`; the implementation was recorded in `cc99169` and has since been merged according to the follow-up task. The real-package hotfix uses that Phase 15 commit on the same branch; its evidence is in section 13. No production database migration or deployment was performed during the hotfix.
 
 ## 1. Implementation summary
 
@@ -20,7 +20,7 @@ The approved task and resolved intake decisions are retained in [the Source-of-T
 
 ## 3. Files and modules
 
-**69 files: 45 added and 24 changed.** The complete path inventory is at the end of this report.
+**Original Phase 15 delivery: 69 files, 45 added and 24 changed.** Its path inventory is at the end of this report; the subsequent hotfix file list is in section 13.
 
 New domain code is in `src/Wasla/Wasla.Domain/Labs`, `Radiology` and `Diagnostics`. New application code is in `src/Wasla/Wasla.Application/Features/Diagnostics`, plus `Features/Governance/MedicalCatalogManagers.cs`. It includes contracts, access checks, capability policy, order/result handlers, queries, validators, offline LOINC parsing and transaction-aware private-file compensation.
 
@@ -56,7 +56,7 @@ ZIP checks reject traversal, duplicate/ambiguous paths, symlinks, unsupported sc
 
 Preview persists an immutable reviewable batch/rows with SHA-256 and comparison dispositions. Apply revalidates its staged comparison under catalog locks, commits atomically with rowversion/idempotency and preserves local presentation/lifecycle decisions. It never automatically merges, deletes or deactivates codes absent from a later release. PossibleConflict blocks apply unless explicitly skipped; retained conflict rows remain reviewable. Source/license documentation is in [LOINC-SOURCE-NOTICE.md](LOINC-SOURCE-NOTICE.md).
 
-Permanent unit/API/SQL tests use small deterministic synthetic packages. An authenticated import of the entire licensed 2.83 release and release-scale performance measurement were **not run**, because no full source ZIP was supplied or committed. No full-release benchmark is claimed.
+Permanent unit/API/SQL tests use small deterministic synthetic packages. The initial delivery did not have the full licensed 2.83 ZIP. The subsequent hotfix used the supplied local official package successfully for both parsers and both authenticated SQL Server preview endpoints; exact counts and timings are in section 13. The package is ignored and uncommitted. Full-release catalog apply and production performance acceptance were not performed; local preview timings are not a production benchmark.
 
 ## 8. Security, concurrency and idempotency
 
@@ -68,7 +68,7 @@ PDF/JPG/PNG uploads reuse BuildingBlock private storage, signature/MIME checks a
 
 Mutations retain immutable actor/time/reason/before/after history. Single-record reads/downloads reuse EncounterAuditEvents with metadata only, without modifying clinical rowversions. PHI redaction is extended; file bytes, report contents, patient notes, internal clinical text and secrets are not intentionally logged. **131 new diagnostic error codes** have English and Arabic text. Existing media and shared idempotency codes keep their established names.
 
-## 9. Commands actually run
+## 9. Original delivery commands
 
 Final build:
 
@@ -99,7 +99,7 @@ git diff --check
 
 The temporary review script and implementation-generation helpers are removed from the deliverable. `--verbosity quiet` reduces runner noise; failures remain visible and no failing tests were suppressed.
 
-## 10. Exact verification results
+## 10. Original delivery verification results
 
 | Final verification | Passed | Failed | Skipped |
 | --- | ---: | ---: | ---: |
@@ -118,7 +118,7 @@ TRX results are in each test project's ignored `TestResults` directory with pref
 
 ## 11. Intentionally deferred and verification limits
 
-V1 exclusions remain as approved: structured observations/reference ranges/abnormal flags, provider/laboratory/PACS integration, DICOM viewing/storage, external result ingestion, sharing/access delegation, substitute reviewers, notifications and wider longitudinal-record work. No requested V1 lifecycle is left as a scaffold. Production deployment/seeding, full licensed-release import/performance acceptance and deployment-specific scanner configuration remain operational work; they were not represented as verified in this branch.
+V1 exclusions remain as approved: structured observations/reference ranges/abnormal flags, provider/laboratory/PACS integration, DICOM viewing/storage, external result ingestion, sharing/access delegation, substitute reviewers, notifications and wider longitudinal-record work. No requested V1 lifecycle is left as a scaffold. Production deployment/seeding, full-release catalog apply/upgrade/load acceptance and deployment-specific scanner configuration remain operational work. Local real-package parsing and preview are verified in section 13.
 
 ## 12. Technical adaptations
 
@@ -133,7 +133,130 @@ V1 exclusions remain as approved: structured observations/reference ranges/abnor
 
 These adaptations preserve approved business behavior; no broader clinical authority or additional product scope was introduced. README advances to Phase 15 DONE only after this implementation, documentation and verification.
 
-## Complete file inventory
+## 13. Real LOINC 2.83 import hotfix — 2026-10-07
+
+The follow-up work stays on `codex/phase15-diagnostic-orders-results`, based on `cc99169`. It changes import compatibility and bounded package handling without redesigning Phase 15. No domain lifecycle, ownership/review rule, permission, manager-governance rule, result correction/void behavior or medical attachment business limit is changed. **No frontend API contract change.** No new migration is required.
+
+### Root cause and exact path selection
+
+The supplied official ZIP contains both `LoincTable/Loinc.csv` and `AccessoryFiles/PanelsAndForms/Loinc.csv`. The original basename search rejected this valid package as UnsafeArchive. Canonical selection now compares the entire normalized path against `LoincTable/Loinc.csv`, case-insensitively, and requires exactly one match. It never takes the first arbitrary basename match or accepts a prefixed suffix match. Global traversal, absolute-path, symlink, duplicate-normalized-path, expansion, ratio, row and encoding checks remain intact.
+
+The real 2.83 accessory paths were inspected before finalizing the resolver:
+
+```text
+AccessoryFiles/LoincUniversalLabOrdersValueSet/LoincUniversalLabOrdersValueSet.csv
+AccessoryFiles/LinguisticVariants/arJO32LinguisticVariant.csv
+AccessoryFiles/LoincRsnaRadiologyPlaybook/LoincRsnaRadiologyPlaybook.csv
+```
+
+Those paths are recognized explicitly. Each accessory basename is unique in this package; safe unique-basename fallback preserves earlier fixture/layout compatibility. Multiple matching accessory basenames, including optional Arabic, fail rather than being chosen arbitrarily. Supported versions still come from `DiagnosticCatalogImport.SupportedVersions`.
+
+### Local official package and real verification
+
+Local verification input: **`_local-data/Loinc_2.83.zip`**. Size: **92,815,327 bytes**, **95 ZIP entries**, **1,063,582,650 declared expanded bytes**. SHA-256:
+
+```text
+077A0718E87D8309FFE3A673F75B836A8E783DC36A646413EF97C71C12EAB27E
+```
+
+The ZIP and any local extracted files were **not committed**. `_local-data/` is ignored, including the local-only verification harness, reports and its build/test output. Normal CI does not require this directory or source package. Existing source/license notices are preserved. The official package was supplied locally; no terminology was downloaded by this hotfix.
+
+| Real-package verification | Lab | Radiology |
+| --- | ---: | ---: |
+| Parser | PASS | PASS |
+| Exact parsed concepts / grouped procedures | 47,977 | 7,016 |
+| ACTIVE / Doctor selectable on initial import | 43,465 | 6,941 |
+| Official Arabic names | 883 | 0 |
+| IsCommonOrder rows | 1,517 | 0 |
+| TRIAL | 2,568 | 2 |
+| DISCOURAGED | 1,182 | 73 |
+| DEPRECATED | 762 | 0 |
+| Authenticated preview endpoint | HTTP 200 / PASS | HTTP 200 / PASS |
+| Persisted Staged records in disposable SQL Server DB | 47,977 | 7,016 |
+| Local preview elapsed seconds | 34.222 | 15.035 |
+
+Counts are measured output, not hard-coded expectations. Every parsed Lab row satisfies CLASSTYPE 1 and ORDER_OBS Order/Both. Non-active rows remain retained and non-selectable. The common value set supplies flags/ranking only; it does not replace the complete catalog. Missing official Arabic remains null, with no generated translation. Each real output row's code, name and status was checked against the canonical source fields. The authenticated previews used the unchanged multipart endpoints, committed reviewable batches and verified package SHA-256 plus paged change counts. They did not apply the full catalog or modify a production database.
+
+Radiology produces one procedure per LoincNumber, retains **49,621 original Part rows** and preserves their PartNumber/PartSequenceOrder plus original names. The 18 actual PartTypeName values are:
+
+```text
+Rad.Anatomic Location.Imaging Focus
+Rad.Anatomic Location.Laterality
+Rad.Anatomic Location.Laterality.Presence
+Rad.Anatomic Location.Region Imaged
+Rad.Guidance for.Action
+Rad.Guidance for.Approach
+Rad.Guidance for.Object
+Rad.Guidance for.Presence
+Rad.Maneuver.Maneuver Type
+Rad.Modality.Modality Subtype
+Rad.Modality.Modality Type
+Rad.Pharmaceutical.Route
+Rad.Pharmaceutical.Substance Given
+Rad.Reason for Exam
+Rad.Subject
+Rad.Timing
+Rad.View.Aggregation
+Rad.View.View Type
+```
+
+The local check validates every original Part row against the grouped attributes without rewriting source spelling/case. The source here uses `Rad.Modality.Modality Type`; existing case-insensitive snapshot extraction also accepts the lower-case `type` variant covered by synthetic tests.
+
+### Memory and release-scale persistence hardening
+
+Both preview controllers now pass `IFormFile.OpenReadStream()` through the internal command/service instead of copying the full package into MemoryStream and another byte array. The controller owns and disposes the stream; ZipArchive leaves it open. ASP.NET's bounded multipart buffering/spooling and request cleanup remain responsible for the upload backing store; no permanent custom temporary files or absolute local paths are added to production code. SHA-256 uses an 80 KiB buffer and checks actual byte totals. Parsing checks seekability and package length, preserves bounded entry reads, and propagates cancellation through hashing, ZIP/CSV processing, output construction and staging. Non-seekable parser input is rejected instead of implicitly buffering an unbounded archive. The byte-array overload remains for small existing synthetic fixtures.
+
+A full preview also revealed repeated EF change-tracker enumeration for every added import row. That run was interrupted, and its verified disposable test database was cleaned up. The guard now captures new Lab/Radiology batch IDs once and uses set membership for each imported record, preserving the rule that persisted previews cannot be extended. Permanent tests explicitly attempt that extension and prove it is rejected for both domains. The successful full previews were rerun after this change.
+
+Remaining memory work is explicit: source dictionaries, parsed rows, staged source JSON and the full EF batch remain materialized. The local verification process reached approximately 1 GiB working set; this is an observation of the test process, not an isolated production request benchmark. End-to-end streaming/chunked staging and concurrent-import capacity testing are deferred to a separate performance change. Production deployment should validate memory, temporary-disk capacity, request/proxy timeouts and full apply/upgrade behavior under its own load. Medical attachments remain 10 MiB each, 20 files and 100 MiB aggregate.
+
+### Permanent regression coverage and verification
+
+The parser suite now has **33 passing cases**, including both domains with the unrelated Loinc.csv before/after the canonical entry, normalized slash/case matching, duplicate canonical paths, exact-path requirement, ambiguous accessories, missing required files, optional missing Arabic, Lab/common/Arabic rules, Radiology grouping, invalid headers/archive/version, package/entry/expansion/row/ratio limits, traversal, stream ownership, non-seekable input and cancellation. API fixtures now use the real official accessory structure and an unrelated panels-table basename. New API tests verify the unchanged preview contract/hash and immutable persisted batches. In total the hotfix adds **22 unit and 4 integration cases**, all synthetic and independent of licensed data.
+
+Final build: **0 warnings, 0 errors**. Final focused Phase 15 verification: **66 unit + 35 integration + 4 architecture = 105 passed; 0 failed, 0 skipped**. All import tests are included (33 parser and 12 catalog/import/governance API cases). Local-only real-package verification: **2 parser + 2 authenticated SQL Server preview checks passed; 0 failed, 0 skipped**. These four local checks are separate from the normal solution totals.
+
+Final full solution regression: **196 unit + 151 integration + 20 architecture = 367 passed; 0 failed, 0 skipped**. Focused cases are included in that total, not added to it. The full suite covers the existing Phase 15 lifecycle, ownership/review, permissions, correction/void, medical media, Complete Visit and prescription/follow-up transaction regressions. The final SQL fixture cleanup left no WaslaPhase13Tests databases behind.
+
+Commands actually used:
+
+```powershell
+dotnet build Wasla.sln --verbosity minimal
+dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --no-restore --filter 'FullyQualifiedName~Phase15LoincImportTests' --logger 'trx;LogFilePrefix=phase15-hotfix-parser' --verbosity quiet
+$env:WASLA_SQLSERVER_CONNECTION_STRING = 'Server=.\SQLEXPRESS;Database=master;Integrated Security=true;TrustServerCertificate=true'
+dotnet test Wasla.sln --no-restore --filter 'FullyQualifiedName~Phase15' --logger 'trx;LogFilePrefix=phase15-hotfix-final-focused' --verbosity quiet
+dotnet test Wasla.sln --no-build --no-restore --logger 'trx;LogFilePrefix=phase15-hotfix-regression' --verbosity quiet
+$env:WASLA_LOINC_PACKAGE = (Resolve-Path -LiteralPath '_local-data/Loinc_2.83.zip').Path
+dotnet test _local-data/phase15-hotfix-verification/Phase15.RealPackageVerification.csproj --filter 'FullyQualifiedName~Official_package_parses' --logger 'trx;LogFilePrefix=phase15-real-parser' --verbosity quiet
+dotnet test _local-data/phase15-hotfix-verification/Phase15.RealPackageVerification.csproj --no-restore --filter 'FullyQualifiedName~Official_package_previews' --logger 'trx;LogFilePrefix=phase15-real-preview-final' --verbosity quiet
+git diff --check
+git status --short
+git check-ignore _local-data/Loinc_2.83.zip
+git ls-files _local-data
+git log --all --format= --name-only -- _local-data
+```
+
+The local harness and metadata-only JSON/TRX evidence remain ignored. Git tracked-file/history checks for `_local-data` return empty; the directory does not appear in staged or ordinary untracked changes. No licensed ZIP or extracted terminology was copied into tests, src, fixtures, wwwroot or migrations. No hotfix commit/push/deployment was performed by this run.
+
+Hotfix changes are confined to these 13 tracked files:
+
+```text
+.gitignore
+PHASE-15-API-CHANGES.md
+PHASE-15-CLOSURE-REPORT.md
+README.md
+src/Wasla/Wasla.Api/Controllers/LabControllers.cs
+src/Wasla/Wasla.Api/Controllers/RadiologyControllers.cs
+src/Wasla/Wasla.Application/Features/Diagnostics/DiagnosticContracts.cs
+src/Wasla/Wasla.Application/Features/Diagnostics/LoincPackageParser.cs
+src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer/Persistence/DiagnosticImportService.cs
+src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer/Persistence/WaslaDbContext.Diagnostics.cs
+tests/Wasla.Tests.Integration/Phase15CatalogApiTests.cs
+tests/Wasla.Tests.Unit/Phase15LoincImportTests.cs
+tests/Wasla.Tests.Unit/Phase15RadiologyDomainTests.cs
+```
+
+## Original delivery file inventory
 
 ```text
 LOINC-SOURCE-NOTICE.md
