@@ -20,6 +20,7 @@ public sealed class DiagnosticCatalogImportOptions
 public sealed record ParsedLoincRow(LoincSourceData Data, string Hash);
 public static partial class LoincPackageParser
 {
+    private static readonly string[] ArabicLocalizedFields = ["LinguisticVariantDisplayName", "LONG_COMMON_NAME_AR", "DisplayName"];
     [GeneratedRegex(@"^\d{1,7}-\d$")]
     private static partial Regex CodePattern();
     public static Result<IReadOnlyList<ParsedLoincRow>> Parse(byte[] bytes, DiagnosticKind kind, string version,
@@ -88,10 +89,8 @@ public static partial class LoincPackageParser
                 foreach (var row in Read(arEntry, options, ct, "LOINC_NUM"))
                 {
                     if (!CodePattern().IsMatch(row["LOINC_NUM"]) || !arabicCodes.Add(row["LOINC_NUM"])) return Failure("DuplicateSourceIdentity");
-                    var name = Get(row, "LONG_COMMON_NAME");
-                    if (string.IsNullOrWhiteSpace(name)) name = Get(row, "DisplayName");
-                    if (string.IsNullOrWhiteSpace(name)) name = Get(row, "LONG_COMMON_NAME_AR");
-                    if (!string.IsNullOrWhiteSpace(name) && !arabic.TryAdd(row["LOINC_NUM"], name)) return Failure("DuplicateSourceIdentity");
+                    var name = GetArabicLocalizedName(row);
+                    if (name is not null && !arabic.TryAdd(row["LOINC_NUM"], name)) return Failure("DuplicateSourceIdentity");
                 }
             }
             var common = new HashSet<string>(StringComparer.Ordinal);
@@ -144,6 +143,21 @@ public static partial class LoincPackageParser
     }
     private static string NormalizePath(string path) => path.Replace('\\', '/');
     private static string? Get(Dictionary<string, string> row, string field) => row.TryGetValue(field, out var value) ? value : null;
+    private static string? GetArabicLocalizedName(Dictionary<string, string> row)
+    {
+        // LONG_COMMON_NAME remains English in the official linguistic variant. Only localized fields are candidates.
+        foreach (var field in ArabicLocalizedFields)
+        {
+            var name = Get(row, field);
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            // Require an Arabic letter, while preserving mixed gene names, numbers, units and source formatting.
+            foreach (var rune in name.EnumerateRunes())
+                if (Rune.IsLetter(rune) && rune.Value is >= 0x0600 and <= 0x06FF or >= 0x0750 and <= 0x077F or
+                    >= 0x0870 and <= 0x08FF or >= 0xFB50 and <= 0xFDFF or >= 0xFE70 and <= 0xFEFF or >= 0x1EE00 and <= 0x1EEFF)
+                    return name;
+        }
+        return null;
+    }
     private static Result<IReadOnlyList<ParsedLoincRow>> Failure(string code)
         => Result<IReadOnlyList<ParsedLoincRow>>.Fail(DiagnosticErrors.Validation("DiagnosticCatalogImport." + code));
     private static IEnumerable<Dictionary<string, string>> Read(ZipArchiveEntry entry, DiagnosticCatalogImportOptions options,
@@ -156,7 +170,8 @@ public static partial class LoincPackageParser
         if (!records.MoveNext()) throw new PackageException("InvalidHeaders");
         var headers = records.Current; headers[0] = headers[0].TrimStart('\uFEFF');
         if (headers.Distinct(StringComparer.OrdinalIgnoreCase).Count() != headers.Length || required.Any(r => !headers.Contains(r, StringComparer.OrdinalIgnoreCase))) throw new PackageException("InvalidHeaders");
-        if (entry.Name.Equals("arJO32LinguisticVariant.csv", StringComparison.OrdinalIgnoreCase) && !headers.Any(h => h.Equals("LONG_COMMON_NAME", StringComparison.OrdinalIgnoreCase) || h.Equals("DisplayName", StringComparison.OrdinalIgnoreCase) || h.Equals("LONG_COMMON_NAME_AR", StringComparison.OrdinalIgnoreCase))) throw new PackageException("InvalidHeaders");
+        if (NormalizePath(entry.FullName).Split('/')[^1].Equals("arJO32LinguisticVariant.csv", StringComparison.OrdinalIgnoreCase) &&
+            !headers.Any(h => ArabicLocalizedFields.Contains(h, StringComparer.OrdinalIgnoreCase))) throw new PackageException("InvalidHeaders");
         var count = 0;
         while (records.MoveNext())
         {

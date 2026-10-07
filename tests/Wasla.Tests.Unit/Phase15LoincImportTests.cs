@@ -7,6 +7,83 @@ namespace Wasla.Tests.Unit;
 
 public sealed class Phase15LoincImportTests
 {
+    private const string ArabicFixtureEnglishName = "MET gene mutations found [Identifier] in Blood or Tissue by Molecular genetics method Nominal";
+    [Fact]
+    public void Official_arabic_uses_linguistic_display_field_instead_of_english_base_name()
+    {
+        const string localized = "فحص MET وALK وBRCA1 وCOVID-19 12 mg/L +";
+        var bytes = ArabicPackage("LOINC_NUM,LONG_COMMON_NAME,LinguisticVariantDisplayName,LONG_COMMON_NAME_AR,DisplayName\n" +
+            $"100026-4,{ArabicFixtureEnglishName},{localized},اسم بديل,اسم عرض بديل\n");
+        var parsed = LoincPackageParser.Parse(bytes, DiagnosticKind.Lab, "2.83", new(), TestContext.Current.CancellationToken);
+        Assert.True(parsed.IsSuccess);
+        var row = Assert.Single(parsed.Value);
+        Assert.Equal("100026-4", row.Data.Code);
+        Assert.Equal(ArabicFixtureEnglishName, row.Data.NameEn);
+        Assert.Equal(localized, row.Data.OfficialNameAr);
+        Assert.NotEqual(ArabicFixtureEnglishName, row.Data.OfficialNameAr);
+    }
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("MET gene mutations")]
+    [InlineData("MET 123 mg/L +")]
+    [InlineData("MET ١٢٣؛")]
+    public void Missing_or_obviously_nonlocalized_arabic_never_falls_back_to_english(string localized)
+    {
+        var bytes = ArabicPackage("LOINC_NUM,LONG_COMMON_NAME,LinguisticVariantDisplayName\n" +
+            $"100026-4,{ArabicFixtureEnglishName},{localized}\n");
+        var parsed = LoincPackageParser.Parse(bytes, DiagnosticKind.Lab, "2.83", new(), TestContext.Current.CancellationToken);
+        Assert.True(parsed.IsSuccess);
+        Assert.Null(Assert.Single(parsed.Value).Data.OfficialNameAr);
+    }
+    [Theory]
+    [InlineData("LONG_COMMON_NAME_AR")]
+    [InlineData("DisplayName")]
+    [InlineData("linguisticvariantdisplayname")]
+    public void Explicit_localized_schema_aliases_are_supported_case_insensitively(string column)
+    {
+        const string localized = "اسم رسمي MET";
+        var bytes = ArabicPackage($"LOINC_NUM,LONG_COMMON_NAME,{column}\n100026-4,{ArabicFixtureEnglishName},{localized}\n");
+        var parsed = LoincPackageParser.Parse(bytes, DiagnosticKind.Lab, "2.83", new(), TestContext.Current.CancellationToken);
+        Assert.True(parsed.IsSuccess);
+        Assert.Equal(localized, Assert.Single(parsed.Value).Data.OfficialNameAr);
+    }
+    [Theory]
+    [InlineData("اسم عربي بديل", "اسم عرض بديل", "اسم عربي بديل")]
+    [InlineData("", "اسم عرض بديل", "اسم عرض بديل")]
+    [InlineData("English alias", "اسم عرض بديل", "اسم عرض بديل")]
+    [InlineData("English alias", "English display", null)]
+    public void Arabic_alias_priority_skips_empty_or_nonlocalized_values(string explicitArabic, string display, string? expected)
+    {
+        var bytes = ArabicPackage("LOINC_NUM,LONG_COMMON_NAME,LinguisticVariantDisplayName,LONG_COMMON_NAME_AR,DisplayName\n" +
+            $"100026-4,{ArabicFixtureEnglishName},,{explicitArabic},{display}\n");
+        var parsed = LoincPackageParser.Parse(bytes, DiagnosticKind.Lab, "2.83", new(), TestContext.Current.CancellationToken);
+        Assert.True(parsed.IsSuccess);
+        Assert.Equal(expected, Assert.Single(parsed.Value).Data.OfficialNameAr);
+    }
+    [Fact]
+    public void English_base_column_alone_is_not_a_supported_arabic_schema()
+    {
+        var parsed = LoincPackageParser.Parse(ArabicPackage($"LOINC_NUM,LONG_COMMON_NAME\n100026-4,{ArabicFixtureEnglishName}\n"),
+            DiagnosticKind.Lab, "2.83", new(), TestContext.Current.CancellationToken);
+        Assert.Equal("DiagnosticCatalogImport.InvalidHeaders", Assert.Single(parsed.Errors).Code);
+    }
+    private static byte[] ArabicPackage(string arabicCsv)
+    {
+        using var stream = new MemoryStream();
+        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, true))
+        {
+            void File(string path, string text)
+            {
+                using var writer = new StreamWriter(zip.CreateEntry(path).Open(), new UTF8Encoding(false));
+                writer.Write(text);
+            }
+            File("LoincTable/Loinc.csv", $"LOINC_NUM,COMPONENT,STATUS,CLASSTYPE,ORDER_OBS,LONG_COMMON_NAME\n100026-4,MET,ACTIVE,1,Order,{ArabicFixtureEnglishName}\n");
+            File("AccessoryFiles/LinguisticVariants/arJO32LinguisticVariant.csv", arabicCsv);
+            File("AccessoryFiles/LoincUniversalLabOrdersValueSet/LoincUniversalLabOrdersValueSet.csv", "LOINC_NUM\n100026-4\n");
+        }
+        return stream.ToArray();
+    }
     public static byte[] Package(string? extraPath = null, bool invalidHeaders = false, string status = "ACTIVE",
         string arabic = "اسم رسمي", bool extraFirst = false)
     {
@@ -26,7 +103,7 @@ public sealed class Phase15LoincImportTests
                 "4567-8,Clinical,ACTIVE,2,Order,Clinical test,Clinical,\n" +
                 "5678-9,Imaging,ACTIVE,2,Order,Chest imaging,Chest,\n");
             File("AccessoryFiles/UniversalLabOrders/LoincUniversalLabOrdersValueSet.csv", "LOINC_NUM,LONG_COMMON_NAME\n1234-5,Common test\n");
-            File("LinguisticVariants/arJO32LinguisticVariant.csv", $"LOINC_NUM,LONG_COMMON_NAME\n1234-5,{arabic}\n");
+            File("LinguisticVariants/arJO32LinguisticVariant.csv", $"LOINC_NUM,LONG_COMMON_NAME,LinguisticVariantDisplayName\n1234-5,Common test,{arabic}\n");
             File("AccessoryFiles/Radiology/LoincRsnaRadiologyPlaybook.csv", "LoincNumber,PartTypeName,PartName,PartNumber,PartSequenceOrder\n" +
                 "5678-9,Rad.Modality.Modality type,XR,LP1,A\n5678-9,Rad.Anatomic Location.Region Imaged,Chest,LP2,A\n5678-9,Rad.Anatomic Location.Laterality,Left,LP3,A\n");
             if (extraPath is not null && !extraFirst) File(extraPath, "unrelated noncanonical content");

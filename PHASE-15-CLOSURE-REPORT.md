@@ -1,6 +1,6 @@
 # Phase 15 closure report — 2026-10-07
 
-**Phase 15 status: DONE.** Branch: `codex/phase15-diagnostic-orders-results`. Original baseline: clean `main` at `2181b40b54d0884fe1362563423b184f6c5b174d`; the implementation was recorded in `cc99169` and has since been merged according to the follow-up task. The real-package hotfix uses that Phase 15 commit on the same branch; its evidence is in section 13. No production database migration or deployment was performed during the hotfix.
+**Phase 15 status: DONE.** Branch: `codex/phase15-diagnostic-orders-results`. Original baseline: clean `main` at `2181b40b54d0884fe1362563423b184f6c5b174d`; the implementation was recorded in `cc99169` and has since been merged according to the follow-up task. Real-package hotfix evidence is in sections 13 and 14; the Arabic mapping hotfix continues from `10577dc` on the same branch. No production database migration or deployment was performed during the hotfixes.
 
 ## 1. Implementation summary
 
@@ -20,7 +20,7 @@ The approved task and resolved intake decisions are retained in [the Source-of-T
 
 ## 3. Files and modules
 
-**Original Phase 15 delivery: 69 files, 45 added and 24 changed.** Its path inventory is at the end of this report; the subsequent hotfix file list is in section 13.
+**Original Phase 15 delivery: 69 files, 45 added and 24 changed.** Its path inventory is at the end of this report; subsequent hotfix file lists are in sections 13 and 14.
 
 New domain code is in `src/Wasla/Wasla.Domain/Labs`, `Radiology` and `Diagnostics`. New application code is in `src/Wasla/Wasla.Application/Features/Diagnostics`, plus `Features/Governance/MedicalCatalogManagers.cs`. It includes contracts, access checks, capability policy, order/result handlers, queries, validators, offline LOINC parsing and transaction-aware private-file compensation.
 
@@ -166,7 +166,7 @@ The ZIP and any local extracted files were **not committed**. `_local-data/` is 
 | Parser | PASS | PASS |
 | Exact parsed concepts / grouped procedures | 47,977 | 7,016 |
 | ACTIVE / Doctor selectable on initial import | 43,465 | 6,941 |
-| Official Arabic names | 883 | 0 |
+| Official Arabic names (corrected in section 14) | 1,192 | 0 |
 | IsCommonOrder rows | 1,517 | 0 |
 | TRIAL | 2,568 | 2 |
 | DISCOURAGED | 1,182 | 73 |
@@ -175,7 +175,7 @@ The ZIP and any local extracted files were **not committed**. `_local-data/` is 
 | Persisted Staged records in disposable SQL Server DB | 47,977 | 7,016 |
 | Local preview elapsed seconds | 34.222 | 15.035 |
 
-Counts are measured output, not hard-coded expectations. Every parsed Lab row satisfies CLASSTYPE 1 and ORDER_OBS Order/Both. Non-active rows remain retained and non-selectable. The common value set supplies flags/ranking only; it does not replace the complete catalog. Missing official Arabic remains null, with no generated translation. Each real output row's code, name and status was checked against the canonical source fields. The authenticated previews used the unchanged multipart endpoints, committed reviewable batches and verified package SHA-256 plus paged change counts. They did not apply the full catalog or modify a production database.
+Counts are measured output, not hard-coded expectations. The previously reported Arabic count of 883 was invalid: it counted English values from the wrong variant column. Section 14 verifies the corrected count and null behavior against the localized source field. Every parsed Lab row satisfies CLASSTYPE 1 and ORDER_OBS Order/Both. Non-active rows remain retained and non-selectable. The common value set supplies flags/ranking only; it does not replace the complete catalog. Each real output row's code, name and status was checked against the canonical source fields. The authenticated previews used the unchanged multipart endpoints, committed reviewable batches and verified package SHA-256 plus paged change counts. They did not apply the full catalog or modify a production database.
 
 Radiology produces one procedure per LoincNumber, retains **49,621 original Part rows** and preserves their PartNumber/PartSequenceOrder plus original names. The 18 actual PartTypeName values are:
 
@@ -255,6 +255,47 @@ tests/Wasla.Tests.Integration/Phase15CatalogApiTests.cs
 tests/Wasla.Tests.Unit/Phase15LoincImportTests.cs
 tests/Wasla.Tests.Unit/Phase15RadiologyDomainTests.cs
 ```
+
+## 14. Arabic linguistic variant mapping hotfix — 2026-10-07
+
+### Root cause and mapping
+
+The extracted `AccessoryFiles/LinguisticVariants/arJO32LinguisticVariant.csv` and the same entry in the local official 2.83 ZIP were inspected before changing the parser. Their actual header is:
+
+```text
+LOINC_NUM,COMPONENT,PROPERTY,TIME_ASPCT,SYSTEM,SCALE_TYP,METHOD_TYP,CLASS,SHORTNAME,LONG_COMMON_NAME,RELATEDNAMES2,LinguisticVariantDisplayName,ConsumerName
+```
+
+The old parser preferred `LONG_COMMON_NAME`, which is English even in this Arabic variant, and overlooked `LinguisticVariantDisplayName`. It could therefore put English into `OfficialNameAr`. The corrected parser selects the first valid localized value from **`LinguisticVariantDisplayName` → `LONG_COMMON_NAME_AR` → `DisplayName`**, with case-insensitive headers. `LONG_COMMON_NAME` is never an Arabic fallback; the variant must expose a supported localized column. Empty or obviously nonlocalized values are skipped, and no valid candidate produces null. A candidate must contain an Arabic letter, but may also contain Latin gene names, abbreviations, numbers, units and symbols. Source text and formatting are preserved without translation or generation.
+
+### Real package and authenticated preview
+
+The corrected production parser was run against the existing ignored **`_local-data/Loinc_2.83.zip`**, with the same SHA-256 recorded in section 13. Lab parsing succeeds with **47,977 records**, source version **2.83**, and exactly **1,192 non-null official Arabic names**. Every Lab row's `OfficialNameAr` was compared with its official `LinguisticVariantDisplayName`, including nulls for absent/blank source values. All non-null values differ from the canonical English name. Code **100026-4** matches its official localized display value and retains the canonical `LoincTable/Loinc.csv` English name; code **62369-4** has a blank localized value and remains null. The variant's English base name and canonical English name differ for 100026-4; neither is used as Arabic. Real terminology values are retained only in ignored local evidence. Radiology was also rechecked: **7,016 procedures**, **0 official Arabic names**, with original Part metadata preserved.
+
+Authenticated **`POST /api/v1/admin/lab-catalog/imports/preview`** used that same ZIP with `sourceVersion=2.83` on a disposable SQL Server database. Result: **HTTP 200, Staged, 47,977 records**. The staged change for 100026-4 was queried through the existing changes endpoint; its `SourceDataJson.OfficialNameAr` equals the official localized field and differs from `NameEn`. The missing value for 62369-4 also remains null in persisted source JSON. Verification batch **`409c32f7-ad0e-4484-8ddc-0da8a84896d7`** was explicitly **discarded**, and the catalog still contained **0 rows**. **No real-package Apply was executed.** The fixture disposed its isolated database; no production database or earlier discarded batch was changed.
+
+### Permanent tests and verification
+
+Fourteen synthetic regression cases cover the official localized field with an English base name, preferred-field/alias priority, case-insensitive aliases, empty/whitespace/missing values, English-only values, Arabic digits/punctuation without letters, and mixed Arabic/Latin gene names, units and symbols. All fourteen failed against the old parser before the fix, then passed. Existing unit and API fixtures now put English in `LONG_COMMON_NAME` and synthetic Arabic in `LinguisticVariantDisplayName`; normal CI remains independent of the licensed ZIP.
+
+Final parser verification: **47 passed, 0 failed, 0 skipped**. Final focused Phase 15 verification: **80 unit + 35 integration + 4 architecture = 119 passed, 0 failed, 0 skipped**. Local-only verification: **2 real-package parser checks + 1 authenticated Lab preview/discard check passed, 0 failed, 0 skipped**; these are separate from solution totals.
+
+Final full solution regression: **210 unit + 151 integration + 20 architecture = 381 passed, 0 failed, 0 skipped**. Focused cases are included in that total. Final SQL fixture cleanup left **0 WaslaPhase13Tests databases**. Runner/TRX evidence uses the `phase15-arabic-parser`, `phase15-arabic-focused`, `phase15-arabic-regression`, `phase15-arabic-real-parser` and `phase15-arabic-real-preview` prefixes; expected pre-fix failures are retained separately as `phase15-arabic-red`.
+
+The default-output solution build initially failed because the running Wasla API/Visual Studio session locked its DLLs/PDBs. The same solution built successfully with output redirected to ignored `_local-data/phase15-arabic-build`: **0 warnings, 0 errors**. Verification commands use that output directory to preserve the running development session:
+
+```powershell
+dotnet build Wasla.sln --artifacts-path _local-data/phase15-arabic-build --verbosity minimal
+dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --no-restore --filter FullyQualifiedName~Phase15LoincImportTests --logger 'trx;LogFilePrefix=phase15-arabic-parser' --verbosity quiet
+$env:WASLA_SQLSERVER_CONNECTION_STRING = 'Server=.\SQLEXPRESS;Database=master;Integrated Security=true;TrustServerCertificate=true'
+dotnet test Wasla.sln --artifacts-path _local-data/phase15-arabic-build --no-build --no-restore --filter FullyQualifiedName~Phase15 --logger 'trx;LogFilePrefix=phase15-arabic-focused' --verbosity quiet
+dotnet test Wasla.sln --artifacts-path _local-data/phase15-arabic-build --no-build --no-restore --logger 'trx;LogFilePrefix=phase15-arabic-regression' --verbosity quiet
+$env:WASLA_LOINC_PACKAGE = (Resolve-Path -LiteralPath '_local-data/Loinc_2.83.zip').Path
+dotnet test _local-data/phase15-hotfix-verification/Phase15.RealPackageVerification.csproj --artifacts-path _local-data/phase15-arabic-build --filter FullyQualifiedName~Official_package_parses --logger 'trx;LogFilePrefix=phase15-arabic-real-parser' --verbosity quiet
+dotnet test _local-data/phase15-hotfix-verification/Phase15.RealPackageVerification.csproj --artifacts-path _local-data/phase15-arabic-build --no-build --no-restore --filter FullyQualifiedName~Official_arabic_lab_preview --logger 'trx;LogFilePrefix=phase15-arabic-real-preview' --verbosity quiet
+```
+
+Only five tracked files change for this hotfix: `LoincPackageParser.cs`, `Phase15LoincImportTests.cs`, `Phase15CatalogApiTests.cs`, this report and README's incorrect Arabic count/current verification summary. `_local-data/` remains ignored and untracked, with empty tracked-file/history checks. The official package was not copied, moved, committed or redistributed. No API/business contract, permission, lifecycle, apply/merge behavior, source-version rule, Lab filtering, selectability, active/inactive handling, clinical snapshot, attachment rule or migration changed. No commit, push or deployment was performed.
 
 ## Original delivery file inventory
 
