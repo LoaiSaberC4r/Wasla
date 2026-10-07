@@ -13,6 +13,7 @@ using Wasla.Domain.Families;
 using Wasla.Application.Features.Clinical;
 using Wasla.Application.Features.Medications;
 using Wasla.Application.Features.Governance;
+using Wasla.Application.Features.Diagnostics;
 
 namespace Wasla.Application;
 
@@ -29,6 +30,9 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(
             AssemblyReference.Assembly,
             includeInternalTypes: true);
+        // Wrap the transaction behavior so compensation observes failures after handler/idempotency saves or commit.
+        services.AddTransient<MediatR.IPipelineBehavior<DiagnosticResultCommand, BuildingBlock.Domain.Results.Result<DiagnosticResultMutationResponse>>, DiagnosticMediaCompensationBehavior>();
+        services.AddScoped<DiagnosticMediaCompensation>();
         services.AddBuildingBlockApplicationBehaviors();
         services.AddScoped<DoctorLifecycleService>();
         services.AddScoped<FamilyRelationshipWorkflowService>();
@@ -37,6 +41,8 @@ public static class DependencyInjection
         services.AddScoped<ReservationScheduleGuard>();
         services.AddScoped<TicketAccessService>();
         services.AddScoped<FollowUpWorkflow>();
+        services.AddScoped<MedicalCatalogManagerAccounts>();
+        services.AddScoped<DiagnosticAccess>();
         services.AddScoped<DrugCatalogManagerAccounts>();
         services.AddScoped<MedicationAccess>();
         services.AddScoped<MedicationIdempotency>();

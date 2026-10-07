@@ -6,7 +6,8 @@ public enum UserType
     Doctor = 2,
     Reception = 3,
     Patient = 4,
-    DrugCatalogManager = 5
+    DrugCatalogManager = 5,
+    MedicalCatalogManager = 6
 }
 
 public enum Gender

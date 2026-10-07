@@ -9,6 +9,7 @@ using Wasla.Application.Persistence;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Security;
 using Wasla.Application.Features.Medications;
+using Wasla.Application.Features.Diagnostics;
 
 namespace Wasla.Application.Features.Clinical;
 
@@ -90,7 +91,11 @@ internal static class ClinicalCapabilities
         var permissions = PermissionNames.All.Where(access.HasPermission).ToArray();
         var prescription = access.HasPermission(PermissionNames.PrescriptionsViewOwn) && d.Prescription is { } state
             ? PrescriptionCapabilities.For(state, new MedicationActor(access.ActorId, d.Doctor.Id, permissions), d.Status == EncounterStatus.InProgress) : null;
-        return d with { Prescription = prescription, Capabilities = For(d, access) };
+        return d with { Prescription = prescription, Capabilities = For(d, access),
+            LabRequestDraft = access.HasPermission(PermissionNames.LabRequestsViewOwn) ? DiagnosticCapabilities.Request(d.LabRequestDraft, permissions, "Lab") : null,
+            RadiologyRequestDraft = access.HasPermission(PermissionNames.RadiologyRequestsViewOwn) ? DiagnosticCapabilities.Request(d.RadiologyRequestDraft, permissions, "Radiology") : null,
+            LabRequestsSummary = access.HasPermission(PermissionNames.LabRequestsViewOwn) ? d.LabRequestsSummary : null,
+            RadiologyRequestsSummary = access.HasPermission(PermissionNames.RadiologyRequestsViewOwn) ? d.RadiologyRequestsSummary : null };
     }
     public static EncounterCapabilitiesResponse For(EncounterDetailsResponse d, ClinicalAccessService access)
     {
@@ -102,7 +107,9 @@ internal static class ClinicalCapabilities
             !draft && access.HasPermission(PermissionNames.MedicalEncountersAmendOwn),
             !draft && d.FollowUpEligibility is null && access.HasPermission(PermissionNames.FollowUpEligibilityCreateOwn),
             draft && access.HasPermission(PermissionNames.PrescriptionsManageOwnDraft),
-            draft && access.HasPermission(PermissionNames.PrescriptionsManageOwnDraft) && access.HasPermission(PermissionNames.DrugCatalogRequestsCreateOwn));
+            draft && access.HasPermission(PermissionNames.PrescriptionsManageOwnDraft) && access.HasPermission(PermissionNames.DrugCatalogRequestsCreateOwn),
+            draft && access.HasPermission(PermissionNames.LabRequestsManageOwnDraft), draft && access.HasPermission(PermissionNames.RadiologyRequestsManageOwnDraft),
+            !draft && access.HasPermission(PermissionNames.LabRequestsCreatePostVisitOwn), !draft && access.HasPermission(PermissionNames.RadiologyRequestsCreatePostVisitOwn));
     }
 }
 

@@ -7,6 +7,7 @@ public static class SystemRoleNames
     public const string Reception = "Reception";
     public const string Patient = "Patient";
     public const string DrugCatalogManager = "DrugCatalogManager";
+    public const string MedicalCatalogManager = "MedicalCatalogManager";
 }
 
 public static class SystemRoleIds
@@ -16,10 +17,77 @@ public static class SystemRoleIds
     public static readonly Guid Reception = Guid.Parse("10000000-0000-0000-0000-000000000003");
     public static readonly Guid Patient = Guid.Parse("10000000-0000-0000-0000-000000000004");
     public static readonly Guid DrugCatalogManager = Guid.Parse("10000000-0000-0000-0000-000000000005");
+    public static readonly Guid MedicalCatalogManager = Guid.Parse("10000000-0000-0000-0000-000000000006");
 }
 
 public static class PermissionNames
 {
+    public const string LabCatalogView = "LabCatalog.View";
+    public const string LabCatalogCreate = "LabCatalog.Create";
+    public const string LabCatalogUpdate = "LabCatalog.Update";
+    public const string LabCatalogActivate = "LabCatalog.Activate";
+    public const string LabCatalogDeactivate = "LabCatalog.Deactivate";
+    public const string LabCatalogMerge = "LabCatalog.Merge";
+    public const string LabCatalogImport = "LabCatalog.Import";
+    public const string LabCatalogImportHistory = "LabCatalog.ImportHistory";
+    public const string LabCatalogRequestsView = "LabCatalogRequests.View";
+    public const string LabCatalogRequestsReview = "LabCatalogRequests.Review";
+    public const string RadiologyCatalogView = "RadiologyCatalog.View";
+    public const string RadiologyCatalogCreate = "RadiologyCatalog.Create";
+    public const string RadiologyCatalogUpdate = "RadiologyCatalog.Update";
+    public const string RadiologyCatalogActivate = "RadiologyCatalog.Activate";
+    public const string RadiologyCatalogDeactivate = "RadiologyCatalog.Deactivate";
+    public const string RadiologyCatalogMerge = "RadiologyCatalog.Merge";
+    public const string RadiologyCatalogImport = "RadiologyCatalog.Import";
+    public const string RadiologyCatalogImportHistory = "RadiologyCatalog.ImportHistory";
+    public const string RadiologyCatalogRequestsView = "RadiologyCatalogRequests.View";
+    public const string RadiologyCatalogRequestsReview = "RadiologyCatalogRequests.Review";
+    public const string LabCatalogSearchActive = "LabCatalog.SearchActive";
+    public const string LabCatalogRequestsCreateOwn = "LabCatalogRequests.CreateOwn";
+    public const string LabCatalogRequestsViewOwn = "LabCatalogRequests.ViewOwn";
+    public const string LabCatalogRequestsUpdateOwn = "LabCatalogRequests.UpdateOwn";
+    public const string LabRequestsViewOwn = "LabRequests.ViewOwn";
+    public const string LabRequestsManageOwnDraft = "LabRequests.ManageOwnDraft";
+    public const string LabRequestsCreatePostVisitOwn = "LabRequests.CreatePostVisitOwn";
+    public const string LabRequestsCancelOwn = "LabRequests.CancelOwn";
+    public const string LabResultsViewOwn = "LabResults.ViewOwn";
+    public const string LabResultsUploadOwn = "LabResults.UploadOwn";
+    public const string LabResultsCorrectOwn = "LabResults.CorrectOwn";
+    public const string LabResultsVoidOwn = "LabResults.VoidOwn";
+    public const string LabResultSubmissionsViewOwn = "LabResultSubmissions.ViewOwn";
+    public const string LabResultSubmissionsReviewOwn = "LabResultSubmissions.ReviewOwn";
+    public const string RadiologyCatalogSearchActive = "RadiologyCatalog.SearchActive";
+    public const string RadiologyCatalogRequestsCreateOwn = "RadiologyCatalogRequests.CreateOwn";
+    public const string RadiologyCatalogRequestsViewOwn = "RadiologyCatalogRequests.ViewOwn";
+    public const string RadiologyCatalogRequestsUpdateOwn = "RadiologyCatalogRequests.UpdateOwn";
+    public const string RadiologyRequestsViewOwn = "RadiologyRequests.ViewOwn";
+    public const string RadiologyRequestsManageOwnDraft = "RadiologyRequests.ManageOwnDraft";
+    public const string RadiologyRequestsCreatePostVisitOwn = "RadiologyRequests.CreatePostVisitOwn";
+    public const string RadiologyRequestsCancelOwn = "RadiologyRequests.CancelOwn";
+    public const string RadiologyResultsViewOwn = "RadiologyResults.ViewOwn";
+    public const string RadiologyResultsUploadOwn = "RadiologyResults.UploadOwn";
+    public const string RadiologyResultsCorrectOwn = "RadiologyResults.CorrectOwn";
+    public const string RadiologyResultsVoidOwn = "RadiologyResults.VoidOwn";
+    public const string RadiologyResultSubmissionsViewOwn = "RadiologyResultSubmissions.ViewOwn";
+    public const string RadiologyResultSubmissionsReviewOwn = "RadiologyResultSubmissions.ReviewOwn";
+    public const string LabRequestsViewOwnIssued = "LabRequests.ViewOwnIssued";
+    public const string LabResultsViewOwnCurrent = "LabResults.ViewOwnCurrent";
+    public const string LabResultSubmissionsCreateOwn = "LabResultSubmissions.CreateOwn";
+    public const string LabResultSubmissionsWithdrawOwn = "LabResultSubmissions.WithdrawOwn";
+    public const string RadiologyRequestsViewOwnIssued = "RadiologyRequests.ViewOwnIssued";
+    public const string RadiologyResultsViewOwnCurrent = "RadiologyResults.ViewOwnCurrent";
+    public const string RadiologyResultSubmissionsCreateOwn = "RadiologyResultSubmissions.CreateOwn";
+    public const string RadiologyResultSubmissionsWithdrawOwn = "RadiologyResultSubmissions.WithdrawOwn";
+    public const string MedicalCatalogManagersViewAll = "MedicalCatalogManagers.ViewAll";
+    public const string MedicalCatalogManagersViewDetails = "MedicalCatalogManagers.ViewDetails";
+    public const string MedicalCatalogManagersCreate = "MedicalCatalogManagers.Create";
+    public const string MedicalCatalogManagersUpdate = "MedicalCatalogManagers.Update";
+    public const string MedicalCatalogManagersActivate = "MedicalCatalogManagers.Activate";
+    public const string MedicalCatalogManagersDeactivate = "MedicalCatalogManagers.Deactivate";
+    public static readonly IReadOnlyList<string> MedicalCatalogManagerDefaults = [LabCatalogView, LabCatalogCreate, LabCatalogUpdate, LabCatalogActivate, LabCatalogDeactivate, LabCatalogMerge, LabCatalogImport, LabCatalogImportHistory, LabCatalogRequestsView, LabCatalogRequestsReview, RadiologyCatalogView, RadiologyCatalogCreate, RadiologyCatalogUpdate, RadiologyCatalogActivate, RadiologyCatalogDeactivate, RadiologyCatalogMerge, RadiologyCatalogImport, RadiologyCatalogImportHistory, RadiologyCatalogRequestsView, RadiologyCatalogRequestsReview];
+    public static readonly IReadOnlyList<string> DiagnosticDoctorDefaults = [LabCatalogSearchActive, LabCatalogRequestsCreateOwn, LabCatalogRequestsViewOwn, LabCatalogRequestsUpdateOwn, LabRequestsViewOwn, LabRequestsManageOwnDraft, LabRequestsCreatePostVisitOwn, LabRequestsCancelOwn, LabResultsViewOwn, LabResultsUploadOwn, LabResultsCorrectOwn, LabResultsVoidOwn, LabResultSubmissionsViewOwn, LabResultSubmissionsReviewOwn, RadiologyCatalogSearchActive, RadiologyCatalogRequestsCreateOwn, RadiologyCatalogRequestsViewOwn, RadiologyCatalogRequestsUpdateOwn, RadiologyRequestsViewOwn, RadiologyRequestsManageOwnDraft, RadiologyRequestsCreatePostVisitOwn, RadiologyRequestsCancelOwn, RadiologyResultsViewOwn, RadiologyResultsUploadOwn, RadiologyResultsCorrectOwn, RadiologyResultsVoidOwn, RadiologyResultSubmissionsViewOwn, RadiologyResultSubmissionsReviewOwn];
+    public static readonly IReadOnlyList<string> DiagnosticPatientDefaults = [LabRequestsViewOwnIssued, LabResultsViewOwnCurrent, LabResultSubmissionsCreateOwn, LabResultSubmissionsViewOwn, LabResultSubmissionsWithdrawOwn, RadiologyRequestsViewOwnIssued, RadiologyResultsViewOwnCurrent, RadiologyResultSubmissionsCreateOwn, RadiologyResultSubmissionsViewOwn, RadiologyResultSubmissionsWithdrawOwn];
+
     public const string DrugCatalogView = "DrugCatalog.View";
     public const string DrugCatalogCreate = "DrugCatalog.Create";
     public const string DrugCatalogUpdate = "DrugCatalog.Update";
@@ -187,6 +255,12 @@ public static class PermissionNames
             DrugCatalogManagersUpdate,
             DrugCatalogManagersActivate,
             DrugCatalogManagersDeactivate,
+            MedicalCatalogManagersViewAll,
+            MedicalCatalogManagersViewDetails,
+            MedicalCatalogManagersCreate,
+            MedicalCatalogManagersUpdate,
+            MedicalCatalogManagersActivate,
+            MedicalCatalogManagersDeactivate,
         ],
         StringComparer.OrdinalIgnoreCase);
 
@@ -365,6 +439,68 @@ public static class PermissionNames
         DrugCatalogManagersUpdate,
         DrugCatalogManagersActivate,
         DrugCatalogManagersDeactivate,
+        LabCatalogView,
+        LabCatalogCreate,
+        LabCatalogUpdate,
+        LabCatalogActivate,
+        LabCatalogDeactivate,
+        LabCatalogMerge,
+        LabCatalogImport,
+        LabCatalogImportHistory,
+        LabCatalogRequestsView,
+        LabCatalogRequestsReview,
+        RadiologyCatalogView,
+        RadiologyCatalogCreate,
+        RadiologyCatalogUpdate,
+        RadiologyCatalogActivate,
+        RadiologyCatalogDeactivate,
+        RadiologyCatalogMerge,
+        RadiologyCatalogImport,
+        RadiologyCatalogImportHistory,
+        RadiologyCatalogRequestsView,
+        RadiologyCatalogRequestsReview,
+        LabCatalogSearchActive,
+        LabCatalogRequestsCreateOwn,
+        LabCatalogRequestsViewOwn,
+        LabCatalogRequestsUpdateOwn,
+        LabRequestsViewOwn,
+        LabRequestsManageOwnDraft,
+        LabRequestsCreatePostVisitOwn,
+        LabRequestsCancelOwn,
+        LabResultsViewOwn,
+        LabResultsUploadOwn,
+        LabResultsCorrectOwn,
+        LabResultsVoidOwn,
+        LabResultSubmissionsViewOwn,
+        LabResultSubmissionsReviewOwn,
+        RadiologyCatalogSearchActive,
+        RadiologyCatalogRequestsCreateOwn,
+        RadiologyCatalogRequestsViewOwn,
+        RadiologyCatalogRequestsUpdateOwn,
+        RadiologyRequestsViewOwn,
+        RadiologyRequestsManageOwnDraft,
+        RadiologyRequestsCreatePostVisitOwn,
+        RadiologyRequestsCancelOwn,
+        RadiologyResultsViewOwn,
+        RadiologyResultsUploadOwn,
+        RadiologyResultsCorrectOwn,
+        RadiologyResultsVoidOwn,
+        RadiologyResultSubmissionsViewOwn,
+        RadiologyResultSubmissionsReviewOwn,
+        LabRequestsViewOwnIssued,
+        LabResultsViewOwnCurrent,
+        LabResultSubmissionsCreateOwn,
+        LabResultSubmissionsWithdrawOwn,
+        RadiologyRequestsViewOwnIssued,
+        RadiologyResultsViewOwnCurrent,
+        RadiologyResultSubmissionsCreateOwn,
+        RadiologyResultSubmissionsWithdrawOwn,
+        MedicalCatalogManagersViewAll,
+        MedicalCatalogManagersViewDetails,
+        MedicalCatalogManagersCreate,
+        MedicalCatalogManagersUpdate,
+        MedicalCatalogManagersActivate,
+        MedicalCatalogManagersDeactivate,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

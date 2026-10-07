@@ -30,6 +30,8 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
     private const string Password = "Phase13TestPass123!";
     private readonly SqliteConnection? _sqlite;
     private readonly string? _sqlConnection;
+    private readonly string _medicalMediaRoot = Path.Combine(Path.GetTempPath(), "WaslaClinicalTests_" + Guid.NewGuid().ToString("N"));
+    internal string MedicalMediaRoot => _medicalMediaRoot;
     public Guid PracticeId { get; } = Guid.NewGuid();
     public Guid OtherPracticeId { get; } = Guid.NewGuid();
     public Guid DoctorId { get; private set; }
@@ -81,6 +83,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
             ["DatabaseInitialization:ApplyMigrationsOnStartup"] = "false",
             ["DatabaseInitialization:ApplySeedingOnStartup"] = "false",
             ["EmailOutbox:Enabled"] = "false",
+            ["MediaStorage:RootPath"] = _medicalMediaRoot,
             ["RootSuperAdmin:UserName"] = "root", ["RootSuperAdmin:Email"] = "root@example.test",
             ["RootSuperAdmin:NameAr"] = "المشرف", ["RootSuperAdmin:Password"] = Password
         }));
@@ -241,6 +244,12 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
         }
         await base.DisposeAsync();
         if (_sqlite is not null) await _sqlite.DisposeAsync();
+        var resolvedMediaRoot = Path.GetFullPath(_medicalMediaRoot);
+        if (!string.Equals(resolvedMediaRoot, _medicalMediaRoot, StringComparison.OrdinalIgnoreCase) ||
+            !resolvedMediaRoot.StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) ||
+            !Path.GetFileName(resolvedMediaRoot).StartsWith("WaslaClinicalTests_", StringComparison.Ordinal))
+            throw new InvalidOperationException("Unexpected test media directory.");
+        if (Directory.Exists(resolvedMediaRoot)) Directory.Delete(resolvedMediaRoot, recursive: true);
     }
 }
 

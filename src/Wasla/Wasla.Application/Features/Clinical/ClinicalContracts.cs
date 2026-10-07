@@ -4,18 +4,21 @@ using Wasla.Application.Persistence;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Medications;
 using Wasla.Application.Features.Medications;
+using Wasla.Application.Features.Diagnostics;
 
 namespace Wasla.Application.Features.Clinical;
 
 public sealed record ClinicalPartyResponse(Guid Id, string NameAr, string? NameEn);
 public sealed record DiagnosisResponse(Guid DiagnosisId, DiagnosisType Type, string DisplayText, string? Notes);
 public sealed record EncounterCapabilitiesResponse(bool CanEditClinicalNotes, bool CanManageDiagnoses,
-    bool CanComplete, bool CanAmend, bool CanCreateFollowUpEligibility, bool CanManagePrescription = false, bool CanRequestNewMedication = false);
+    bool CanComplete, bool CanAmend, bool CanCreateFollowUpEligibility, bool CanManagePrescription = false, bool CanRequestNewMedication = false, bool CanManageLabRequest = false, bool CanManageRadiologyRequest = false, bool CanCreatePostVisitLabRequest = false, bool CanCreatePostVisitRadiologyRequest = false);
 public sealed record EncounterDetailsResponse(Guid EncounterId, Guid TicketId, ClinicalPartyResponse Doctor,
     ClinicalPartyResponse Practice, ClinicalPartyResponse Patient, EncounterStatus Status, DateTime StartedAtUtc,
     DateTime? CompletedAtUtc, string? ClinicalNotes, IReadOnlyList<DiagnosisResponse> Diagnoses,
     FollowUpEligibilityResponse? FollowUpEligibility, EncounterCapabilitiesResponse Capabilities, string RowVersion, PrescriptionStateResponse? Prescription = null,
-    IReadOnlyList<PrescriptionCompletionBlocker>? CompletionBlockers = null);
+    IReadOnlyList<PrescriptionCompletionBlocker>? CompletionBlockers = null,
+    DiagnosticRequestStateResponse? LabRequestDraft = null, DiagnosticRequestStateResponse? RadiologyRequestDraft = null,
+    IReadOnlyList<DiagnosticRequestSummary>? LabRequestsSummary = null, IReadOnlyList<DiagnosticRequestSummary>? RadiologyRequestsSummary = null);
 public sealed record PatientEncounterDetailsResponse(Guid EncounterId, Guid TicketId, ClinicalPartyResponse Doctor,
     ClinicalPartyResponse Practice, DateTime StartedAtUtc, DateTime CompletedAtUtc,
     IReadOnlyList<DiagnosisResponse> CurrentActiveDiagnoses, FollowUpEligibilityResponse? FollowUpEligibility);

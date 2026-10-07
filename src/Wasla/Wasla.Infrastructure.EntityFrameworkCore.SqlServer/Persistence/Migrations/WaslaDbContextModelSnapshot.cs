@@ -1083,6 +1083,939 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.ToTable("FamilyRelationshipRequestHistories", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogImportBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AppliedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("AppliedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DiscardedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DiscardedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FileSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SourceVersion")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalRecords")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadedAtUtc");
+
+                    b.ToTable("LabCatalogImportBatches", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogImportRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Disposition")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ImportBatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LoincCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("MatchedCatalogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("MatchedRowVersion")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("SourceDataJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportBatchId", "Disposition");
+
+                    b.HasIndex("ImportBatchId", "LoincCode")
+                        .IsUnique();
+
+                    b.ToTable("LabCatalogImportRecords", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CanonicalCatalogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CatalogClarificationNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ReasonType")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("RequestedByDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReviewReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Specimen")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CanonicalCatalogId");
+
+                    b.HasIndex("RequestedByDoctorId", "Status");
+
+                    b.ToTable("LabCatalogRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogRequestHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("LabCatalogRequestHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MedicalEncounterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Origin")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PatientInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PostVisitReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("RequestedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicalEncounterId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_LabRequests_EncounterDraft")
+                        .HasFilter("[Status] = 1");
+
+                    b.HasIndex("RequestedAtUtc");
+
+                    b.HasIndex("DoctorId", "Status");
+
+                    b.HasIndex("DoctorPracticeId", "Status");
+
+                    b.HasIndex("PatientId", "Status");
+
+                    b.ToTable("LabRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_LabRequests_PostVisit", "[Origin] = 1 OR ([PostVisitReason] IS NOT NULL AND [Status] <> 1)");
+
+                            t.HasCheckConstraint("CK_LabRequests_State", "[Status] IN (1,2,3,4,5) AND [Origin] IN (1,2)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabRequestHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("LabRequestHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabRequestItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AnatomicLocationSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CancelledByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CatalogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CatalogRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DoctorInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("LateralitySnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LoincCodeSnapshot")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ModalitySnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameArSnapshot")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NameEnSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogId");
+
+                    b.HasIndex("CatalogRequestId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("RequestId", "CatalogId")
+                        .IsUnique()
+                        .HasFilter("[CatalogId] IS NOT NULL");
+
+                    b.ToTable("LabRequestItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_LabRequestItems_Source", "([Source] = 1 AND [CatalogId] IS NOT NULL AND [CatalogRequestId] IS NULL) OR ([Source] = 2 AND [CatalogId] IS NULL AND [CatalogRequestId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_LabRequestItems_State", "[Status] IN (1,2,3)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AcceptedSubmissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentVersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedSubmissionId")
+                        .IsUnique()
+                        .HasFilter("[AcceptedSubmissionId] IS NOT NULL");
+
+                    b.HasIndex("DoctorPracticeId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("DoctorId", "CreatedAtUtc");
+
+                    b.HasIndex("PatientId", "CreatedAtUtc");
+
+                    b.ToTable("LabResults", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("PrivateMediaKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("ResultVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResultVersionId");
+
+                    b.ToTable("LabResultAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultCoverage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResultVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestItemId");
+
+                    b.HasIndex("ResultVersionId", "RequestItemId")
+                        .IsUnique();
+
+                    b.ToTable("LabResultCoverages", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("LabResultHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CorrectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ExternalProviderName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("ExternalReportDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("OriginallyUploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OriginallyUploadedBy")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("OriginallyUploadedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResultId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ReviewedByDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("VoidedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResultId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_LabResultVersions_Current")
+                        .HasFilter("[Status] = 1");
+
+                    b.HasIndex("ResultId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("LabResultVersions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_LabResultVersions_State", "[Status] IN (1,2,3) AND [VersionNumber] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabTestCatalog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AliasesAr")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("AliasesEn")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("AttributesJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Component")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayNameAr")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DisplayNameEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ExternalStatus")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("InternalNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsCommonOrder")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLocallyDeactivated")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastSeenAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LoincCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("MergedIntoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NormalizedSearch")
+                        .IsRequired()
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OfficialNameAr")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("OfficialNameEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("ShortName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceDataJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("SourceVersion")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoincCode")
+                        .IsUnique()
+                        .HasDatabaseName("UX_LabTestCatalog_Loinc")
+                        .HasFilter("[LoincCode] IS NOT NULL");
+
+                    b.HasIndex("MergedIntoId");
+
+                    b.HasIndex("Status", "IsCommonOrder");
+
+                    b.HasIndex("Status", "Source");
+
+                    b.ToTable("LabTestCatalogs", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_LabTestCatalog_Merge", "([Status] = 3 AND [MergedIntoId] IS NOT NULL AND [MergedIntoId] <> [Id]) OR ([Status] IN (1,2) AND [MergedIntoId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_LabTestCatalog_Source", "([Source] = 1 AND [LoincCode] IS NOT NULL) OR ([Source] = 2 AND [LoincCode] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabTestCatalogHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("LabTestCatalogHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.PatientLabResultSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AcceptedResultId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExternalProviderName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("ExternalReportDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PatientNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PatientVisibleReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedResultId");
+
+                    b.HasIndex("DoctorPracticeId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("PatientId", "SubmittedAtUtc");
+
+                    b.HasIndex("DoctorId", "Status", "SubmittedAtUtc");
+
+                    b.ToTable("PatientLabResultSubmissions", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.PatientLabResultSubmissionAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("PrivateMediaKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubmissionId");
+
+                    b.ToTable("PatientLabResultSubmissionAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.PatientLabResultSubmissionHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("PatientLabResultSubmissionHistories", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Medications.DrugCatalog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3087,6 +4020,939 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.ToTable("ReceptionPracticeAssignmentPermissions", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Radiology.PatientRadiologyResultSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AcceptedResultId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExternalProviderName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("ExternalReportDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PatientNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PatientVisibleReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedResultId");
+
+                    b.HasIndex("DoctorPracticeId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("PatientId", "SubmittedAtUtc");
+
+                    b.HasIndex("DoctorId", "Status", "SubmittedAtUtc");
+
+                    b.ToTable("PatientRadiologyResultSubmissions", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.PatientRadiologyResultSubmissionAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("PrivateMediaKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubmissionId");
+
+                    b.ToTable("PatientRadiologyResultSubmissionAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.PatientRadiologyResultSubmissionHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("PatientRadiologyResultSubmissionHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogImportBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AppliedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("AppliedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DiscardedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DiscardedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FileSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SourceVersion")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalRecords")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadedAtUtc");
+
+                    b.ToTable("RadiologyCatalogImportBatches", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogImportRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Disposition")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ImportBatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LoincCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("MatchedCatalogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("MatchedRowVersion")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("SourceDataJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportBatchId", "Disposition");
+
+                    b.HasIndex("ImportBatchId", "LoincCode")
+                        .IsUnique();
+
+                    b.ToTable("RadiologyCatalogImportRecords", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CanonicalCatalogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CatalogClarificationNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ReasonType")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("RequestedByDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReviewReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Specimen")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CanonicalCatalogId");
+
+                    b.HasIndex("RequestedByDoctorId", "Status");
+
+                    b.ToTable("RadiologyCatalogRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogRequestHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("RadiologyCatalogRequestHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyProcedureCatalog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AliasesAr")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("AliasesEn")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("AttributesJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Component")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayNameAr")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DisplayNameEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ExternalStatus")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("InternalNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsCommonOrder")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLocallyDeactivated")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastSeenAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LoincCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("MergedIntoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NormalizedSearch")
+                        .IsRequired()
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OfficialNameAr")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("OfficialNameEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("ShortName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceDataJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("SourceVersion")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoincCode")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RadiologyProcedureCatalog_Loinc")
+                        .HasFilter("[LoincCode] IS NOT NULL");
+
+                    b.HasIndex("MergedIntoId");
+
+                    b.HasIndex("Status", "IsCommonOrder");
+
+                    b.HasIndex("Status", "Source");
+
+                    b.ToTable("RadiologyProcedureCatalogs", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RadiologyProcedureCatalog_Merge", "([Status] = 3 AND [MergedIntoId] IS NOT NULL AND [MergedIntoId] <> [Id]) OR ([Status] IN (1,2) AND [MergedIntoId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_RadiologyProcedureCatalog_Source", "([Source] = 1 AND [LoincCode] IS NOT NULL) OR ([Source] = 2 AND [LoincCode] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyProcedureCatalogHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("RadiologyProcedureCatalogHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MedicalEncounterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Origin")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PatientInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PostVisitReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("RequestedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicalEncounterId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RadiologyRequests_EncounterDraft")
+                        .HasFilter("[Status] = 1");
+
+                    b.HasIndex("RequestedAtUtc");
+
+                    b.HasIndex("DoctorId", "Status");
+
+                    b.HasIndex("DoctorPracticeId", "Status");
+
+                    b.HasIndex("PatientId", "Status");
+
+                    b.ToTable("RadiologyRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RadiologyRequests_PostVisit", "[Origin] = 1 OR ([PostVisitReason] IS NOT NULL AND [Status] <> 1)");
+
+                            t.HasCheckConstraint("CK_RadiologyRequests_State", "[Status] IN (1,2,3,4,5) AND [Origin] IN (1,2)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyRequestHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("RadiologyRequestHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyRequestItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AnatomicLocationSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CancelledByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CatalogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CatalogRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DoctorInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("LateralitySnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LoincCodeSnapshot")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ModalitySnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameArSnapshot")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NameEnSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogId");
+
+                    b.HasIndex("CatalogRequestId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("RequestId", "CatalogId")
+                        .IsUnique()
+                        .HasFilter("[CatalogId] IS NOT NULL");
+
+                    b.ToTable("RadiologyRequestItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RadiologyRequestItems_Source", "([Source] = 1 AND [CatalogId] IS NOT NULL AND [CatalogRequestId] IS NULL) OR ([Source] = 2 AND [CatalogId] IS NULL AND [CatalogRequestId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_RadiologyRequestItems_State", "[Status] IN (1,2,3)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AcceptedSubmissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentVersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedSubmissionId")
+                        .IsUnique()
+                        .HasFilter("[AcceptedSubmissionId] IS NOT NULL");
+
+                    b.HasIndex("DoctorPracticeId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("DoctorId", "CreatedAtUtc");
+
+                    b.HasIndex("PatientId", "CreatedAtUtc");
+
+                    b.ToTable("RadiologyResults", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("PrivateMediaKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("ResultVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResultVersionId");
+
+                    b.ToTable("RadiologyResultAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultCoverage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResultVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestItemId");
+
+                    b.HasIndex("ResultVersionId", "RequestItemId")
+                        .IsUnique();
+
+                    b.ToTable("RadiologyResultCoverages", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "OccurredAtUtc");
+
+                    b.ToTable("RadiologyResultHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CorrectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ExternalProviderName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("ExternalReportDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("OriginallyUploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OriginallyUploadedBy")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("OriginallyUploadedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResultId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ReviewedByDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("VoidedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResultId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RadiologyResultVersions_Current")
+                        .HasFilter("[Status] = 1");
+
+                    b.HasIndex("ResultId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("RadiologyResultVersions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RadiologyResultVersions_State", "[Status] IN (1,2,3) AND [VersionNumber] > 0");
+                        });
+                });
+
             modelBuilder.Entity("Wasla.Domain.ReferenceData.Area", b =>
                 {
                     b.Property<int>("Id")
@@ -4897,6 +6763,184 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogImportRecord", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabCatalogImportBatch", null)
+                        .WithMany("Records")
+                        .HasForeignKey("ImportBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogRequest", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabTestCatalog", null)
+                        .WithMany()
+                        .HasForeignKey("CanonicalCatalogId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogRequestHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabCatalogRequest", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabRequest", b =>
+                {
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Clinical.MedicalEncounter", null)
+                        .WithMany()
+                        .HasForeignKey("MedicalEncounterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabRequestItem", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabTestCatalog", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Labs.LabCatalogRequest", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Labs.LabRequest", null)
+                        .WithMany("Items")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResult", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultAttachment", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabResultVersion", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("ResultVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultCoverage", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabRequestItem", null)
+                        .WithMany()
+                        .HasForeignKey("RequestItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Labs.LabResultVersion", null)
+                        .WithMany("Coverage")
+                        .HasForeignKey("ResultVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabResult", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultVersion", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabResult", null)
+                        .WithMany("Versions")
+                        .HasForeignKey("ResultId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabTestCatalog", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabTestCatalog", null)
+                        .WithMany()
+                        .HasForeignKey("MergedIntoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabTestCatalogHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabTestCatalog", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.PatientLabResultSubmission", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.LabResult", null)
+                        .WithMany()
+                        .HasForeignKey("AcceptedResultId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Labs.LabRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.PatientLabResultSubmissionAttachment", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.PatientLabResultSubmission", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("SubmissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.PatientLabResultSubmissionHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Labs.PatientLabResultSubmission", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.Medications.DrugCatalog", b =>
                 {
                     b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
@@ -5513,6 +7557,184 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Radiology.PatientRadiologyResultSubmission", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyResult", null)
+                        .WithMany()
+                        .HasForeignKey("AcceptedResultId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.PatientRadiologyResultSubmissionAttachment", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.PatientRadiologyResultSubmission", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("SubmissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.PatientRadiologyResultSubmissionHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.PatientRadiologyResultSubmission", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogImportRecord", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyCatalogImportBatch", null)
+                        .WithMany("Records")
+                        .HasForeignKey("ImportBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogRequest", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyProcedureCatalog", null)
+                        .WithMany()
+                        .HasForeignKey("CanonicalCatalogId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogRequestHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyCatalogRequest", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyProcedureCatalog", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyProcedureCatalog", null)
+                        .WithMany()
+                        .HasForeignKey("MergedIntoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyProcedureCatalogHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyProcedureCatalog", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyRequest", b =>
+                {
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Clinical.MedicalEncounter", null)
+                        .WithMany()
+                        .HasForeignKey("MedicalEncounterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyRequestItem", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyProcedureCatalog", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyCatalogRequest", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyRequest", null)
+                        .WithMany("Items")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResult", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultAttachment", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyResultVersion", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("ResultVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultCoverage", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyRequestItem", null)
+                        .WithMany()
+                        .HasForeignKey("RequestItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyResultVersion", null)
+                        .WithMany("Coverage")
+                        .HasForeignKey("ResultVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyResult", null)
+                        .WithMany("History")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultVersion", b =>
+                {
+                    b.HasOne("Wasla.Domain.Radiology.RadiologyResult", null)
+                        .WithMany("Versions")
+                        .HasForeignKey("ResultId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.ReferenceData.Area", b =>
                 {
                     b.HasOne("Wasla.Domain.ReferenceData.City", "City")
@@ -5854,6 +8076,47 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Navigation("Members");
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogImportBatch", b =>
+                {
+                    b.Navigation("Records");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogRequest", b =>
+                {
+                    b.Navigation("History");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabRequest", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResult", b =>
+                {
+                    b.Navigation("History");
+
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabResultVersion", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Coverage");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.LabTestCatalog", b =>
+                {
+                    b.Navigation("History");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Labs.PatientLabResultSubmission", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("History");
+                });
+
             modelBuilder.Entity("Wasla.Domain.Medications.DrugCatalog", b =>
                 {
                     b.Navigation("History");
@@ -5889,6 +8152,47 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
             modelBuilder.Entity("Wasla.Domain.Payments.Refund", b =>
                 {
                     b.Navigation("CorrectionHistory");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.PatientRadiologyResultSubmission", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("History");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogImportBatch", b =>
+                {
+                    b.Navigation("Records");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyCatalogRequest", b =>
+                {
+                    b.Navigation("History");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyProcedureCatalog", b =>
+                {
+                    b.Navigation("History");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyRequest", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResult", b =>
+                {
+                    b.Navigation("History");
+
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Radiology.RadiologyResultVersion", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Coverage");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Reservations.Reservation", b =>

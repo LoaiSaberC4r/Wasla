@@ -13,6 +13,10 @@ using Wasla.Domain.Practices;
 using Wasla.Application.Features.Clinical;
 using Wasla.Application.Features.Medications;
 using Wasla.Domain.Medications;
+using Wasla.Domain.Labs;
+using Wasla.Domain.Radiology;
+using Wasla.Domain.Diagnostics;
+using Wasla.Application.Features.Diagnostics;
 
 namespace Wasla.Application.Features.Tickets.CompleteTicket;
 
@@ -22,7 +26,9 @@ public sealed record CompleteTicketCommand(
     string TicketRowVersion,
     string EncounterRowVersion,
     string IdempotencyKey,
-    string? PrescriptionRowVersion = null)
+    string? PrescriptionRowVersion = null,
+    string? LabRequestRowVersion = null,
+    string? RadiologyRequestRowVersion = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CompleteTicketCommandValidator : AbstractValidator<CompleteTicketCommand>
@@ -84,7 +90,7 @@ internal sealed class CompleteTicketCommandHandler(
             actor.Value.ApplicationUserId,
             "CompleteTicket",
             key.Value,
-            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion),
+            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)
@@ -114,7 +120,17 @@ internal sealed class CompleteTicketCommandHandler(
         if (prescription is not null && !TicketRowVersion.Matches(prescription.RowVersion, request.PrescriptionRowVersion ?? string.Empty) ||
             prescription is null && !string.IsNullOrWhiteSpace(request.PrescriptionRowVersion))
             return Result<TicketDetailsResponse>.Fail(MedicationErrors.Conflict("Prescription.ConcurrencyConflict"));
+        await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase14:Phase15:LabOrder", encounter.Id.ToString("N"), cancellationToken);
+        await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase14:Phase15:RadiologyOrder", encounter.Id.ToString("N"), cancellationToken);
+        var lab = await unitOfWork.WriteRepository<LabRequest>().FirstOrDefaultAsync(new DiagnosticForUpdate<LabRequest>(r => r.MedicalEncounterId == encounter.Id && r.Status == DiagnosticRequestStatus.Draft, r => r.Items), cancellationToken);
+        var radiology = await unitOfWork.WriteRepository<RadiologyRequest>().FirstOrDefaultAsync(new DiagnosticForUpdate<RadiologyRequest>(r => r.MedicalEncounterId == encounter.Id && r.Status == DiagnosticRequestStatus.Draft, r => r.Items), cancellationToken);
+        if (lab is not null && !TicketRowVersion.Matches(lab.RowVersion, request.LabRequestRowVersion ?? string.Empty) || lab is null && !string.IsNullOrWhiteSpace(request.LabRequestRowVersion))
+            return Result<TicketDetailsResponse>.Fail(DiagnosticErrors.Conflict("LabRequest.ConcurrencyConflict"));
+        if (radiology is not null && !TicketRowVersion.Matches(radiology.RowVersion, request.RadiologyRequestRowVersion ?? string.Empty) || radiology is null && !string.IsNullOrWhiteSpace(request.RadiologyRequestRowVersion))
+            return Result<TicketDetailsResponse>.Fail(DiagnosticErrors.Conflict("RadiologyRequest.ConcurrencyConflict"));
         var validationErrors = new List<Error>();
+        if (lab is not null && lab.Items.Count == 0) validationErrors.Add(DiagnosticErrors.Validation("LabRequest.Empty"));
+        if (radiology is not null && radiology.Items.Count == 0) validationErrors.Add(DiagnosticErrors.Validation("RadiologyRequest.Empty"));
         if (prescription is not null) validationErrors.AddRange(prescription.FinalizationErrors());
         var clinicalCompletion = encounter.ValidateCompletion(ticket);
         if (clinicalCompletion.IsFailure) validationErrors.AddRange(clinicalCompletion.Errors);
@@ -124,6 +140,16 @@ internal sealed class CompleteTicketCommandHandler(
             // Validation and all three lifecycle transitions commit in the existing transaction.
             var finalized = prescription.FinalizeInitial(encounter, actor.Value.ApplicationUserId, nowUtc);
             if (finalized.IsFailure) return Result<TicketDetailsResponse>.Fail(finalized.Errors);
+        }
+        if (lab is not null)
+        {
+            var issued = lab.Publish(actor.Value.ApplicationUserId, nowUtc);
+            if (issued.IsFailure) return Result<TicketDetailsResponse>.Fail(issued.Errors);
+        }
+        if (radiology is not null)
+        {
+            var issued = radiology.Publish(actor.Value.ApplicationUserId, nowUtc);
+            if (issued.IsFailure) return Result<TicketDetailsResponse>.Fail(issued.Errors);
         }
         var encounterCompleted = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc);
         if (encounterCompleted.IsFailure) return Result<TicketDetailsResponse>.Fail(encounterCompleted.Errors);

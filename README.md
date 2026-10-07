@@ -10,7 +10,7 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Phase 14 — Drug Catalog & Prescriptions — DONE
+**Current Stage:** Phase 15 — Diagnostic Orders & Results — DONE
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root
@@ -39,6 +39,23 @@ prescriptions with drafts and immutable versions, correction/discard/void,
 patient-owned completed outputs, and atomic prescription finalization during
 Complete Visit. Catalog search is server-side; missing medication can be
 requested and added in one call without waiting for catalog review.
+
+Phase 15 adds Root-managed MedicalCatalogManager accounts, separate LOINC Lab
+and LOINC/RSNA Radiology catalogs with reviewed offline imports, missing-catalog
+request review, encounter drafts and post-visit diagnostic orders, and atomic
+publication during Complete Visit. Patients submit their own private medical
+documents for the requesting Doctor to review; only Doctor acceptance or direct
+recording creates an official result. Document results can cover multiple items
+and support immutable correction/void history and scoped private downloads.
+
+Final Phase 15 verification: **174 unit, 147 integration and 20 architecture
+tests passed (341 total; zero failures/skips)**, including **79 focused Phase 15
+tests**; the solution builds with **zero warnings/errors**. SQL Server tests
+verify concurrency, transaction rollback and private-file compensation.
+[API changes](PHASE-15-API-CHANGES.md), [closure report](PHASE-15-CLOSURE-REPORT.md),
+[source-of-truth addendum](SOURCE-OF-TRUTH-PHASE-15-ADDENDUM.md) and
+[terminology source/license notice](LOINC-SOURCE-NOTICE.md) record the contracts,
+decisions, actual verification and full-release import limitations.
 
 Phase 14 frontend contracts, decisions and verification (130 unit, 116
 integration and 16 architecture tests passed; zero build warnings/errors):
@@ -129,6 +146,12 @@ A platform-global patient profile that is not owned by one Doctor and can accumu
 A Root-managed platform account that maintains medication reference data,
 reviews offline imports and Doctor medication requests, and has no access to
 patient clinical records or prescriptions.
+
+### MedicalCatalogManager
+
+A Root-managed platform account that maintains Lab and Radiology reference
+catalogs, reviews offline LOINC/RSNA imports and Doctor catalog requests, and has
+no authority over patient diagnostic orders/results or medication reference data.
 
 ---
 
@@ -257,6 +280,8 @@ The initial system roles are:
 - `Doctor`
 - `Reception`
 - `Patient`
+- `DrugCatalogManager`
+- `MedicalCatalogManager`
 
 Roles are permission bundles. Business authorization should prefer granular permissions and explicit scope validation over role-only checks.
 

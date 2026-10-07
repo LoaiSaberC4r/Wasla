@@ -106,7 +106,8 @@ internal sealed class WaslaSecuritySeeder(
             (SystemRoleIds.Doctor, SystemRoleNames.Doctor),
             (SystemRoleIds.Reception, SystemRoleNames.Reception),
             (SystemRoleIds.Patient, SystemRoleNames.Patient),
-            (SystemRoleIds.DrugCatalogManager, SystemRoleNames.DrugCatalogManager)
+            (SystemRoleIds.DrugCatalogManager, SystemRoleNames.DrugCatalogManager),
+            (SystemRoleIds.MedicalCatalogManager, SystemRoleNames.MedicalCatalogManager)
         };
         foreach (var (id, name) in roles)
         {
@@ -162,6 +163,7 @@ internal sealed class WaslaSecuritySeeder(
         var mappings = new Dictionary<Guid, IReadOnlyList<string>>
         {
             [SystemRoleIds.DrugCatalogManager] = PermissionNames.DrugCatalogManagerDefaults,
+            [SystemRoleIds.MedicalCatalogManager] = PermissionNames.MedicalCatalogManagerDefaults,
             [SystemRoleIds.SuperAdmin] =
             [
                 PermissionNames.DoctorsViewAll,
@@ -311,6 +313,8 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.FollowUpEligibilityViewOwn
             ]
         };
+        mappings[SystemRoleIds.Doctor] = mappings[SystemRoleIds.Doctor].Concat(PermissionNames.DiagnosticDoctorDefaults).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(PermissionNames.DiagnosticPatientDefaults).ToArray();
         foreach (var (roleId, permissionNames) in mappings)
         {
             foreach (var permissionName in permissionNames)

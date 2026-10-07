@@ -290,6 +290,8 @@ public sealed class EncounterAuditEvent : Entity<Guid>
     public DateTime OccurredAtUtc { get; private set; }
     public static EncounterAuditEvent RecordRead(Guid encounterId, Guid actor, DateTime nowUtc)
         => Create(encounterId, "ClinicalRead", null, actor, nowUtc);
+    public static EncounterAuditEvent RecordDiagnosticRead(Guid encounterId, string action, Guid targetId, Guid actor, DateTime nowUtc)
+        => Create(encounterId, action, targetId, actor, nowUtc);
     internal static EncounterAuditEvent Create(Guid encounterId, string action, Guid? targetId, Guid actor, DateTime nowUtc)
         => new() { Id = Guid.NewGuid(), MedicalEncounterId = encounterId, Action = action,
             TargetEntityId = targetId, ActorApplicationUserId = actor, OccurredAtUtc = nowUtc };

@@ -3,11 +3,13 @@ using BuildingBlock.Application.Time;
 using Wasla.Application.Features.Clinical;
 using Wasla.Domain.Clinical;
 using Wasla.Application.Features.Medications;
+using Wasla.Application.Features.Diagnostics;
+using Wasla.Domain.Diagnostics;
 using Wasla.Domain.Medications;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
-internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider clock, IMedicationReadService medications) : IClinicalReadService
+internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider clock, IMedicationReadService medications, IDiagnosticReadService diagnostics) : IClinicalReadService
 {
     public async Task<ClinicalPage<EncounterSummaryResponse>> ListEncountersAsync(Guid? doctorId, Guid? practiceId,
         Guid? patientId, EncounterStatus? status, DateTime? fromUtc, DateTime? throughUtc, string? search,
@@ -60,9 +62,15 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
         var blockers = (prescription?.CompletionBlockers ?? []).ToList();
         if (row.Status == EncounterStatus.InProgress && string.IsNullOrWhiteSpace(row.ClinicalNotes))
             blockers.Add(new("MedicalEncounter.ClinicalNotesRequired", null, "clinicalNotes"));
+        var labPage = (ClinicalPage<DiagnosticRequestSummary>)(await diagnostics.ReadAsync(new(DiagnosticKind.Lab, DiagnosticReadResource.Requests, Filter: new(EncounterId: row.Id, PageSize: 100)), doctorId, [], ct))!;
+        var radioPage = (ClinicalPage<DiagnosticRequestSummary>)(await diagnostics.ReadAsync(new(DiagnosticKind.Radiology, DiagnosticReadResource.Requests, Filter: new(EncounterId: row.Id, PageSize: 100)), doctorId, [], ct))!;
+        var labId = labPage.Items.FirstOrDefault(x => x.Status == DiagnosticRequestStatus.Draft)?.RequestId;
+        var radioId = radioPage.Items.FirstOrDefault(x => x.Status == DiagnosticRequestStatus.Draft)?.RequestId;
+        var lab = labId is { } l ? await diagnostics.RequestAsync(DiagnosticKind.Lab, l, doctorId, false, [], ct) : null;
+        var radio = radioId is { } r ? await diagnostics.RequestAsync(DiagnosticKind.Radiology, r, doctorId, false, [], ct) : null;
         return new(row.Id, row.TicketId, row.Doctor, row.Practice, row.Patient, row.Status, row.StartedAtUtc, row.CompletedAtUtc,
             row.ClinicalNotes, await DiagnosesAsync(row.Id, ct), await SourceEligibilityAsync(row.Id, row.Patient.Id, ct),
-            new(false, false, false, false, false), Convert.ToBase64String(row.RowVersion), prescription, blockers);
+            new(false, false, false, false, false), Convert.ToBase64String(row.RowVersion), prescription, blockers, lab, radio, labPage.Items, radioPage.Items);
     }
 
     public async Task<PatientEncounterDetailsResponse?> PatientDetailsAsync(Guid patientId, Guid id, CancellationToken ct)

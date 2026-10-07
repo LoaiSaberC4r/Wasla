@@ -330,4 +330,135 @@
   <data name="PrescriptionItem.DurationValueRequired" xml:space="preserve"><value>مدة علاج محددة موجبة مطلوب.</value></data>
   <data name="PrescriptionItem.PrnReasonRequired" xml:space="preserve"><value>سبب الاستخدام عند الحاجة مطلوب.</value></data>
   <data name="PrescriptionItem.MinimumIntervalRequired" xml:space="preserve"><value>الحد الأدنى للفاصل بين الجرعات مطلوب.</value></data>
+  <data name="LabCatalog.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="LabCatalog.NotActive" xml:space="preserve"><value>عنصر الدليل غير متاح للاختيار.</value></data>
+  <data name="LabCatalog.AlreadyInactive" xml:space="preserve"><value>عنصر الدليل غير نشط بالفعل.</value></data>
+  <data name="LabCatalog.Merged" xml:space="preserve"><value>تم دمج عنصر الدليل ولا يمكن تعديله.</value></data>
+  <data name="LabCatalog.DuplicateLoincCode" xml:space="preserve"><value>رمز LOINC موجود بالفعل.</value></data>
+  <data name="LabCatalog.PossibleDuplicate" xml:space="preserve"><value>راجع عنصر الدليل الموجود قبل إنشاء عنصر مكرر.</value></data>
+  <data name="LabCatalog.SourceFieldsReadOnly" xml:space="preserve"><value>حقول المصدر الرسمي للقراءة فقط.</value></data>
+  <data name="LabCatalog.InvalidMergeTarget" xml:space="preserve"><value>اختر عنصراً مرجعياً نشطاً مختلفاً للدمج.</value></data>
+  <data name="LabCatalog.MergeCycle" xml:space="preserve"><value>سيؤدي دمج الدليل إلى حلقة مرجعية.</value></data>
+  <data name="LabCatalog.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="LabCatalog.InvalidState" xml:space="preserve"><value>هذه العملية غير مسموحة في الحالة الحالية.</value></data>
+  <data name="LabCatalog.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="LabCatalog.ReasonRequired" xml:space="preserve"><value>سبب التغيير مطلوب.</value></data>
+  <data name="LabCatalogRequest.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="LabCatalogRequest.InvalidState" xml:space="preserve"><value>هذه العملية غير مسموحة في الحالة الحالية.</value></data>
+  <data name="LabCatalogRequest.NotOwner" xml:space="preserve"><value>لا يمكنك الوصول إلى هذا السجل.</value></data>
+  <data name="LabCatalogRequest.MoreInfoReasonRequired" xml:space="preserve"><value>سبب طلب معلومات إضافية مطلوب.</value></data>
+  <data name="LabCatalogRequest.RejectionReasonRequired" xml:space="preserve"><value>سبب الرفض الظاهر للمريض مطلوب.</value></data>
+  <data name="LabCatalogRequest.InvalidDuplicateTarget" xml:space="preserve"><value>اختر عنصراً مرجعياً نشطاً موجوداً في الدليل.</value></data>
+  <data name="LabCatalogRequest.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="LabCatalogRequest.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="LabRequest.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="LabRequest.EncounterNotOwned" xml:space="preserve"><value>الكشف غير متاح لهذا الطبيب.</value></data>
+  <data name="LabRequest.InvalidEncounterState" xml:space="preserve"><value>حالة الكشف لا تسمح بعملية الفحص هذه.</value></data>
+  <data name="LabRequest.PostVisitReasonRequired" xml:space="preserve"><value>سبب طلب الفحص بعد انتهاء الكشف مطلوب.</value></data>
+  <data name="LabRequest.Empty" xml:space="preserve"><value>يجب أن يتضمن طلب الفحص عنصراً واحداً على الأقل.</value></data>
+  <data name="LabRequest.DuplicateTest" xml:space="preserve"><value>يتضمن طلب الفحص هذا الاختبار أو الإجراء بالفعل.</value></data>
+  <data name="LabRequest.SourceRequired" xml:space="preserve"><value>اختر عنصراً من الدليل أو أرسل فحصاً غير موجود.</value></data>
+  <data name="LabRequest.MultipleSources" xml:space="preserve"><value>يجب أن يكون لعنصر الفحص مصدر واحد فقط.</value></data>
+  <data name="LabRequest.ItemNotFound" xml:space="preserve"><value>عنصر طلب الفحص غير موجود.</value></data>
+  <data name="LabRequest.ItemNotRequested" xml:space="preserve"><value>عنصر الفحص لم يعد في حالة مطلوب.</value></data>
+  <data name="LabRequest.CompletedItemCannotBeCancelled" xml:space="preserve"><value>لا يمكن إلغاء عنصر فحص مكتمل.</value></data>
+  <data name="LabRequest.CancellationReasonRequired" xml:space="preserve"><value>سبب الإلغاء الظاهر للمريض مطلوب.</value></data>
+  <data name="LabRequest.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="LabRequest.InvalidState" xml:space="preserve"><value>هذه العملية غير مسموحة في الحالة الحالية.</value></data>
+  <data name="LabRequest.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="LabResultSubmission.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="LabResultSubmission.NotOwner" xml:space="preserve"><value>لا يمكنك الوصول إلى هذا السجل.</value></data>
+  <data name="LabResultSubmission.NotPending" xml:space="preserve"><value>التقرير المرسل لم يعد بانتظار المراجعة.</value></data>
+  <data name="LabResultSubmission.NoRequestedItems" xml:space="preserve"><value>لا يتضمن الطلب عناصر ما زالت مطلوبة.</value></data>
+  <data name="LabResultSubmission.InvalidCoverage" xml:space="preserve"><value>يجب أن تشير تغطية النتيجة إلى عناصر مؤهلة من هذا الطلب.</value></data>
+  <data name="LabResultSubmission.RejectionReasonRequired" xml:space="preserve"><value>سبب الرفض الظاهر للمريض مطلوب.</value></data>
+  <data name="LabResultSubmission.NoLongerApplicable" xml:space="preserve"><value>لم يعد التقرير قابلاً للمراجعة بعد إلغاء العناصر المتبقية.</value></data>
+  <data name="LabResultSubmission.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="LabResultSubmission.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="LabResult.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="LabResult.AttachmentRequired" xml:space="preserve"><value>أرفق من ملف واحد إلى عشرين ملفاً مدعوماً ضمن حدود الملفات الطبية.</value></data>
+  <data name="LabResult.CoverageRequired" xml:space="preserve"><value>اختر عنصراً مطلوباً واحداً على الأقل يغطيه التقرير.</value></data>
+  <data name="LabResult.InvalidCoverage" xml:space="preserve"><value>يجب أن تشير تغطية النتيجة إلى عناصر مؤهلة من هذا الطلب.</value></data>
+  <data name="LabResult.ItemNotRequested" xml:space="preserve"><value>عنصر الفحص لم يعد في حالة مطلوب.</value></data>
+  <data name="LabResult.NoCurrentVersion" xml:space="preserve"><value>لا يوجد إصدار حالي صالح للنتيجة.</value></data>
+  <data name="LabResult.InvalidCorrectionState" xml:space="preserve"><value>يمكن تصحيح النتيجة الحالية الصالحة فقط.</value></data>
+  <data name="LabResult.InvalidVoidState" xml:space="preserve"><value>يمكن إبطال النتيجة الحالية الصالحة فقط.</value></data>
+  <data name="LabResult.VoidReasonRequired" xml:space="preserve"><value>سبب إبطال النتيجة مطلوب.</value></data>
+  <data name="LabResult.CorrectionReasonRequired" xml:space="preserve"><value>سبب تصحيح النتيجة مطلوب.</value></data>
+  <data name="LabResult.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="LabResult.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="LabResult.AttachmentNotFound" xml:space="preserve"><value>المرفق غير متاح.</value></data>
+  <data name="RadiologyCatalog.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="RadiologyCatalog.NotActive" xml:space="preserve"><value>عنصر الدليل غير متاح للاختيار.</value></data>
+  <data name="RadiologyCatalog.AlreadyInactive" xml:space="preserve"><value>عنصر الدليل غير نشط بالفعل.</value></data>
+  <data name="RadiologyCatalog.Merged" xml:space="preserve"><value>تم دمج عنصر الدليل ولا يمكن تعديله.</value></data>
+  <data name="RadiologyCatalog.DuplicateLoincCode" xml:space="preserve"><value>رمز LOINC موجود بالفعل.</value></data>
+  <data name="RadiologyCatalog.PossibleDuplicate" xml:space="preserve"><value>راجع عنصر الدليل الموجود قبل إنشاء عنصر مكرر.</value></data>
+  <data name="RadiologyCatalog.SourceFieldsReadOnly" xml:space="preserve"><value>حقول المصدر الرسمي للقراءة فقط.</value></data>
+  <data name="RadiologyCatalog.InvalidMergeTarget" xml:space="preserve"><value>اختر عنصراً مرجعياً نشطاً مختلفاً للدمج.</value></data>
+  <data name="RadiologyCatalog.MergeCycle" xml:space="preserve"><value>سيؤدي دمج الدليل إلى حلقة مرجعية.</value></data>
+  <data name="RadiologyCatalog.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="RadiologyCatalog.InvalidState" xml:space="preserve"><value>هذه العملية غير مسموحة في الحالة الحالية.</value></data>
+  <data name="RadiologyCatalog.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="RadiologyCatalog.ReasonRequired" xml:space="preserve"><value>سبب التغيير مطلوب.</value></data>
+  <data name="RadiologyCatalogRequest.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="RadiologyCatalogRequest.InvalidState" xml:space="preserve"><value>هذه العملية غير مسموحة في الحالة الحالية.</value></data>
+  <data name="RadiologyCatalogRequest.NotOwner" xml:space="preserve"><value>لا يمكنك الوصول إلى هذا السجل.</value></data>
+  <data name="RadiologyCatalogRequest.MoreInfoReasonRequired" xml:space="preserve"><value>سبب طلب معلومات إضافية مطلوب.</value></data>
+  <data name="RadiologyCatalogRequest.RejectionReasonRequired" xml:space="preserve"><value>سبب الرفض الظاهر للمريض مطلوب.</value></data>
+  <data name="RadiologyCatalogRequest.InvalidDuplicateTarget" xml:space="preserve"><value>اختر عنصراً مرجعياً نشطاً موجوداً في الدليل.</value></data>
+  <data name="RadiologyCatalogRequest.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="RadiologyCatalogRequest.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="RadiologyRequest.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="RadiologyRequest.EncounterNotOwned" xml:space="preserve"><value>الكشف غير متاح لهذا الطبيب.</value></data>
+  <data name="RadiologyRequest.InvalidEncounterState" xml:space="preserve"><value>حالة الكشف لا تسمح بعملية الفحص هذه.</value></data>
+  <data name="RadiologyRequest.PostVisitReasonRequired" xml:space="preserve"><value>سبب طلب الفحص بعد انتهاء الكشف مطلوب.</value></data>
+  <data name="RadiologyRequest.Empty" xml:space="preserve"><value>يجب أن يتضمن طلب الفحص عنصراً واحداً على الأقل.</value></data>
+  <data name="RadiologyRequest.DuplicateTest" xml:space="preserve"><value>يتضمن طلب الفحص هذا الاختبار أو الإجراء بالفعل.</value></data>
+  <data name="RadiologyRequest.SourceRequired" xml:space="preserve"><value>اختر عنصراً من الدليل أو أرسل فحصاً غير موجود.</value></data>
+  <data name="RadiologyRequest.MultipleSources" xml:space="preserve"><value>يجب أن يكون لعنصر الفحص مصدر واحد فقط.</value></data>
+  <data name="RadiologyRequest.ItemNotFound" xml:space="preserve"><value>عنصر طلب الفحص غير موجود.</value></data>
+  <data name="RadiologyRequest.ItemNotRequested" xml:space="preserve"><value>عنصر الفحص لم يعد في حالة مطلوب.</value></data>
+  <data name="RadiologyRequest.CompletedItemCannotBeCancelled" xml:space="preserve"><value>لا يمكن إلغاء عنصر فحص مكتمل.</value></data>
+  <data name="RadiologyRequest.CancellationReasonRequired" xml:space="preserve"><value>سبب الإلغاء الظاهر للمريض مطلوب.</value></data>
+  <data name="RadiologyRequest.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="RadiologyRequest.InvalidState" xml:space="preserve"><value>هذه العملية غير مسموحة في الحالة الحالية.</value></data>
+  <data name="RadiologyRequest.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="RadiologyResultSubmission.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="RadiologyResultSubmission.NotOwner" xml:space="preserve"><value>لا يمكنك الوصول إلى هذا السجل.</value></data>
+  <data name="RadiologyResultSubmission.NotPending" xml:space="preserve"><value>التقرير المرسل لم يعد بانتظار المراجعة.</value></data>
+  <data name="RadiologyResultSubmission.NoRequestedItems" xml:space="preserve"><value>لا يتضمن الطلب عناصر ما زالت مطلوبة.</value></data>
+  <data name="RadiologyResultSubmission.InvalidCoverage" xml:space="preserve"><value>يجب أن تشير تغطية النتيجة إلى عناصر مؤهلة من هذا الطلب.</value></data>
+  <data name="RadiologyResultSubmission.RejectionReasonRequired" xml:space="preserve"><value>سبب الرفض الظاهر للمريض مطلوب.</value></data>
+  <data name="RadiologyResultSubmission.NoLongerApplicable" xml:space="preserve"><value>لم يعد التقرير قابلاً للمراجعة بعد إلغاء العناصر المتبقية.</value></data>
+  <data name="RadiologyResultSubmission.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="RadiologyResultSubmission.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="RadiologyResult.NotFound" xml:space="preserve"><value>السجل المطلوب غير موجود.</value></data>
+  <data name="RadiologyResult.AttachmentRequired" xml:space="preserve"><value>أرفق من ملف واحد إلى عشرين ملفاً مدعوماً ضمن حدود الملفات الطبية.</value></data>
+  <data name="RadiologyResult.CoverageRequired" xml:space="preserve"><value>اختر عنصراً مطلوباً واحداً على الأقل يغطيه التقرير.</value></data>
+  <data name="RadiologyResult.InvalidCoverage" xml:space="preserve"><value>يجب أن تشير تغطية النتيجة إلى عناصر مؤهلة من هذا الطلب.</value></data>
+  <data name="RadiologyResult.ItemNotRequested" xml:space="preserve"><value>عنصر الفحص لم يعد في حالة مطلوب.</value></data>
+  <data name="RadiologyResult.NoCurrentVersion" xml:space="preserve"><value>لا يوجد إصدار حالي صالح للنتيجة.</value></data>
+  <data name="RadiologyResult.InvalidCorrectionState" xml:space="preserve"><value>يمكن تصحيح النتيجة الحالية الصالحة فقط.</value></data>
+  <data name="RadiologyResult.InvalidVoidState" xml:space="preserve"><value>يمكن إبطال النتيجة الحالية الصالحة فقط.</value></data>
+  <data name="RadiologyResult.VoidReasonRequired" xml:space="preserve"><value>سبب إبطال النتيجة مطلوب.</value></data>
+  <data name="RadiologyResult.CorrectionReasonRequired" xml:space="preserve"><value>سبب تصحيح النتيجة مطلوب.</value></data>
+  <data name="RadiologyResult.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="RadiologyResult.InvalidData" xml:space="preserve"><value>بيانات الفحص المرسلة غير صالحة.</value></data>
+  <data name="RadiologyResult.AttachmentNotFound" xml:space="preserve"><value>المرفق غير متاح.</value></data>
+  <data name="DiagnosticCatalogImport.PackageTooLarge" xml:space="preserve"><value>ملف الدليل المضغوط يتجاوز الحد المسموح للحجم.</value></data>
+  <data name="DiagnosticCatalogImport.InvalidArchive" xml:space="preserve"><value>ملف دليل الفحوصات المضغوط غير صالح.</value></data>
+  <data name="DiagnosticCatalogImport.UnsafeArchive" xml:space="preserve"><value>ملف دليل الفحوصات المضغوط لا يطابق حدود الأمان.</value></data>
+  <data name="DiagnosticCatalogImport.RequiredFileMissing" xml:space="preserve"><value>حزمة الإصدار الرسمي تفتقد ملف CSV مطلوباً.</value></data>
+  <data name="DiagnosticCatalogImport.InvalidHeaders" xml:space="preserve"><value>عناوين أو سجلات CSV لا تطابق بنية المصدر المدعومة.</value></data>
+  <data name="DiagnosticCatalogImport.UnsupportedEncoding" xml:space="preserve"><value>يجب أن يستخدم ملف CSV ترميز UTF-8 صالحاً.</value></data>
+  <data name="DiagnosticCatalogImport.DuplicateSourceIdentity" xml:space="preserve"><value>تحتوي الحزمة على رموز مصدر مكررة.</value></data>
+  <data name="DiagnosticCatalogImport.UnsupportedSourceVersion" xml:space="preserve"><value>إصدار مصدر LOINC غير مضبوط للاستيراد.</value></data>
+  <data name="DiagnosticCatalogImport.BatchNotFound" xml:space="preserve"><value>دفعة الاستيراد غير موجودة.</value></data>
+  <data name="DiagnosticCatalogImport.BatchNotStaged" xml:space="preserve"><value>يمكن تطبيق دفعة مجهزة فقط أو استبعادها.</value></data>
+  <data name="DiagnosticCatalogImport.AlreadyApplied" xml:space="preserve"><value>تم تطبيق دفعة الاستيراد بالفعل.</value></data>
+  <data name="DiagnosticCatalogImport.AlreadyDiscarded" xml:space="preserve"><value>تم استبعاد دفعة الاستيراد بالفعل.</value></data>
+  <data name="DiagnosticCatalogImport.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
+  <data name="DiagnosticCatalogImport.PossibleConflict" xml:space="preserve"><value>راجع التعارضات المحتملة وحدد صراحةً إن كنت تريد تخطيها قبل التطبيق.</value></data>
+  <data name="Diagnostics.AccessDenied" xml:space="preserve"><value>ليس لديك تصريح لتنفيذ عملية الفحص هذه.</value></data>
 </root>

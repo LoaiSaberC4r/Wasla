@@ -2,6 +2,7 @@ using Wasla.Application.Email;
 using Wasla.Application.Features.Clinical;
 using Wasla.Application.Features.Medications;
 using Wasla.Application.Features.Governance;
+using Wasla.Application.Features.Diagnostics;
 using Wasla.Application.Persistence;
 using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Application.Features.Reservations;
@@ -85,6 +86,14 @@ public static class DependencyInjection
         services.AddScoped<IMedicationReadService>(provider => provider.GetRequiredService<MedicationReadService>());
         services.AddScoped<IDrugCatalogManagerReader>(provider => provider.GetRequiredService<MedicationReadService>());
         services.AddScoped<IDrugCatalogImportService, DrugCatalogImportService>();
+        services.AddScoped<DiagnosticReadService>();
+        services.AddScoped<IDiagnosticReadService>(p => p.GetRequiredService<DiagnosticReadService>());
+        services.AddScoped<IDiagnosticCoverageReader>(p => p.GetRequiredService<DiagnosticReadService>());
+        services.AddScoped<IDiagnosticMediaReferenceReader>(p => p.GetRequiredService<DiagnosticReadService>());
+        services.AddScoped<IMedicalCatalogManagerReader>(p => p.GetRequiredService<DiagnosticReadService>());
+        services.AddScoped<IDiagnosticImportService, DiagnosticImportService>();
+        services.AddOptions<DiagnosticCatalogImportOptions>().Bind(configuration.GetSection(DiagnosticCatalogImportOptions.SectionName))
+            .Validate(o => o.MaxPackageBytes > 0 && o.MaxExpandedBytes >= o.MaxPackageBytes && o.MaxEntries > 0 && o.MaxRows > 0 && o.MaxCompressionRatio > 0 && o.SupportedVersions.Length > 0, "Invalid diagnostic import limits.").ValidateOnStart();
         services.AddScoped<IClinicalReadService, ClinicalReadService>();
         services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();
