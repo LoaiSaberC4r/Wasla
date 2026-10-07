@@ -35,7 +35,7 @@ public sealed class Phase15CatalogApiTests
             File("LoincTable/Loinc.csv", "LOINC_NUM,COMPONENT,STATUS,CLASSTYPE,ORDER_OBS,LONG_COMMON_NAME,SHORTNAME\n" +
                 $"1234-5,Analyte,{status},1,Order,{name},Lab\n2345-6,Imaging,{status},2,Order,{name},Radio\n");
             File("AccessoryFiles/LoincUniversalLabOrdersValueSet/LoincUniversalLabOrdersValueSet.csv", "LOINC_NUM\n1234-5\n");
-            File("AccessoryFiles/LinguisticVariants/arJO32LinguisticVariant.csv", $"LOINC_NUM,LONG_COMMON_NAME\n1234-5,{arabic}\n2345-6,{arabic}\n");
+            File("AccessoryFiles/LinguisticVariants/arJO32LinguisticVariant.csv", $"LOINC_NUM,LONG_COMMON_NAME,LinguisticVariantDisplayName\n1234-5,{name},{arabic}\n2345-6,{name},{arabic}\n");
             File("AccessoryFiles/LoincRsnaRadiologyPlaybook/LoincRsnaRadiologyPlaybook.csv", "LoincNumber,PartTypeName,PartName\n2345-6,Rad.Modality.Modality Type,XR\n2345-6,Rad.Anatomic Location.Region Imaged,Chest\n");
         }
         return stream.ToArray();
