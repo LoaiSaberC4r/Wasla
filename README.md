@@ -53,15 +53,18 @@ integration and 20 architecture tests passed (381 total; zero failures/skips)**,
 including **119 focused Phase 15 tests**; the solution builds with **zero
 warnings/errors**. SQL Server tests
 verify concurrency, transaction rollback and private-file compensation.
-The supplied local official LOINC 2.83 ZIP passes both parsers and authenticated
-SQL Server preview endpoints: **47,977 Lab concepts (43,465 active; 1,192 with
-official Arabic)** and **7,016 Radiology procedures (6,941 active)**. Canonical
+The supplied local official LOINC 2.83 ZIP has passed both parsers and authenticated
+SQL Server Preview, full development/local Apply and persisted catalog verification
+for both catalogs: **47,977 Lab concepts (43,465 active from prior verification;
+1,192 with official Arabic)** and **7,016 Radiology procedures (6,941 active)**. Canonical
 table selection uses its exact path, the upload boundary uses a stream, and
 `_local-data/` remains ignored. API contracts and clinical rules are unchanged.
 [API changes](PHASE-15-API-CHANGES.md), [closure report](PHASE-15-CLOSURE-REPORT.md),
 [source-of-truth addendum](SOURCE-OF-TRUTH-PHASE-15-ADDENDUM.md) and
 [terminology source/license notice](LOINC-SOURCE-NOTICE.md) record the contracts,
-decisions, actual verification and remaining full-apply/production load limits.
+decisions, completed development full-apply verification and remaining production
+deployment/performance acceptance. Production Apply was not performed; production
+performance/load acceptance remains pending and deployment-specific.
 
 Phase 14 frontend contracts, decisions and verification (130 unit, 116
 integration and 16 architecture tests passed; zero build warnings/errors):
