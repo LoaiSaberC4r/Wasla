@@ -1,6 +1,6 @@
 # Phase 15 closure report — 2026-10-07
 
-**Phase 15 status: DONE.** Branch: `codex/phase15-diagnostic-orders-results`. Original baseline: clean `main` at `2181b40b54d0884fe1362563423b184f6c5b174d`; the implementation was recorded in `cc99169` and has since been merged according to the follow-up task. Real-package hotfix evidence is in sections 13 and 14; the Arabic mapping hotfix continues from `10577dc` on the same branch. No production database migration or deployment was performed during the hotfixes.
+**Phase 15 status: DONE.** Branch: `codex/phase15-diagnostic-orders-results`. Original baseline: clean `main` at `2181b40b54d0884fe1362563423b184f6c5b174d`; the implementation was recorded in `cc99169` and has since been merged according to the follow-up task. Real-package hotfix evidence is in sections 13 and 14; the Arabic mapping hotfix continues from `10577dc` on the same branch. Subsequent manual development full Apply evidence is in section 15. No production database migration or deployment was performed during the hotfixes.
 
 ## 1. Implementation summary
 
@@ -56,7 +56,7 @@ ZIP checks reject traversal, duplicate/ambiguous paths, symlinks, unsupported sc
 
 Preview persists an immutable reviewable batch/rows with SHA-256 and comparison dispositions. Apply revalidates its staged comparison under catalog locks, commits atomically with rowversion/idempotency and preserves local presentation/lifecycle decisions. It never automatically merges, deletes or deactivates codes absent from a later release. PossibleConflict blocks apply unless explicitly skipped; retained conflict rows remain reviewable. Source/license documentation is in [LOINC-SOURCE-NOTICE.md](LOINC-SOURCE-NOTICE.md).
 
-Permanent unit/API/SQL tests use small deterministic synthetic packages. The initial delivery did not have the full licensed 2.83 ZIP. The subsequent hotfix used the supplied local official package successfully for both parsers and both authenticated SQL Server preview endpoints; exact counts and timings are in section 13. The package is ignored and uncommitted. Full-release catalog apply and production performance acceptance were not performed; local preview timings are not a production benchmark.
+Permanent unit/API/SQL tests use small deterministic synthetic packages. The initial delivery did not have the full licensed 2.83 ZIP. The subsequent hotfix used the supplied local official package successfully for both parsers and both authenticated SQL Server preview endpoints; exact counts and timings are in section 13. The package is ignored and uncommitted. At the time of that automated hotfix verification, full-release catalog Apply was not performed. Subsequent full Lab and Radiology Apply and persisted catalog verification succeeded in the local/development environment, as documented in section 15. Production Apply and production performance/load acceptance remain pending; local preview timings are not a production benchmark.
 
 ## 8. Security, concurrency and idempotency
 
@@ -118,7 +118,7 @@ TRX results are in each test project's ignored `TestResults` directory with pref
 
 ## 11. Intentionally deferred and verification limits
 
-V1 exclusions remain as approved: structured observations/reference ranges/abnormal flags, provider/laboratory/PACS integration, DICOM viewing/storage, external result ingestion, sharing/access delegation, substitute reviewers, notifications and wider longitudinal-record work. No requested V1 lifecycle is left as a scaffold. Production deployment/seeding, full-release catalog apply/upgrade/load acceptance and deployment-specific scanner configuration remain operational work. Local real-package parsing and preview are verified in section 13.
+V1 exclusions remain as approved: structured observations/reference ranges/abnormal flags, provider/laboratory/PACS integration, DICOM viewing/storage, external result ingestion, sharing/access delegation, substitute reviewers, notifications and wider longitudinal-record work. No requested V1 lifecycle is left as a scaffold. Production deployment/seeding, production catalog Apply/upgrade and performance/load acceptance, and deployment-specific scanner configuration remain operational work. Local real-package parsing and preview are verified in sections 13 and 14; the subsequent real full development Apply and persisted catalog verification for both domains are documented in section 15.
 
 ## 12. Technical adaptations
 
@@ -175,7 +175,7 @@ The ZIP and any local extracted files were **not committed**. `_local-data/` is 
 | Persisted Staged records in disposable SQL Server DB | 47,977 | 7,016 |
 | Local preview elapsed seconds | 34.222 | 15.035 |
 
-Counts are measured output, not hard-coded expectations. The previously reported Arabic count of 883 was invalid: it counted English values from the wrong variant column. Section 14 verifies the corrected count and null behavior against the localized source field. Every parsed Lab row satisfies CLASSTYPE 1 and ORDER_OBS Order/Both. Non-active rows remain retained and non-selectable. The common value set supplies flags/ranking only; it does not replace the complete catalog. Each real output row's code, name and status was checked against the canonical source fields. The authenticated previews used the unchanged multipart endpoints, committed reviewable batches and verified package SHA-256 plus paged change counts. They did not apply the full catalog or modify a production database.
+Counts are measured output, not hard-coded expectations. The previously reported Arabic count of 883 was invalid: it counted English values from the wrong variant column. Section 14 verifies the corrected count and null behavior against the localized source field. Every parsed Lab row satisfies CLASSTYPE 1 and ORDER_OBS Order/Both. Non-active rows remain retained and non-selectable. The common value set supplies flags/ranking only; it does not replace the complete catalog. Each real output row's code, name and status was checked against the canonical source fields. The authenticated previews used the unchanged multipart endpoints, committed reviewable batches and verified package SHA-256 plus paged change counts. Those earlier automated previews did not apply the full catalog or modify a production database. A subsequent manual development full Apply is documented in section 15.
 
 Radiology produces one procedure per LoincNumber, retains **49,621 original Part rows** and preserves their PartNumber/PartSequenceOrder plus original names. The 18 actual PartTypeName values are:
 
@@ -270,9 +270,9 @@ The old parser preferred `LONG_COMMON_NAME`, which is English even in this Arabi
 
 ### Real package and authenticated preview
 
-The corrected production parser was run against the existing ignored **`_local-data/Loinc_2.83.zip`**, with the same SHA-256 recorded in section 13. Lab parsing succeeds with **47,977 records**, source version **2.83**, and exactly **1,192 non-null official Arabic names**. Every Lab row's `OfficialNameAr` was compared with its official `LinguisticVariantDisplayName`, including nulls for absent/blank source values. All non-null values differ from the canonical English name. Code **100026-4** matches its official localized display value and retains the canonical `LoincTable/Loinc.csv` English name; code **62369-4** has a blank localized value and remains null. The variant's English base name and canonical English name differ for 100026-4; neither is used as Arabic. Real terminology values are retained only in ignored local evidence. Radiology was also rechecked: **7,016 procedures**, **0 official Arabic names**, with original Part metadata preserved.
+The corrected production parser was run against the existing ignored **`_local-data/Loinc_2.83.zip`**, with the same SHA-256 recorded in section 13. Lab parsing succeeds with **47,977 records**, source version **2.83**, and exactly **1,192 non-null official Arabic names**. Every Lab row's `OfficialNameAr` was compared with its official `LinguisticVariantDisplayName`, including nulls for absent/blank source values. All non-null values differ from the canonical English name. Code **100026-4** matches its official localized display value and retains the canonical `LoincTable/Loinc.csv` English name; code **62369-4** has a blank localized value and remains null. The variant's English base name and canonical English name differ for 100026-4; neither is used as Arabic. During that hotfix, real terminology values were retained only in ignored local evidence. Radiology was also rechecked: **7,016 procedures**, **0 official Arabic names**, with original Part metadata preserved.
 
-Authenticated **`POST /api/v1/admin/lab-catalog/imports/preview`** used that same ZIP with `sourceVersion=2.83` on a disposable SQL Server database. Result: **HTTP 200, Staged, 47,977 records**. The staged change for 100026-4 was queried through the existing changes endpoint; its `SourceDataJson.OfficialNameAr` equals the official localized field and differs from `NameEn`. The missing value for 62369-4 also remains null in persisted source JSON. Verification batch **`409c32f7-ad0e-4484-8ddc-0da8a84896d7`** was explicitly **discarded**, and the catalog still contained **0 rows**. **No real-package Apply was executed.** The fixture disposed its isolated database; no production database or earlier discarded batch was changed.
+Authenticated **`POST /api/v1/admin/lab-catalog/imports/preview`** used that same ZIP with `sourceVersion=2.83` on a disposable SQL Server database. Result: **HTTP 200, Staged, 47,977 records**. The staged change for 100026-4 was queried through the existing changes endpoint; its `SourceDataJson.OfficialNameAr` equals the official localized field and differs from `NameEn`. The missing value for 62369-4 also remains null in persisted source JSON. Verification batch **`409c32f7-ad0e-4484-8ddc-0da8a84896d7`** was explicitly **discarded**, and the catalog still contained **0 rows**. **At the time of this automated hotfix verification, no real-package Apply was executed.** A subsequent manual development full Apply is documented in section 15. The fixture disposed its isolated database; no production database or earlier discarded batch was changed.
 
 ### Permanent tests and verification
 
@@ -296,6 +296,74 @@ dotnet test _local-data/phase15-hotfix-verification/Phase15.RealPackageVerificat
 ```
 
 Only five tracked files change for this hotfix: `LoincPackageParser.cs`, `Phase15LoincImportTests.cs`, `Phase15CatalogApiTests.cs`, this report and README's incorrect Arabic count/current verification summary. `_local-data/` remains ignored and untracked, with empty tracked-file/history checks. The official package was not copied, moved, committed or redistributed. No API/business contract, permission, lifecycle, apply/merge behavior, source-version rule, Lab filtering, selectability, active/inactive handling, clinical snapshot, attachment rule or migration changed. No commit, push or deployment was performed.
+
+## 15. Real LOINC 2.83 full development Apply — 2026-10-07
+
+### Scope
+
+The official ignored **`_local-data/Loinc_2.83.zip`** was manually exercised in the **local/development environment**, using `SourceVersion=2.83` and the same known SHA-256 **`077A0718E87D8309FFE3A673F75B836A8E783DC36A646413EF97C71C12EAB27E`**. Both catalogs used the MedicalCatalogManager-authenticated API flow with user **`82cc0ddd-bdb7-4b65-b2ea-948eb38297d5`**. This was manual development verification, not a Production deployment or Production Apply.
+
+### Lab Preview, review and Apply
+
+The corrected Lab Preview created batch **`b375911c-db5e-499b-a5e1-902caa044a0a`** with `Status=Staged`, `TotalRecords=47,977`, `Counts.New=47,977`, `CanApply=true` and `CanDiscard=true`.
+
+Before Apply, staged LOINC **100026-4** was manually reviewed:
+
+- `NameEn`: MET gene mutations found [Identifier] in Blood or Tissue by Targeted gene mutation analysis Nominal
+- `OfficialNameAr`: الكشف عن الطفرات الجينية في جين MET في الدم أو الأنسجة ( بتقنية علم الوراثة الجزيئية )
+
+The official localized value confirmed that the `LinguisticVariantDisplayName` mapping hotfix was working in the real staged data. The full Lab Apply then succeeded:
+
+| Applied result | Value |
+| --- | --- |
+| BatchId | `b375911c-db5e-499b-a5e1-902caa044a0a` |
+| Status | `Applied` |
+| TotalRecords | 47,977 |
+| Counts.New | 47,977 |
+| AppliedByUserId | `82cc0ddd-bdb7-4b65-b2ea-948eb38297d5` |
+| AppliedAtUtc | `2026-10-07T10:41:17.0764964` |
+| CanApply / CanDiscard | `false` / `false` |
+
+Final **`GET /api/v1/admin/lab-catalog?pageNumber=1&pageSize=1`** returned **`totalCount=47,977`**. The persisted catalog was searched for **100026-4** and verified to have `Source=Loinc`, `Status=Active` and `SourceVersion=2.83`; `OfficialNameEn` retained the canonical English LOINC name and `OfficialNameAr` contained the Arabic localized value shown above. The final catalog record was persisted successfully.
+
+The existing **43,465 Active Lab** count comes from the earlier real-package parser/verification evidence in section 13, not a new Active-Lab measurement from this manual session. Section 14's **1,192 official Arabic names** remains the corrected parser verification count.
+
+### Radiology Preview, review and Apply
+
+The same package produced Radiology batch **`9022bb63-6924-4f6c-9666-ac54f68fa701`** with `Status=Staged`, `TotalRecords=7,016`, `Counts.New=7,016`, `CanApply=true` and `CanDiscard=true`.
+
+Staged samples, including **100349-0**, **100760-8**, **101301-0** and **103230-9**, were manually reviewed before Apply. They preserved LOINC identity, canonical English name, external status, `Attributes`, original `RadiologyParts`, `PartNumber`, `PartTypeName`, `PartName`, `PartSequenceOrder` and RID / PreferredName where supplied. Review also confirmed grouped multi-value attributes, Laterality, Modality, Region Imaged, Imaging Focus, View information and pharmaceutical metadata where applicable.
+
+The full Radiology Apply then succeeded:
+
+| Applied result | Value |
+| --- | --- |
+| BatchId | `9022bb63-6924-4f6c-9666-ac54f68fa701` |
+| Status | `Applied` |
+| TotalRecords | 7,016 |
+| Counts.New | 7,016 |
+| AppliedByUserId | `82cc0ddd-bdb7-4b65-b2ea-948eb38297d5` |
+| AppliedAtUtc | `2026-10-07T10:54:53.7971049` |
+| CanApply / CanDiscard | `false` / `false` |
+
+Final **`GET /api/v1/admin/radiology-catalog?pageNumber=1&pageSize=1`** returned **`totalCount=7,016`**. Persisted LOINC **99633-0**, **Cone beam CT Teeth**, was inspected and contained these `Attributes`:
+
+| Attribute | Persisted value |
+| --- | --- |
+| `Rad.Anatomic Location.Imaging Focus` | Teeth |
+| `Rad.Anatomic Location.Region Imaged` | Head |
+| `Rad.Modality.Modality Subtype` | Cone beam |
+| `Rad.Modality.Modality Type` | CT |
+
+Its persisted `SourceDataJson` also contained the original `RadiologyParts`. The explicit active-catalog query **`GET /api/v1/admin/radiology-catalog?status=Active&pageNumber=1&pageSize=1`** returned **`totalCount=6,941`**, matching the previously measured expected Active Radiology count.
+
+### Import lifecycle and terminal state
+
+The real **Upload → Preview → Review → Apply → Persisted Catalog Verification** flow was successfully exercised end-to-end for **both Lab and Radiology**. Successful Apply returned `CanApply=false` and `CanDiscard=false` for both batches. This records the observed terminal state; no repeated-Apply verification is claimed.
+
+### Environment boundary and verification limits
+
+This closes the previous **full-release catalog Apply not performed** verification gap for the **local/development environment**. Production Apply was not performed. Production deployment remains a separate controlled operation, and production performance/load acceptance remains pending and deployment-specific. Production migration, seeding and deployment remain outside this manual verification. The manual evidence does not change the existing automated test counts; no new tests or build were run for this documentation update.
 
 ## Original delivery file inventory
 
