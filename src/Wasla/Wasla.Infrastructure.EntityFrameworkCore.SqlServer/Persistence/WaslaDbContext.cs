@@ -9,6 +9,9 @@ using Wasla.Domain.Reservations;
 using Wasla.Domain.Tickets;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Medications;
+using Wasla.Domain.Labs;
+using Wasla.Domain.Radiology;
+using Wasla.Domain.Diagnostics;
 using Wasla.Domain.Payments;
 using BuildingBlock.Infrastructure.Extensions;
 using BuildingBlock.Infrastructure.Persistence;
@@ -17,7 +20,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
-public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
+public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     : DbContext(options)
 {
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
@@ -56,6 +59,40 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
     public DbSet<ReservationIdempotencyRecord> ReservationIdempotencyRecords => Set<ReservationIdempotencyRecord>();
     public DbSet<ReservationProjectionInvalidation> ReservationProjectionInvalidations
         => Set<ReservationProjectionInvalidation>();
+        public DbSet<LabTestCatalog> LabTestCatalogs => Set<LabTestCatalog>();
+    public DbSet<LabTestCatalogHistory> LabTestCatalogHistories => Set<LabTestCatalogHistory>();
+    public DbSet<LabCatalogRequest> LabCatalogRequests => Set<LabCatalogRequest>();
+    public DbSet<LabCatalogRequestHistory> LabCatalogRequestHistories => Set<LabCatalogRequestHistory>();
+    public DbSet<LabRequest> LabRequests => Set<LabRequest>();
+    public DbSet<LabRequestHistory> LabRequestHistories => Set<LabRequestHistory>();
+    public DbSet<LabRequestItem> LabRequestItems => Set<LabRequestItem>();
+    public DbSet<LabResult> LabResults => Set<LabResult>();
+    public DbSet<LabResultHistory> LabResultHistories => Set<LabResultHistory>();
+    public DbSet<LabResultVersion> LabResultVersions => Set<LabResultVersion>();
+    public DbSet<LabResultCoverage> LabResultCoverages => Set<LabResultCoverage>();
+    public DbSet<PatientLabResultSubmission> PatientLabResultSubmissions => Set<PatientLabResultSubmission>();
+    public DbSet<PatientLabResultSubmissionHistory> PatientLabResultSubmissionHistories => Set<PatientLabResultSubmissionHistory>();
+    public DbSet<LabResultAttachment> LabResultAttachments => Set<LabResultAttachment>();
+    public DbSet<PatientLabResultSubmissionAttachment> PatientLabResultSubmissionAttachments => Set<PatientLabResultSubmissionAttachment>();
+    public DbSet<LabCatalogImportBatch> LabCatalogImportBatches => Set<LabCatalogImportBatch>();
+    public DbSet<LabCatalogImportRecord> LabCatalogImportRecords => Set<LabCatalogImportRecord>();
+    public DbSet<RadiologyProcedureCatalog> RadiologyProcedureCatalogs => Set<RadiologyProcedureCatalog>();
+    public DbSet<RadiologyProcedureCatalogHistory> RadiologyProcedureCatalogHistories => Set<RadiologyProcedureCatalogHistory>();
+    public DbSet<RadiologyCatalogRequest> RadiologyCatalogRequests => Set<RadiologyCatalogRequest>();
+    public DbSet<RadiologyCatalogRequestHistory> RadiologyCatalogRequestHistories => Set<RadiologyCatalogRequestHistory>();
+    public DbSet<RadiologyRequest> RadiologyRequests => Set<RadiologyRequest>();
+    public DbSet<RadiologyRequestHistory> RadiologyRequestHistories => Set<RadiologyRequestHistory>();
+    public DbSet<RadiologyRequestItem> RadiologyRequestItems => Set<RadiologyRequestItem>();
+    public DbSet<RadiologyResult> RadiologyResults => Set<RadiologyResult>();
+    public DbSet<RadiologyResultHistory> RadiologyResultHistories => Set<RadiologyResultHistory>();
+    public DbSet<RadiologyResultVersion> RadiologyResultVersions => Set<RadiologyResultVersion>();
+    public DbSet<RadiologyResultCoverage> RadiologyResultCoverages => Set<RadiologyResultCoverage>();
+    public DbSet<PatientRadiologyResultSubmission> PatientRadiologyResultSubmissions => Set<PatientRadiologyResultSubmission>();
+    public DbSet<PatientRadiologyResultSubmissionHistory> PatientRadiologyResultSubmissionHistories => Set<PatientRadiologyResultSubmissionHistory>();
+    public DbSet<RadiologyResultAttachment> RadiologyResultAttachments => Set<RadiologyResultAttachment>();
+    public DbSet<PatientRadiologyResultSubmissionAttachment> PatientRadiologyResultSubmissionAttachments => Set<PatientRadiologyResultSubmissionAttachment>();
+    public DbSet<RadiologyCatalogImportBatch> RadiologyCatalogImportBatches => Set<RadiologyCatalogImportBatch>();
+    public DbSet<RadiologyCatalogImportRecord> RadiologyCatalogImportRecords => Set<RadiologyCatalogImportRecord>();
     public DbSet<DrugCatalog> DrugCatalogs => Set<DrugCatalog>();
     public DbSet<DrugCatalogHistory> DrugCatalogHistories => Set<DrugCatalogHistory>();
     public DbSet<DrugCatalogRequest> DrugCatalogRequests => Set<DrugCatalogRequest>();
@@ -103,9 +140,16 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        var diagnosticCorrection = ChangeTracker.Entries<LabResultVersion>().Any(e => e.State == EntityState.Modified && e.Entity.Status == DiagnosticVersionStatus.Superseded) ||
+            ChangeTracker.Entries<RadiologyResultVersion>().Any(e => e.State == EntityState.Modified && e.Entity.Status == DiagnosticVersionStatus.Superseded);
+        await using var diagnosticTransaction = diagnosticCorrection && Database.CurrentTransaction is null
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
         await SynchronizeFollowUpReleasesAsync(cancellationToken);
         await GuardCompletedDiagnosisDeletionAsync(cancellationToken);
         await GuardPrescriptionHistoryAsync(cancellationToken);
+        await GuardDiagnosticContentAsync(cancellationToken);
+        await GuardDiagnosticHistoryAsync(cancellationToken);
+        AddDiagnosticDraftHistory();
         EnsureFinancialHistoryIsAppendOnly();
         AddPrescriptionAuditEvents();
         PrepareSqliteRowVersions();
@@ -124,7 +168,66 @@ public sealed class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
         }
         var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         if (ownedTransaction is not null) await ownedTransaction.CommitAsync(cancellationToken);
+        if (diagnosticTransaction is not null) await diagnosticTransaction.CommitAsync(cancellationToken);
         return result;
+    }
+
+    private void AddDiagnosticDraftHistory()
+    {
+        var trackedLab = ChangeTracker.Entries<LabRequestHistory>().Select(e => e.Entity.Id).ToHashSet();
+        Set<LabRequestHistory>().AddRange(ChangeTracker.Entries<LabRequest>().SelectMany(e => e.Entity.History).Where(e => !trackedLab.Contains(e.Id)).ToArray());
+        var trackedRadiology = ChangeTracker.Entries<RadiologyRequestHistory>().Select(e => e.Entity.Id).ToHashSet();
+        Set<RadiologyRequestHistory>().AddRange(ChangeTracker.Entries<RadiologyRequest>().SelectMany(e => e.Entity.History).Where(e => !trackedRadiology.Contains(e.Id)).ToArray());
+    }
+    private async Task GuardDiagnosticHistoryAsync(CancellationToken ct)
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State is EntityState.Modified or EntityState.Deleted && entry.Entity is LabTestCatalogHistory or LabCatalogRequestHistory or LabRequestHistory or LabResultHistory or LabResultCoverage or PatientLabResultSubmissionHistory or LabResultAttachment or PatientLabResultSubmissionAttachment or LabCatalogImportRecord or RadiologyProcedureCatalogHistory or RadiologyCatalogRequestHistory or RadiologyRequestHistory or RadiologyResultHistory or RadiologyResultCoverage or PatientRadiologyResultSubmissionHistory or RadiologyResultAttachment or PatientRadiologyResultSubmissionAttachment or RadiologyCatalogImportRecord)
+                throw new InvalidOperationException("Diagnostic history is immutable.");
+            if (entry.State == EntityState.Deleted && entry.Entity is LabTestCatalog or RadiologyProcedureCatalog or LabCatalogRequest or RadiologyCatalogRequest or LabResult or RadiologyResult or PatientLabResultSubmission or PatientRadiologyResultSubmission or LabCatalogImportBatch or RadiologyCatalogImportBatch)
+                throw new InvalidOperationException("Diagnostic records cannot be deleted.");
+        }
+        foreach (var entry in ChangeTracker.Entries<LabRequest>().Where(e => e.State == EntityState.Deleted))
+            if (entry.Entity.Status != DiagnosticRequestStatus.Draft || entry.Entity.Items.Count != 0)
+                throw new InvalidOperationException("Issued diagnostic orders cannot be deleted.");
+        foreach (var entry in ChangeTracker.Entries<LabResultVersion>())
+        {
+            if (entry.State == EntityState.Deleted) throw new InvalidOperationException("Result versions cannot be deleted.");
+            if (entry.State != EntityState.Modified) continue;
+            var original = entry.Property(x => x.Status).OriginalValue;
+            var allowed = original == DiagnosticVersionStatus.Finalized && entry.Entity.Status is DiagnosticVersionStatus.Superseded or DiagnosticVersionStatus.Voided;
+            var fields = entry.Entity.Status == DiagnosticVersionStatus.Superseded ? new[] { "Status" } : new[] { "Status", "VoidReason", "VoidedAtUtc" };
+            if (!allowed || entry.Properties.Any(p => p.IsModified && !fields.Contains(p.Metadata.Name)))
+                throw new InvalidOperationException("Finalized result content is immutable.");
+            if (entry.Entity.Status == DiagnosticVersionStatus.Superseded)
+            {
+                var count = await Database.ExecuteSqlInterpolatedAsync($"UPDATE [LabResultVersions] SET [Status] = 2 WHERE [Id] = {entry.Entity.Id} AND [Status] = 1", ct);
+                if (count != 1) throw new DbUpdateConcurrencyException("LabResult.ConcurrencyConflict");
+                entry.Property(x => x.Status).OriginalValue = DiagnosticVersionStatus.Superseded;
+                entry.Property(x => x.Status).IsModified = false;
+            }
+        }
+        foreach (var entry in ChangeTracker.Entries<RadiologyRequest>().Where(e => e.State == EntityState.Deleted))
+            if (entry.Entity.Status != DiagnosticRequestStatus.Draft || entry.Entity.Items.Count != 0)
+                throw new InvalidOperationException("Issued diagnostic orders cannot be deleted.");
+        foreach (var entry in ChangeTracker.Entries<RadiologyResultVersion>())
+        {
+            if (entry.State == EntityState.Deleted) throw new InvalidOperationException("Result versions cannot be deleted.");
+            if (entry.State != EntityState.Modified) continue;
+            var original = entry.Property(x => x.Status).OriginalValue;
+            var allowed = original == DiagnosticVersionStatus.Finalized && entry.Entity.Status is DiagnosticVersionStatus.Superseded or DiagnosticVersionStatus.Voided;
+            var fields = entry.Entity.Status == DiagnosticVersionStatus.Superseded ? new[] { "Status" } : new[] { "Status", "VoidReason", "VoidedAtUtc" };
+            if (!allowed || entry.Properties.Any(p => p.IsModified && !fields.Contains(p.Metadata.Name)))
+                throw new InvalidOperationException("Finalized result content is immutable.");
+            if (entry.Entity.Status == DiagnosticVersionStatus.Superseded)
+            {
+                var count = await Database.ExecuteSqlInterpolatedAsync($"UPDATE [RadiologyResultVersions] SET [Status] = 2 WHERE [Id] = {entry.Entity.Id} AND [Status] = 1", ct);
+                if (count != 1) throw new DbUpdateConcurrencyException("RadiologyResult.ConcurrencyConflict");
+                entry.Property(x => x.Status).OriginalValue = DiagnosticVersionStatus.Superseded;
+                entry.Property(x => x.Status).IsModified = false;
+            }
+        }
     }
 
     private void AddPrescriptionAuditEvents()

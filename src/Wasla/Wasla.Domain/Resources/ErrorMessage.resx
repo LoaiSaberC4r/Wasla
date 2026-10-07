@@ -330,4 +330,135 @@
   <data name="PrescriptionItem.DurationValueRequired" xml:space="preserve"><value>A positive fixed duration is required.</value></data>
   <data name="PrescriptionItem.PrnReasonRequired" xml:space="preserve"><value>As-needed reason is required.</value></data>
   <data name="PrescriptionItem.MinimumIntervalRequired" xml:space="preserve"><value>Minimum interval between doses is required.</value></data>
+  <data name="LabCatalog.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="LabCatalog.NotActive" xml:space="preserve"><value>The catalog item is not selectable.</value></data>
+  <data name="LabCatalog.AlreadyInactive" xml:space="preserve"><value>The catalog item is already inactive.</value></data>
+  <data name="LabCatalog.Merged" xml:space="preserve"><value>The catalog item has been merged and cannot be changed.</value></data>
+  <data name="LabCatalog.DuplicateLoincCode" xml:space="preserve"><value>The LOINC code already exists.</value></data>
+  <data name="LabCatalog.PossibleDuplicate" xml:space="preserve"><value>Review the existing catalog item before creating a duplicate.</value></data>
+  <data name="LabCatalog.SourceFieldsReadOnly" xml:space="preserve"><value>Official source fields are read-only.</value></data>
+  <data name="LabCatalog.InvalidMergeTarget" xml:space="preserve"><value>Select a different active canonical catalog item.</value></data>
+  <data name="LabCatalog.MergeCycle" xml:space="preserve"><value>The catalog merge would create a cycle.</value></data>
+  <data name="LabCatalog.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="LabCatalog.InvalidState" xml:space="preserve"><value>The operation is not allowed in the current state.</value></data>
+  <data name="LabCatalog.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="LabCatalog.ReasonRequired" xml:space="preserve"><value>A reason is required for this change.</value></data>
+  <data name="LabCatalogRequest.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="LabCatalogRequest.InvalidState" xml:space="preserve"><value>The operation is not allowed in the current state.</value></data>
+  <data name="LabCatalogRequest.NotOwner" xml:space="preserve"><value>You cannot access this record.</value></data>
+  <data name="LabCatalogRequest.MoreInfoReasonRequired" xml:space="preserve"><value>A reason is required when requesting more information.</value></data>
+  <data name="LabCatalogRequest.RejectionReasonRequired" xml:space="preserve"><value>A patient-visible reason is required when rejecting a report.</value></data>
+  <data name="LabCatalogRequest.InvalidDuplicateTarget" xml:space="preserve"><value>Select an existing active canonical catalog item.</value></data>
+  <data name="LabCatalogRequest.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="LabCatalogRequest.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="LabRequest.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="LabRequest.EncounterNotOwned" xml:space="preserve"><value>The encounter is not available to this Doctor.</value></data>
+  <data name="LabRequest.InvalidEncounterState" xml:space="preserve"><value>The encounter state does not allow this diagnostic operation.</value></data>
+  <data name="LabRequest.PostVisitReasonRequired" xml:space="preserve"><value>A reason is required for a post-visit diagnostic order.</value></data>
+  <data name="LabRequest.Empty" xml:space="preserve"><value>A diagnostic order must contain at least one item.</value></data>
+  <data name="LabRequest.DuplicateTest" xml:space="preserve"><value>The diagnostic order already contains this test or procedure.</value></data>
+  <data name="LabRequest.SourceRequired" xml:space="preserve"><value>Select a catalog item or submit a missing test.</value></data>
+  <data name="LabRequest.MultipleSources" xml:space="preserve"><value>A diagnostic item must have exactly one source.</value></data>
+  <data name="LabRequest.ItemNotFound" xml:space="preserve"><value>The diagnostic order item was not found.</value></data>
+  <data name="LabRequest.ItemNotRequested" xml:space="preserve"><value>The diagnostic item is no longer requested.</value></data>
+  <data name="LabRequest.CompletedItemCannotBeCancelled" xml:space="preserve"><value>A completed diagnostic item cannot be cancelled.</value></data>
+  <data name="LabRequest.CancellationReasonRequired" xml:space="preserve"><value>A patient-visible cancellation reason is required.</value></data>
+  <data name="LabRequest.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="LabRequest.InvalidState" xml:space="preserve"><value>The operation is not allowed in the current state.</value></data>
+  <data name="LabRequest.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="LabResultSubmission.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="LabResultSubmission.NotOwner" xml:space="preserve"><value>You cannot access this record.</value></data>
+  <data name="LabResultSubmission.NotPending" xml:space="preserve"><value>The submission is no longer pending review.</value></data>
+  <data name="LabResultSubmission.NoRequestedItems" xml:space="preserve"><value>The order has no remaining requested items.</value></data>
+  <data name="LabResultSubmission.InvalidCoverage" xml:space="preserve"><value>Result coverage must reference eligible items from this request.</value></data>
+  <data name="LabResultSubmission.RejectionReasonRequired" xml:space="preserve"><value>A patient-visible reason is required when rejecting a report.</value></data>
+  <data name="LabResultSubmission.NoLongerApplicable" xml:space="preserve"><value>The report is no longer applicable after cancellation of the remaining items.</value></data>
+  <data name="LabResultSubmission.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="LabResultSubmission.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="LabResult.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="LabResult.AttachmentRequired" xml:space="preserve"><value>Provide 1–20 supported attachments within the medical file limits.</value></data>
+  <data name="LabResult.CoverageRequired" xml:space="preserve"><value>Select at least one requested item covered by the report.</value></data>
+  <data name="LabResult.InvalidCoverage" xml:space="preserve"><value>Result coverage must reference eligible items from this request.</value></data>
+  <data name="LabResult.ItemNotRequested" xml:space="preserve"><value>The diagnostic item is no longer requested.</value></data>
+  <data name="LabResult.NoCurrentVersion" xml:space="preserve"><value>The result has no current valid version.</value></data>
+  <data name="LabResult.InvalidCorrectionState" xml:space="preserve"><value>Only a current valid result can be corrected.</value></data>
+  <data name="LabResult.InvalidVoidState" xml:space="preserve"><value>Only a current valid result can be voided.</value></data>
+  <data name="LabResult.VoidReasonRequired" xml:space="preserve"><value>A reason is required to void a result.</value></data>
+  <data name="LabResult.CorrectionReasonRequired" xml:space="preserve"><value>A reason is required to correct a result.</value></data>
+  <data name="LabResult.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="LabResult.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="LabResult.AttachmentNotFound" xml:space="preserve"><value>The attachment is not available.</value></data>
+  <data name="RadiologyCatalog.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="RadiologyCatalog.NotActive" xml:space="preserve"><value>The catalog item is not selectable.</value></data>
+  <data name="RadiologyCatalog.AlreadyInactive" xml:space="preserve"><value>The catalog item is already inactive.</value></data>
+  <data name="RadiologyCatalog.Merged" xml:space="preserve"><value>The catalog item has been merged and cannot be changed.</value></data>
+  <data name="RadiologyCatalog.DuplicateLoincCode" xml:space="preserve"><value>The LOINC code already exists.</value></data>
+  <data name="RadiologyCatalog.PossibleDuplicate" xml:space="preserve"><value>Review the existing catalog item before creating a duplicate.</value></data>
+  <data name="RadiologyCatalog.SourceFieldsReadOnly" xml:space="preserve"><value>Official source fields are read-only.</value></data>
+  <data name="RadiologyCatalog.InvalidMergeTarget" xml:space="preserve"><value>Select a different active canonical catalog item.</value></data>
+  <data name="RadiologyCatalog.MergeCycle" xml:space="preserve"><value>The catalog merge would create a cycle.</value></data>
+  <data name="RadiologyCatalog.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="RadiologyCatalog.InvalidState" xml:space="preserve"><value>The operation is not allowed in the current state.</value></data>
+  <data name="RadiologyCatalog.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="RadiologyCatalog.ReasonRequired" xml:space="preserve"><value>A reason is required for this change.</value></data>
+  <data name="RadiologyCatalogRequest.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="RadiologyCatalogRequest.InvalidState" xml:space="preserve"><value>The operation is not allowed in the current state.</value></data>
+  <data name="RadiologyCatalogRequest.NotOwner" xml:space="preserve"><value>You cannot access this record.</value></data>
+  <data name="RadiologyCatalogRequest.MoreInfoReasonRequired" xml:space="preserve"><value>A reason is required when requesting more information.</value></data>
+  <data name="RadiologyCatalogRequest.RejectionReasonRequired" xml:space="preserve"><value>A patient-visible reason is required when rejecting a report.</value></data>
+  <data name="RadiologyCatalogRequest.InvalidDuplicateTarget" xml:space="preserve"><value>Select an existing active canonical catalog item.</value></data>
+  <data name="RadiologyCatalogRequest.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="RadiologyCatalogRequest.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="RadiologyRequest.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="RadiologyRequest.EncounterNotOwned" xml:space="preserve"><value>The encounter is not available to this Doctor.</value></data>
+  <data name="RadiologyRequest.InvalidEncounterState" xml:space="preserve"><value>The encounter state does not allow this diagnostic operation.</value></data>
+  <data name="RadiologyRequest.PostVisitReasonRequired" xml:space="preserve"><value>A reason is required for a post-visit diagnostic order.</value></data>
+  <data name="RadiologyRequest.Empty" xml:space="preserve"><value>A diagnostic order must contain at least one item.</value></data>
+  <data name="RadiologyRequest.DuplicateTest" xml:space="preserve"><value>The diagnostic order already contains this test or procedure.</value></data>
+  <data name="RadiologyRequest.SourceRequired" xml:space="preserve"><value>Select a catalog item or submit a missing test.</value></data>
+  <data name="RadiologyRequest.MultipleSources" xml:space="preserve"><value>A diagnostic item must have exactly one source.</value></data>
+  <data name="RadiologyRequest.ItemNotFound" xml:space="preserve"><value>The diagnostic order item was not found.</value></data>
+  <data name="RadiologyRequest.ItemNotRequested" xml:space="preserve"><value>The diagnostic item is no longer requested.</value></data>
+  <data name="RadiologyRequest.CompletedItemCannotBeCancelled" xml:space="preserve"><value>A completed diagnostic item cannot be cancelled.</value></data>
+  <data name="RadiologyRequest.CancellationReasonRequired" xml:space="preserve"><value>A patient-visible cancellation reason is required.</value></data>
+  <data name="RadiologyRequest.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="RadiologyRequest.InvalidState" xml:space="preserve"><value>The operation is not allowed in the current state.</value></data>
+  <data name="RadiologyRequest.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="RadiologyResultSubmission.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="RadiologyResultSubmission.NotOwner" xml:space="preserve"><value>You cannot access this record.</value></data>
+  <data name="RadiologyResultSubmission.NotPending" xml:space="preserve"><value>The submission is no longer pending review.</value></data>
+  <data name="RadiologyResultSubmission.NoRequestedItems" xml:space="preserve"><value>The order has no remaining requested items.</value></data>
+  <data name="RadiologyResultSubmission.InvalidCoverage" xml:space="preserve"><value>Result coverage must reference eligible items from this request.</value></data>
+  <data name="RadiologyResultSubmission.RejectionReasonRequired" xml:space="preserve"><value>A patient-visible reason is required when rejecting a report.</value></data>
+  <data name="RadiologyResultSubmission.NoLongerApplicable" xml:space="preserve"><value>The report is no longer applicable after cancellation of the remaining items.</value></data>
+  <data name="RadiologyResultSubmission.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="RadiologyResultSubmission.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="RadiologyResult.NotFound" xml:space="preserve"><value>The requested record was not found.</value></data>
+  <data name="RadiologyResult.AttachmentRequired" xml:space="preserve"><value>Provide 1–20 supported attachments within the medical file limits.</value></data>
+  <data name="RadiologyResult.CoverageRequired" xml:space="preserve"><value>Select at least one requested item covered by the report.</value></data>
+  <data name="RadiologyResult.InvalidCoverage" xml:space="preserve"><value>Result coverage must reference eligible items from this request.</value></data>
+  <data name="RadiologyResult.ItemNotRequested" xml:space="preserve"><value>The diagnostic item is no longer requested.</value></data>
+  <data name="RadiologyResult.NoCurrentVersion" xml:space="preserve"><value>The result has no current valid version.</value></data>
+  <data name="RadiologyResult.InvalidCorrectionState" xml:space="preserve"><value>Only a current valid result can be corrected.</value></data>
+  <data name="RadiologyResult.InvalidVoidState" xml:space="preserve"><value>Only a current valid result can be voided.</value></data>
+  <data name="RadiologyResult.VoidReasonRequired" xml:space="preserve"><value>A reason is required to void a result.</value></data>
+  <data name="RadiologyResult.CorrectionReasonRequired" xml:space="preserve"><value>A reason is required to correct a result.</value></data>
+  <data name="RadiologyResult.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="RadiologyResult.InvalidData" xml:space="preserve"><value>The supplied diagnostic data is invalid.</value></data>
+  <data name="RadiologyResult.AttachmentNotFound" xml:space="preserve"><value>The attachment is not available.</value></data>
+  <data name="DiagnosticCatalogImport.PackageTooLarge" xml:space="preserve"><value>The diagnostic catalog ZIP exceeds the package size limit.</value></data>
+  <data name="DiagnosticCatalogImport.InvalidArchive" xml:space="preserve"><value>The diagnostic catalog ZIP is invalid.</value></data>
+  <data name="DiagnosticCatalogImport.UnsafeArchive" xml:space="preserve"><value>The diagnostic catalog ZIP fails archive safety limits.</value></data>
+  <data name="DiagnosticCatalogImport.RequiredFileMissing" xml:space="preserve"><value>The official release package is missing a required CSV file.</value></data>
+  <data name="DiagnosticCatalogImport.InvalidHeaders" xml:space="preserve"><value>The source CSV headers or records do not match the supported schema.</value></data>
+  <data name="DiagnosticCatalogImport.UnsupportedEncoding" xml:space="preserve"><value>The source CSV must use valid UTF-8 encoding.</value></data>
+  <data name="DiagnosticCatalogImport.DuplicateSourceIdentity" xml:space="preserve"><value>The package contains duplicate source identities.</value></data>
+  <data name="DiagnosticCatalogImport.UnsupportedSourceVersion" xml:space="preserve"><value>This LOINC source version has not been configured for import.</value></data>
+  <data name="DiagnosticCatalogImport.BatchNotFound" xml:space="preserve"><value>The import batch was not found.</value></data>
+  <data name="DiagnosticCatalogImport.BatchNotStaged" xml:space="preserve"><value>Only a staged batch can be applied or discarded.</value></data>
+  <data name="DiagnosticCatalogImport.AlreadyApplied" xml:space="preserve"><value>The import batch has already been applied.</value></data>
+  <data name="DiagnosticCatalogImport.AlreadyDiscarded" xml:space="preserve"><value>The import batch has already been discarded.</value></data>
+  <data name="DiagnosticCatalogImport.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
+  <data name="DiagnosticCatalogImport.PossibleConflict" xml:space="preserve"><value>Review possible conflicts and explicitly choose whether to skip them before applying.</value></data>
+  <data name="Diagnostics.AccessDenied" xml:space="preserve"><value>You are not authorized for this diagnostic operation.</value></data>
 </root>

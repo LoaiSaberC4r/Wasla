@@ -1,0 +1,306 @@
+
+using Asp.Versioning;
+using BuildingBlock.Api;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Wasla.Application.Features.Diagnostics;
+using Wasla.Application.Features.Clinical;
+using Wasla.Domain.Diagnostics;
+using Wasla.Domain.Security;
+
+namespace Wasla.Api.Controllers;
+
+public sealed record MedicalCatalogUpdateRequest(CatalogPresentation Data, string RowVersion);
+public sealed record DiagnosticActionRequest(string RowVersion, string? Reason = null, Guid? TargetCatalogId = null);
+public sealed record MedicalRequestUpdateRequest(DiagnosticCatalogRequestData Data, string RowVersion);
+public sealed record MedicalRequestReviewRequest(string RowVersion, string? Reason = null, Guid? CanonicalCatalogId = null, CatalogPresentation? ApprovedData = null);
+public sealed record DiagnosticImportApplyRequest(string RowVersion, bool SkipPossibleConflicts = false);
+public sealed class DiagnosticImportUploadRequest
+{
+    public IFormFile File { get; set; } = null!;
+    public string SourceVersion { get; set; } = "2.83";
+}
+internal static class DiagnosticForms
+{
+    public static async Task<IReadOnlyList<DiagnosticUpload>> ReadAsync(IReadOnlyList<IFormFile> files, IReadOnlyList<DiagnosticAttachmentKind> kinds, CancellationToken ct, bool requireKinds = false)
+    {
+        if (requireKinds && kinds.Count != files.Count) return [];
+        if (files.Count is < 1 or > 20 || files.Sum(f => f.Length) > 100L * 1024 * 1024 || files.Any(f => f.Length is <= 0 or > 10L * 1024 * 1024)) return [];
+        var result = new List<DiagnosticUpload>();
+        for (var i = 0; i < files.Count; i++)
+        {
+            using var buffer = new MemoryStream(); await files[i].CopyToAsync(buffer, ct);
+            result.Add(new(files[i].FileName, files[i].ContentType, buffer.ToArray(), kinds.Count == files.Count ? kinds[i] : DiagnosticAttachmentKind.Report));
+        }
+        return result;
+    }
+}
+
+public sealed record LabMissingTestRequest(string TestName, string? Specimen = null, string? CatalogClarificationNote = null)
+{
+    public DiagnosticCatalogRequestData Data() => new(TestName, Specimen, CatalogClarificationNote);
+}
+public sealed record LabCatalogRequestUpdateRequest(LabMissingTestRequest Data, string RowVersion);
+public sealed record LabOrderItemRequest(Guid? LabTestCatalogId = null, LabMissingTestRequest? NewLabTest = null, string? DoctorInstructions = null)
+{
+    public DiagnosticOrderItemInput Input() => new(LabTestCatalogId, NewLabTest?.Data(), DoctorInstructions);
+}
+public sealed record LabAddItemRequest(Guid? LabTestCatalogId = null, LabMissingTestRequest? NewLabTest = null, string? DoctorInstructions = null,
+    string? LabRequestRowVersion = null, string? PatientInstructions = null);
+public sealed record LabPostVisitRequest(string PostVisitReason, IReadOnlyList<LabOrderItemRequest> Items, string? PatientInstructions = null);
+public sealed record LabAcceptSubmissionRequest(IReadOnlyList<Guid> CoveredLabRequestItemIds, string RowVersion);
+public sealed record DiagnosticRejectSubmissionRequest(string PatientVisibleReason, string RowVersion);
+public sealed class LabResultUploadRequest
+{
+    public List<Guid> CoveredLabRequestItemIds { get; set; } = [];
+    public List<IFormFile> Attachments { get; set; } = [];
+    public List<DiagnosticAttachmentKind> AttachmentKinds { get; set; } = [];
+    public string? ExternalLaboratoryName { get; set; }
+    public DateOnly? ExternalReportDate { get; set; }
+    public string? PatientNote { get; set; }
+    public string? RowVersion { get; set; }
+    public string? Reason { get; set; }
+}
+public sealed class PatientLabSubmissionRequest
+{
+    public List<IFormFile> Attachments { get; set; } = [];
+    public string? ExternalLaboratoryName { get; set; }
+    public DateOnly? ExternalReportDate { get; set; }
+    public string? PatientNote { get; set; }
+}
+
+[ApiController, ApiVersion("1.0"), Authorize(Roles = SystemRoleNames.MedicalCatalogManager)]
+[Route("api/v{version:apiVersion}/admin/lab-catalog")]
+[ProducesResponseType<MedicalCatalogResponse>(StatusCodes.Status200OK)]
+public sealed class LabCatalogController(ISender sender, IOptions<DiagnosticCatalogImportOptions> options) : ControllerBase
+{
+    [HttpGet, ProducesResponseType<ClinicalPage<MedicalCatalogResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> List([FromQuery] string? search = null, [FromQuery] MedicalCatalogStatus? status = null, [FromQuery] MedicalCatalogSource? source = null,
+        [FromQuery] bool? hasArabic = null, [FromQuery] bool commonOnly = false, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        => (await sender.Send(new SearchMedicalCatalogQuery(DiagnosticKind.Lab, false, search, status, source, hasArabic, commonOnly, pageNumber, pageSize), ct)).ToIActionResult(ct);
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> Get(Guid id, CancellationToken ct)
+    {
+        var result = await sender.Send(new SearchMedicalCatalogQuery(DiagnosticKind.Lab, false, Id: id), ct);
+        return result.IsSuccess ? Ok(result.Value.Items.Single()) : result.Errors.ToActionProblem(ct);
+    }
+    [HttpPost, ProducesResponseType<MedicalCatalogResponse>(StatusCodes.Status201Created)]
+    public async Task<IActionResult> Create(CatalogPresentation r, CancellationToken ct)
+    {
+        var result = await sender.Send(new MutateMedicalCatalogCommand(DiagnosticKind.Lab, CatalogMutation.Create, Data: r), ct);
+        return result.IsSuccess ? StatusCode(201, result.Value) : result.Errors.ToActionProblem(ct);
+    }
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, MedicalCatalogUpdateRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogCommand(DiagnosticKind.Lab, CatalogMutation.Update, id, r.Data, r.RowVersion), ct)).ToIActionResult(ct);
+    [HttpPost("{id:guid}/activate")]
+    public async Task<IActionResult> Activate(Guid id, DiagnosticActionRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogCommand(DiagnosticKind.Lab, CatalogMutation.Activate, id, RowVersion: r.RowVersion, Reason: r.Reason), ct)).ToIActionResult(ct);
+    [HttpPost("{id:guid}/deactivate")]
+    public async Task<IActionResult> Deactivate(Guid id, DiagnosticActionRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogCommand(DiagnosticKind.Lab, CatalogMutation.Deactivate, id, RowVersion: r.RowVersion, Reason: r.Reason), ct)).ToIActionResult(ct);
+    [HttpPost("{id:guid}/merge")]
+    public async Task<IActionResult> Merge(Guid id, DiagnosticActionRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogCommand(DiagnosticKind.Lab, CatalogMutation.Merge, id, RowVersion: r.RowVersion, Reason: r.Reason, TargetId: r.TargetCatalogId, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpPost("imports/preview"), Consumes("multipart/form-data"), RequestSizeLimit(220L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 210L * 1024 * 1024)]
+    [ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Preview([FromForm] DiagnosticImportUploadRequest r, CancellationToken ct)
+    {
+        if (r.File is null) return new[] { DiagnosticErrors.Validation("DiagnosticCatalogImport.RequiredFileMissing") }.ToActionProblem(ct);
+        if (r.File.Length > options.Value.MaxPackageBytes) return new[] { DiagnosticErrors.Validation("DiagnosticCatalogImport.PackageTooLarge") }.ToActionProblem(ct);
+        using var buffer = new MemoryStream(); await r.File.CopyToAsync(buffer, ct);
+        return (await sender.Send(new PreviewDiagnosticImportCommand(DiagnosticKind.Lab, buffer.ToArray(), r.File.FileName, r.SourceVersion), ct)).ToIActionResult(ct);
+    }
+    [HttpGet("imports"), ProducesResponseType<ClinicalPage<DiagnosticImportBatchResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Imports([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        => (await sender.Send(new ReadDiagnosticImportQuery(DiagnosticKind.Lab, PageNumber: pageNumber, PageSize: pageSize), ct)).ToIActionResult(ct);
+    [HttpGet("imports/{batchId:guid}"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Import(Guid batchId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticImportQuery(DiagnosticKind.Lab, batchId), ct)).ToIActionResult(ct);
+    [HttpGet("imports/{batchId:guid}/changes"), ProducesResponseType<ClinicalPage<DiagnosticImportRecordResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Changes(Guid batchId, [FromQuery] DiagnosticImportDisposition? disposition = null, [FromQuery] string? search = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        => (await sender.Send(new ReadDiagnosticImportQuery(DiagnosticKind.Lab, batchId, true, disposition, search, pageNumber, pageSize), ct)).ToIActionResult(ct);
+    [HttpPost("imports/{batchId:guid}/apply"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Apply(Guid batchId, DiagnosticImportApplyRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new MutateDiagnosticImportCommand(DiagnosticKind.Lab, batchId, true, r.RowVersion, key, r.SkipPossibleConflicts), ct)).ToIActionResult(ct);
+    [HttpPost("imports/{batchId:guid}/discard"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Discard(Guid batchId, DiagnosticActionRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateDiagnosticImportCommand(DiagnosticKind.Lab, batchId, false, r.RowVersion), ct)).ToIActionResult(ct);
+}
+
+[ApiController, ApiVersion("1.0"), Authorize(Roles = SystemRoleNames.MedicalCatalogManager)]
+[Route("api/v{version:apiVersion}/admin/lab-catalog-requests")]
+[ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]
+public sealed class LabCatalogRequestsController(ISender sender) : ControllerBase
+{
+    [HttpGet, ProducesResponseType<ClinicalPage<MedicalCatalogRequestResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> List([FromQuery] MedicalCatalogRequestStatus? status = null, [FromQuery] Guid? doctorId = null, [FromQuery] string? search = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        => (await sender.Send(new ListMedicalCatalogRequestsQuery(DiagnosticKind.Lab, false, Status: status, DoctorId: doctorId, Search: search, PageNumber: pageNumber, PageSize: pageSize), ct)).ToIActionResult(ct);
+    [HttpGet("{requestId:guid}")]
+    public async Task<IActionResult> Get(Guid requestId, CancellationToken ct)
+    {
+        var result = await sender.Send(new ListMedicalCatalogRequestsQuery(DiagnosticKind.Lab, false, requestId), ct);
+        return result.IsSuccess ? Ok(result.Value.Items.Single()) : result.Errors.ToActionProblem(ct);
+    }
+    [HttpPost("{requestId:guid}/request-more-info")]
+    public async Task<IActionResult> MoreInfo(Guid requestId, MedicalRequestReviewRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogRequestCommand(DiagnosticKind.Lab, CatalogRequestMutation.MoreInfo, requestId, RowVersion: r.RowVersion, Reason: r.Reason), ct)).ToIActionResult(ct);
+    [HttpPost("{requestId:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid requestId, MedicalRequestReviewRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogRequestCommand(DiagnosticKind.Lab, CatalogRequestMutation.Approve, requestId, RowVersion: r.RowVersion, Reason: r.Reason, CanonicalCatalogId: r.CanonicalCatalogId, ApprovedData: r.ApprovedData, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpPost("{requestId:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid requestId, MedicalRequestReviewRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogRequestCommand(DiagnosticKind.Lab, CatalogRequestMutation.Reject, requestId, RowVersion: r.RowVersion, Reason: r.Reason, CanonicalCatalogId: r.CanonicalCatalogId), ct)).ToIActionResult(ct);
+}
+
+[ApiController, ApiVersion("1.0"), Authorize(Roles = SystemRoleNames.Doctor)]
+[Route("api/v{version:apiVersion}/doctors/me")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public sealed class DoctorLabController(ISender sender) : ControllerBase
+{
+    [HttpGet("lab-catalog"), ProducesResponseType<ClinicalPage<MedicalCatalogResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Search([FromQuery] string? search = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        => (await sender.Send(new SearchMedicalCatalogQuery(DiagnosticKind.Lab, true, search, PageNumber: pageNumber, PageSize: pageSize), ct)).ToIActionResult(ct);
+    [HttpGet("lab-catalog-requests"), ProducesResponseType<ClinicalPage<MedicalCatalogRequestResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CatalogRequests([FromQuery] MedicalCatalogRequestStatus? status = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        => (await sender.Send(new ListMedicalCatalogRequestsQuery(DiagnosticKind.Lab, true, Status: status, PageNumber: pageNumber, PageSize: pageSize), ct)).ToIActionResult(ct);
+    [HttpGet("lab-catalog-requests/{requestId:guid}"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CatalogRequest(Guid requestId, CancellationToken ct)
+    {
+        var result = await sender.Send(new ListMedicalCatalogRequestsQuery(DiagnosticKind.Lab, true, requestId), ct);
+        return result.IsSuccess ? Ok(result.Value.Items.Single()) : result.Errors.ToActionProblem(ct);
+    }
+    [HttpPost("lab-catalog-requests"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> SubmitCatalogRequest(LabMissingTestRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogRequestCommand(DiagnosticKind.Lab, CatalogRequestMutation.Create, Data: r.Data()), ct)).ToIActionResult(ct);
+    [HttpPut("lab-catalog-requests/{requestId:guid}"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateCatalogRequest(Guid requestId, LabCatalogRequestUpdateRequest r, CancellationToken ct)
+        => (await sender.Send(new MutateMedicalCatalogRequestCommand(DiagnosticKind.Lab, CatalogRequestMutation.Update, requestId, r.Data.Data(), r.RowVersion), ct)).ToIActionResult(ct);
+    [HttpGet("practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Draft(Guid practiceId, Guid encounterId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Draft, PracticeId: practiceId, EncounterId: encounterId), ct)).ToIActionResult(ct);
+    [HttpPost("practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request/items"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Add(Guid practiceId, Guid encounterId, LabAddItemRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new DiagnosticOrderCommand(DiagnosticKind.Lab, DiagnosticOrderMutation.Add, practiceId, encounterId, RowVersion: r.LabRequestRowVersion, Item: new(r.LabTestCatalogId, r.NewLabTest?.Data(), r.DoctorInstructions), PatientInstructions: r.PatientInstructions, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpPut("practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request/items/{itemId:guid}"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Update(Guid practiceId, Guid encounterId, Guid itemId, LabAddItemRequest r, CancellationToken ct)
+        => (await sender.Send(new DiagnosticOrderCommand(DiagnosticKind.Lab, DiagnosticOrderMutation.Update, practiceId, encounterId, ItemId: itemId, RowVersion: r.LabRequestRowVersion, Item: new(DoctorInstructions: r.DoctorInstructions)), ct)).ToIActionResult(ct);
+    [HttpDelete("practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request/items/{itemId:guid}"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Remove(Guid practiceId, Guid encounterId, Guid itemId, [FromQuery] string rowVersion, CancellationToken ct)
+        => (await sender.Send(new DiagnosticOrderCommand(DiagnosticKind.Lab, DiagnosticOrderMutation.Remove, practiceId, encounterId, ItemId: itemId, RowVersion: rowVersion), ct)).ToIActionResult(ct);
+    [HttpPost("practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-requests/post-visit"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> PostVisit(Guid practiceId, Guid encounterId, LabPostVisitRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new DiagnosticOrderCommand(DiagnosticKind.Lab, DiagnosticOrderMutation.PostVisit, practiceId, encounterId, Items: r.Items?.Select(i => i.Input()).ToArray(), PatientInstructions: r.PatientInstructions, Reason: r.PostVisitReason, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpGet("lab-requests"), ProducesResponseType<ClinicalPage<DiagnosticRequestSummary>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Requests([FromQuery] DiagnosticFilter filter, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Requests, Filter: filter), ct)).ToIActionResult(ct);
+    [HttpGet("lab-requests/{requestId:guid}"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RequestDetails(Guid requestId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Requests, Id: requestId), ct)).ToIActionResult(ct);
+    [HttpGet("lab-requests/{requestId:guid}/history"), ProducesResponseType<IReadOnlyList<DiagnosticHistoryResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> History(Guid requestId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.RequestHistory, Id: requestId), ct)).ToIActionResult(ct);
+    [HttpPost("lab-requests/{requestId:guid}/items/{itemId:guid}/cancel"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Cancel(Guid requestId, Guid itemId, DiagnosticActionRequest r, CancellationToken ct)
+        => (await sender.Send(new DiagnosticOrderCommand(DiagnosticKind.Lab, DiagnosticOrderMutation.Cancel, RequestId: requestId, ItemId: itemId, RowVersion: r.RowVersion, Reason: r.Reason), ct)).ToIActionResult(ct);
+    [HttpPost("lab-requests/{requestId:guid}/cancel-remaining"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CancelRemaining(Guid requestId, DiagnosticActionRequest r, CancellationToken ct)
+        => (await sender.Send(new DiagnosticOrderCommand(DiagnosticKind.Lab, DiagnosticOrderMutation.Cancel, RequestId: requestId, RowVersion: r.RowVersion, Reason: r.Reason), ct)).ToIActionResult(ct);
+    [HttpPost("lab-requests/{requestId:guid}/results"), Consumes("multipart/form-data"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]
+    [ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Upload(Guid requestId, [FromForm] LabResultUploadRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new DiagnosticResultCommand(DiagnosticKind.Lab, DiagnosticResultMutation.Upload, requestId, RowVersion: r.RowVersion, CoveredItemIds: r.CoveredLabRequestItemIds, Attachments: await DiagnosticForms.ReadAsync(r.Attachments, r.AttachmentKinds, ct), ExternalProviderName: r.ExternalLaboratoryName, ExternalReportDate: r.ExternalReportDate, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpGet("lab-results"), ProducesResponseType<ClinicalPage<DiagnosticResultResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Results([FromQuery] DiagnosticFilter filter, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Results, Filter: filter), ct)).ToIActionResult(ct);
+    [HttpGet("lab-results/{resultId:guid}"), ProducesResponseType<DiagnosticResultResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Result(Guid resultId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Results, Id: resultId), ct)).ToIActionResult(ct);
+    [HttpGet("lab-results/{resultId:guid}/versions"), ProducesResponseType<IReadOnlyList<DiagnosticVersionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Versions(Guid resultId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Versions, Id: resultId), ct)).ToIActionResult(ct);
+    [HttpGet("lab-results/{resultId:guid}/versions/{versionNumber:int}"), ProducesResponseType<DiagnosticVersionResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Version(Guid resultId, int versionNumber, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Versions, Id: resultId, VersionNumber: versionNumber), ct)).ToIActionResult(ct);
+    [HttpPost("lab-results/{resultId:guid}/corrections"), Consumes("multipart/form-data"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]
+    [ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Correct(Guid resultId, [FromForm] LabResultUploadRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new DiagnosticResultCommand(DiagnosticKind.Lab, DiagnosticResultMutation.Correct, ResultId: resultId, RowVersion: r.RowVersion, CoveredItemIds: r.CoveredLabRequestItemIds, Attachments: await DiagnosticForms.ReadAsync(r.Attachments, r.AttachmentKinds, ct), ExternalProviderName: r.ExternalLaboratoryName, ExternalReportDate: r.ExternalReportDate, Reason: r.Reason, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpPost("lab-results/{resultId:guid}/void"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Void(Guid resultId, DiagnosticActionRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new DiagnosticResultCommand(DiagnosticKind.Lab, DiagnosticResultMutation.Void, ResultId: resultId, RowVersion: r.RowVersion, Reason: r.Reason, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpGet("lab-result-submissions"), ProducesResponseType<ClinicalPage<DiagnosticSubmissionSummary>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Inbox([FromQuery] DiagnosticFilter filter, [FromQuery] PatientSubmissionStatus? status = null, CancellationToken ct = default)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Submissions, Filter: filter with { SubmissionStatus = status ?? filter.SubmissionStatus }), ct)).ToIActionResult(ct);
+    [HttpGet("lab-result-submissions/{submissionId:guid}"), ProducesResponseType<DiagnosticSubmissionResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Submission(Guid submissionId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Submissions, Id: submissionId), ct)).ToIActionResult(ct);
+    [HttpPost("lab-result-submissions/{submissionId:guid}/accept"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Accept(Guid submissionId, LabAcceptSubmissionRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+        => (await sender.Send(new DiagnosticResultCommand(DiagnosticKind.Lab, DiagnosticResultMutation.Accept, SubmissionId: submissionId, RowVersion: r.RowVersion, CoveredItemIds: r.CoveredLabRequestItemIds, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    [HttpPost("lab-result-submissions/{submissionId:guid}/reject"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Reject(Guid submissionId, DiagnosticRejectSubmissionRequest r, CancellationToken ct)
+        => (await sender.Send(new DiagnosticResultCommand(DiagnosticKind.Lab, DiagnosticResultMutation.Reject, SubmissionId: submissionId, RowVersion: r.RowVersion, Reason: r.PatientVisibleReason), ct)).ToIActionResult(ct);
+    [HttpGet("lab-results/{resultId:guid}/versions/{versionNumber:int}/attachments/{attachmentId:guid}/content")]
+    public async Task<IActionResult> ResultContent(Guid resultId, int versionNumber, Guid attachmentId, CancellationToken ct)
+    {
+        var result = await sender.Send(new DiagnosticMediaQuery(DiagnosticKind.Lab, false, false, resultId, attachmentId, versionNumber), ct);
+        return result.IsSuccess ? File(result.Value.Content, result.Value.ContentType, result.Value.FileName) : result.Errors.ToActionProblem(ct);
+    }
+    [HttpGet("lab-result-submissions/{submissionId:guid}/attachments/{attachmentId:guid}/content")]
+    public async Task<IActionResult> SubmissionContent(Guid submissionId, Guid attachmentId, CancellationToken ct)
+    {
+        var result = await sender.Send(new DiagnosticMediaQuery(DiagnosticKind.Lab, false, true, submissionId, attachmentId), ct);
+        return result.IsSuccess ? File(result.Value.Content, result.Value.ContentType, result.Value.FileName) : result.Errors.ToActionProblem(ct);
+    }
+}
+
+[ApiController, ApiVersion("1.0"), Authorize(Roles = SystemRoleNames.Patient)]
+[Route("api/v{version:apiVersion}")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public sealed class PatientLabController(ISender sender) : ControllerBase
+{
+    [HttpGet("lab-requests/mine"), ProducesResponseType<ClinicalPage<DiagnosticRequestSummary>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Requests([FromQuery] DiagnosticFilter filter, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Requests, true, Filter: filter), ct)).ToIActionResult(ct);
+    [HttpGet("lab-requests/mine/{requestId:guid}"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RequestDetails(Guid requestId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Requests, true, requestId), ct)).ToIActionResult(ct);
+    [HttpGet("lab-results/mine"), ProducesResponseType<ClinicalPage<DiagnosticResultResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Results([FromQuery] DiagnosticFilter filter, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Results, true, Filter: filter), ct)).ToIActionResult(ct);
+    [HttpGet("lab-results/mine/{resultId:guid}"), ProducesResponseType<DiagnosticResultResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Result(Guid resultId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Results, true, resultId), ct)).ToIActionResult(ct);
+    [HttpPost("lab-requests/mine/{requestId:guid}/submissions"), Consumes("multipart/form-data"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]
+    [ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Submit(Guid requestId, [FromForm] PatientLabSubmissionRequest r, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
+    {
+        if (Request.Form.Keys.Any(k => k.Contains("covered", StringComparison.OrdinalIgnoreCase))) return new[] { DiagnosticErrors.Validation("LabResultSubmission.InvalidCoverage") }.ToActionProblem(ct);
+        return (await sender.Send(new DiagnosticResultCommand(DiagnosticKind.Lab, DiagnosticResultMutation.Submit, requestId, Attachments: await DiagnosticForms.ReadAsync(r.Attachments, [], ct), ExternalProviderName: r.ExternalLaboratoryName, ExternalReportDate: r.ExternalReportDate, PatientNote: r.PatientNote, IdempotencyKey: key), ct)).ToIActionResult(ct);
+    }
+    [HttpGet("lab-requests/mine/{requestId:guid}/submissions"), ProducesResponseType<ClinicalPage<DiagnosticSubmissionSummary>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Submissions(Guid requestId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Submissions, true, Filter: new(RequestId: requestId, PageNumber: pageNumber, PageSize: pageSize)), ct)).ToIActionResult(ct);
+    [HttpGet("lab-result-submissions/mine/{submissionId:guid}"), ProducesResponseType<DiagnosticSubmissionResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Submission(Guid submissionId, CancellationToken ct)
+        => (await sender.Send(new ReadDiagnosticQuery(DiagnosticKind.Lab, DiagnosticReadResource.Submissions, true, submissionId), ct)).ToIActionResult(ct);
+    [HttpPost("lab-result-submissions/mine/{submissionId:guid}/withdraw"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Withdraw(Guid submissionId, DiagnosticActionRequest r, CancellationToken ct)
+        => (await sender.Send(new DiagnosticResultCommand(DiagnosticKind.Lab, DiagnosticResultMutation.Withdraw, SubmissionId: submissionId, RowVersion: r.RowVersion), ct)).ToIActionResult(ct);
+    [HttpGet("lab-result-submissions/mine/{submissionId:guid}/attachments/{attachmentId:guid}/content")]
+    public async Task<IActionResult> SubmissionContent(Guid submissionId, Guid attachmentId, CancellationToken ct)
+    {
+        var result = await sender.Send(new DiagnosticMediaQuery(DiagnosticKind.Lab, true, true, submissionId, attachmentId), ct);
+        return result.IsSuccess ? File(result.Value.Content, result.Value.ContentType, result.Value.FileName) : result.Errors.ToActionProblem(ct);
+    }
+    [HttpGet("lab-results/mine/{resultId:guid}/attachments/{attachmentId:guid}/content")]
+    public async Task<IActionResult> ResultContent(Guid resultId, Guid attachmentId, CancellationToken ct)
+    {
+        var result = await sender.Send(new DiagnosticMediaQuery(DiagnosticKind.Lab, true, false, resultId, attachmentId), ct);
+        return result.IsSuccess ? File(result.Value.Content, result.Value.ContentType, result.Value.FileName) : result.Errors.ToActionProblem(ct);
+    }
+}
+

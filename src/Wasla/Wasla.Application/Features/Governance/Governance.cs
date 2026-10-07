@@ -442,7 +442,8 @@ internal sealed class ReplaceRolePermissionsCommandHandler(IWaslaDataStore dataS
             return Result<RolePermissionsResponse>.Fail(GovernanceErrors.RootPermissionNotAssignable);
         }
 
-        if (role.Id == SystemRoleIds.DrugCatalogManager && (!isRoot || permissions.Any(p => !PermissionNames.DrugCatalogManagerDefaults.Contains(p.Name))))
+        if ((role.Id == SystemRoleIds.DrugCatalogManager && (!isRoot || permissions.Any(p => !PermissionNames.DrugCatalogManagerDefaults.Contains(p.Name)))) ||
+            (role.Id == SystemRoleIds.MedicalCatalogManager && (!isRoot || permissions.Any(p => !PermissionNames.MedicalCatalogManagerDefaults.Contains(p.Name)))))
             return Result<RolePermissionsResponse>.Fail(SecurityErrors.RootRequired);
 
         var existing = await dataStore.ListRolePermissionsAsync(role.Id, cancellationToken);
