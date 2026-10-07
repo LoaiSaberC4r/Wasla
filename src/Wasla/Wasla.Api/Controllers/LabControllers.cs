@@ -110,8 +110,8 @@ public sealed class LabCatalogController(ISender sender, IOptions<DiagnosticCata
     {
         if (r.File is null) return new[] { DiagnosticErrors.Validation("DiagnosticCatalogImport.RequiredFileMissing") }.ToActionProblem(ct);
         if (r.File.Length > options.Value.MaxPackageBytes) return new[] { DiagnosticErrors.Validation("DiagnosticCatalogImport.PackageTooLarge") }.ToActionProblem(ct);
-        using var buffer = new MemoryStream(); await r.File.CopyToAsync(buffer, ct);
-        return (await sender.Send(new PreviewDiagnosticImportCommand(DiagnosticKind.Lab, buffer.ToArray(), r.File.FileName, r.SourceVersion), ct)).ToIActionResult(ct);
+        await using var package = r.File.OpenReadStream();
+        return (await sender.Send(new PreviewDiagnosticImportCommand(DiagnosticKind.Lab, package, r.File.FileName, r.SourceVersion), ct)).ToIActionResult(ct);
     }
     [HttpGet("imports"), ProducesResponseType<ClinicalPage<DiagnosticImportBatchResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Imports([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)

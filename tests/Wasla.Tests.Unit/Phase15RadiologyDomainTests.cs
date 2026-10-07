@@ -27,7 +27,7 @@ public sealed class Phase15RadiologyDomainTests
     [Fact]
     public void Official_part_type_casing_produces_the_ordered_modality_location_and_laterality_snapshot()
     {
-        var source = Wasla.Application.Features.Diagnostics.LoincPackageParser.Parse(Phase15LoincImportTests.Package(), DiagnosticKind.Radiology, "2.83", new()).Value.Single();
+        var source = Wasla.Application.Features.Diagnostics.LoincPackageParser.Parse(Phase15LoincImportTests.Package(), DiagnosticKind.Radiology, "2.83", new(), TestContext.Current.CancellationToken).Value.Single();
         var catalog = RadiologyProcedureCatalog.Import(source.Data, source.Hash, Actor, Now).Value;
         var request = RadiologyRequest.CreateDraft(Encounter().Encounter, Actor, Now).Value;
         Assert.True(request.AddCatalogItem(catalog, null, Actor, Now).IsSuccess);
