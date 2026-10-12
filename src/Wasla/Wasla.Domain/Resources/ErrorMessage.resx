@@ -467,4 +467,11 @@
   <data name="HiddenAccessRequest.Expired" xml:space="preserve"><value>The treating visit has ended or access has expired.</value></data>
   <data name="MedicalRecord.ConcurrencyConflict" xml:space="preserve"><value>The record changed. Refresh and retry.</value></data>
   <data name="HiddenAccessRequest.AlreadyRequestedForTicket" xml:space="preserve"><value>Access was already requested for this visit.</value></data>
+  <data name="MedicalRecord.VisitTitle" xml:space="preserve"><value>Completed visit</value></data>
+  <data name="MedicalRecord.DiagnosisTitle" xml:space="preserve"><value>Current diagnosis</value></data>
+  <data name="MedicalRecord.PrescriptionTitle" xml:space="preserve"><value>Prescription</value></data>
+  <data name="MedicalRecord.LabOrderTitle" xml:space="preserve"><value>Lab order</value></data>
+  <data name="MedicalRecord.LabResultTitle" xml:space="preserve"><value>Lab result</value></data>
+  <data name="MedicalRecord.RadiologyOrderTitle" xml:space="preserve"><value>Radiology order</value></data>
+  <data name="MedicalRecord.RadiologyResultTitle" xml:space="preserve"><value>Radiology result</value></data>
 </root>

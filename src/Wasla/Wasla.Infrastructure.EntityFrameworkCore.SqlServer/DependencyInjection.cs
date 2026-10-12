@@ -100,6 +100,9 @@ public static class DependencyInjection
         services.AddScoped<IHiddenAccessReader, HiddenAccessReader>();
         services.AddHttpContextAccessor();
         services.AddScoped<MedicalRecordAuditWriter>();
+        services.AddScoped<MedicalRecordReadService>();
+        services.AddScoped<IMedicalRecordReadService>(p => p.GetRequiredService<MedicalRecordReadService>());
+        services.AddScoped<IMedicalRecordMediaReader>(p => p.GetRequiredService<MedicalRecordReadService>());
         var protection = services.AddDataProtection().SetApplicationName("Wasla.Phase16");
         if (configuration["MedicalRecord:DataProtectionKeyRingPath"] is { Length: > 0 } keyPath)
             protection.PersistKeysToFileSystem(new DirectoryInfo(keyPath));

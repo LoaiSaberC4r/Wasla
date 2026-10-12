@@ -29,6 +29,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Wasla.Api.xml"));
+        options.SchemaFilter<Wasla.Api.OpenApi.MedicalRecordSchemaFilter>();
     });
 builder.Services.AddApiVersioning(options =>
 {
