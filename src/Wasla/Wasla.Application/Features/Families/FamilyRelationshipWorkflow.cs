@@ -52,7 +52,7 @@ public sealed record RequestFamilyRelationshipModificationCommand(Guid RequestId
 
 public sealed record GetMyFamilyQuery : IQuery<MyFamilyResponse>;
 public sealed record MyFamilyResponse(Guid FamilyId, FamilyStatus Status, IReadOnlyList<FamilyMemberResponse> Members);
-public sealed record FamilyMemberResponse(Guid PatientId, string NameAr, string? NameEn, FamilyMemberRole Role, Gender Gender);
+public sealed record FamilyMemberResponse(Guid PatientId, string NameAr, string? NameEn, FamilyMemberRole Role, Gender Gender, FamilyMedicalAccessStatusResponse? MedicalAccess = null);
 
 public sealed record GetMyFamilyRelationshipRequestsQuery(
     FamilyRelationshipRequestStatus? Status,
@@ -270,7 +270,7 @@ internal sealed class RequestFamilyRelationshipModificationCommandHandler(Family
         => workflow.ReviewAsync(request.RequestId, request.RowVersion, request.Message, true, cancellationToken);
 }
 
-internal sealed class GetMyFamilyQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class GetMyFamilyQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser, IFamilyMedicalAccessPolicy medical)
     : IQueryHandler<GetMyFamilyQuery, MyFamilyResponse>
 {
     public async Task<Result<MyFamilyResponse>> Handle(GetMyFamilyQuery request, CancellationToken cancellationToken)
@@ -282,7 +282,9 @@ internal sealed class GetMyFamilyQueryHandler(IWaslaDataStore dataStore, ICurren
         var family = await dataStore.FindFamilyByIdAsync(member.FamilyId, cancellationToken);
         if (family is null) return Result<MyFamilyResponse>.Fail(FamilyErrors.NotFound);
         var members = await dataStore.ListActiveFamilyMembersAsync(family.Id, cancellationToken);
-        return Result<MyFamilyResponse>.Ok(new(family.Id, family.Status, members.Select(FamilyWorkflowMapper.Member).ToArray()));
+        var statuses = await medical.StatusesAsync(family.Id, cancellationToken);
+        return Result<MyFamilyResponse>.Ok(new(family.Id, family.Status, members.Select(m => FamilyWorkflowMapper.Member(m) with
+            { MedicalAccess = m.Member.Role == FamilyMemberRole.Child && statuses.TryGetValue(m.Patient.Id, out var status) ? status : null }).ToArray()));
     }
 }
 

@@ -47,10 +47,15 @@ internal sealed class ReadMedicalRecordMediaValidator : AbstractValidator<ReadMe
         RuleFor(r => r.SourceId).NotEmpty(); RuleFor(r => r.AttachmentId).NotEmpty();
     }
 }
-internal sealed class ReadMedicalRecordHandler(IMedicalRecordAccessPolicy policy, IMedicalRecordReadService reader) : IQueryHandler<ReadMedicalRecordQuery, object>
+internal sealed class ReadMedicalRecordHandler(IMedicalRecordAccessPolicy policy, IMedicalRecordReadService reader, Wasla.Application.Features.Families.IFamilyMedicalAccessPolicy families) : IQueryHandler<ReadMedicalRecordQuery, object>
 {
     public async Task<Result<object>> Handle(ReadMedicalRecordQuery r, CancellationToken ct)
     {
+        if (r.Read == MedicalRecordRead.Dependents)
+        {
+            var dependents = await families.DependentsAsync(ct);
+            return dependents.IsSuccess ? Result<object>.Ok(dependents.Value) : Result<object>.Fail(dependents.Errors);
+        }
         var started = Stopwatch.GetTimestamp();
         var scope = await policy.ScopeAsync(r.Mode, r.PracticeId, r.TicketId, r.DependentPatientId, MedicalRecordInput.Permission(r.Mode, r.Read == MedicalRecordRead.AccessLog), ct);
         if (scope.IsFailure) { MedicalRecordTelemetry.Denied(r.Mode); return Result<object>.Fail(MedicalRecordErrors.Denied); }

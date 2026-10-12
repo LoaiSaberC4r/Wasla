@@ -194,6 +194,14 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.FamilyRelationshipRequestsReject,
                 PermissionNames.FamilyRelationshipRequestsRequestModification,
                 PermissionNames.ReservationsViewAdministrative,
+                PermissionNames.FamilyMedicalAccessRequestsViewAll,
+                PermissionNames.FamilyMedicalAccessRequestsViewAdminDetails,
+                PermissionNames.FamilyMedicalAccessRequestsDecide,
+                PermissionNames.FamilyMedicalAccessRequestsRequestModification,
+                PermissionNames.FamilyMedicalAccessRequestsViewAdminDocuments,
+                PermissionNames.FamilyMedicalAccessEligibilityReview,
+                PermissionNames.FamilyMedicalAccessEligibilityDecide,
+                PermissionNames.FamilyMedicalAccessEligibilityRevoke,
                 PermissionNames.PlatformRevenueViewAggregates
             ],
             [SystemRoleIds.Doctor] =
@@ -293,6 +301,12 @@ internal sealed class WaslaSecuritySeeder(
                 PermissionNames.PatientContactsViewOwn,
                 PermissionNames.PatientContactsManageOwn,
                 PermissionNames.FamiliesViewOwn,
+                PermissionNames.FamilyMedicalAccessRequestsCreateOwn,
+                PermissionNames.FamilyMedicalAccessRequestsViewOwn,
+                PermissionNames.FamilyMedicalAccessRequestsWithdrawOwn,
+                PermissionNames.FamilyMedicalAccessRequestsResubmitOwn,
+                PermissionNames.FamilyMedicalAccessRequestsViewOwnDocuments,
+
                 PermissionNames.FamiliesManageOwn,
                 PermissionNames.FamilyRelationshipRequestsCreate,
                 PermissionNames.FamilyRelationshipRequestsViewOwn,

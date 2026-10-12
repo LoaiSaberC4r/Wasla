@@ -3,6 +3,7 @@ using BuildingBlock.Domain.Results;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Domain.Clinical;
+using Wasla.Domain.Families;
 using Wasla.Domain.Medications;
 using Wasla.Domain.Diagnostics;
 using Wasla.Domain.Labs;
@@ -17,6 +18,7 @@ internal sealed class ClinicalPersistenceErrorMapper : IExceptionToErrorMapper
         error = null!;
         if (exception is DbUpdateConcurrencyException concurrency)
         {
+            if (concurrency.Entries.Any(e => e.Entity is FamilyMedicalAccessRequest or FamilyMedicalAccessRestriction or FamilyMedicalEligibilityReview)) { error = FamilyMedicalErrors.Conflict; return true; }
             var diagnostic = concurrency.Entries.Select(e => DiagnosticConflict(e.Entity)).FirstOrDefault(c => c is not null);
             if (diagnostic is not null) error = DiagnosticErrors.Conflict(diagnostic);
             else if (concurrency.Message is "LabResult.ConcurrencyConflict" or "RadiologyResult.ConcurrencyConflict") error = DiagnosticErrors.Conflict(concurrency.Message);
@@ -31,6 +33,7 @@ internal sealed class ClinicalPersistenceErrorMapper : IExceptionToErrorMapper
         }
         if (exception is DbUpdateException { InnerException: SqlException sql } && sql.Number is 2601 or 2627)
         {
+            if (sql.Message.Contains("UX_FamilyMedical", StringComparison.Ordinal)) { error = FamilyMedicalErrors.Conflict; return true; }
             var diagnostic = exception is DbUpdateException update ? update.Entries.Select(e => DiagnosticConflict(e.Entity)).FirstOrDefault(c => c is not null) : null;
             if (diagnostic is not null) error = DiagnosticErrors.Conflict(diagnostic);
             else if (sql.Message.Contains("UX_Prescriptions_Encounter", StringComparison.Ordinal)) error = MedicationErrors.Conflict("Prescription.AlreadyExistsForEncounter");

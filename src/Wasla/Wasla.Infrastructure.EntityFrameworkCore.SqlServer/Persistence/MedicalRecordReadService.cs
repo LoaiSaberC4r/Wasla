@@ -89,7 +89,7 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
         if (q.Read == MedicalRecordRead.Encounter && !await Authorized(s).AnyAsync(e => e.Id == q.EncounterId, ct)) return null;
         if (value is MedicalRecordItemDetailsResponse item && !await Authorized(s).AnyAsync(e => e.Id == item.EncounterId, ct)) return null;
         await audit.WriteAsync(s, q.Read.ToString(), q.ResourceType ?? "medical-record", q.SourceId, q.EncounterId, ct);
-        return value;
+        return await RecheckAsync(s, q.Read == MedicalRecordRead.AccessLog, ct) ? value : null;
     }
     private async Task<MedicalRecordOverviewResponse?> OverviewAsync(MedicalRecordScope s, MedicalRecordFilter f, CancellationToken ct)
     {
@@ -116,7 +116,7 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
         var rr = await db.RadiologyResults.Where(p => p.PatientId == s.PatientId).SumAsync(p => (long?)p.Revision + 1, ct) ?? 0;
         var grants = s.TicketId.HasValue ? await db.Set<HiddenEncounterAccessRequest>().Where(r => r.RequestingTicketId == s.TicketId)
             .SumAsync(r => (long?)r.Status + 1, ct) ?? 0 : 0;
-        return $"{e}:{p}:{l}:{lr}:{r}:{rr}:{grants}";
+        return $"{e}:{p}:{l}:{lr}:{r}:{rr}:{grants}:{s.AccessVersion}";
     }
     private IQueryable<TimelineCandidate> Candidates(IQueryable<MedicalEncounter> sources)
     {
@@ -260,6 +260,8 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
         { await opened.Content.DisposeAsync(); return null; }
         try { await audit.WriteAsync(s, "MediaRead", q.ResourceType, q.SourceId, reference.EncounterId, ct); }
         catch { await opened.Content.DisposeAsync(); throw; }
+        if (!await RecheckAsync(s, false, ct) || await MediaReferenceAsync(s, q.ResourceType, q.SourceId, q.AttachmentId, ct) != reference)
+        { await opened.Content.DisposeAsync(); return null; }
         return new(opened.Content, reference.ContentType, SafeFileName(reference.FileName));
     }
     private static string SafeFileName(string original)

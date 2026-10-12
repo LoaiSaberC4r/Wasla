@@ -474,4 +474,8 @@
   <data name="MedicalRecord.LabResultTitle" xml:space="preserve"><value>نتيجة تحاليل</value></data>
   <data name="MedicalRecord.RadiologyOrderTitle" xml:space="preserve"><value>طلب أشعة</value></data>
   <data name="MedicalRecord.RadiologyResultTitle" xml:space="preserve"><value>نتيجة أشعة</value></data>
+  <data name="FamilyMedicalAccess.Unavailable" xml:space="preserve"><value>الوصول الطبي للأسرة غير متاح.</value></data>
+  <data name="FamilyMedicalAccess.Invalid" xml:space="preserve"><value>طلب الوصول الطبي للأسرة غير صالح.</value></data>
+  <data name="FamilyMedicalAccess.Conflict" xml:space="preserve"><value>تغير طلب الوصول الطبي للأسرة أو لا يمكن البت فيه.</value></data>
+  <data name="FamilyMedicalAccess.PolicyUnavailable" xml:space="preserve"><value>سياسة الوصول الطبي للأسرة المعتمدة غير متاحة.</value></data>
 </root>

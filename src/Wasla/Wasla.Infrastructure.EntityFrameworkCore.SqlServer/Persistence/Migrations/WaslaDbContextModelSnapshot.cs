@@ -1084,6 +1084,423 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.ToTable("Families", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AffectedAdultPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AffectedRestrictionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChildPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CurrentRevisionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("RequestType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReviewMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedBySuperAdminApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SubmittedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SubmittedByPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("WithdrawnAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("WithdrawnByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AffectedAdultPatientId");
+
+                    b.HasIndex("AffectedRestrictionId");
+
+                    b.HasIndex("ChildPatientId");
+
+                    b.HasIndex("ReviewedBySuperAdminApplicationUserId");
+
+                    b.HasIndex("SubmittedByPatientId");
+
+                    b.HasIndex("WithdrawnByApplicationUserId");
+
+                    b.HasIndex("Status", "SubmittedAtUtc", "Id")
+                        .IsDescending(false, true, false);
+
+                    b.HasIndex("SubmittedByApplicationUserId", "SubmittedAtUtc", "Id")
+                        .IsDescending(false, true, false);
+
+                    b.HasIndex("FamilyId", "ChildPatientId", "AffectedAdultPatientId", "RequestType")
+                        .IsUnique()
+                        .HasDatabaseName("UX_FamilyMedicalRequests_Open")
+                        .HasFilter("[Status] IN (1,2)");
+
+                    b.ToTable("FamilyMedicalAccessRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FamilyMedicalRequests_Actors", "[ChildPatientId] <> [AffectedAdultPatientId] AND (([RequestType] = 1 AND [SubmittedByPatientId] <> [AffectedAdultPatientId]) OR ([RequestType] = 2 AND [SubmittedByPatientId] = [AffectedAdultPatientId]))");
+
+                            t.HasCheckConstraint("CK_FamilyMedicalRequests_Revision", "[CurrentRevisionNumber] >= 1");
+
+                            t.HasCheckConstraint("CK_FamilyMedicalRequests_Status", "[Status] IN (1,2,3,4,5)");
+
+                            t.HasCheckConstraint("CK_FamilyMedicalRequests_Type", "[RequestType] IN (1,2)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRequestDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("MediaKey")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RevisionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadedByApplicationUserId");
+
+                    b.HasIndex("RequestId", "RevisionNumber");
+
+                    b.ToTable("FamilyMedicalAccessRequestDocuments", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRequestHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OldStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReasonOrMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("ParentId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("FamilyMedicalAccessRequestHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRestriction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AffectedAdultPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChildPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LiftedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("LiftedByRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LiftedBySuperAdminApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RestrictedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("RestrictedBySuperAdminApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RestrictionApprovedByRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AffectedAdultPatientId");
+
+                    b.HasIndex("ChildPatientId");
+
+                    b.HasIndex("LiftedByRequestId");
+
+                    b.HasIndex("LiftedBySuperAdminApplicationUserId");
+
+                    b.HasIndex("RestrictedBySuperAdminApplicationUserId");
+
+                    b.HasIndex("RestrictionApprovedByRequestId");
+
+                    b.HasIndex("FamilyId", "ChildPatientId", "AffectedAdultPatientId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_FamilyMedicalRestrictions_Active")
+                        .HasFilter("[Status] = 1");
+
+                    b.ToTable("FamilyMedicalAccessRestrictions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FamilyMedicalRestrictions_Status", "[Status] IN (1,2)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRestrictionHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OldStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReasonOrMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("ParentId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("FamilyMedicalAccessRestrictionHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalEligibilityReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AdultFamilyMemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AdultPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BasisReference")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("ChildFamilyMemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChildPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PolicyVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ReviewReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdultFamilyMemberId");
+
+                    b.HasIndex("AdultPatientId");
+
+                    b.HasIndex("ChildFamilyMemberId");
+
+                    b.HasIndex("ChildPatientId");
+
+                    b.HasIndex("ReviewedByApplicationUserId");
+
+                    b.HasIndex("Status", "CreatedAtUtc");
+
+                    b.HasIndex("FamilyId", "AdultPatientId", "ChildPatientId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_FamilyMedicalEligibility_Pair");
+
+                    b.ToTable("FamilyMedicalEligibilityReviews", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FamilyMedicalEligibility_Status", "[Status] IN (1,2,3,4)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalEligibilityReviewHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OldStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReasonOrMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("ParentId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("FamilyMedicalEligibilityReviewHistories", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Families.FamilyMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7005,6 +7422,192 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRequest", b =>
+                {
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("AffectedAdultPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMedicalAccessRestriction", null)
+                        .WithMany()
+                        .HasForeignKey("AffectedRestrictionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("ChildPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedBySuperAdminApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("SubmittedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("SubmittedByPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("WithdrawnByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRequestDocument", b =>
+                {
+                    b.HasOne("Wasla.Domain.Families.FamilyMedicalAccessRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UploadedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRequestHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMedicalAccessRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRestriction", b =>
+                {
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("AffectedAdultPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("ChildPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMedicalAccessRequest", null)
+                        .WithMany()
+                        .HasForeignKey("LiftedByRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("LiftedBySuperAdminApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RestrictedBySuperAdminApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMedicalAccessRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RestrictionApprovedByRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalAccessRestrictionHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMedicalAccessRestriction", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalEligibilityReview", b =>
+                {
+                    b.HasOne("Wasla.Domain.Families.FamilyMember", null)
+                        .WithMany()
+                        .HasForeignKey("AdultFamilyMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("AdultPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMember", null)
+                        .WithMany()
+                        .HasForeignKey("ChildFamilyMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("ChildPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.FamilyMedicalEligibilityReviewHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMedicalEligibilityReview", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

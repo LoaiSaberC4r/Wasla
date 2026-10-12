@@ -17,7 +17,7 @@ namespace Wasla.Api.Controllers;
 [Authorize]
 public sealed class FamiliesController(ISender sender) : ControllerBase
 {
-    [HttpGet("mine")]
+    [HttpGet("mine"), ProducesResponseType<MyFamilyResponse>(200)]
     [Permission(PermissionNames.FamiliesViewOwn)]
     public async Task<IActionResult> Mine(CancellationToken cancellationToken)
         => (await sender.Send(new GetMyFamilyQuery(), cancellationToken)).ToIActionResult(cancellationToken);
