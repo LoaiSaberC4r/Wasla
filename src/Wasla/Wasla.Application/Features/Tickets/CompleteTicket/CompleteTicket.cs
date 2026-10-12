@@ -28,7 +28,8 @@ public sealed record CompleteTicketCommand(
     string IdempotencyKey,
     string? PrescriptionRowVersion = null,
     string? LabRequestRowVersion = null,
-    string? RadiologyRequestRowVersion = null)
+    string? RadiologyRequestRowVersion = null,
+    EncounterVisibility? Visibility = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CompleteTicketCommandValidator : AbstractValidator<CompleteTicketCommand>
@@ -39,6 +40,7 @@ internal sealed class CompleteTicketCommandValidator : AbstractValidator<Complet
         RuleFor(command => command.TicketId).NotEmpty();
         RuleFor(command => command.TicketRowVersion).Must(TicketRowVersion.IsValid);
         RuleFor(command => command.EncounterRowVersion).Must(TicketRowVersion.IsValid);
+        RuleFor(command => command.Visibility).Must(v => v is null || Enum.IsDefined(v.Value));
         RuleFor(command => command.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
@@ -90,7 +92,7 @@ internal sealed class CompleteTicketCommandHandler(
             actor.Value.ApplicationUserId,
             "CompleteTicket",
             key.Value,
-            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion),
+            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion, request.Visibility ?? EncounterVisibility.Visible),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)
@@ -151,7 +153,7 @@ internal sealed class CompleteTicketCommandHandler(
             var issued = radiology.Publish(actor.Value.ApplicationUserId, nowUtc);
             if (issued.IsFailure) return Result<TicketDetailsResponse>.Fail(issued.Errors);
         }
-        var encounterCompleted = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc);
+        var encounterCompleted = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc, request.Visibility);
         if (encounterCompleted.IsFailure) return Result<TicketDetailsResponse>.Fail(encounterCompleted.Errors);
         if (ticket.FollowUpEligibilityId is { } eligibilityId)
         {

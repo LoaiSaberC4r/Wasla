@@ -152,6 +152,10 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         AddDiagnosticDraftHistory();
         EnsureFinancialHistoryIsAppendOnly();
         AddPrescriptionAuditEvents();
+        var trackedVisibility = ChangeTracker.Entries<EncounterVisibilityHistory>().Select(e => e.Entity.Id).ToHashSet();
+        Set<EncounterVisibilityHistory>().AddRange(ChangeTracker.Entries<MedicalEncounter>().SelectMany(e => e.Entity.VisibilityHistory).Where(h => !trackedVisibility.Contains(h.Id)).ToArray());
+        if (ChangeTracker.Entries<EncounterVisibilityHistory>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Visibility history is immutable.");
         PrepareSqliteRowVersions();
         // Release the filtered current-version key before acquiring it for the correction.
         var superseded = ChangeTracker.Entries<PrescriptionVersion>().Where(e => e.State == EntityState.Modified &&

@@ -22,6 +22,19 @@ public static class SystemRoleIds
 
 public static class PermissionNames
 {
+    public const string MedicalRecordsViewOwn = "MedicalRecords.ViewOwn";
+    public const string MedicalRecordsViewTreatingPatient = "MedicalRecords.ViewTreatingPatient";
+    public const string MedicalRecordsViewDependent = "MedicalRecords.ViewDependent";
+    public const string MedicalRecordsViewOwnAccessLog = "MedicalRecords.ViewOwnAccessLog";
+    public const string MedicalEncounterVisibilityUpdateOwn = "MedicalEncounterVisibility.UpdateOwn";
+    public const string MedicalEncounterVisibilityViewHistoryOwn = "MedicalEncounterVisibility.ViewHistoryOwn";
+    public const string HiddenEncounterAccessRequestsCreate = "HiddenEncounterAccessRequests.Create";
+    public const string HiddenEncounterAccessRequestsViewSent = "HiddenEncounterAccessRequests.ViewSent";
+    public const string HiddenEncounterAccessRequestsViewIncoming = "HiddenEncounterAccessRequests.ViewIncoming";
+    public const string HiddenEncounterAccessRequestsDecideOwn = "HiddenEncounterAccessRequests.DecideOwn";
+    public const string HiddenEncounterAccessRequestsRevokeOwn = "HiddenEncounterAccessRequests.RevokeOwn";
+    public const string HiddenEncounterAccessRequestsViewHistoryOwn = "HiddenEncounterAccessRequests.ViewHistoryOwn";
+
     public const string LabCatalogView = "LabCatalog.View";
     public const string LabCatalogCreate = "LabCatalog.Create";
     public const string LabCatalogUpdate = "LabCatalog.Update";
@@ -501,6 +514,18 @@ public static class PermissionNames
         MedicalCatalogManagersUpdate,
         MedicalCatalogManagersActivate,
         MedicalCatalogManagersDeactivate,
+        MedicalRecordsViewOwn,
+        MedicalRecordsViewTreatingPatient,
+        MedicalRecordsViewDependent,
+        MedicalRecordsViewOwnAccessLog,
+        MedicalEncounterVisibilityUpdateOwn,
+        MedicalEncounterVisibilityViewHistoryOwn,
+        HiddenEncounterAccessRequestsCreate,
+        HiddenEncounterAccessRequestsViewSent,
+        HiddenEncounterAccessRequestsViewIncoming,
+        HiddenEncounterAccessRequestsDecideOwn,
+        HiddenEncounterAccessRequestsRevokeOwn,
+        HiddenEncounterAccessRequestsViewHistoryOwn,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
