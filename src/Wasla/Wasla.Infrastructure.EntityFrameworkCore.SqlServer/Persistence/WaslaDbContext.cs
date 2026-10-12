@@ -146,6 +146,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
             ? await Database.BeginTransactionAsync(cancellationToken) : null;
         await SynchronizeFollowUpReleasesAsync(cancellationToken);
         await SynchronizeMedicalRecordExpiryAsync(cancellationToken);
+        await PrepareFamilyMedicalAsync(cancellationToken);
         await GuardCompletedDiagnosisDeletionAsync(cancellationToken);
         await GuardPrescriptionHistoryAsync(cancellationToken);
         await GuardDiagnosticContentAsync(cancellationToken);

@@ -22,6 +22,20 @@ public static class SystemRoleIds
 
 public static class PermissionNames
 {
+    public const string FamilyMedicalAccessRequestsCreateOwn = "FamilyMedicalAccessRequests.CreateOwn";
+    public const string FamilyMedicalAccessRequestsViewOwn = "FamilyMedicalAccessRequests.ViewOwn";
+    public const string FamilyMedicalAccessRequestsWithdrawOwn = "FamilyMedicalAccessRequests.WithdrawOwn";
+    public const string FamilyMedicalAccessRequestsResubmitOwn = "FamilyMedicalAccessRequests.ResubmitOwn";
+    public const string FamilyMedicalAccessRequestsViewOwnDocuments = "FamilyMedicalAccessRequests.ViewOwnDocuments";
+    public const string FamilyMedicalAccessRequestsViewAll = "FamilyMedicalAccessRequests.ViewAll";
+    public const string FamilyMedicalAccessRequestsViewAdminDetails = "FamilyMedicalAccessRequests.ViewAdminDetails";
+    public const string FamilyMedicalAccessRequestsDecide = "FamilyMedicalAccessRequests.Decide";
+    public const string FamilyMedicalAccessRequestsRequestModification = "FamilyMedicalAccessRequests.RequestModification";
+    public const string FamilyMedicalAccessRequestsViewAdminDocuments = "FamilyMedicalAccessRequests.ViewAdminDocuments";
+    public const string FamilyMedicalAccessEligibilityReview = "FamilyMedicalAccessEligibility.Review";
+    public const string FamilyMedicalAccessEligibilityDecide = "FamilyMedicalAccessEligibility.Decide";
+    public const string FamilyMedicalAccessEligibilityRevoke = "FamilyMedicalAccessEligibility.Revoke";
+
     public const string MedicalRecordsViewOwn = "MedicalRecords.ViewOwn";
     public const string MedicalRecordsViewTreatingPatient = "MedicalRecords.ViewTreatingPatient";
     public const string MedicalRecordsViewDependent = "MedicalRecords.ViewDependent";
@@ -526,6 +540,20 @@ public static class PermissionNames
         HiddenEncounterAccessRequestsDecideOwn,
         HiddenEncounterAccessRequestsRevokeOwn,
         HiddenEncounterAccessRequestsViewHistoryOwn,
+        FamilyMedicalAccessRequestsCreateOwn,
+        FamilyMedicalAccessRequestsViewOwn,
+        FamilyMedicalAccessRequestsWithdrawOwn,
+        FamilyMedicalAccessRequestsResubmitOwn,
+        FamilyMedicalAccessRequestsViewOwnDocuments,
+        FamilyMedicalAccessRequestsViewAll,
+        FamilyMedicalAccessRequestsViewAdminDetails,
+        FamilyMedicalAccessRequestsDecide,
+        FamilyMedicalAccessRequestsRequestModification,
+        FamilyMedicalAccessRequestsViewAdminDocuments,
+        FamilyMedicalAccessEligibilityReview,
+        FamilyMedicalAccessEligibilityDecide,
+        FamilyMedicalAccessEligibilityRevoke,
+
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

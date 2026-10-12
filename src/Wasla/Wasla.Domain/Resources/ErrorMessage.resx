@@ -474,4 +474,8 @@
   <data name="MedicalRecord.LabResultTitle" xml:space="preserve"><value>Lab result</value></data>
   <data name="MedicalRecord.RadiologyOrderTitle" xml:space="preserve"><value>Radiology order</value></data>
   <data name="MedicalRecord.RadiologyResultTitle" xml:space="preserve"><value>Radiology result</value></data>
+  <data name="FamilyMedicalAccess.Unavailable" xml:space="preserve"><value>Family medical access is unavailable.</value></data>
+  <data name="FamilyMedicalAccess.Invalid" xml:space="preserve"><value>The family medical request is invalid.</value></data>
+  <data name="FamilyMedicalAccess.Conflict" xml:space="preserve"><value>The family medical request changed or cannot be decided.</value></data>
+  <data name="FamilyMedicalAccess.PolicyUnavailable" xml:space="preserve"><value>The approved family medical policy is unavailable.</value></data>
 </root>

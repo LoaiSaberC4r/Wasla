@@ -20,8 +20,8 @@ namespace Wasla.Api.Controllers;
 [Route("api/v{version:apiVersion}/families/mine/medical-record-dependents")]
 public sealed class MedicalRecordDependentsController(ISender sender) : ControllerBase
 {
-    /// <summary>P16-24: Guardian medical scope is inactive pending formal legal/privacy policy adoption.</summary>
-    [HttpGet, ProducesResponseType<RecordPage<MedicalRecordPatient>>(200)]
+    /// <summary>P16-24: Current eligible dependents under configured approved policy and guardian sharing gate.</summary>
+    [HttpGet, ProducesResponseType<RecordPage<Wasla.Application.Features.Families.FamilyMedicalDependent>>(200)]
     public async Task<IActionResult> List(CancellationToken ct)
         => (await sender.Send(new ReadMedicalRecordQuery(MedicalRecordRead.Dependents, MedicalRecordMode.Dependent), ct)).ToIActionResult(ct);
 }

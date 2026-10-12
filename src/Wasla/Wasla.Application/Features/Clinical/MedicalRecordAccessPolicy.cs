@@ -5,6 +5,7 @@ using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Security;
+using Wasla.Application.Features.Families;
 
 namespace Wasla.Application.Features.Clinical;
 
@@ -18,7 +19,7 @@ public enum MedicalRecordMode { OwnPatient = 1, TreatingDoctor = 2, Dependent = 
 public sealed record MedicalRecordActor(Guid UserId, Guid DoctorId, IReadOnlyList<string> Permissions);
 public sealed record TreatmentContext(Guid PatientId, Guid EncounterId);
 public sealed record MedicalRecordScope(Guid ActorId, Guid PatientId, MedicalRecordMode Mode, Guid? DoctorId = null,
-    Guid? PracticeId = null, Guid? TicketId = null, Guid? TreatingEncounterId = null, bool CanRequestHiddenAccess = false);
+    Guid? PracticeId = null, Guid? TicketId = null, Guid? TreatingEncounterId = null, bool CanRequestHiddenAccess = false, string? AccessVersion = null);
 public interface ICurrentTreatmentReader
 {
     Task<TreatmentContext?> CurrentAsync(Guid doctorId, Guid practiceId, Guid ticketId, CancellationToken ct);
@@ -29,7 +30,7 @@ public interface IMedicalRecordAccessPolicy
     Task<Result<MedicalRecordActor>> DoctorAsync(string permission, CancellationToken ct);
 }
 internal sealed class MedicalRecordAccessPolicy(IWaslaDataStore store, ICurrentUser current, ICurrentTreatmentReader treatments,
-    IOptions<MedicalRecordOptions> options) : IMedicalRecordAccessPolicy
+    IOptions<MedicalRecordOptions> options, IFamilyMedicalAccessPolicy families) : IMedicalRecordAccessPolicy
 {
     private async Task<UserAccessSnapshot?> SnapshotAsync(string permission, CancellationToken ct)
     {
@@ -49,8 +50,7 @@ internal sealed class MedicalRecordAccessPolicy(IWaslaDataStore store, ICurrentU
     {
         if (mode == MedicalRecordMode.Dependent)
         {
-            // Exact legal policy has not been adopted. Fail closed even if an operator enables the configuration flag.
-            return Result<MedicalRecordScope>.Fail(MedicalRecordErrors.Denied);
+            return await families.ScopeAsync(dependentId, ct);
         }
         if (mode == MedicalRecordMode.TreatingDoctor)
         {
