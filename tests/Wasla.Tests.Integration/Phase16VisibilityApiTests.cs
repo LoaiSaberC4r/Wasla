@@ -1,11 +1,38 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Wasla.Domain.Tickets;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
 
 namespace Wasla.Tests.Integration;
 
 public sealed class Phase16VisibilityApiTests
 {
+    [Fact]
+    public async Task EXT_01_preserves_pre_phase16_default_completion_idempotency_records()
+    {
+        await using var app = await Phase15DiagnosticApiTests.CreateAsync(); using var doctor = await app.ClientAsync("doctor"); using var reception = await app.ClientAsync("reception");
+        var ticket = await app.StartAsync(doctor, await app.WalkInAsync(reception)); var id = ticket.GetProperty("ticketId").GetGuid(); var encounterId = ticket.GetProperty("medicalEncounterId").GetGuid();
+        var e = await GetAsync(doctor, app.EncounterUrl(encounterId));
+        using var notes = await doctor.PatchAsJsonAsync(app.EncounterUrl(encounterId) + "/clinical-notes", new { clinicalNotes = "Clinical documentation", rowVersion = e.GetProperty("rowVersion").GetString() }, TestContext.Current.CancellationToken); e = await JsonAsync(notes);
+        var ticketVersion = ticket.GetProperty("rowVersion").GetString(); var encounterVersion = e.GetProperty("rowVersion").GetString();
+        var body = new { ticketRowVersion = ticketVersion, encounterRowVersion = encounterVersion };
+        await Phase15DiagnosticApiTests.OkAsync(await PostAsync(doctor, app.TicketUrl(id) + "/complete", body));
+        // The persisted legacy key contains the seven original fields, without a visibility field.
+        var payload = $"{app.PracticeId}|{id}|{ticketVersion}|{encounterVersion}|<null>|<null>|<null>";
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))); var key = Guid.NewGuid().ToString("N");
+        await app.WithDbAsync(async db =>
+        {
+            var record = new TicketIdempotencyRecord(Guid.NewGuid(), app.DoctorUserId, "CompleteTicket", key, fingerprint, app.Clock.UtcNow);
+            record.Complete(id, app.Clock.UtcNow); db.TicketIdempotencyRecords.Add(record); await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        });
+        await Phase15DiagnosticApiTests.OkAsync(await PostAsync(doctor, app.TicketUrl(id) + "/complete", body, key));
+        await Phase15DiagnosticApiTests.OkAsync(await PostAsync(doctor, app.TicketUrl(id) + "/complete", new { ticketRowVersion = ticketVersion, encounterRowVersion = encounterVersion, visibility = "Visible" }, key));
+        using var conflict = await PostAsync(doctor, app.TicketUrl(id) + "/complete", new { ticketRowVersion = ticketVersion, encounterRowVersion = encounterVersion, visibility = "Hidden" }, key);
+        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+    }
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

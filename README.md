@@ -340,6 +340,17 @@ Business and domain decisions must be resolved before implementation proceeds in
 
 ---
 
+## Phase 16 backend status
+
+Phase 16 adds the central patient record, current-output timeline, scoped private
+media, encounter visibility and hidden-access request workflow. See
+[API contract and route status](PHASE-16-API-CHANGES.md),
+[rollout and privacy gates](PHASE-16-ROLLOUT.md), and
+[implementation/verification report](PHASE-16-IMPLEMENTATION-REPORT.md).
+Cross-doctor sharing defaults OFF. Guardian routes are inactive pending a
+separately approved policy. The [proposed addendum](SOURCE-OF-TRUTH-PHASE-16-ADDENDUM-PROPOSED.md)
+does not formally amend the master or grant production release approval.
+
 ## Source of Truth
 
 The project follows an explicit source-priority model:

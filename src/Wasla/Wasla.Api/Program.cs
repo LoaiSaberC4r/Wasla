@@ -27,10 +27,10 @@ builder.Services
     .AddApplicationPart(typeof(BuildingBlock.Api.ProblemDetailsMappingMvc).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
-    {
-        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Wasla.Api.xml"));
-        options.SchemaFilter<Wasla.Api.OpenApi.MedicalRecordSchemaFilter>();
-    });
+{
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Wasla.Api.xml"));
+    options.SchemaFilter<Wasla.Api.OpenApi.MedicalRecordSchemaFilter>();
+});
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -72,7 +72,7 @@ builder.Services.AddRateLimiter(options =>
     void AddFixedPolicy(string name, int permitLimit)
         => options.AddPolicy(name, context => RateLimitPartition.GetFixedWindowLimiter(
             name.StartsWith("medical-record", StringComparison.Ordinal)
-                ? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"
+                ? context.User.FindFirst("sub")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"
                 : context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
