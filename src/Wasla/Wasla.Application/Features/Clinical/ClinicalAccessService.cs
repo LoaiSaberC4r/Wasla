@@ -19,7 +19,7 @@ internal sealed class ClinicalAccessService(IWaslaDataStore dataStore, ICurrentU
     public async Task<Result<ClinicalActor>> DoctorAsync(Guid practiceId, string permission, CancellationToken ct)
     {
         var snapshot = await SnapshotAsync(ct);
-        if (snapshot is null || !Has(snapshot, permission) || snapshot.DoctorId is not { } doctorId ||
+        if (snapshot is null || snapshot.User.UserType != UserType.Doctor || !Has(snapshot, permission) || snapshot.DoctorId is not { } doctorId ||
             snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
             return Result<ClinicalActor>.Fail(ClinicalErrors.AccessDenied);
         var practice = await dataStore.FindDoctorPracticeAsync(practiceId, ct);

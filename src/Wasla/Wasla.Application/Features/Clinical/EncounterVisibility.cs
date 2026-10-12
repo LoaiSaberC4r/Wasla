@@ -27,6 +27,7 @@ public interface IEncounterVisibilityReader
 }
 public interface IMedicalRecordTokens
 {
+    string OpaqueEntryId(string value);
     string Protect<T>(string purpose, T value);
     T? Read<T>(string purpose, string token);
 }

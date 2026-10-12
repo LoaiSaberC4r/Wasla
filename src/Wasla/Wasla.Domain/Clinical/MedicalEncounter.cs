@@ -55,7 +55,7 @@ public sealed class MedicalEncounter : AggregateRoot<Guid>, IAuditableEntity
         {
             Id = Guid.NewGuid(), TicketId = ticket.Id, DoctorId = ticket.DoctorId,
             DoctorPracticeId = ticket.DoctorPracticeId, PatientId = ticket.PatientId,
-            Status = EncounterStatus.InProgress, StartedAtUtc = ticket.InProgressOnUtc.Value,
+            Status = EncounterStatus.InProgress, Visibility = EncounterVisibility.Visible, VisibilityRevision = 0, StartedAtUtc = ticket.InProgressOnUtc.Value,
             CreatedOnUtc = nowUtc, CreatedByApplicationUserId = actor
         };
         encounter.Audit("Started", null, actor, nowUtc);

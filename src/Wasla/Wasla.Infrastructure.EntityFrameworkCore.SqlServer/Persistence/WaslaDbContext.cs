@@ -145,6 +145,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         await using var diagnosticTransaction = diagnosticCorrection && Database.CurrentTransaction is null
             ? await Database.BeginTransactionAsync(cancellationToken) : null;
         await SynchronizeFollowUpReleasesAsync(cancellationToken);
+        await SynchronizeMedicalRecordExpiryAsync(cancellationToken);
         await GuardCompletedDiagnosisDeletionAsync(cancellationToken);
         await GuardPrescriptionHistoryAsync(cancellationToken);
         await GuardDiagnosticContentAsync(cancellationToken);
@@ -348,6 +349,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
                 StringComparison.Ordinal))
         {
             ConfigureSqliteConcurrencyFallback(modelBuilder);
+            modelBuilder.Entity<HiddenEncounterAccessRequest>().ToTable("HiddenEncounterAccessRequests", t => t.HasCheckConstraint("CK_HiddenAccessRequests_Reason", "length(trim([Reason])) > 0"));
             modelBuilder.Entity<MedicalEncounter>().ToTable("MedicalEncounters", table =>
                 table.HasCheckConstraint("CK_MedicalEncounters_Completion", "([Status] = 1 AND [CompletedAtUtc] IS NULL) OR ([Status] = 2 AND [CompletedAtUtc] IS NOT NULL AND length(trim([ClinicalNotes])) > 0 AND [ClinicalNotes] IS NOT NULL)"));
         }

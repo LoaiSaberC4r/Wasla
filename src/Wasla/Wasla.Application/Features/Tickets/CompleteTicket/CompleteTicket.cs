@@ -75,6 +75,7 @@ internal sealed class CompleteTicketCommandHandler(
             return Result<TicketDetailsResponse>.Fail(key.Errors);
         }
 
+        await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase16:Treatment", request.TicketId.ToString("N"), cancellationToken);
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(request.TicketId), cancellationToken);
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId)
@@ -92,7 +93,9 @@ internal sealed class CompleteTicketCommandHandler(
             actor.Value.ApplicationUserId,
             "CompleteTicket",
             key.Value,
-            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion, request.Visibility ?? EncounterVisibility.Visible),
+            request.Visibility is null or EncounterVisibility.Visible
+                ? TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion)
+                : TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion, request.Visibility),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)

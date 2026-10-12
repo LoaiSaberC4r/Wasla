@@ -345,6 +345,129 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.ToTable("FollowUpEligibilityHistories", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Clinical.HiddenEncounterAccessRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid?>("DecidedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("HiddenEncounterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwningDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("RequestingDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestingEncounterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestingPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RequestingTicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid?>("RevokedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VisibilityRevisionAtApproval")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VisibilityRevisionAtRequest")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedByApplicationUserId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("RequestingEncounterId");
+
+                    b.HasIndex("RequestingPracticeId");
+
+                    b.HasIndex("RequestingTicketId");
+
+                    b.HasIndex("RevokedByApplicationUserId");
+
+                    b.HasIndex("HiddenEncounterId", "RequestingTicketId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_HiddenAccessRequests_Target_Ticket");
+
+                    b.HasIndex("RequestingDoctorId", "RequestingTicketId", "RequestedAtUtc")
+                        .IsDescending(false, false, true);
+
+                    b.HasIndex("OwningDoctorId", "Status", "RequestedAtUtc", "Id")
+                        .IsDescending(false, false, true, false);
+
+                    b.ToTable("HiddenEncounterAccessRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HiddenAccessRequests_Actors", "[OwningDoctorId] <> [RequestingDoctorId]");
+
+                            t.HasCheckConstraint("CK_HiddenAccessRequests_Reason", "LEN(LTRIM(RTRIM([Reason]))) > 0");
+
+                            t.HasCheckConstraint("CK_HiddenAccessRequests_Status", "[Status] IN (1,2,3,4,5)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Clinical.HiddenEncounterAccessRequestHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("RequestId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("HiddenEncounterAccessRequestHistories", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Clinical.MedicalEncounter", b =>
                 {
                     b.Property<Guid>("Id")
@@ -429,6 +552,70 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                             t.HasCheckConstraint("CK_MedicalEncounters_Visibility", "[Visibility] IN (1,2) AND [VisibilityRevision] >= 0");
                         });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Clinical.MedicalRecordAccessAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccessDecision")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("AccessReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActorCategory")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RequestingTicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("TargetEncounterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId", "OccurredAtUtc")
+                        .IsDescending(false, true);
+
+                    b.HasIndex("PatientId", "OccurredAtUtc", "Id")
+                        .IsDescending(false, true, false);
+
+                    b.ToTable("MedicalRecordAccessAudits", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Doctors.Doctor", b =>
@@ -6534,6 +6721,76 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Clinical.HiddenEncounterAccessRequest", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Clinical.MedicalEncounter", null)
+                        .WithMany()
+                        .HasForeignKey("HiddenEncounterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("OwningDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("RequestingDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Clinical.MedicalEncounter", null)
+                        .WithMany()
+                        .HasForeignKey("RequestingEncounterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("RequestingPracticeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("RequestingTicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RevokedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Clinical.HiddenEncounterAccessRequestHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Clinical.HiddenEncounterAccessRequest", null)
+                        .WithMany("History")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.Clinical.MedicalEncounter", b =>
                 {
                     b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
@@ -6568,6 +6825,21 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasOne("Wasla.Domain.Tickets.Ticket", null)
                         .WithMany()
                         .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Clinical.MedicalRecordAccessAudit", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -8120,6 +8392,11 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                 });
 
             modelBuilder.Entity("Wasla.Domain.Clinical.FollowUpEligibility", b =>
+                {
+                    b.Navigation("History");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Clinical.HiddenEncounterAccessRequest", b =>
                 {
                     b.Navigation("History");
                 });

@@ -29,3 +29,25 @@ public sealed class EncounterVisibilityHistory : Entity<Guid>
         { Id = Guid.NewGuid(), MedicalEncounterId = encounter, OldVisibility = old, NewVisibility = value,
             Revision = revision, ActorApplicationUserId = actor, OccurredAtUtc = now, Source = source };
 }
+
+public sealed class MedicalRecordAccessAudit : Entity<Guid>
+{
+    private MedicalRecordAccessAudit() { }
+    public Guid ActorApplicationUserId { get; private set; }
+    public Guid PatientId { get; private set; }
+    public Guid? TargetEncounterId { get; private set; }
+    public Guid? RequestingTicketId { get; private set; }
+    public string ActorCategory { get; private set; } = string.Empty;
+    public string Action { get; private set; } = string.Empty;
+    public string ResourceType { get; private set; } = string.Empty;
+    public Guid? ResourceId { get; private set; }
+    public string AccessDecision { get; private set; } = "Allowed";
+    public string AccessReasonCode { get; private set; } = string.Empty;
+    public string CorrelationId { get; private set; } = string.Empty;
+    public DateTime OccurredAtUtc { get; private set; }
+    public static MedicalRecordAccessAudit Create(Guid actor, Guid patient, string category, string action, string resource,
+        Guid? sourceId, Guid? encounter, Guid? ticket, string correlation, DateTime now) => new()
+        { Id = Guid.NewGuid(), ActorApplicationUserId = actor, PatientId = patient, ActorCategory = category, Action = action,
+            ResourceType = resource, ResourceId = sourceId, TargetEncounterId = encounter, RequestingTicketId = ticket,
+            AccessReasonCode = category, CorrelationId = correlation, OccurredAtUtc = now };
+}
