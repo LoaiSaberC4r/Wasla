@@ -461,4 +461,17 @@
   <data name="DiagnosticCatalogImport.ConcurrencyConflict" xml:space="preserve"><value>This record has changed. Refresh it and retry with its current version.</value></data>
   <data name="DiagnosticCatalogImport.PossibleConflict" xml:space="preserve"><value>Review possible conflicts and explicitly choose whether to skip them before applying.</value></data>
   <data name="Diagnostics.AccessDenied" xml:space="preserve"><value>You are not authorized for this diagnostic operation.</value></data>
+  <data name="MedicalRecord.Unavailable" xml:space="preserve"><value>The medical record is unavailable.</value></data>
+  <data name="MedicalRecord.InvalidInput" xml:space="preserve"><value>The medical record input is invalid.</value></data>
+  <data name="HiddenAccessRequest.InvalidState" xml:space="preserve"><value>This action is not available in the current state.</value></data>
+  <data name="HiddenAccessRequest.Expired" xml:space="preserve"><value>The treating visit has ended or access has expired.</value></data>
+  <data name="MedicalRecord.ConcurrencyConflict" xml:space="preserve"><value>The record changed. Refresh and retry.</value></data>
+  <data name="HiddenAccessRequest.AlreadyRequestedForTicket" xml:space="preserve"><value>Access was already requested for this visit.</value></data>
+  <data name="MedicalRecord.VisitTitle" xml:space="preserve"><value>Completed visit</value></data>
+  <data name="MedicalRecord.DiagnosisTitle" xml:space="preserve"><value>Current diagnosis</value></data>
+  <data name="MedicalRecord.PrescriptionTitle" xml:space="preserve"><value>Prescription</value></data>
+  <data name="MedicalRecord.LabOrderTitle" xml:space="preserve"><value>Lab order</value></data>
+  <data name="MedicalRecord.LabResultTitle" xml:space="preserve"><value>Lab result</value></data>
+  <data name="MedicalRecord.RadiologyOrderTitle" xml:space="preserve"><value>Radiology order</value></data>
+  <data name="MedicalRecord.RadiologyResultTitle" xml:space="preserve"><value>Radiology result</value></data>
 </root>

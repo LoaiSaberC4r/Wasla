@@ -28,7 +28,8 @@ public sealed record CompleteTicketCommand(
     string IdempotencyKey,
     string? PrescriptionRowVersion = null,
     string? LabRequestRowVersion = null,
-    string? RadiologyRequestRowVersion = null)
+    string? RadiologyRequestRowVersion = null,
+    EncounterVisibility? Visibility = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CompleteTicketCommandValidator : AbstractValidator<CompleteTicketCommand>
@@ -39,6 +40,7 @@ internal sealed class CompleteTicketCommandValidator : AbstractValidator<Complet
         RuleFor(command => command.TicketId).NotEmpty();
         RuleFor(command => command.TicketRowVersion).Must(TicketRowVersion.IsValid);
         RuleFor(command => command.EncounterRowVersion).Must(TicketRowVersion.IsValid);
+        RuleFor(command => command.Visibility).Must(v => v is null || Enum.IsDefined(v.Value));
         RuleFor(command => command.IdempotencyKey).NotEmpty().MaximumLength(200);
     }
 }
@@ -73,6 +75,7 @@ internal sealed class CompleteTicketCommandHandler(
             return Result<TicketDetailsResponse>.Fail(key.Errors);
         }
 
+        await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase16:Treatment", request.TicketId.ToString("N"), cancellationToken);
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(request.TicketId), cancellationToken);
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId)
@@ -90,7 +93,9 @@ internal sealed class CompleteTicketCommandHandler(
             actor.Value.ApplicationUserId,
             "CompleteTicket",
             key.Value,
-            TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion),
+            request.Visibility is null or EncounterVisibility.Visible
+                ? TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion)
+                : TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion, request.Visibility),
             nowUtc,
             cancellationToken);
         if (idempotency.IsFailure)
@@ -151,7 +156,7 @@ internal sealed class CompleteTicketCommandHandler(
             var issued = radiology.Publish(actor.Value.ApplicationUserId, nowUtc);
             if (issued.IsFailure) return Result<TicketDetailsResponse>.Fail(issued.Errors);
         }
-        var encounterCompleted = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc);
+        var encounterCompleted = encounter.Complete(ticket, actor.Value.ApplicationUserId, nowUtc, request.Visibility);
         if (encounterCompleted.IsFailure) return Result<TicketDetailsResponse>.Fail(encounterCompleted.Errors);
         if (ticket.FollowUpEligibilityId is { } eligibilityId)
         {

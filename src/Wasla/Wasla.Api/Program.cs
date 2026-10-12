@@ -27,7 +27,10 @@ builder.Services
     .AddApplicationPart(typeof(BuildingBlock.Api.ProblemDetailsMappingMvc).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
-    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Wasla.Api.xml")));
+{
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Wasla.Api.xml"));
+    options.SchemaFilter<Wasla.Api.OpenApi.MedicalRecordSchemaFilter>();
+});
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -48,7 +51,7 @@ builder.Services.AddBuildingBlockLocalization(builder.Configuration);
 builder.Services.AddBuildingBlockProblemDetails();
 builder.Services.PostConfigure<LogRedactionOptions>(options =>
     options.SensitivePropertyNames = [.. options.SensitivePropertyNames, "ClinicalNotes", "DisplayText", "Notes", "Prescription", "ResponseJson", "Current", "Draft", "Versions", "Items", "Clinical", "Data", "NewMedication", "Medication", "DoctorNote", "Dose", "DoseText", "FrequencyText", "Instructions", "PrnReason", "MinimumIntervalText", "MaxPer24HoursText", "Reason", "CorrectionReason", "VoidReason", "MedicationNameSnapshot", "MedicationName",
-        "BeforeSnapshot", "AfterSnapshot", "Changes", "Search", "Attachments", "Content", "File", "PatientNote", "PostVisitReason", "PatientInstructions", "DoctorInstructions", "ExternalProviderName", "CatalogClarificationNote", "SourceDataJson", "LabRequestDraft", "RadiologyRequestDraft", "CurrentResults", "Submission"]);
+        "BeforeSnapshot", "AfterSnapshot", "Changes", "Search", "Attachments", "Content", "File", "PatientNote", "PostVisitReason", "PatientInstructions", "DoctorInstructions", "ExternalProviderName", "CatalogClarificationNote", "SourceDataJson", "LabRequestDraft", "RadiologyRequestDraft", "CurrentResults", "Submission", "SafeContent", "Diagnoses", "Timeline", "Outputs", "Patient", "HiddenEncounterToken", "Cursor", "NextCursor", "OwnerDetails", "OpaqueEntryKey"]);
 builder.Services.AddWaslaCors(builder.Configuration);
 builder.Services.AddWaslaApplication();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
@@ -59,13 +62,18 @@ builder.Services.AddWaslaAuthentication();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    AddFixedPolicy("medical-record", 1200);
+    AddFixedPolicy("medical-record-media", 120);
+    AddFixedPolicy("medical-record-request", 60);
     AddFixedPolicy("password-reset-request", 5);
     AddFixedPolicy("password-reset-verify", 30);
     AddFixedPolicy("password-reset-complete", 10);
 
     void AddFixedPolicy(string name, int permitLimit)
         => options.AddPolicy(name, context => RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            name.StartsWith("medical-record", StringComparison.Ordinal)
+                ? context.User.FindFirst("sub")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"
+                : context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = permitLimit,
@@ -94,8 +102,8 @@ if (Directory.Exists(emailAssetsPath))
 }
 app.UseRouting();
 app.UseCors(CorsPolicyNames.Default);
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.UseSwagger(options =>
 {

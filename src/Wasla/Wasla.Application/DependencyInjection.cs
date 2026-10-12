@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<DrugCatalogManagerAccounts>();
         services.AddScoped<MedicationAccess>();
         services.AddScoped<MedicationIdempotency>();
+        services.AddScoped<IMedicalRecordAccessPolicy, MedicalRecordAccessPolicy>();
         services.AddScoped<ClinicalAccessService>();
         services.AddScoped<ClinicalMutationService>();
         services.AddScoped<ReservationCheckInWorkflow>();

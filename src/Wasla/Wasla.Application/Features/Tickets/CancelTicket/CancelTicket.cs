@@ -59,6 +59,7 @@ internal sealed class CancelTicketCommandHandler(
             return Result<TicketDetailsResponse>.Fail(key.Errors);
         }
 
+        await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase16:Treatment", request.TicketId.ToString("N"), cancellationToken);
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(request.TicketId), cancellationToken);
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId)

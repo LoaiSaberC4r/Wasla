@@ -21,6 +21,7 @@ using Wasla.Application.Features.Tickets.RestoreNoShow;
 using Wasla.Application.Features.Tickets.StartVisit;
 using Wasla.Domain.Security;
 using Wasla.Domain.Payments;
+using Wasla.Domain.Clinical;
 
 namespace Wasla.Api.Controllers;
 
@@ -170,7 +171,7 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken cancellationToken)
         => (await sender.Send(new CompleteTicketCommand(
-            practiceId, ticketId, request.TicketRowVersion, request.EncounterRowVersion, idempotencyKey ?? string.Empty, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion),
+            practiceId, ticketId, request.TicketRowVersion, request.EncounterRowVersion, idempotencyKey ?? string.Empty, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion, request.Visibility),
             cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpPost("tickets/{ticketId:guid}/cancel")]
@@ -238,4 +239,4 @@ public sealed record CreateWalkInTicketRequest(
 public sealed record TicketMutationRequest(string RowVersion);
 public sealed record ReasonedTicketMutationRequest(string Reason, string RowVersion);
 
-public sealed record CompleteVisitRequest(string TicketRowVersion, string EncounterRowVersion, string? PrescriptionRowVersion = null, string? LabRequestRowVersion = null, string? RadiologyRequestRowVersion = null);
+public sealed record CompleteVisitRequest(string TicketRowVersion, string EncounterRowVersion, string? PrescriptionRowVersion = null, string? LabRequestRowVersion = null, string? RadiologyRequestRowVersion = null, EncounterVisibility? Visibility = null);

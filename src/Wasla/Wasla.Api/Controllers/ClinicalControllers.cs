@@ -17,6 +17,7 @@ namespace Wasla.Api.Controllers;
 public sealed class DoctorEncountersController(ISender sender) : ControllerBase
 {
     [HttpGet("encounters")]
+    [ProducesResponseType<ClinicalPage<EncounterSummaryResponse>>(200)]
     public async Task<IActionResult> List(Guid practiceId, [FromQuery] Guid? patientId = null,
         [FromQuery] EncounterStatus? status = null, [FromQuery] DateOnly? fromDate = null, [FromQuery] DateOnly? toDate = null,
         [FromQuery] string? search = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)

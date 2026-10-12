@@ -17,10 +17,14 @@ internal sealed class MedicalEncounterConfiguration : IWriteEntityConfiguration<
     {
         builder.ToTable("MedicalEncounters", table =>
         {
+            table.HasCheckConstraint("CK_MedicalEncounters_Visibility", "[Visibility] IN (1,2) AND [VisibilityRevision] >= 0");
             table.HasCheckConstraint("CK_MedicalEncounters_Status", "[Status] IN (1,2)");
             table.HasCheckConstraint("CK_MedicalEncounters_Completion", "([Status] = 1 AND [CompletedAtUtc] IS NULL) OR ([Status] = 2 AND [CompletedAtUtc] IS NOT NULL AND LEN(LTRIM(RTRIM([ClinicalNotes]))) > 0 AND [ClinicalNotes] IS NOT NULL)");
         });
         builder.HasKey(e => e.Id);
+        builder.Property(e => e.Visibility).HasDefaultValue(EncounterVisibility.Hidden).HasSentinel((EncounterVisibility)0);
+        builder.HasMany(e => e.VisibilityHistory).WithOne().HasForeignKey(h => h.MedicalEncounterId).OnDelete(DeleteBehavior.Restrict);
+        builder.Navigation(e => e.VisibilityHistory).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Property(e => e.ClinicalNotes).HasMaxLength(8000);
         builder.Property(e => e.StartedAtUtc).HasColumnType("datetime2(3)");
         builder.Property(e => e.CompletedAtUtc).HasColumnType("datetime2(3)");

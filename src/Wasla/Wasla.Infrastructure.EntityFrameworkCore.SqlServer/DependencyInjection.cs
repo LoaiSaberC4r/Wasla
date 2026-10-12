@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Wasla.Application.Email;
 using Wasla.Application.Features.Clinical;
 using Wasla.Application.Features.Medications;
@@ -94,6 +95,19 @@ public static class DependencyInjection
         services.AddScoped<IDiagnosticImportService, DiagnosticImportService>();
         services.AddOptions<DiagnosticCatalogImportOptions>().Bind(configuration.GetSection(DiagnosticCatalogImportOptions.SectionName))
             .Validate(o => o.MaxPackageBytes > 0 && o.MaxExpandedBytes >= o.MaxPackageBytes && o.MaxEntries > 0 && o.MaxRows > 0 && o.MaxCompressionRatio > 0 && o.SupportedVersions.Length > 0, "Invalid diagnostic import limits.").ValidateOnStart();
+        services.AddOptions<MedicalRecordOptions>().Bind(configuration.GetSection("MedicalRecord"));
+        services.AddScoped<ICurrentTreatmentReader, CurrentTreatmentReader>();
+        services.AddScoped<IHiddenAccessReader, HiddenAccessReader>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<MedicalRecordAuditWriter>();
+        services.AddScoped<MedicalRecordReadService>();
+        services.AddScoped<IMedicalRecordReadService>(p => p.GetRequiredService<MedicalRecordReadService>());
+        services.AddScoped<IMedicalRecordMediaReader>(p => p.GetRequiredService<MedicalRecordReadService>());
+        var protection = services.AddDataProtection().SetApplicationName("Wasla.Phase16");
+        if (configuration["MedicalRecord:DataProtectionKeyRingPath"] is { Length: > 0 } keyPath)
+            protection.PersistKeysToFileSystem(new DirectoryInfo(keyPath));
+        services.AddSingleton<IMedicalRecordTokens, MedicalRecordTokens>();
+        services.AddScoped<IEncounterVisibilityReader, EncounterVisibilityReader>();
         services.AddScoped<IClinicalReadService, ClinicalReadService>();
         services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();

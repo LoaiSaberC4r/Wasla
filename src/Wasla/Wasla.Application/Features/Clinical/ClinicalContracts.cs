@@ -18,14 +18,15 @@ public sealed record EncounterDetailsResponse(Guid EncounterId, Guid TicketId, C
     FollowUpEligibilityResponse? FollowUpEligibility, EncounterCapabilitiesResponse Capabilities, string RowVersion, PrescriptionStateResponse? Prescription = null,
     IReadOnlyList<PrescriptionCompletionBlocker>? CompletionBlockers = null,
     DiagnosticRequestStateResponse? LabRequestDraft = null, DiagnosticRequestStateResponse? RadiologyRequestDraft = null,
-    IReadOnlyList<DiagnosticRequestSummary>? LabRequestsSummary = null, IReadOnlyList<DiagnosticRequestSummary>? RadiologyRequestsSummary = null);
+    IReadOnlyList<DiagnosticRequestSummary>? LabRequestsSummary = null, IReadOnlyList<DiagnosticRequestSummary>? RadiologyRequestsSummary = null,
+    EncounterVisibility Visibility = EncounterVisibility.Visible, int VisibilityRevision = 0, bool CanChangeVisibility = false);
 public sealed record PatientEncounterDetailsResponse(Guid EncounterId, Guid TicketId, ClinicalPartyResponse Doctor,
     ClinicalPartyResponse Practice, DateTime StartedAtUtc, DateTime CompletedAtUtc,
     IReadOnlyList<DiagnosisResponse> CurrentActiveDiagnoses, FollowUpEligibilityResponse? FollowUpEligibility);
 public sealed record EncounterSummaryResponse(Guid EncounterId, Guid TicketId, Guid PatientId, string PatientNameAr,
     string? PatientNameEn, Guid DoctorPracticeId, string PracticeNameAr, string? PracticeNameEn, string VisitTypeCode,
     string VisitTypeNameAr, string? VisitTypeNameEn, EncounterStatus Status, DateTime StartedAtUtc, DateTime? CompletedAtUtc,
-    bool HasDiagnosis, bool HasFollowUpEligibility, string RowVersion);
+    bool HasDiagnosis, bool HasFollowUpEligibility, string RowVersion, EncounterVisibility Visibility = EncounterVisibility.Visible);
 public sealed record ClinicalPage<T>(IReadOnlyList<T> Items, long TotalCount, int PageNumber, int PageSize);
 public sealed record FollowUpEligibilityResponse(Guid EligibilityId, Guid SourceEncounterId,
     ClinicalPartyResponse Patient, ClinicalPartyResponse Doctor, ClinicalPartyResponse Practice,

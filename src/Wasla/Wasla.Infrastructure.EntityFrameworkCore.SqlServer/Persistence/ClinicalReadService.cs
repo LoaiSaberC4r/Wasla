@@ -36,14 +36,14 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
             {
                 r.e.Id, r.e.TicketId, r.e.PatientId, r.NameAr, r.NameEn, r.e.DoctorPracticeId, r.PracticeNameAr,
                 r.PracticeNameEn, r.VisitTypeCodeSnapshot, r.VisitTypeNameArSnapshot, r.VisitTypeNameEnSnapshot,
-                r.e.Status, r.e.StartedAtUtc, r.e.CompletedAtUtc, r.e.RowVersion,
+                r.e.Status, r.e.StartedAtUtc, r.e.CompletedAtUtc, r.e.RowVersion, r.e.Visibility,
                 HasDiagnosis = db.Diagnoses.Any(d => d.MedicalEncounterId == r.e.Id && !d.IsVoided),
                 HasEligibility = db.FollowUpEligibilities.Any(f => f.SourceMedicalEncounterId == r.e.Id)
             }).ToArrayAsync(ct);
         return new(rows.Select(r => new EncounterSummaryResponse(r.Id, r.TicketId, r.PatientId, r.NameAr, r.NameEn,
             r.DoctorPracticeId, r.PracticeNameAr, r.PracticeNameEn, r.VisitTypeCodeSnapshot, r.VisitTypeNameArSnapshot,
             r.VisitTypeNameEnSnapshot, r.Status, r.StartedAtUtc, r.CompletedAtUtc, r.HasDiagnosis, r.HasEligibility,
-            Convert.ToBase64String(r.RowVersion))).ToArray(), count, page, size);
+            Convert.ToBase64String(r.RowVersion), r.Visibility)).ToArray(), count, page, size);
     }
 
     public async Task<EncounterDetailsResponse?> DoctorDetailsAsync(Guid doctorId, Guid practiceId, Guid id, bool byTicket, CancellationToken ct)
@@ -53,7 +53,7 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
             join practice in db.DoctorPractices.AsNoTracking() on e.DoctorPracticeId equals practice.Id
             join patient in db.Patients.AsNoTracking() on e.PatientId equals patient.Id
             where e.DoctorId == doctorId && e.DoctorPracticeId == practiceId && (byTicket ? e.TicketId == id : e.Id == id)
-            select new { e.Id, e.TicketId, e.Status, e.StartedAtUtc, e.CompletedAtUtc, e.ClinicalNotes, e.RowVersion,
+            select new { e.Id, e.TicketId, e.Status, e.StartedAtUtc, e.CompletedAtUtc, e.ClinicalNotes, e.RowVersion, e.Visibility, e.VisibilityRevision,
                 Doctor = new ClinicalPartyResponse(doctor.Id, doctor.NameAr, doctor.NameEn),
                 Practice = new ClinicalPartyResponse(practice.Id, practice.NameAr, practice.NameEn),
                 Patient = new ClinicalPartyResponse(patient.Id, patient.NameAr, patient.NameEn) }).SingleOrDefaultAsync(ct);
@@ -70,7 +70,7 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
         var radio = radioId is { } r ? await diagnostics.RequestAsync(DiagnosticKind.Radiology, r, doctorId, false, [], ct) : null;
         return new(row.Id, row.TicketId, row.Doctor, row.Practice, row.Patient, row.Status, row.StartedAtUtc, row.CompletedAtUtc,
             row.ClinicalNotes, await DiagnosesAsync(row.Id, ct), await SourceEligibilityAsync(row.Id, row.Patient.Id, ct),
-            new(false, false, false, false, false), Convert.ToBase64String(row.RowVersion), prescription, blockers, lab, radio, labPage.Items, radioPage.Items);
+            new(false, false, false, false, false), Convert.ToBase64String(row.RowVersion), prescription, blockers, lab, radio, labPage.Items, radioPage.Items, row.Visibility, row.VisibilityRevision);
     }
 
     public async Task<PatientEncounterDetailsResponse?> PatientDetailsAsync(Guid patientId, Guid id, CancellationToken ct)

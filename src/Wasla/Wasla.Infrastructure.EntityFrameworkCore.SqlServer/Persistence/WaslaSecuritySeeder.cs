@@ -315,6 +315,8 @@ internal sealed class WaslaSecuritySeeder(
         };
         mappings[SystemRoleIds.Doctor] = mappings[SystemRoleIds.Doctor].Concat(PermissionNames.DiagnosticDoctorDefaults).ToArray();
         mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(PermissionNames.DiagnosticPatientDefaults).ToArray();
+        mappings[SystemRoleIds.Doctor] = mappings[SystemRoleIds.Doctor].Concat(new[] { PermissionNames.MedicalRecordsViewTreatingPatient, PermissionNames.MedicalEncounterVisibilityUpdateOwn, PermissionNames.MedicalEncounterVisibilityViewHistoryOwn, PermissionNames.HiddenEncounterAccessRequestsCreate, PermissionNames.HiddenEncounterAccessRequestsViewSent, PermissionNames.HiddenEncounterAccessRequestsViewIncoming, PermissionNames.HiddenEncounterAccessRequestsDecideOwn, PermissionNames.HiddenEncounterAccessRequestsRevokeOwn, PermissionNames.HiddenEncounterAccessRequestsViewHistoryOwn }).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(new[] { PermissionNames.MedicalRecordsViewOwn, PermissionNames.MedicalRecordsViewOwnAccessLog, PermissionNames.MedicalRecordsViewDependent }).ToArray();
         foreach (var (roleId, permissionNames) in mappings)
         {
             foreach (var permissionName in permissionNames)

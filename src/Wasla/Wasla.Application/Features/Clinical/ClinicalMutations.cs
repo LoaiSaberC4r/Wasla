@@ -92,6 +92,7 @@ internal static class ClinicalCapabilities
         var prescription = access.HasPermission(PermissionNames.PrescriptionsViewOwn) && d.Prescription is { } state
             ? PrescriptionCapabilities.For(state, new MedicationActor(access.ActorId, d.Doctor.Id, permissions), d.Status == EncounterStatus.InProgress) : null;
         return d with { Prescription = prescription, Capabilities = For(d, access),
+            CanChangeVisibility = d.Status == EncounterStatus.Completed && access.HasPermission(PermissionNames.MedicalEncounterVisibilityUpdateOwn),
             LabRequestDraft = access.HasPermission(PermissionNames.LabRequestsViewOwn) ? DiagnosticCapabilities.Request(d.LabRequestDraft, permissions, "Lab") : null,
             RadiologyRequestDraft = access.HasPermission(PermissionNames.RadiologyRequestsViewOwn) ? DiagnosticCapabilities.Request(d.RadiologyRequestDraft, permissions, "Radiology") : null,
             LabRequestsSummary = access.HasPermission(PermissionNames.LabRequestsViewOwn) ? d.LabRequestsSummary : null,

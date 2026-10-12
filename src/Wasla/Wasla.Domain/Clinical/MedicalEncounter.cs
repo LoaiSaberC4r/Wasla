@@ -6,6 +6,7 @@ using Wasla.Domain.Tickets;
 namespace Wasla.Domain.Clinical;
 
 public enum EncounterStatus { InProgress = 1, Completed = 2 }
+public enum EncounterVisibility { Visible = 1, Hidden = 2 }
 public enum DiagnosisType { Primary = 1, Secondary = 2 }
 public enum AmendmentTarget { ClinicalNotes = 1, Diagnosis = 2 }
 public enum AmendmentChangeType { Added = 1, Updated = 2, Removed = 3 }
@@ -20,12 +21,16 @@ public sealed class MedicalEncounter : AggregateRoot<Guid>, IAuditableEntity
     private readonly List<Diagnosis> _diagnoses = [];
     private readonly List<EncounterAmendment> _amendments = [];
     private readonly List<EncounterAuditEvent> _auditEvents = [];
+    private readonly List<EncounterVisibilityHistory> _visibilityHistory = [];
     private MedicalEncounter() { }
     public Guid TicketId { get; private set; }
     public Guid DoctorPracticeId { get; private set; }
     public Guid DoctorId { get; private set; }
     public Guid PatientId { get; private set; }
     public EncounterStatus Status { get; private set; }
+    public EncounterVisibility Visibility { get; private set; } = EncounterVisibility.Visible;
+    public int VisibilityRevision { get; private set; }
+    public IReadOnlyCollection<EncounterVisibilityHistory> VisibilityHistory => _visibilityHistory.AsReadOnly();
     public DateTime StartedAtUtc { get; private set; }
     public DateTime? CompletedAtUtc { get; private set; }
     public string? ClinicalNotes { get; private set; }
@@ -50,7 +55,7 @@ public sealed class MedicalEncounter : AggregateRoot<Guid>, IAuditableEntity
         {
             Id = Guid.NewGuid(), TicketId = ticket.Id, DoctorId = ticket.DoctorId,
             DoctorPracticeId = ticket.DoctorPracticeId, PatientId = ticket.PatientId,
-            Status = EncounterStatus.InProgress, StartedAtUtc = ticket.InProgressOnUtc.Value,
+            Status = EncounterStatus.InProgress, Visibility = EncounterVisibility.Visible, VisibilityRevision = 0, StartedAtUtc = ticket.InProgressOnUtc.Value,
             CreatedOnUtc = nowUtc, CreatedByApplicationUserId = actor
         };
         encounter.Audit("Started", null, actor, nowUtc);
@@ -115,14 +120,37 @@ public sealed class MedicalEncounter : AggregateRoot<Guid>, IAuditableEntity
         return Result.Ok();
     }
 
-    public Result Complete(Ticket ticket, Guid actor, DateTime nowUtc)
+    public Result Complete(Ticket ticket, Guid actor, DateTime nowUtc, EncounterVisibility? visibility = null)
     {
+        if (visibility.HasValue && !Enum.IsDefined(visibility.Value)) return Result.Fail(MedicalRecordErrors.InvalidInput);
         var valid = ValidateCompletion(ticket);
         if (valid.IsFailure) return valid;
         Status = EncounterStatus.Completed;
         CompletedAtUtc = nowUtc;
+        if (visibility.HasValue) SetVisibility(visibility.Value, actor, nowUtc, "Completion");
         Touch("Completed", null, actor, nowUtc);
         return Result.Ok();
+    }
+
+    public Result ChangeVisibility(EncounterVisibility visibility, Guid doctorId, Guid practiceId, Guid actor, DateTime nowUtc)
+    {
+        if (doctorId != DoctorId || practiceId != DoctorPracticeId || actor == Guid.Empty)
+            return Result.Fail(MedicalRecordErrors.Denied);
+        if (Status != EncounterStatus.Completed) return Result.Fail(MedicalRecordErrors.InvalidState);
+        if (!Enum.IsDefined(visibility)) return Result.Fail(MedicalRecordErrors.InvalidInput);
+        SetVisibility(visibility, actor, nowUtc, "OwnerChoice");
+        return Result.Ok();
+    }
+
+    private void SetVisibility(EncounterVisibility visibility, Guid actor, DateTime nowUtc, string source)
+    {
+        if (Visibility == visibility) return;
+        var old = Visibility;
+        Visibility = visibility;
+        VisibilityRevision = checked(VisibilityRevision + 1);
+        ModifiedOnUtc = nowUtc;
+        ModifiedByApplicationUserId = actor;
+        _visibilityHistory.Add(EncounterVisibilityHistory.Create(Id, old, visibility, VisibilityRevision, actor, nowUtc, source));
     }
 
     public Result Amend(string reason, IReadOnlyList<EncounterCorrection> corrections, Guid doctorId,

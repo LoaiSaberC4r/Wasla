@@ -145,6 +145,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         await using var diagnosticTransaction = diagnosticCorrection && Database.CurrentTransaction is null
             ? await Database.BeginTransactionAsync(cancellationToken) : null;
         await SynchronizeFollowUpReleasesAsync(cancellationToken);
+        await SynchronizeMedicalRecordExpiryAsync(cancellationToken);
         await GuardCompletedDiagnosisDeletionAsync(cancellationToken);
         await GuardPrescriptionHistoryAsync(cancellationToken);
         await GuardDiagnosticContentAsync(cancellationToken);
@@ -152,6 +153,10 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         AddDiagnosticDraftHistory();
         EnsureFinancialHistoryIsAppendOnly();
         AddPrescriptionAuditEvents();
+        var trackedVisibility = ChangeTracker.Entries<EncounterVisibilityHistory>().Select(e => e.Entity.Id).ToHashSet();
+        Set<EncounterVisibilityHistory>().AddRange(ChangeTracker.Entries<MedicalEncounter>().SelectMany(e => e.Entity.VisibilityHistory).Where(h => !trackedVisibility.Contains(h.Id)).ToArray());
+        if (ChangeTracker.Entries<EncounterVisibilityHistory>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Visibility history is immutable.");
         PrepareSqliteRowVersions();
         // Release the filtered current-version key before acquiring it for the correction.
         var superseded = ChangeTracker.Entries<PrescriptionVersion>().Where(e => e.State == EntityState.Modified &&
@@ -344,6 +349,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
                 StringComparison.Ordinal))
         {
             ConfigureSqliteConcurrencyFallback(modelBuilder);
+            modelBuilder.Entity<HiddenEncounterAccessRequest>().ToTable("HiddenEncounterAccessRequests", t => t.HasCheckConstraint("CK_HiddenAccessRequests_Reason", "length(trim([Reason])) > 0"));
             modelBuilder.Entity<MedicalEncounter>().ToTable("MedicalEncounters", table =>
                 table.HasCheckConstraint("CK_MedicalEncounters_Completion", "([Status] = 1 AND [CompletedAtUtc] IS NULL) OR ([Status] = 2 AND [CompletedAtUtc] IS NOT NULL AND length(trim([ClinicalNotes])) > 0 AND [ClinicalNotes] IS NOT NULL)"));
         }

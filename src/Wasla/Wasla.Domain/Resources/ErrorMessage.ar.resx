@@ -461,4 +461,17 @@
   <data name="DiagnosticCatalogImport.ConcurrencyConflict" xml:space="preserve"><value>تم تغيير السجل. حدّث البيانات وأعد المحاولة باستخدام الإصدار الحالي.</value></data>
   <data name="DiagnosticCatalogImport.PossibleConflict" xml:space="preserve"><value>راجع التعارضات المحتملة وحدد صراحةً إن كنت تريد تخطيها قبل التطبيق.</value></data>
   <data name="Diagnostics.AccessDenied" xml:space="preserve"><value>ليس لديك تصريح لتنفيذ عملية الفحص هذه.</value></data>
+  <data name="MedicalRecord.Unavailable" xml:space="preserve"><value>السجل الطبي غير متاح.</value></data>
+  <data name="MedicalRecord.InvalidInput" xml:space="preserve"><value>بيانات السجل الطبي غير صالحة.</value></data>
+  <data name="HiddenAccessRequest.InvalidState" xml:space="preserve"><value>هذا الإجراء غير متاح في الحالة الحالية.</value></data>
+  <data name="HiddenAccessRequest.Expired" xml:space="preserve"><value>انتهت الزيارة العلاجية أو صلاحية الوصول.</value></data>
+  <data name="MedicalRecord.ConcurrencyConflict" xml:space="preserve"><value>تغير السجل. يرجى التحديث والمحاولة مجدداً.</value></data>
+  <data name="HiddenAccessRequest.AlreadyRequestedForTicket" xml:space="preserve"><value>تم طلب الوصول لهذه الزيارة مسبقاً.</value></data>
+  <data name="MedicalRecord.VisitTitle" xml:space="preserve"><value>زيارة مكتملة</value></data>
+  <data name="MedicalRecord.DiagnosisTitle" xml:space="preserve"><value>تشخيص حالي</value></data>
+  <data name="MedicalRecord.PrescriptionTitle" xml:space="preserve"><value>وصفة طبية</value></data>
+  <data name="MedicalRecord.LabOrderTitle" xml:space="preserve"><value>طلب تحاليل</value></data>
+  <data name="MedicalRecord.LabResultTitle" xml:space="preserve"><value>نتيجة تحاليل</value></data>
+  <data name="MedicalRecord.RadiologyOrderTitle" xml:space="preserve"><value>طلب أشعة</value></data>
+  <data name="MedicalRecord.RadiologyResultTitle" xml:space="preserve"><value>نتيجة أشعة</value></data>
 </root>
