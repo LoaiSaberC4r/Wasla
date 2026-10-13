@@ -130,6 +130,15 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     public DbSet<DoctorPracticeSegmentVisitTypePrice> DoctorPracticeSegmentVisitTypePrices => Set<DoctorPracticeSegmentVisitTypePrice>();
     public DbSet<PublicPracticeAvailabilitySlot> PublicPracticeAvailabilitySlots => Set<PublicPracticeAvailabilitySlot>();
     public DbSet<PublicDoctorSearchRank> PublicDoctorSearchRanks => Set<PublicDoctorSearchRank>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingFinancialPlan> OperatingFinancialPlans => Set<Wasla.Domain.OperatingFinance.OperatingFinancialPlan>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingPlanRevision> OperatingPlanRevisions => Set<Wasla.Domain.OperatingFinance.OperatingPlanRevision>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingPlanAllocation> OperatingPlanAllocations => Set<Wasla.Domain.OperatingFinance.OperatingPlanAllocation>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingObligation> OperatingObligations => Set<Wasla.Domain.OperatingFinance.OperatingObligation>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingObligationRevision> OperatingObligationRevisions => Set<Wasla.Domain.OperatingFinance.OperatingObligationRevision>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot> OperatingCostAllocationSnapshots => Set<Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingSettlement> OperatingSettlements => Set<Wasla.Domain.OperatingFinance.OperatingSettlement>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingSettlementReversal> OperatingSettlementReversals => Set<Wasla.Domain.OperatingFinance.OperatingSettlementReversal>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingFinanceHistory> OperatingFinanceHistories => Set<Wasla.Domain.OperatingFinance.OperatingFinanceHistory>();
     public DbSet<Reception> Receptions => Set<Reception>();
     public DbSet<ReceptionPracticeAssignment> ReceptionPracticeAssignments => Set<ReceptionPracticeAssignment>();
     public DbSet<ReceptionPracticeAssignmentPermission> ReceptionPracticeAssignmentPermissions
@@ -153,6 +162,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         await GuardDiagnosticHistoryAsync(cancellationToken);
         AddDiagnosticDraftHistory();
         EnsureFinancialHistoryIsAppendOnly();
+        EnsureOperatingFinanceIsAppendOnly();
         AddPrescriptionAuditEvents();
         var trackedVisibility = ChangeTracker.Entries<EncounterVisibilityHistory>().Select(e => e.Entity.Id).ToHashSet();
         Set<EncounterVisibilityHistory>().AddRange(ChangeTracker.Entries<MedicalEncounter>().SelectMany(e => e.Entity.VisibilityHistory).Where(h => !trackedVisibility.Contains(h.Id)).ToArray());

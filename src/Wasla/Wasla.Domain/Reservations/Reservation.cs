@@ -102,7 +102,8 @@ public sealed record ReservationCreationSnapshot(
     decimal PriceSnapshot,
     string? BookingNote,
     DateTime OccurredOnUtc,
-    Guid? FollowUpEligibilityId = null);
+    Guid? FollowUpEligibilityId = null,
+    int? CheckInGracePeriodMinutesSnapshot = null);
 
 public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
 {
@@ -137,6 +138,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         VisitTypeNameArSnapshot = snapshot.VisitTypeNameArSnapshot;
         VisitTypeNameEnSnapshot = snapshot.VisitTypeNameEnSnapshot;
         PriceSnapshot = snapshot.PriceSnapshot;
+        CheckInGracePeriodMinutesSnapshot = snapshot.CheckInGracePeriodMinutesSnapshot;
         BookingNote = Normalize(snapshot.BookingNote);
         Status = ReservationStatus.Active;
         CreatedOnUtc = RequireUtc(snapshot.OccurredOnUtc);
@@ -172,6 +174,7 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
     public string VisitTypeNameArSnapshot { get; private set; } = string.Empty;
     public string? VisitTypeNameEnSnapshot { get; private set; }
     public decimal PriceSnapshot { get; private set; }
+    public int? CheckInGracePeriodMinutesSnapshot { get; private set; }
     public string? BookingNote { get; private set; }
     public ReservationStatus Status { get; private set; }
     public int PatientInitiatedRescheduleCount { get; private set; }

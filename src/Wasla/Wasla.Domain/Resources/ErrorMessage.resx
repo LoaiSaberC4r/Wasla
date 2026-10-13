@@ -478,4 +478,19 @@
   <data name="FamilyMedicalAccess.Invalid" xml:space="preserve"><value>The family medical request is invalid.</value></data>
   <data name="FamilyMedicalAccess.Conflict" xml:space="preserve"><value>The family medical request changed or cannot be decided.</value></data>
   <data name="FamilyMedicalAccess.PolicyUnavailable" xml:space="preserve"><value>The approved family medical policy is unavailable.</value></data>
+  <data name="Phase18AccessDenied" xml:space="preserve">
+    <value>You do not have access to this operation in the requested scope.</value>
+  </data>
+  <data name="Phase18Invalid" xml:space="preserve">
+    <value>The supplied business data is invalid.</value>
+  </data>
+  <data name="Phase18Conflict" xml:space="preserve">
+    <value>The resource changed or the requested transition is no longer valid. Refresh and retry.</value>
+  </data>
+  <data name="Phase18InvalidFilter" xml:space="preserve">
+    <value>The report filters or reporting window are invalid.</value>
+  </data>
+  <data name="Phase18NotFound" xml:space="preserve">
+    <value>The requested resource is unavailable.</value>
+  </data>
 </root>

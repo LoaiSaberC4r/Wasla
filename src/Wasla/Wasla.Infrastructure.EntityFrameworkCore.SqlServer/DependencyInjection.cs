@@ -11,6 +11,8 @@ using Wasla.Application.Features.Reservations;
 using Wasla.Application.Features.Tickets.Common;
 using Wasla.Application.Features.Tickets.GetWalkInOptions;
 using Wasla.Application.Features.Finance;
+using Wasla.Application.Features.Reporting;
+using Wasla.Application.Features.OperatingFinance;
 using Wasla.Application.Features.Finance.Common;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
@@ -84,6 +86,19 @@ public static class DependencyInjection
         services.AddScoped<ITicketQueueReader, TicketQueueReader>();
         services.AddScoped<IWalkInOptionsReader, WalkInOptionsReader>();
         services.AddScoped<IFinanceReadService, FinanceReadService>();
+        services.AddOptions<Phase18Options>().Bind(configuration.GetSection("Phase18"))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.DefaultReportTimeZoneId) &&
+                TimeZoneInfo.TryFindSystemTimeZoneById(o.DefaultReportTimeZoneId, out _) &&
+                o.ObligationGenerationIntervalSeconds is >= 30 and <= 86400 &&
+                o.PdfTimeoutSeconds is >= 5 and <= 120 && o.MaximumConcurrentPdfRenders is >= 1 and <= 4,
+                "Invalid Phase 18 reporting configuration.").ValidateOnStart();
+        services.AddScoped<IReportingAccessGuard, ReportingAccessGuard>();
+        services.AddScoped<IReportingTimeScope, ReportingTimeScope>();
+        services.AddScoped<IReportingQueryService, ReportingQueryService>();
+        services.AddSingleton<IKpiDefinitionRegistry, KpiDefinitionRegistry>();
+        services.AddScoped<IOperatingFinanceService, OperatingFinanceService>();
+        services.AddScoped<IOperatingObligationGenerator, OperatingObligationGenerator>();
+        services.AddHostedService<OperatingObligationBackgroundService>();
         services.AddScoped<MedicationReadService>();
         services.AddScoped<IMedicationReadService>(provider => provider.GetRequiredService<MedicationReadService>());
         services.AddScoped<IDrugCatalogManagerReader>(provider => provider.GetRequiredService<MedicationReadService>());
