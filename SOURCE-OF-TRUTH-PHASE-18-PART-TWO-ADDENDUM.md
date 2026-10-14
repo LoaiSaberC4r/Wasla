@@ -1,0 +1,13 @@
+# Source-of-Truth addendum — Phase 18 Part Two — 2026-10-14
+
+Owner-approved business decisions from the supplied WAS-P18.2-MASTER Annex A. Repository incorporation remains subject to owner review/merge. This document preserves prior decisions verbatim in their existing files.
+
+DEC-038 previously prohibited every hard/soft deletion of Ticket, call attempt, payment and history. The approved narrow exception permits deleting a validated active physical copy **only inside the transaction that retains the complete original operational record and histories in the same database's archive schema and preserves permanent registry identities**. There is no logical record/history loss. Payments, Refunds, clinical records, patient identity and independent histories remain in their original stores. Failure rolls back the entire linked Ticket/ConvertedToTicket Reservation group. Rationale: bounded operational tables with fiscal, clinical, identity and historic report continuity. Scope: eligible closed-day terminal operational records only. Purge, disposal, unarchive and public manual archive execution remain prohibited.
+
+Automatic effective Practice day closure preserves InProgress visits, cancels Waiting/Called with OperationalDayEnded, freezes observed schedule/timezone evidence, and finalizes closed-day NoShow restoration. Closed-day NoShow cannot be reclassified to Cancelled for Refund. Archived Cancelled never-InProgress Ticket still supports an independently authorized single full Refund. Open-day DEC-051 behavior is preserved.
+
+Archive storage adds no Ticket/Reservation business status. Full history, original IDs, references, numbers and snapshots survive. Historical reports combine each identity once. Legacy unverifiable records stay active and surface as metadata-only integrity exceptions; no invented historical schedule/payment/clinical evidence.
+
+Authorization remains current permission plus eligible account and owner/assignment/self/family relationship. Reception requires exact current delegation. Patient Ticket archive is self-only; dependent Reservation policy stays authoritative. SuperAdmin is metadata-only, including Founder. Restricted audit access is explicitly granted with justification, never a default/root bypass. Existing clinical privacy and disabled cross-Doctor sharing remain unchanged.
+
+No numeric retention period, legal disposal policy, notification expansion or production release approval is established. The 38 API contracts are implementation contracts; schema and performance parameters are technical decisions supported by implementation evidence.
