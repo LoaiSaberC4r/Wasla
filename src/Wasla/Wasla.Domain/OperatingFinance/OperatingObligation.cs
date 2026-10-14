@@ -28,6 +28,7 @@ public sealed class OperatingObligation : AggregateRoot<Guid>
     public Guid? ActiveSettlementId { get; private set; }
     public int CurrentRevisionNumber { get; private set; }
     public Guid CreatedByApplicationUserId { get; private set; }
+    public bool GeneratedBySystem { get; private set; }
     public DateTime RecordedAtUtc { get; private set; }
     public byte[] RowVersion { get; private set; } = [];
     public IReadOnlyCollection<OperatingObligationRevision> Revisions => _revisions.AsReadOnly();
@@ -52,7 +53,7 @@ public sealed class OperatingObligation : AggregateRoot<Guid>
             PlannedAmountMinorUnits = (long)(amount * 100), AmountMinorUnits = (long)(amount * 100),
             AmountPolicy = policy, ActualAmountConfirmed = policy == ExpenseAmountPolicy.Fixed, Category = category,
             DescriptionAr = descriptionAr.Trim(), DescriptionEn = descriptionEn?.Trim(), Status = OperatingObligationStatus.Unpaid,
-            CurrentRevisionNumber = 1, CreatedByApplicationUserId = actorId, RecordedAtUtc = now,
+            CurrentRevisionNumber = 1, CreatedByApplicationUserId = actorId, GeneratedBySystem = planId != null, RecordedAtUtc = now,
             PeriodYear = planId != null ? businessDate.Year : null, PeriodMonth = planId != null ? businessDate.Month : null };
         result._revisions.Add(OperatingObligationRevision.Create(result, allocation.Value, "Created", actorId, now));
         return Result<OperatingObligation>.Ok(result);

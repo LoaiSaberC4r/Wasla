@@ -493,4 +493,6 @@
   <data name="Phase18NotFound" xml:space="preserve">
     <value>The requested resource is unavailable.</value>
   </data>
+  <data name="Phase18ExportTooLarge" xml:space="preserve"><value>The export exceeds the allowed period, row count, or file size. Narrow the filters.</value></data>
+  <data name="Phase18ExportUnavailable" xml:space="preserve"><value>The PDF rendering runtime is unavailable.</value></data>
 </root>

@@ -12,12 +12,11 @@ public sealed class KpiDefinitionRegistry : IKpiDefinitionRegistry
         void Add(string code, string ar, string en, string sources, string basis, string numerator,
             string? denominator = null, string unit = "count", string exclusions = "Records recorded after AsOfUtc.",
             string completeness = "Persisted authoritative source records required.")
-            => definitions.Add(new(code, ar, en, en, sources, "Owning Doctor/assigned Practice; platform aggregates are privacy suppressed.",
+            => definitions.Add(new(code, ar, en, en, sources, "Actor report allow-list and current permission/ownership/delegation; platform patient aggregates are privacy suppressed; outgoing finance is Doctor-only.",
                 basis, "Reconstructed state at AsOfUtc; recorded transactions only.", numerator, denominator,
                 exclusions, "Practice-local labeled dates for operations; explicit report zone for financial movements.",
                 completeness, "Ignore events/movements recorded after AsOfUtc; do not infer missing history.",
-                denominator is null ? "Count distinct eligible source IDs; an empty complete cohort is zero."
-                    : "2 eligible successes / 4 eligible records = 50%; an empty denominator is unavailable.", unit));
+                Example(code, unit, denominator), unit));
 
         Add("BookingsCreated", "الحجوزات المنشأة", "Bookings created", "Reservation.CreatedOnUtc", "Creation date", "Distinct ReservationId created in window.");
         Add("AppointmentsScheduled", "المواعيد المجدولة", "Appointments scheduled", "ReservationHistory schedule snapshots", "Effective scheduled local date", "Distinct reservations scheduled in window at AsOfUtc.");
@@ -49,6 +48,8 @@ public sealed class KpiDefinitionRegistry : IKpiDefinitionRegistry
         Add("OperationalExceptions", "الاستثناءات التشغيلية", "Operational exceptions", "TicketHistory force/manual/no-response/day-ended", "Event date", "Recorded exceptional operational events.");
         Add("ReceptionActivity", "نشاط الاستقبال", "Reception activity", "ReservationHistory; TicketHistory; Reception.ApplicationUserId", "Event date", "Recorded operational events by Reception actors.");
         Add("CapacityMinutes", "الدقائق المتاحة", "Effective capacity minutes", "Immutable schedule snapshots", "Scheduled local date", "Union of effective availability intervals after exceptions.", unit: "minutes", completeness: "No historical schedule snapshot: NotMeasured.");
+        Add("UnusedCapacityMinutes", "دقائق المواعيد غير المستخدمة", "Unused booking capacity minutes", "Immutable schedule snapshots; reservation interval snapshots", "Scheduled local date", "Effective available minutes minus union of booked minutes intersecting availability.", unit: "minutes", completeness: "Historical effective schedules required; time capacity is separate from headcount constraints.");
+        Add("MaximumDailyPatientCapacity", "حد المرضى اليومي المجمع", "Configured daily patient capacity", "Immutable MaximumDailyPatients policy snapshots", "Working local days", "Sum of configured daily patient limits for active working days.", completeness: "Unbounded limits or intraday policy changes are NotMeasured; never translate headcount into invented minutes.");
         Add("BookedUtilization", "استغلال المواعيد", "Booked utilization", "Immutable schedule snapshots; booking intervals", "Scheduled local date", "Union of booked intervals intersecting availability.", "Effective available minutes.", "percent", completeness: "Historical effective schedule snapshots required.");
         Add("ActualServiceUtilization", "استغلال الخدمة", "Actual service utilization", "Immutable schedule snapshots; TicketHistory", "Scheduled local date", "Union of valid service intervals intersecting availability.", "Effective available minutes.", "percent", completeness: "Historical effective schedule snapshots required.");
         Add("SegmentQuotaUtilization", "استغلال حصة الشريحة", "Segment quota utilization", "Historical quota snapshots; recorded consumption", "Scheduled local date", "Recorded quota consumption.", "Effective historical quota.", "percent", completeness: "Absent historical quota: NotMeasured.");
@@ -84,8 +85,52 @@ public sealed class KpiDefinitionRegistry : IKpiDefinitionRegistry
         Add("DoctorRetention", "استمرار الأطباء", "Doctor activity retention", "Reservation/Ticket activity", "Previous/current activity windows", "Previously active Doctors also active now.", "Distinct Doctors active in preceding equal window.", "percent");
         Add("PatientRetention", "استمرار المرضى", "Patient activity retention", "Reservation/Ticket activity", "Previous/current activity windows", "Previously active patients also active now.", "Distinct patients active in preceding equal window.", "percent");
         Add("OpenHandovers", "التسليمات المفتوحة", "Open handovers", "HandoverHistory", "At AsOfUtc", "Nonclosed Practice-scoped handovers.");
+        Add("HandoversCreated", "التسليمات المنشأة", "Handovers created", "HandoverHistory.Created", "Recorded event date in report zone", "Recorded creation events in permitted Practices.");
+        Add("HandoverAcknowledgements", "إقرارات استلام التسليم", "Handover acknowledgements", "HandoverHistory.Acknowledged", "Recorded event date in report zone", "Recorded acknowledgement events.");
+        Add("HandoversClosed", "التسليمات المغلقة", "Handovers closed", "HandoverHistory.Closed/DoctorDirectClosure", "Recorded event date in report zone", "Recorded terminal closure events.");
         Add("OpenInvestigations", "التحقيقات المفتوحة", "Open investigations", "InvestigationHistory", "At AsOfUtc", "Nonclosed administrative cases.");
         Add("InvestigationResolutions", "التحقيقات المحلولة", "Investigation resolutions", "InvestigationHistory.Resolve", "Event date", "Recorded resolution transitions.");
+        Add("CurrentBookableDoctors", "أطباء لديهم مواعيد متاحة مسجلة", "Doctors with recorded bookable slots", "Current public availability projection + current configuration", "Current observed projection", "Distinct approved active Doctors with visible available future slots and active normal consultation pricing.");
+        Add("PublicEligibleDoctors", "أطباء مؤهلون للظهور", "Public eligible Doctors", "Doctor + active account + active practice", "Current source", "Distinct approved Doctors with active account and at least one active practice.");
+        Add("PendingApprovalAgeMinutes", "عمر انتظار الاعتماد", "Pending approval age", "Doctor.CreatedOnUtc + current pending status", "Current pending cohort", "Sum current registration-to-now minutes", "Pending Doctors with trustworthy creation timestamps", "minutes");
+        Add("VerificationCompleteDoctors", "مكتملو مستندات التحقق", "Doctors with verification documents", "Doctor required document-presence metadata", "Current metadata", "Doctors with front/back identity and syndicate front document keys; contents are excluded.");
+        Add("DoctorSuspensions", "إيقاف الأطباء", "Doctor suspensions", "DoctorStatusHistory", "Status event date", "Recorded transitions to Suspended.");
+        Add("DoctorReactivations", "إعادة تفعيل الأطباء", "Doctor reactivations", "DoctorStatusHistory", "Status event date", "Recorded Suspended to Approved transitions.");
+        Add("SpecializationApprovals", "اعتماد التخصصات", "Specialization approvals", "DoctorSpecializationRequestHistory", "Decision event date", "Recorded specialization approval events.");
+        Add("SpecializationReviewMinutes", "زمن مراجعة التخصص", "Specialization review time", "Specialization submission/review timestamps", "Reviewed decision cohort", "Sum valid submission-to-review minutes", "Requests with trustworthy reviewed/submitted timestamps", "minutes");
+        Add("ActiveUserAccounts", "الحسابات النشطة", "Active user accounts", "ApplicationUser.IsActive", "Current state", "Distinct active accounts.");
+        Add("InactiveUserAccounts", "الحسابات غير النشطة", "Inactive user accounts", "ApplicationUser.IsActive", "Current state", "Distinct inactive accounts.");
+        Add("FirstLoginAccounts", "حسابات الدخول الأول", "First-login accounts", "ApplicationUser.IsFirstLogin", "Current state", "Distinct accounts requiring first-login completion.");
+        Add("RoleAssignments", "إسناد الأدوار", "Role assignments", "UserRole", "Current governance", "Distinct role assignment rows.");
+        Add("PermissionGrants", "منح الصلاحيات", "Permission grants", "RolePermission", "Current governance", "Distinct role permission grants.");
+        Add("AssignedPracticePermissionGrants", "الصلاحيات المفوضة للعيادات", "Delegated practice permission grants", "Active Reception assignment permissions", "Current governance", "Delegated permission rows on active assignments.");
+        Add("SuperAdminAccounts", "حسابات الإدارة", "SuperAdmin accounts", "SuperAdmin.IsDeleted", "Current governance", "Nondeleted SuperAdmin identities; founder policy remains on existing commands.");
+        Add("PasswordResetChallenges", "طلبات إعادة تعيين كلمة المرور", "Password reset challenges", "PasswordResetChallenge.CreatedOnUtc", "Creation event date", "Recorded challenge creations; no OTP, hash or token metadata.");
+        Add("PasswordResetConsumptions", "إتمام إعادة تعيين كلمة المرور", "Password reset completions", "PasswordResetChallenge.ConsumedOnUtc", "Completion event date", "Recorded reset consumption events.");
+        Add("SecurityLoginEvents", "أحداث تسجيل الدخول", "Login security events", "No persisted login-event store", "Activity date", "NotInstrumented; no inferred authentication activity.");
+        Add("PageViewAdoption", "استخدام الصفحات", "Page view adoption", "No persisted page-view telemetry", "Activity date", "NotInstrumented; no inferred page views.");
+        Add("SearchAdoption", "استخدام البحث", "Search adoption", "No persisted search telemetry", "Activity date", "NotInstrumented; no inferred search requests.");
+        Add("PracticeCoverage", "تغطية العيادات", "Practice coverage", "DoctorPractice geography keys", "Current state", "Distinct Practices in geographic group.");
+        Add("SpecializationCoverage", "تغطية التخصصات", "Specialization coverage", "Approved DoctorSpecialization selections", "Current state", "Distinct approved Doctors associated with specialization.");
+        Add("FeatureBookingDoctors", "أطباء يستخدمون الحجز", "Doctors using booking", "Reservation.CreatedOnUtc", "Activity date", "Distinct Doctors with recorded created bookings.");
+        Add("FeatureQueueDoctors", "أطباء يستخدمون الطابور", "Doctors using queue", "Ticket.CheckInTimeUtc", "Activity date", "Distinct Doctors with recorded check-ins.");
         return definitions.ToArray();
     }
+    private static string Example(string code, string unit, string? denominator) => code switch
+    {
+        "GrossCollected" => "EGP300.00 + EGP200.00 collections = EGP500.00 gross.",
+        "Refunds" => "EGP50.00 + EGP25.00 refunds = EGP75.00.",
+        "NetCollected" => "EGP500.00 gross - EGP75.00 refunds = EGP425.00 net.",
+        "PaidOperatingExpenses" => "EGP500.00 settlements - EGP100.00 reversals = EGP400.00 outgoing cash.",
+        "NetOperatingCashResult" => "EGP425.00 net collections - EGP200.00 outgoing cash = EGP225.00.",
+        "ProjectedResultForPeriod" => "EGP225.00 net operating cash - EGP100.00 unpaid due-in-period = EGP125.00.",
+        "AllOutstandingAsOf" or "OutstandingDueInPeriod" or "OverdueAsOf" => "Eligible immutable allocated liabilities EGP200.00 + EGP100.00 = EGP300.00; each metric applies its own due-date scope.",
+        "CapacityMinutes" => "Availability08:00-09:00 and08:30-09:30 has90 union minutes, not120.",
+        "UnusedCapacityMinutes" => "90 available union minutes -30 booked union minutes =60 unused minutes.",
+        "MaximumDailyPatientCapacity" => "Two working days with recorded limits30 each contribute60 patient places; an unbounded limit remains unmeasured.",
+        _ when denominator != null && unit == "percent" => "2 eligible successes /4 eligible records =50%; an empty denominator is unavailable.",
+        _ when denominator != null && unit == "minutes" => "60 total valid interval minutes /4 valid intervals =15 minutes; an empty denominator is unavailable.",
+        _ when denominator != null => "2 eligible units /4 eligible records =0.5; an empty denominator is unavailable.",
+        _ => "3 distinct eligible source IDs contribute3; an empty complete cohort is0."
+    };
 }

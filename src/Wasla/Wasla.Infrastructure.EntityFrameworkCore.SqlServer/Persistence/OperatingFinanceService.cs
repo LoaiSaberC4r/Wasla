@@ -212,7 +212,7 @@ internal sealed partial class OperatingFinanceService(WaslaDbContext db, IReport
     private async Task<bool> ValidAllocationsAsync(Guid doctor, Guid? reception, IReadOnlyCollection<PracticeAllocationPercentage> allocations,
         bool salary, CancellationToken ct)
     {
-        if (allocations.Count is 0 or > 100) return false;
+        if (allocations is null || allocations.Any(a => a is null) || allocations.Count is 0 or > 100) return false;
         var ids = allocations.Select(a => a.PracticeId).Distinct().ToArray();
         if (ids.Length != allocations.Count || await db.DoctorPractices.CountAsync(p => ids.Contains(p.Id) && p.DoctorId == doctor, ct) != ids.Length) return false;
         if (!salary) return reception is null;
@@ -234,7 +234,13 @@ internal sealed partial class OperatingFinanceService(WaslaDbContext db, IReport
         return true;
     }
     private void History(ReportScope scope, string type, Guid id, string operation, string? reason, DateTime now)
-        => db.OperatingFinanceHistories.Add(new(Guid.NewGuid(), scope.DoctorId!.Value, type, id, operation, reason, scope.ActorId, now));
+    {
+        var revision = type == "Plan" ? db.OperatingFinancialPlans.Local.FirstOrDefault(p => p.Id == id)?.Revisions.OrderByDescending(r => r.RevisionNumber).FirstOrDefault()?.Id
+            : type == "Obligation" ? db.OperatingObligations.Local.FirstOrDefault(o => o.Id == id)?.Revisions.OrderByDescending(r => r.RevisionNumber).FirstOrDefault()?.Id
+                ?? db.OperatingSettlements.Local.FirstOrDefault(s => s.ObligationId == id)?.ObligationRevisionId
+            : db.OperatingSettlements.Local.FirstOrDefault(s => s.Id == id)?.ObligationRevisionId;
+        db.OperatingFinanceHistories.Add(new(Guid.NewGuid(), scope.DoctorId!.Value, type, id, operation, reason, scope.ActorId, now, revision));
+    }
     private static DateOnly Today(DateTime now, string zone) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now, TimeZoneInfo.FindSystemTimeZoneById(zone)));
     private static OperatingPlanTerms Terms(OperatingPlanRequest r) => new(r.Amount, r.DueDay, r.EffectiveFrom, r.EffectiveTo,
         r.Cadence, r.AmountPolicy, r.Category, r.DescriptionAr, r.DescriptionEn, r.Allocations);

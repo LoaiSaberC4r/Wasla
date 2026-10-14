@@ -669,6 +669,14 @@ internal static class ReceptionPermissionCatalog
     {
         var (nameAr, nameEn) = permission.Name switch
         {
+            Phase18PermissionNames.ReceptionDashboard => ("عرض لوحة الاستقبال للعيادات المعينة", "View assigned Reception dashboard"),
+            Phase18PermissionNames.ReceptionReports => ("عرض تقارير التشغيل للعيادات المعينة", "View assigned operational reports"),
+            Phase18PermissionNames.ReceptionExport => ("تصدير تقارير التشغيل للعيادات المعينة", "Export assigned operational reports"),
+            Phase18PermissionNames.HandoverCreate => ("إنشاء تسليم تشغيلي", "Create an operational handover"),
+            Phase18PermissionNames.HandoverView => ("عرض التسليمات التشغيلية", "View operational handovers"),
+            Phase18PermissionNames.HandoverAcknowledge => ("استلام التسليم التشغيلي", "Acknowledge a handover"),
+            Phase18PermissionNames.HandoverClose => ("إغلاق التسليم التشغيلي", "Close a handover"),
+            Phase18PermissionNames.HandoverAnnotate => ("إضافة متابعة للتسليم التشغيلي", "Annotate a handover"),
             PermissionNames.FollowUpEligibilityViewBookingEligibility => ("عرض أهلية حجز المتابعة", "View follow-up booking eligibility"),
             PermissionNames.PatientsSearchBasic => ("البحث الأساسي عن المرضى", "Search patients"),
             PermissionNames.PatientsRegister => ("تسجيل مريض", "Register patients"),

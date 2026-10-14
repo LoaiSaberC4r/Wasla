@@ -116,6 +116,18 @@ public sealed class Phase18OperatingFinanceApiTests
             PostAsync(doctor, Base + $"/expenses/obligations/{id}/settle", body, "race-b"));
         try { Assert.Single(responses, r => r.StatusCode == HttpStatusCode.OK); Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Conflict); }
         finally { foreach (var r in responses) r.Dispose(); }
+        await app.WithDbAsync(async db =>
+        {
+            var duplicateId = Guid.NewGuid(); var duplicateReceipt = "OPS-" + duplicateId.ToString("N");
+            var duplicate = await Assert.ThrowsAsync<Microsoft.Data.SqlClient.SqlException>(() => db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO [OperatingSettlements] ([Id], [DoctorId], [ObligationId], [ObligationRevisionId], [ReceiptNumber], [AmountMinorUnits],
+                    [CurrencyCode], [PaymentMethod], [Reference], [BusinessDate], [ReportTimeZoneId], [BackdateReason], [ActorApplicationUserId], [RecordedAtUtc])
+                SELECT {duplicateId}, [DoctorId], [ObligationId], [ObligationRevisionId], {duplicateReceipt}, [AmountMinorUnits],
+                    [CurrencyCode], [PaymentMethod], [Reference], [BusinessDate], [ReportTimeZoneId], [BackdateReason], [ActorApplicationUserId], [RecordedAtUtc]
+                FROM [OperatingSettlements] WHERE [ObligationId] = {id};
+                """, TestContext.Current.CancellationToken));
+            Assert.Equal(51018, duplicate.Number);
+        });
         using var cross = await PostAsync(doctor, Base + "/expenses", new
         { amount = 1, businessDate = app.Today, dueBusinessDate = app.Today, category = "Other", descriptionAr = "اختبار",
             allocations = new[] { new { practiceId = app.OtherPracticeId, percentage = 100 } }, reason = "scope test" }, "cross");

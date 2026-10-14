@@ -493,4 +493,6 @@
   <data name="Phase18NotFound" xml:space="preserve">
     <value>المورد المطلوب غير متاح.</value>
   </data>
+  <data name="Phase18ExportTooLarge" xml:space="preserve"><value>يتجاوز التصدير المدة أو عدد الصفوف أو حجم الملف المسموح. قلل نطاق التصفية.</value></data>
+  <data name="Phase18ExportUnavailable" xml:space="preserve"><value>بيئة إنشاء ملفات PDF غير متاحة.</value></data>
 </root>

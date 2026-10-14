@@ -15,6 +15,8 @@ internal sealed partial class DatabaseInitializationHostedService(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        if (environment.IsProduction() && options.Value.ApplyMigrationsOnStartup)
+            throw new InvalidOperationException("Production migrations must be applied by an authorized operator before startup; disable ApplyMigrationsOnStartup for Production.");
         await using var scope = scopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
         var migrationService = scope.ServiceProvider

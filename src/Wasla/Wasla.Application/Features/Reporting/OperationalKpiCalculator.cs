@@ -5,13 +5,13 @@ namespace Wasla.Application.Features.Reporting;
 
 public sealed record ReservationReportingEvent(ReservationHistoryEventType EventType, DateTime RecordedAtUtc,
     ReservationStatus? ToStatus, DateOnly? OldBusinessDate, DateTime? OldStartUtc, DateOnly? NewBusinessDate,
-    DateTime? NewStartUtc, ReservationActionInitiator Initiator, Guid? ActorId, string? ReasonCode, string? Reason);
+    DateTime? NewStartUtc, ReservationActionInitiator Initiator, Guid? ActorId, string? ReasonCode, string? Reason, Guid Id = default);
 public sealed record ReservationReportingFact(Guid Id, Guid DoctorId, Guid PracticeId, Guid PatientId,
     Guid SegmentId, Guid VisitTypeId, string VisitTypeCode, ReservationBookingSource BookingSource,
     Guid CreatedBy, DateTime CreatedAtUtc, DateOnly CreatedBusinessDate, DateOnly ScheduledBusinessDate,
     DateTime ScheduledStartUtc, DateTime? OriginalStartUtc, int? GraceMinutes, ReservationStatus? Status,
-    string TimeZoneId, IReadOnlyList<ReservationReportingEvent> Events);
-public sealed record TicketReportingEvent(TicketHistoryEventType EventType, DateTime RecordedAtUtc, TicketStatus? ToStatus, Guid? ActorId);
+    string TimeZoneId, IReadOnlyList<ReservationReportingEvent> Events, int DurationMinutes = 0);
+public sealed record TicketReportingEvent(TicketHistoryEventType EventType, DateTime RecordedAtUtc, TicketStatus? ToStatus, Guid? ActorId, Guid Id = default);
 public sealed record TicketReportingFact(Guid Id, Guid DoctorId, Guid PracticeId, Guid PatientId,
     Guid? ReservationId, Guid SegmentId, Guid VisitTypeId, string VisitTypeCode, int Priority,
     TicketSource Source, DateOnly BusinessDate, DateTime CheckInAtUtc, TicketStatus? Status,
@@ -23,7 +23,8 @@ public sealed class OperationalKpiCalculator(IKpiDefinitionRegistry registry)
         long excluded = 0, string? warning = null)
     {
         var d = registry.FindDefinition(code);
-        return new(code, d.NameAr, d.NameEn, value, d.Unit, value, null, sample, excluded, status, warning);
+        return new(code, d.NameAr, d.NameEn, value == 0 && excluded > 0 ? null : value, d.Unit, value, null, sample, excluded,
+            excluded > 0 ? ReportDataStatus.Partial : status, warning ?? (excluded > 0 ? "Report.ExcludedInvalidSamples" : null));
     }
     public ReportMetric Missing(string code, ReportDataStatus status, string warning)
     { var d = registry.FindDefinition(code); return new(code, d.NameAr, d.NameEn, null, d.Unit, null, null, 0, 0, status, warning); }
@@ -49,7 +50,7 @@ public sealed class OperationalKpiCalculator(IKpiDefinitionRegistry registry)
         var reschedules = reservations.SelectMany(r => r.Events.Where(e => e.EventType == ReservationHistoryEventType.Rescheduled &&
             InWindow(LocalDate(e.RecordedAtUtc, r.TimeZoneId), w)).Select(e => (r.Id, Event: e))).ToArray();
         bool CancelledBeforeSlot(ReservationReportingFact r) => r.Events.Any(e => e.EventType == ReservationHistoryEventType.Cancelled && e.RecordedAtUtc < r.ScheduledStartUtc);
-        var matured = scheduled.Where(r => r.ScheduledStartUtc <= w.AsOfUtc && !CancelledBeforeSlot(r)).ToArray();
+        var matured = scheduled.Where(r => r.Status != null && r.ScheduledStartUtc <= w.AsOfUtc && !CancelledBeforeSlot(r)).ToArray();
         var graceKnown = matured.Where(r => r.GraceMinutes != null && r.ScheduledStartUtc.AddMinutes(r.GraceMinutes.Value) <= w.AsOfUtc).ToArray();
         var ticketIds = tickets.Where(t => t.ReservationId != null && t.CheckInAtUtc <= w.AsOfUtc).Select(t => t.ReservationId!.Value).ToHashSet();
         var leads = booked.Where(r => r.OriginalStartUtc >= r.CreatedAtUtc).Select(r => (decimal)(r.OriginalStartUtc!.Value - r.CreatedAtUtc).TotalMinutes).ToArray();
@@ -74,9 +75,14 @@ public sealed class OperationalKpiCalculator(IKpiDefinitionRegistry registry)
             if (firstStart is not null)
             {
                 starts.Add((decimal)(firstStart.RecordedAtUtc - t.CheckInAtUtc).TotalMinutes);
-                var preceding = calls.LastOrDefault(e => e.RecordedAtUtc <= firstStart.RecordedAtUtc);
+                var cycleStart = events.LastOrDefault(e => e.EventType == TicketHistoryEventType.RestoredFromNoShow && e.RecordedAtUtc <= firstStart.RecordedAtUtc)?.RecordedAtUtc ?? t.CheckInAtUtc;
+                var preceding = calls.LastOrDefault(e => e.RecordedAtUtc >= cycleStart && e.RecordedAtUtc <= firstStart.RecordedAtUtc);
                 if (preceding is not null) callStarts.Add((decimal)(firstStart.RecordedAtUtc - preceding.RecordedAtUtc).TotalMinutes);
             }
+        }
+        foreach (var t in tickets)
+        {
+            var events = t.Events.OrderBy(e => e.RecordedAtUtc).ThenBy(e => e.EventType).ToArray();
             foreach (var completed in events.Where(e => e.EventType == TicketHistoryEventType.Completed && InWindow(LocalDate(e.RecordedAtUtc, t.TimeZoneId), w)))
             {
                 var began = events.LastOrDefault(e => e.EventType == TicketHistoryEventType.InProgress && e.RecordedAtUtc <= completed.RecordedAtUtc);
@@ -86,12 +92,14 @@ public sealed class OperationalKpiCalculator(IKpiDefinitionRegistry registry)
         var completedCount = ticketEvents.Count(e => e.EventType == TicketHistoryEventType.Completed);
         var unknownStates = scheduled.LongCount(r => r.Status == null);
         var ticketUnknown = attended.LongCount(t => t.Status == null);
+        var maturedTickets = attended.Where(t => t.Status != null && (t.BusinessDate < LocalDate(w.AsOfUtc, t.TimeZoneId) ||
+            t.Status is TicketStatus.NoShow or TicketStatus.Cancelled or TicketStatus.Completed)).ToArray();
         return [Count("BookingsCreated", booked.Length, booked.Length), Count("AppointmentsScheduled", scheduled.Length, scheduled.Length),
             Count("CancellationsByEvent", cancellation.Length, cancellation.Length),
-            Ratio("CancellationRateScheduledCohort", scheduled.Count(r => r.Status == ReservationStatus.Cancelled), scheduled.Length, unknownStates),
+            Ratio("CancellationRateScheduledCohort", scheduled.Count(r => r.Status == ReservationStatus.Cancelled), scheduled.Count(r => r.Status != null), unknownStates),
             Ratio("ReservationNoShowRate", graceKnown.Count(r => r.Status == ReservationStatus.NoShow), graceKnown.Length,
                 matured.Count(r => r.GraceMinutes == null) + unknownStates),
-            Ratio("TicketNoShowRate", attended.Count(t => t.Status == TicketStatus.NoShow), attended.Length, ticketUnknown),
+            Ratio("TicketNoShowRate", maturedTickets.Count(t => t.Status == TicketStatus.NoShow), maturedTickets.Length, ticketUnknown),
             Count("RescheduleEvents", reschedules.Length, reschedules.Length), Count("RescheduledReservations", reschedules.Select(r => r.Id).Distinct().Count()),
             Ratio("ReservationToTicketConversion", matured.Count(r => ticketIds.Contains(r.Id)), matured.Length, unknownStates),
             Ratio("BookingLeadTimeMinutes", leads.Sum(), leads.Length, booked.Length - leads.Length),
@@ -111,6 +119,8 @@ public sealed class OperationalKpiCalculator(IKpiDefinitionRegistry registry)
             Count("OperationalExceptions", ticketEvents.Count(e => e.EventType is TicketHistoryEventType.ForceCheckIn or TicketHistoryEventType.ManualCalled or
                 TicketHistoryEventType.CallNoResponse or TicketHistoryEventType.OperationalDayEnded)),
             Missing("CapacityMinutes", ReportDataStatus.NotMeasured, "Report.HistoricalCapacityNotRecorded"),
+            Missing("UnusedCapacityMinutes", ReportDataStatus.NotMeasured, "Report.HistoricalCapacityNotRecorded"),
+            Missing("MaximumDailyPatientCapacity", ReportDataStatus.NotMeasured, "Report.HistoricalCapacityNotRecorded"),
             Missing("BookedUtilization", ReportDataStatus.NotMeasured, "Report.HistoricalCapacityNotRecorded"),
             Missing("ActualServiceUtilization", ReportDataStatus.NotMeasured, "Report.HistoricalCapacityNotRecorded"),
             Missing("SegmentQuotaUtilization", ReportDataStatus.NotMeasured, "Report.HistoricalQuotaNotRecorded")];

@@ -21,12 +21,13 @@ public sealed class ReportingTimeScope(IDateTimeProvider clock, IOptions<Phase18
         var now = clock.UtcNow;
         var asOf = filter.AsOfUtc ?? now;
         if (asOf.Kind == DateTimeKind.Local || asOf > now || asOf == default ||
-            filter.PageNumber < 1 || filter.PageSize is < 1 or > 100 ||
+            filter.PageNumber is < 1 or > 1_000_000 || filter.PageSize is < 1 or > 100 ||
             filter.SortBy is not ("Date" or "Status" or "Reference" or "Amount") ||
             filter.SortDirection is not ("asc" or "desc") || !Enum.IsDefined(filter.Grouping) ||
             filter.ReservationStatus is { } rs && !Enum.IsDefined(rs) ||
             filter.TicketStatus is { } ts && !Enum.IsDefined(ts) ||
-            filter.BookingSource is { } bs && !Enum.IsDefined(bs))
+            filter.BookingSource is { } bs && !Enum.IsDefined(bs) ||
+            filter.ExpenseCategory is { } category && !Enum.IsDefined(category))
             return Result<ReportingWindow>.Fail(ReportingErrors.InvalidFilter);
         var zoneId = filter.ReportTimeZoneId ?? options.Value.DefaultReportTimeZoneId;
         TimeZoneInfo zone;
@@ -35,7 +36,7 @@ public sealed class ReportingTimeScope(IDateTimeProvider clock, IOptions<Phase18
         catch (InvalidTimeZoneException) { return Result<ReportingWindow>.Fail(ReportingErrors.InvalidFilter); }
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(asOf, DateTimeKind.Utc), zone));
         var to = filter.ToDate ?? today;
-        var from = filter.FromDate ?? to.AddDays(-29);
+        var from = filter.FromDate ?? DateOnly.FromDayNumber(Math.Max(1, to.DayNumber - 29));
         return from > to || to.DayNumber - from.DayNumber >= 366 || from == DateOnly.MinValue || to == DateOnly.MaxValue
             ? Result<ReportingWindow>.Fail(ReportingErrors.InvalidFilter)
             : Result<ReportingWindow>.Ok(new(from, to, DateTime.SpecifyKind(asOf, DateTimeKind.Utc), now, zone.Id));
@@ -44,8 +45,16 @@ public sealed class ReportingTimeScope(IDateTimeProvider clock, IOptions<Phase18
     public static (DateTime FromUtc, DateTime BeforeUtc) Bounds(DateOnly from, DateOnly to, string zoneId)
     {
         var zone = TimeZoneInfo.FindSystemTimeZoneById(zoneId);
-        return (TimeZoneInfo.ConvertTimeToUtc(from.ToDateTime(TimeOnly.MinValue), zone),
-            TimeZoneInfo.ConvertTimeToUtc(to.AddDays(1).ToDateTime(TimeOnly.MinValue), zone));
+        return (DateBoundaryUtc(from, zone), DateBoundaryUtc(to.AddDays(1), zone));
+    }
+
+    public static DateTime DateBoundaryUtc(DateOnly date, TimeZoneInfo zone)
+    {
+        var local = date.ToDateTime(TimeOnly.MinValue);
+        while (zone.IsInvalidTime(local)) local = local.AddMinutes(1);
+        return zone.IsAmbiguousTime(local)
+            ? new DateTimeOffset(local, zone.GetAmbiguousTimeOffsets(local).Max()).UtcDateTime
+            : TimeZoneInfo.ConvertTimeToUtc(local, zone);
     }
 
     public static decimal UnionMinutes(IEnumerable<(DateTime Start, DateTime End)> intervals)

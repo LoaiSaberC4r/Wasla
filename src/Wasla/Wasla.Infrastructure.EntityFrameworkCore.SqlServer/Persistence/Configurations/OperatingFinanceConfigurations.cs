@@ -14,6 +14,7 @@ internal sealed class OperatingFinancialPlanConfiguration : IWriteEntityConfigur
     {
         b.ToTable("OperatingFinancialPlans", t =>
         {
+            t.UseSqlOutputClause(false);
             t.HasCheckConstraint("CK_OperatingPlan_Kind", "[Kind] IN (1,2)");
             t.HasCheckConstraint("CK_OperatingPlan_Status", "[Status] IN (1,2,3)");
             t.HasCheckConstraint("CK_OperatingPlan_Reception", "([Kind] = 1 AND [ReceptionId] IS NOT NULL) OR ([Kind] = 2 AND [ReceptionId] IS NULL)");

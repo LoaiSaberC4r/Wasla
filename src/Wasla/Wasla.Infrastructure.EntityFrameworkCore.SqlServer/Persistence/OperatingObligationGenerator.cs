@@ -52,7 +52,9 @@ internal sealed class OperatingObligationGenerator(WaslaDbContext db, ITicketQue
                         .OrderByDescending(r => r.EffectiveFrom).ThenByDescending(r => r.RevisionNumber).FirstOrDefault();
                     if (terms is null) continue;
                     var due = OperatingFinancialPolicy.DueDate(month.Year, month.Month, terms.DueDay);
-                    if (due > today || due < terms.EffectiveFrom || terms.EffectiveTo < due) continue;
+                    // Create the eligible current calendar occurrence before its due day, so Upcoming
+                    // liabilities and the projected result are visible. No future calendar cycle is generated.
+                    if (due < terms.EffectiveFrom || terms.EffectiveTo < due) continue;
                     var lifecycle = plan.Revisions.Where(r => r.IsLifecycleChange && r.EffectiveFrom <= due)
                         .OrderByDescending(r => r.EffectiveFrom).ThenByDescending(r => r.RevisionNumber).FirstOrDefault();
                     if (lifecycle is not null && lifecycle.Status != OperatingPlanStatus.Active) continue;
@@ -77,7 +79,7 @@ internal sealed class OperatingObligationGenerator(WaslaDbContext db, ITicketQue
                     if (created.IsFailure) throw new InvalidOperationException("OperatingFinance.InvalidStoredPlan");
                     db.OperatingObligations.Add(created.Value);
                     db.OperatingFinanceHistories.Add(new(Guid.NewGuid(), doctor, "Obligation", created.Value.Id,
-                        "Generated", "ScheduledGeneration", plan.CreatedByApplicationUserId, now));
+                        "Generated", "ScheduledGeneration", null, now, created.Value.Revisions.Single().Id));
                     ++added;
                 }
                 await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct); total += added;

@@ -26,6 +26,9 @@ public static class ReportDefinitionCatalog
     public static string ViewPermission(ReportActor actor) => actor switch
     { ReportActor.Doctor => Phase18PermissionNames.DoctorReports, ReportActor.Reception => Phase18PermissionNames.ReceptionReports,
         ReportActor.SuperAdmin => Phase18PermissionNames.PlatformReports, _ => Phase18PermissionNames.PatientDashboard };
+    public static string DashboardPermission(ReportActor actor) => actor switch
+    { ReportActor.Doctor => Phase18PermissionNames.DoctorDashboard, ReportActor.Reception => Phase18PermissionNames.ReceptionDashboard,
+        ReportActor.SuperAdmin => Phase18PermissionNames.PlatformDashboard, _ => Phase18PermissionNames.PatientDashboard };
     public static string ExportPermission(ReportActor actor, bool financial) => actor switch
     { ReportActor.Doctor => financial ? Phase18PermissionNames.DoctorExportFinancial : Phase18PermissionNames.DoctorExportOperational,
         ReportActor.Reception => Phase18PermissionNames.ReceptionExport, ReportActor.SuperAdmin => Phase18PermissionNames.PlatformExport,

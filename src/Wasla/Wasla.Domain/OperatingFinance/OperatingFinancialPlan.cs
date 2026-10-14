@@ -91,6 +91,7 @@ public sealed class OperatingFinancialPlan : AggregateRoot<Guid>
             terms.EffectiveFrom == DateOnly.MinValue || terms.EffectiveFrom == DateOnly.MaxValue || terms.EffectiveTo < terms.EffectiveFrom ||
             string.IsNullOrWhiteSpace(terms.DescriptionAr) || terms.DescriptionAr.Trim().Length > 1000 || terms.DescriptionEn?.Length > 1000 ||
             kind == OperatingPlanKind.Salary && (terms.Cadence != ExpenseCadence.Monthly || terms.AmountPolicy != ExpenseAmountPolicy.Fixed)
+            || kind == OperatingPlanKind.Salary && terms.EffectiveFrom.Year == 9999 && terms.EffectiveFrom.Month == 12 && terms.EffectiveFrom.Day > 1
             ? Result.Fail(OperatingFinanceErrors.Invalid()) : Result.Ok();
     }
 }

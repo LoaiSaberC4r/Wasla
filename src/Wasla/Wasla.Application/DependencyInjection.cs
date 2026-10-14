@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddTransient<MediatR.IPipelineBehavior<FamilyMedicalCommand, BuildingBlock.Domain.Results.Result<object>>, FamilyMedicalMediaCompensationBehavior>();
         services.AddBuildingBlockApplicationBehaviors();
         services.AddScoped<DoctorLifecycleService>();
+        services.AddScoped<Wasla.Application.Features.Dashboards.PatientDashboardComposer>();
         services.AddScoped<FamilyRelationshipWorkflowService>();
         services.AddScoped<IReceptionPracticeAuthorizationService, ReceptionPracticeAuthorizationService>();
         services.AddScoped<ReservationApplicationService>();

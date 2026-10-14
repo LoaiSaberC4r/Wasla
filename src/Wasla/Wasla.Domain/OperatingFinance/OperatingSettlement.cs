@@ -70,14 +70,15 @@ public sealed class OperatingFinanceHistory : Entity<Guid>
 {
     private OperatingFinanceHistory() { }
     public OperatingFinanceHistory(Guid id, Guid doctorId, string resourceType, Guid resourceId,
-        string operation, string? reason, Guid actorId, DateTime now) : base(id)
+        string operation, string? reason, Guid? actorId, DateTime now, Guid? snapshotRevisionId = null) : base(id)
     { DoctorId = doctorId; ResourceType = resourceType; ResourceId = resourceId; Operation = operation;
-        Reason = reason?.Trim(); ActorApplicationUserId = actorId; RecordedAtUtc = now; }
+        Reason = reason?.Trim(); ActorApplicationUserId = actorId; RecordedAtUtc = now; SnapshotRevisionId = snapshotRevisionId; }
     public Guid DoctorId { get; private set; }
     public string ResourceType { get; private set; } = string.Empty;
     public Guid ResourceId { get; private set; }
     public string Operation { get; private set; } = string.Empty;
     public string? Reason { get; private set; }
-    public Guid ActorApplicationUserId { get; private set; }
+    public Guid? ActorApplicationUserId { get; private set; }
     public DateTime RecordedAtUtc { get; private set; }
+    public Guid? SnapshotRevisionId { get; private set; }
 }

@@ -40,7 +40,7 @@ public static class OperatingFinancialPolicy
     {
         var minor = MinorUnits(amount);
         if (minor.IsFailure) return Result<IReadOnlyList<AllocatedOperatingCost>>.Fail(minor.Errors);
-        if (percentages.Count is 0 or > 100 || percentages.Select(p => p.PracticeId).Distinct().Count() != percentages.Count ||
+        if (percentages is null || percentages.Any(p => p is null) || percentages.Count is 0 or > 100 || percentages.Select(p => p.PracticeId).Distinct().Count() != percentages.Count ||
             percentages.Any(p => p.PracticeId == Guid.Empty || p.Percentage <= 0 || p.Percentage > 100 ||
                 decimal.Truncate(p.Percentage * 10_000) != p.Percentage * 10_000) || percentages.Sum(p => p.Percentage) != 100)
             return Result<IReadOnlyList<AllocatedOperatingCost>>.Fail(OperatingFinanceErrors.Invalid("OperatingFinance.InvalidAllocation"));

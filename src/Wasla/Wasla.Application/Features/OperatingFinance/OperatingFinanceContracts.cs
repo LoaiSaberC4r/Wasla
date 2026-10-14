@@ -66,11 +66,16 @@ public sealed record OperatingSettlementResponse(Guid Id, Guid ObligationId, Gui
 public sealed record OperatingMovementResponse(Guid Id, Guid ObligationId, string MovementType, decimal Amount,
     DateOnly BusinessDate, DateTime RecordedAtUtc, Guid? OriginalSettlementId);
 public sealed record OperatingHistoryResponse(Guid Id, string ResourceType, Guid ResourceId, string Operation,
-    string? Reason, Guid ActorApplicationUserId, DateTime RecordedAtUtc);
+    string? Reason, Guid? ActorApplicationUserId, DateTime RecordedAtUtc, Guid? SnapshotRevisionId = null,
+    OperatingPlanRevisionResponse? PlanSnapshot = null, OperatingObligationRevisionResponse? ObligationSnapshot = null);
+public sealed record OperatingObligationRevisionResponse(Guid Id, int RevisionNumber, decimal Amount, DateOnly DueBusinessDate,
+    ExpenseCategoryCode Category, string DescriptionAr, string? DescriptionEn, bool ActualAmountConfirmed,
+    OperatingObligationStatus Status, string Reason, Guid ActorApplicationUserId, DateTime RecordedAtUtc,
+    IReadOnlyList<OperatingAllocationResponse> Allocations);
 public sealed record OperatingFinanceOptions(IReadOnlyList<ReportOption> Practices, IReadOnlyList<ReportOption> Receptions,
     IReadOnlyList<ReportOption> Categories, IReadOnlyList<ReportOption> PaymentMethods,
     IReadOnlyList<ReportOption> Cadences, IReadOnlyList<ReportOption> AmountPolicies,
-    string CurrencyCode, bool NoProration, string DefaultReportTimeZoneId);
+    string CurrencyCode, bool NoProration, string DefaultReportTimeZoneId, ReportOptionsPagination? Pagination = null);
 
 public interface IOperatingFinanceService
 {
@@ -84,7 +89,7 @@ public interface IOperatingFinanceService
     Task<Result<ReportPage<OperatingHistoryResponse>>> HistoryAsync(Guid id, string resourceType, bool salary,
         int pageNumber, int pageSize, CancellationToken cancellationToken);
     Task<Result<ReportPage<OperatingMovementResponse>>> MovementsAsync(OperatingFinanceFilter filter, CancellationToken cancellationToken);
-    Task<Result<OperatingFinanceOptions>> OptionsAsync(CancellationToken cancellationToken);
+    Task<Result<OperatingFinanceOptions>> OptionsAsync(CancellationToken cancellationToken, ReportOptionsFilter? filter = null);
 }
 public interface IOperatingObligationGenerator { Task<int> GenerateAsync(Guid? doctorId, CancellationToken cancellationToken); }
 
