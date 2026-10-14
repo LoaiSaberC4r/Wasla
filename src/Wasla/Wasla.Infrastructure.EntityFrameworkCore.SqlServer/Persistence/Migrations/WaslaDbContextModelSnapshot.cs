@@ -3455,6 +3455,958 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         });
                 });
 
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("AmountMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Percentage")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<Guid>("PracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RevisionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId", "PracticeId");
+
+                    b.HasIndex("DoctorId", "RevisionId");
+
+                    b.HasIndex("PracticeId", "RevisionId");
+
+                    b.HasIndex("RevisionId", "PracticeId")
+                        .IsUnique();
+
+                    b.ToTable("OperatingCostAllocationSnapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingCostAllocation_Amount", "[AmountMinorUnits] >= 0");
+
+                            t.HasCheckConstraint("CK_OperatingCostAllocation_Percent", "CAST([Percentage] AS decimal(9,4)) > 0 AND CAST([Percentage] AS decimal(9,4)) <= 100");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingFinanceHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid?>("SnapshotRevisionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("DoctorId", "ResourceType", "ResourceId", "RecordedAtUtc");
+
+                    b.ToTable("OperatingFinanceHistories", (string)null);
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingFinancialPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CreatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentRevisionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("FirstCoveredMonth")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ModifiedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReceptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByApplicationUserId");
+
+                    b.HasIndex("ModifiedByApplicationUserId");
+
+                    b.HasIndex("DoctorId", "Kind", "Status", "EffectiveFrom");
+
+                    b.HasIndex("DoctorId", "ReceptionId", "EffectiveFrom", "EffectiveTo");
+
+                    b.ToTable("OperatingFinancialPlans", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingPlan_Dates", "[EffectiveTo] IS NULL OR [EffectiveTo] >= [EffectiveFrom]");
+
+                            t.HasCheckConstraint("CK_OperatingPlan_Kind", "[Kind] IN (1,2)");
+
+                            t.HasCheckConstraint("CK_OperatingPlan_Reception", "([Kind] = 1 AND [ReceptionId] IS NOT NULL) OR ([Kind] = 2 AND [ReceptionId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_OperatingPlan_Status", "[Status] IN (1,2,3)");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingGenerationRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("FinishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("GeneratedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAtUtc");
+
+                    b.ToTable("OperatingGenerationRuns", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingObligation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ActiveSettlementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ActualAmountConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("AmountMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("AmountPolicy")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CreatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<int>("CurrentRevisionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DescriptionAr")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DescriptionEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("DueBusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("GeneratedBySystem")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OccurrenceKey")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<int?>("PeriodMonth")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PeriodYear")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("PlanId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("PlannedAmountMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("ReceptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActiveSettlementId")
+                        .IsUnique()
+                        .HasFilter("[ActiveSettlementId] IS NOT NULL");
+
+                    b.HasIndex("CreatedByApplicationUserId");
+
+                    b.HasIndex("DoctorId", "PlanId");
+
+                    b.HasIndex("DoctorId", "ReceptionId");
+
+                    b.HasIndex("Id", "ActiveSettlementId");
+
+                    b.HasIndex("PlanId", "OccurrenceKey")
+                        .IsUnique()
+                        .HasFilter("[PlanId] IS NOT NULL");
+
+                    b.HasIndex("DoctorId", "Status", "DueBusinessDate");
+
+                    b.HasIndex("PlanId", "PeriodYear", "PeriodMonth")
+                        .IsUnique()
+                        .HasFilter("[PlanId] IS NOT NULL AND [Kind] = 1");
+
+                    b.ToTable("OperatingObligations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingObligation_Amount", "[AmountMinorUnits] > 0 AND [PlannedAmountMinorUnits] > 0");
+
+                            t.HasCheckConstraint("CK_OperatingObligation_Currency", "[CurrencyCode] = 'EGP'");
+
+                            t.HasCheckConstraint("CK_OperatingObligation_Occurrence", "([Kind] = 2 AND [PlanId] IS NULL AND [OccurrenceKey] IS NULL) OR ([Kind] IN (1,3) AND [PlanId] IS NOT NULL AND [OccurrenceKey] IS NOT NULL AND [PeriodMonth] BETWEEN 1 AND 12 AND [PeriodYear] BETWEEN 1 AND 9999)");
+
+                            t.HasCheckConstraint("CK_OperatingObligation_State", "([Status] = 2 AND [ActiveSettlementId] IS NOT NULL) OR ([Status] IN (1,3) AND [ActiveSettlementId] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingObligationRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ActualAmountConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("AmountMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DescriptionAr")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DescriptionEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("DueBusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("ObligationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RevisionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("DoctorId", "ObligationId");
+
+                    b.HasIndex("ObligationId", "RevisionNumber")
+                        .IsUnique();
+
+                    b.HasIndex("DoctorId", "RecordedAtUtc", "DueBusinessDate");
+
+                    b.ToTable("OperatingObligationRevisions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingObligationRevision_Amount", "[AmountMinorUnits] > 0");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingPlanAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Percentage")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<Guid>("PracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RevisionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId", "PracticeId");
+
+                    b.HasIndex("DoctorId", "RevisionId");
+
+                    b.HasIndex("RevisionId", "PracticeId")
+                        .IsUnique();
+
+                    b.ToTable("OperatingPlanAllocations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingPlanAllocation_Percent", "CAST([Percentage] AS decimal(9,4)) > 0 AND CAST([Percentage] AS decimal(9,4)) <= 100");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingPlanRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("AmountPolicy")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Cadence")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("DescriptionAr")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DescriptionEn")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DueDay")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsLifecycleChange")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RevisionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("DoctorId", "PlanId");
+
+                    b.HasIndex("PlanId", "RevisionNumber")
+                        .IsUnique();
+
+                    b.HasIndex("PlanId", "EffectiveFrom", "RecordedAtUtc");
+
+                    b.ToTable("OperatingPlanRevisions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingPlanRevision_Amount", "CAST([Amount] AS decimal(18,2)) > 0");
+
+                            t.HasCheckConstraint("CK_OperatingPlanRevision_Cadence", "[Cadence] IN (1,3,12)");
+
+                            t.HasCheckConstraint("CK_OperatingPlanRevision_Currency", "[CurrencyCode] = 'EGP'");
+
+                            t.HasCheckConstraint("CK_OperatingPlanRevision_Day", "[DueDay] BETWEEN 1 AND 31");
+
+                            t.HasCheckConstraint("CK_OperatingPlanRevision_Policy", "[AmountPolicy] IN (1,2)");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingSettlement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("AmountMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("BackdateReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ObligationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ObligationRevisionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceiptNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ReportTimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("ReceiptNumber")
+                        .IsUnique();
+
+                    b.HasIndex("DoctorId", "ObligationId");
+
+                    b.HasIndex("ObligationId", "ObligationRevisionId");
+
+                    b.HasIndex("DoctorId", "BusinessDate", "RecordedAtUtc");
+
+                    b.ToTable("OperatingSettlements", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingSettlement_Amount", "[AmountMinorUnits] > 0");
+
+                            t.HasCheckConstraint("CK_OperatingSettlement_Currency", "[CurrencyCode] = 'EGP'");
+
+                            t.HasCheckConstraint("CK_OperatingSettlement_Method", "[PaymentMethod] IN (1,2,3,4)");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingSettlementReversal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("AmountMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ObligationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OriginalSettlementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReportTimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("OriginalSettlementId")
+                        .IsUnique();
+
+                    b.HasIndex("DoctorId", "ObligationId");
+
+                    b.HasIndex("ObligationId", "OriginalSettlementId");
+
+                    b.HasIndex("DoctorId", "BusinessDate", "RecordedAtUtc");
+
+                    b.ToTable("OperatingSettlementReversals", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_OperatingReversal_Amount", "[AmountMinorUnits] > 0");
+
+                            t.HasCheckConstraint("CK_OperatingReversal_Reason", "NULLIF(LTRIM(RTRIM([Reason])), '') IS NOT NULL");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.AdministrativeInvestigation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssignedSuperAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClosureNotes")
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CreatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("HistorySequence")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IssueType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("LinkedBackgroundJobRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LinkedDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LinkedOutboxMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LinkedResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("LinkedResourceType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("LinkedSpecializationRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ModifiedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResolutionNotes")
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ResolutionType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ResolvedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TitleAr")
+                        .IsRequired()
+                        .HasMaxLength(1200)
+                        .HasColumnType("nvarchar(1200)");
+
+                    b.Property<string>("TitleEn")
+                        .HasMaxLength(1200)
+                        .HasColumnType("nvarchar(1200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByApplicationUserId");
+
+                    b.HasIndex("LinkedBackgroundJobRunId");
+
+                    b.HasIndex("LinkedDoctorId");
+
+                    b.HasIndex("LinkedOutboxMessageId");
+
+                    b.HasIndex("LinkedSpecializationRequestId");
+
+                    b.HasIndex("AssignedSuperAdminId", "Status");
+
+                    b.HasIndex("IssueType", "CreatedOnUtc");
+
+                    b.HasIndex("Status", "Priority", "CreatedOnUtc");
+
+                    b.ToTable("AdministrativeInvestigations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Investigation_Assignee", "[Status] <> 2 OR [AssignedSuperAdminId] IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_Investigation_Closure", "[Status] <> 4 OR ([ClosureNotes] IS NOT NULL AND [ClosedOnUtc] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Investigation_Link", "([LinkedResourceType] = 0 AND [LinkedResourceId] IS NULL AND [LinkedDoctorId] IS NULL AND [LinkedSpecializationRequestId] IS NULL AND [LinkedBackgroundJobRunId] IS NULL AND [LinkedOutboxMessageId] IS NULL) OR ([LinkedResourceType] = 1 AND [LinkedResourceId] = [LinkedDoctorId] AND [LinkedDoctorId] IS NOT NULL AND [LinkedSpecializationRequestId] IS NULL AND [LinkedBackgroundJobRunId] IS NULL AND [LinkedOutboxMessageId] IS NULL) OR ([LinkedResourceType] = 2 AND [LinkedResourceId] = [LinkedSpecializationRequestId] AND [LinkedSpecializationRequestId] IS NOT NULL AND [LinkedDoctorId] IS NULL AND [LinkedBackgroundJobRunId] IS NULL AND [LinkedOutboxMessageId] IS NULL) OR ([LinkedResourceType] = 3 AND [LinkedResourceId] = [LinkedBackgroundJobRunId] AND [LinkedBackgroundJobRunId] IS NOT NULL AND [LinkedDoctorId] IS NULL AND [LinkedSpecializationRequestId] IS NULL AND [LinkedOutboxMessageId] IS NULL) OR ([LinkedResourceType] = 4 AND [LinkedResourceId] = [LinkedOutboxMessageId] AND [LinkedOutboxMessageId] IS NOT NULL AND [LinkedDoctorId] IS NULL AND [LinkedSpecializationRequestId] IS NULL AND [LinkedBackgroundJobRunId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_Investigation_Resolution", "[Status] <> 3 OR ([ResolutionType] IS NOT NULL AND [ResolutionNotes] IS NOT NULL AND [ResolvedOnUtc] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Investigation_State", "[Status] IN (1,2,3,4) AND [Priority] IN (1,2) AND [IssueType] BETWEEN 1 AND 7");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.InvestigationHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssignedSuperAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ResolutionType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SequenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("AssignedSuperAdminId");
+
+                    b.HasIndex("CaseId", "SequenceNumber")
+                        .IsUnique();
+
+                    b.ToTable("InvestigationHistories", (string)null);
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.ReceptionHandover", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AcknowledgedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AcknowledgedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ClosedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClosureOutcome")
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CreatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("HistorySequence")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PreviousHandoverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ReservationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("TicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcknowledgedByApplicationUserId");
+
+                    b.HasIndex("ClosedByApplicationUserId");
+
+                    b.HasIndex("CreatedByApplicationUserId");
+
+                    b.HasIndex("DoctorId", "DoctorPracticeId");
+
+                    b.HasIndex("DoctorPracticeId", "PreviousHandoverId");
+
+                    b.HasIndex("DoctorPracticeId", "ReservationId");
+
+                    b.HasIndex("DoctorPracticeId", "TicketId");
+
+                    b.HasIndex("DoctorPracticeId", "Status", "CreatedOnUtc");
+
+                    b.ToTable("ReceptionHandovers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Handover_Status", "[Status] IN (1,2,3)");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.ReceptionHandoverHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("HandoverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SequenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("HandoverId", "SequenceNumber")
+                        .IsUnique();
+
+                    b.ToTable("ReceptionHandoverHistories", (string)null);
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Patients.Patient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5853,6 +6805,241 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.ToTable("MedicalSpecializations", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Reporting.DoctorInsightFollowUp", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CreatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MetricCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateTime?>("ModifiedOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByApplicationUserId");
+
+                    b.HasIndex("DoctorId", "PracticeId", "State", "CreatedOnUtc");
+
+                    b.ToTable("DoctorInsightFollowUps", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DoctorInsight_State", "[State] IN (1,2,3,4)");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.DoctorInsightHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("InsightId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SequenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId");
+
+                    b.HasIndex("InsightId", "RecordedAtUtc");
+
+                    b.HasIndex("InsightId", "SequenceNumber")
+                        .IsUnique();
+
+                    b.ToTable("DoctorInsightHistories", (string)null);
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.PracticeReportingPolicySnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PolicyJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("RevisionNumber")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId", "PracticeId");
+
+                    b.HasIndex("PracticeId", "RecordedAtUtc");
+
+                    b.HasIndex("PracticeId", "RevisionNumber")
+                        .IsUnique();
+
+                    b.ToTable("PracticeReportingPolicySnapshots", (string)null);
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.ReportExportAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("AppliedFiltersJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int?>("ByteCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReportCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ScopeSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorApplicationUserId", "RecordedAtUtc");
+
+                    b.HasIndex("ReportCode", "RecordedAtUtc");
+
+                    b.ToTable("ReportExportAudits", (string)null);
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.ReportingRefreshRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("FinishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("LastPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PracticesObserved")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SnapshotsWritten")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAtUtc");
+
+                    b.ToTable("ReportingRefreshRuns", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Reservations.Reservation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5889,6 +7076,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.Property<DateTime?>("CancelledOnUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("CheckInGracePeriodMinutesSnapshot")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("ConvertedToTicketOnUtc")
                         .HasColumnType("datetime2");
@@ -8088,6 +9278,304 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot", b =>
+                {
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "PracticeId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingObligationRevision", null)
+                        .WithMany("Allocations")
+                        .HasForeignKey("DoctorId", "RevisionId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingFinanceHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingFinancialPlan", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ModifiedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Practices.Reception", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "ReceptionId")
+                        .HasPrincipalKey("OwnerDoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingObligation", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingFinancialPlan", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "PlanId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Practices.Reception", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "ReceptionId")
+                        .HasPrincipalKey("OwnerDoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingSettlement", null)
+                        .WithMany()
+                        .HasForeignKey("Id", "ActiveSettlementId")
+                        .HasPrincipalKey("ObligationId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingObligationRevision", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingObligation", null)
+                        .WithMany("Revisions")
+                        .HasForeignKey("DoctorId", "ObligationId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingPlanAllocation", b =>
+                {
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "PracticeId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingPlanRevision", null)
+                        .WithMany("Allocations")
+                        .HasForeignKey("DoctorId", "RevisionId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingPlanRevision", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingFinancialPlan", null)
+                        .WithMany("Revisions")
+                        .HasForeignKey("DoctorId", "PlanId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingSettlement", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingObligation", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "ObligationId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingObligationRevision", null)
+                        .WithMany()
+                        .HasForeignKey("ObligationId", "ObligationRevisionId")
+                        .HasPrincipalKey("ObligationId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingSettlementReversal", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingObligation", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "ObligationId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingSettlement", null)
+                        .WithMany()
+                        .HasForeignKey("ObligationId", "OriginalSettlementId")
+                        .HasPrincipalKey("ObligationId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.AdministrativeInvestigation", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.SuperAdmin", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedSuperAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.OperatingFinance.OperatingGenerationRun", null)
+                        .WithMany()
+                        .HasForeignKey("LinkedBackgroundJobRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("LinkedDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email.EmailOutboxMessage", null)
+                        .WithMany()
+                        .HasForeignKey("LinkedOutboxMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Doctors.DoctorSpecializationRequest", null)
+                        .WithMany()
+                        .HasForeignKey("LinkedSpecializationRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.InvestigationHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.SuperAdmin", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedSuperAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Operations.AdministrativeInvestigation", null)
+                        .WithMany("History")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.ReceptionHandover", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AcknowledgedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ClosedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "DoctorPracticeId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Operations.ReceptionHandover", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId", "PreviousHandoverId")
+                        .HasPrincipalKey("DoctorPracticeId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Reservations.Reservation", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId", "ReservationId")
+                        .HasPrincipalKey("DoctorPracticeId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId", "TicketId")
+                        .HasPrincipalKey("DoctorPracticeId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.ReceptionHandoverHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Operations.ReceptionHandover", null)
+                        .WithMany("History")
+                        .HasForeignKey("HandoverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.Patients.PatientAccountLink", b =>
                 {
                     b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
@@ -8718,6 +10206,56 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Reporting.DoctorInsightFollowUp", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "PracticeId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.DoctorInsightHistory", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Reporting.DoctorInsightFollowUp", null)
+                        .WithMany("History")
+                        .HasForeignKey("InsightId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.PracticeReportingPolicySnapshot", b =>
+                {
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId", "PracticeId")
+                        .HasPrincipalKey("DoctorId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.ReportExportAudit", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.Reservations.Reservation", b =>
                 {
                     b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
@@ -9086,6 +10624,36 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingFinancialPlan", b =>
+                {
+                    b.Navigation("Revisions");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingObligation", b =>
+                {
+                    b.Navigation("Revisions");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingObligationRevision", b =>
+                {
+                    b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingPlanRevision", b =>
+                {
+                    b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.AdministrativeInvestigation", b =>
+                {
+                    b.Navigation("History");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Operations.ReceptionHandover", b =>
+                {
+                    b.Navigation("History");
+                });
+
             modelBuilder.Entity("Wasla.Domain.Payments.Payment", b =>
                 {
                     b.Navigation("CorrectionHistory");
@@ -9137,6 +10705,11 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Navigation("Attachments");
 
                     b.Navigation("Coverage");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Reporting.DoctorInsightFollowUp", b =>
+                {
+                    b.Navigation("History");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Reservations.Reservation", b =>

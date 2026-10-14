@@ -817,7 +817,7 @@ internal sealed partial class ReservationApplicationService(
             visitType.NameEn,
             price.Price,
             bookingNote,
-            clock.UtcNow, followUpEligibilityId));
+            clock.UtcNow, followUpEligibilityId, configuration.CheckInGracePeriodMinutes));
         if (created.IsFailure)
         {
             return Result<ReservationDetailsResponse>.Fail(created.Errors);

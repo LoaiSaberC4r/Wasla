@@ -20,7 +20,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
-public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> options)
+public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> options,
+    BuildingBlock.Application.Time.IDateTimeProvider? reportingClock = null)
     : DbContext(options)
 {
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
@@ -130,6 +131,15 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     public DbSet<DoctorPracticeSegmentVisitTypePrice> DoctorPracticeSegmentVisitTypePrices => Set<DoctorPracticeSegmentVisitTypePrice>();
     public DbSet<PublicPracticeAvailabilitySlot> PublicPracticeAvailabilitySlots => Set<PublicPracticeAvailabilitySlot>();
     public DbSet<PublicDoctorSearchRank> PublicDoctorSearchRanks => Set<PublicDoctorSearchRank>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingFinancialPlan> OperatingFinancialPlans => Set<Wasla.Domain.OperatingFinance.OperatingFinancialPlan>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingPlanRevision> OperatingPlanRevisions => Set<Wasla.Domain.OperatingFinance.OperatingPlanRevision>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingPlanAllocation> OperatingPlanAllocations => Set<Wasla.Domain.OperatingFinance.OperatingPlanAllocation>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingObligation> OperatingObligations => Set<Wasla.Domain.OperatingFinance.OperatingObligation>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingObligationRevision> OperatingObligationRevisions => Set<Wasla.Domain.OperatingFinance.OperatingObligationRevision>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot> OperatingCostAllocationSnapshots => Set<Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingSettlement> OperatingSettlements => Set<Wasla.Domain.OperatingFinance.OperatingSettlement>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingSettlementReversal> OperatingSettlementReversals => Set<Wasla.Domain.OperatingFinance.OperatingSettlementReversal>();
+    public DbSet<Wasla.Domain.OperatingFinance.OperatingFinanceHistory> OperatingFinanceHistories => Set<Wasla.Domain.OperatingFinance.OperatingFinanceHistory>();
     public DbSet<Reception> Receptions => Set<Reception>();
     public DbSet<ReceptionPracticeAssignment> ReceptionPracticeAssignments => Set<ReceptionPracticeAssignment>();
     public DbSet<ReceptionPracticeAssignmentPermission> ReceptionPracticeAssignmentPermissions
@@ -144,6 +154,9 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
             ChangeTracker.Entries<RadiologyResultVersion>().Any(e => e.State == EntityState.Modified && e.Entity.Status == DiagnosticVersionStatus.Superseded);
         await using var diagnosticTransaction = diagnosticCorrection && Database.CurrentTransaction is null
             ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        var reportingPractices = ChangedReportingPractices();
+        await using var reportingTransaction = reportingPractices.Length > 0 && Database.CurrentTransaction is null
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
         await SynchronizeFollowUpReleasesAsync(cancellationToken);
         await SynchronizeMedicalRecordExpiryAsync(cancellationToken);
         await PrepareFamilyMedicalAsync(cancellationToken);
@@ -153,6 +166,8 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         await GuardDiagnosticHistoryAsync(cancellationToken);
         AddDiagnosticDraftHistory();
         EnsureFinancialHistoryIsAppendOnly();
+        await CaptureReportingPoliciesAsync(reportingPractices, cancellationToken);
+        EnsureOperatingFinanceIsAppendOnly();
         AddPrescriptionAuditEvents();
         var trackedVisibility = ChangeTracker.Entries<EncounterVisibilityHistory>().Select(e => e.Entity.Id).ToHashSet();
         Set<EncounterVisibilityHistory>().AddRange(ChangeTracker.Entries<MedicalEncounter>().SelectMany(e => e.Entity.VisibilityHistory).Where(h => !trackedVisibility.Contains(h.Id)).ToArray());
@@ -175,6 +190,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         if (ownedTransaction is not null) await ownedTransaction.CommitAsync(cancellationToken);
         if (diagnosticTransaction is not null) await diagnosticTransaction.CommitAsync(cancellationToken);
+        if (reportingTransaction is not null) await reportingTransaction.CommitAsync(cancellationToken);
         return result;
     }
 
@@ -342,6 +358,12 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyWriteConfigurations(typeof(WaslaDbContext).Assembly);
+        var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+            value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+        foreach (var entity in modelBuilder.Model.GetEntityTypes().Where(e => e.ClrType.Namespace is
+            "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations"))
+            foreach (var property in entity.GetProperties().Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?)))
+                property.SetValueConverter(utcConverter);
         modelBuilder.ApplySoftDeleteQueryFilter();
 
         if (string.Equals(

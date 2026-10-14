@@ -47,11 +47,15 @@ builder.Services.AddBuildingBlockSwagger(options =>
 {
     options.ApiTitle = "Wasla API";
 });
+builder.Services.Configure<Swashbuckle.AspNetCore.SwaggerGen.SwaggerGenOptions>(options => options.OperationFilter<ReportExportsOperationFilter>());
 builder.Services.AddBuildingBlockLocalization(builder.Configuration);
 builder.Services.AddBuildingBlockProblemDetails();
 builder.Services.PostConfigure<LogRedactionOptions>(options =>
     options.SensitivePropertyNames = [.. options.SensitivePropertyNames, "ClinicalNotes", "DisplayText", "Notes", "Prescription", "ResponseJson", "Current", "Draft", "Versions", "Items", "Clinical", "Data", "NewMedication", "Medication", "DoctorNote", "Dose", "DoseText", "FrequencyText", "Instructions", "PrnReason", "MinimumIntervalText", "MaxPer24HoursText", "Reason", "CorrectionReason", "VoidReason", "MedicationNameSnapshot", "MedicationName",
         "BeforeSnapshot", "AfterSnapshot", "Changes", "Search", "Attachments", "Content", "File", "PatientNote", "PostVisitReason", "PatientInstructions", "DoctorInstructions", "ExternalProviderName", "CatalogClarificationNote", "SourceDataJson", "LabRequestDraft", "RadiologyRequestDraft", "CurrentResults", "Submission", "SafeContent", "Diagnoses", "Timeline", "Outputs", "Patient", "HiddenEncounterToken", "Cursor", "NextCursor", "OwnerDetails", "OpaqueEntryKey", "ReviewMessage", "RejectionReason", "ReasonOrMessage", "DecisionNote", "BasisReference", "EvidenceFiles", "Documents", "MediaKey", "RelationshipVerification"]);
+builder.Services.PostConfigure<LogRedactionOptions>(options => options.SensitivePropertyNames = [.. options.SensitivePropertyNames,
+    "Amount", "PlannedAmount", "Allocations", "Plan", "Expense", "Settlement", "Reversal", "Summary", "Description", "DescriptionAr", "DescriptionEn",
+    "TitleAr", "TitleEn", "ResolutionNotes", "ClosureNotes", "Outcome", "Annotation", "EvidenceJson", "PolicyJson", "AppliedFiltersJson", "RowVersion", "ReceiptSnapshotJson"]);
 builder.Services.AddWaslaCors(builder.Configuration);
 builder.Services.AddWaslaApplication();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
@@ -63,6 +67,7 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     AddFixedPolicy("medical-record", 1200);
+    AddFixedPolicy("reports-export", 12);
     AddFixedPolicy("medical-record-media", 120);
     AddFixedPolicy("medical-record-request", 60);
     AddFixedPolicy("password-reset-request", 5);
@@ -71,7 +76,7 @@ builder.Services.AddRateLimiter(options =>
 
     void AddFixedPolicy(string name, int permitLimit)
         => options.AddPolicy(name, context => RateLimitPartition.GetFixedWindowLimiter(
-            name.StartsWith("medical-record", StringComparison.Ordinal)
+            name.StartsWith("medical-record", StringComparison.Ordinal) || name == "reports-export"
                 ? context.User.FindFirst("sub")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"
                 : context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions

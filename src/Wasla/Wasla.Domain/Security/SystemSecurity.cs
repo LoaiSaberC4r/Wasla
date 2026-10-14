@@ -553,11 +553,12 @@ public static class PermissionNames
         FamilyMedicalAccessEligibilityReview,
         FamilyMedicalAccessEligibilityDecide,
         FamilyMedicalAccessEligibilityRevoke,
-
+        .. Phase18PermissionNames.All,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
         [
+            .. Phase18PermissionNames.ReceptionDefaults,
             PatientsSearchBasic,
             PatientsRegister,
             PracticeReservationsView,

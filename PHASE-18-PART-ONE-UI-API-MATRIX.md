@@ -1,0 +1,70 @@
+# Phase 18 Part One UI/API acceptance matrix
+
+This is a backend integration contract for the existing/future Angular client; no Angular project is added. Exact route IDs, actor permissions, DTOs, enum/nullability tables and synthetic examples are in [API changes](PHASE-18-PART-ONE-API-CHANGES.md), [OpenAPI](docs/phase18/part1-openapi.json) and [DTO schemas](docs/phase18/part1-contract-schemas.md). Reused sensitive commands retain their existing request/response contracts in [the reuse inventory](docs/phase18/part1-reused-api-contracts.md).
+
+## Shared UI behavior
+
+Every load distinguishes loading, empty, successful complete, partial/incomplete, unavailable, unauthenticated and forbidden. Preserve filters in navigation and use returned metric drilldown routes. Show null/unavailable values with their warning; never draw an unavailable metric as0. Show numerator/denominator and sample/excluded counts beside rates/averages. Do not average Practice ratios.
+
+Read the catalog and returned AvailableActions/capabilities; roles alone do not decide buttons. Buttons remain subject to destination reauthorization. Send a fresh idempotency key per intended mutation; reuse it for an identical network retry. Keep the returned opaque RowVersion. On409 fetch detail again, display the changed state, and obtain a deliberate new submission; do not blindly replay a stale action. Business422 displays errors by stable code and translated message. Medical429 observes Retry-After. Export422 offers a narrower period/filter; export503 explains runtime unavailability and leaves JSON preview/Excel available as applicable.
+
+Dates are inclusive yyyy-MM-dd. Display business zone and AsOfUtc/generated/freshness timestamps. Default reports use30 calendar days; one complete day is allowed and max366. Options are independently paged/searched (default50/max100) and use actual authorized IDs and bilingual labels. Report lists default20/max100. Sort fields are whitelisted. Financial forms display EGP, two decimal places, allocation percentages with up to four decimals and exactly100 total. Never infer an unreturned list entry from a default option.
+
+## Journey acceptance
+
+| Journey / rules | Step | API / source | Acceptance behavior |
+|---|---|---|---|
+| Doctor salary D.43–D.48 | Load options and existing plans | GET `/api/v1/doctors/me/finance/filter-options`; GET `/reception-salary-plans` under the same prefix | Authorized Reception and Practices only; page/search options; plan list filters/status/sort |
+| Salary | Create/revise plan | POST `/reception-salary-plans`; PUT `/reception-salary-plans/{id}` | Monthly fixed EGP amount, DueDay1–31, interval, ReceptionId, allocations, descriptions; revision needs future effective date, reason and RowVersion |
+| Salary | Explain covered period | Returned FirstCoveredMonth / NoProration / revisions | Mid-month start means following complete month; due31 clamps; no automatic partial salary entitlement |
+| Salary | Inspect generated liability | GET `/salary-obligations`, `/{id}`, `/{id}/history`; plan `/{id}/history` | Show periodYear/month, due/business dates, immutable allocation shares, planned/confirmed amount, Upcoming/Due/Overdue and actual system-generated history |
+| Salary | Full payment | POST `/salary-obligations/{id}/settle` | Amount equals full unpaid obligation; PaidBusinessDate, method, optional reference/zone; mandatory past-date reason; no future date; no bank-transfer action |
+| Salary | Receipt/reversal/history | GET `/salary-settlements/{id}`, `/receipt`, `/history`; POST `/{id}/reverse` | Immutable JSON receipt; reverse with reason/date/version; refresh obligation to Unpaid; re-settlement creates a new receipt; original remains reversed |
+| Salary | End/report/export | POST plan `/{id}/end`; GET `/reports/salary`, `/reports/operating-finance`; catalog exportRoute | Ending stops future generation and retains existing liabilities; financial read/export permissions independently required |
+| One-time expense D.43–D.48 | Categories/options/list | GET `/api/v1/doctors/me/expenses/categories`, `/finance/filter-options`, `/expenses`, `/expenses/obligations` | Category bilingual enum options; Practice/date/category/status filtering and paging |
+| Expense | Create unpaid or PaidNow | POST `/api/v1/doctors/me/expenses` | Amount/businessDate/dueDate/category/descriptions/allocations/reason; PaidNow includes Payment payload; one atomic outcome |
+| Expense | Details/correct/cancel | GET `/expenses/{id}` or `/expenses/obligations/{id}`; PATCH obligation; POST obligation `/cancel` | Correct/cancel only Unpaid; reason+version; correction appends a snapshot and recalculates minor-unit shares |
+| Expense | Pay/reverse/history | POST obligation `/settle`; GET `/expense-settlements/{id}` + `/receipt` + `/history`; POST settlement `/reverse` | Full amount only; receipt immutable; full reversal only once; refresh details and reports |
+| Expense | Transactions/reconciliation | GET `/expenses/transactions`; GET `/expenses/dashboard` | Effective cash movement list with signed allocated shares; show cash vs due totals separately |
+| Recurring expense D.43–D.48 | Create/list/detail | POST/GET `/api/v1/doctors/me/recurring-expense-plans`; GET `/{id}` | Cadence Monthly/Quarterly/Yearly; Fixed/Variable; effective dates/dueDay/amount/category/allocations |
+| Recurring | Occurrence/actual confirmation | GET plan `/{id}/obligations`; POST `/expenses/obligations/{id}/confirm-actual` | Generated occurrence appears after worker; Variable is planned and cannot settle until actual confirmation; reason on correction |
+| Recurring | Pay/history/future lifecycle | Existing expense settlement routes; PUT plan; POST plan `/pause`, `/resume`, `/end`; GET plan `/history` | No automatic payment; no mutation of past bills by new terms; reason+version on lifecycle actions |
+| Doctor analytics D.01–D.36 | Overview/options/report | GET `/api/v1/doctors/me/dashboard/overview`, `/dashboard/filter-options`, `/reports/catalog`, `/reports/reservations`, `/reports/queue`, `/reports/patients`, `/reports/practice-comparison` | Show actual source cohorts, business date basis, quality/samples, comparison window and permitted financial portions |
+| Analytics | Source detail | GET `/reports/{reportCode}/drilldown?metricCode=...` with original filters | Paginated rows, numerator/denominator contributions, source event IDs, exclusions; follow current detailRoute only if permitted |
+| Analytics | Existing operations/revenue | Existing Doctor bookings/queue; GET `/api/v1/doctors/me/revenue/dashboard` | Preserve Phase12 incoming revenue contract; no new queue/revenue command competing with existing commands |
+| Insight D.37–D.42 | List/detail | GET `/api/v1/doctors/me/insights`, `/{insightId}` | Practice/date/state filters; show both7-day windows,≥20 samples,25% threshold, explanation, evidence, quality and suggested operational action |
+| Insight | Track/resolve/dismiss/history | POST `/{id}/acknowledge`, `/resolve`, `/dismiss`; GET `/{id}/history` | Calculated signal is not persisted before tracking; dismissal reason mandatory; resolve after acknowledgement; no queue/money/notification side effect |
+| Reception R.01–R.17 | Daily context/worklist | GET `/api/v1/reception/dashboard/overview`, `/dashboard/filter-options`, `/attention`, `/practices/{practiceId}/worklist` | Explicit Practice assignment+delegation; business-local date; category/status/Segment/VisitType filters; patient identity withheld without underlying view permission |
+| Reception | Existing operations | Returned CheckIn/ForceCheckIn/RestoreNoShow/OpenQueue/detail routes and existing booking/patient-search/payment commands | Reuse original DTOs, versions, clinical/financial safeguards and receipt behavior; action revalidated on submit |
+| Reception | Reports/drilldown/export | GET `/api/v1/reception/reports/catalog`, `/reservations`, `/queue`, `/activity`, `/{code}/drilldown`, `/{code}/export` | Operational data only; financial report codes unavailable; export needs independent exact assignment delegation |
+| Handover R.18–R.22 | Create/list | POST/GET `/api/v1/reception/practices/{practiceId}/handovers`; Doctor oversight equivalent | Operational summary; optional same-Practice ReservationId/TicketId/PreviousHandoverId; no clinical notes/results/payroll/attachment URLs |
+| Handover | Detail/acknowledge | GET `/{id}`; POST `/{id}/acknowledge` | Different actor from creator; creator self-ack conflict; latest RowVersion |
+| Handover | Annotate/close/history | POST Reception `/{id}/annotations`, `/{id}/close`; GET `/{id}/history`; Doctor close equivalent | Authorized annotations while nonclosed; outcome mandatory; Doctor direct close from Open allowed with outcome; Closed terminal |
+| Handover | Refresh/follow-up | GET list/detail/history; new POST with PreviousHandoverId | Closed is never reopened; follow-up preserves link and original immutable history; open worklist handovers are outstanding regardless of selected day |
+| Platform S.01–S.29 | Overview/filters/catalog | GET `/api/v1/admin/dashboard/overview`, `/dashboard/filter-options`, `/reports/catalog` | Distinguish approval, public eligibility and observed bookability; display partial/uninstrumented data honestly |
+| Platform | Lifecycle/adoption/operations/geography/security | GET `/api/v1/admin/reports/doctor-lifecycle`, `/adoption`, `/operations`, `/geography`, `/security-metadata` | Cohorts, true activity denominator, current metadata versus history, complementary small-group suppression; no private patient/finance content |
+| Platform | Attention/quality/health/governance | GET `/api/v1/admin/attention`, `/data-quality/summary`, `/operations/jobs/health`, `/operations/exports/health`; existing governance routes | Bounded attention lists; actual persisted run/outbox state; permission-gated existing approval actions; never fake Healthy |
+| Investigation S.31–S.35 | Options/create/list/detail | GET `/api/v1/admin/investigation-cases/filter-options`; POST/GET `/investigation-cases`; GET `/{id}` | Purpose/priority/resource enum options; paged/searchable active role-verified assignees; operational metadata text only |
+| Investigation | Assign/review/resolve | POST `/{id}/assign`, `/start-review`, `/resolve` | Assign explicitly; active assignee required to review/resolve; mandatory outcome+notes; no assignment-implies-review shortcut |
+| Investigation | Close/reopen/history | POST `/{id}/close`, `/reopen`; GET `/{id}/history` | Explicit closure notes; Open withdrawal needs reason; reopen reason+active assignee; assigning a replacement needs Assign permission; retain history |
+| Patient P.01–P.08 | Self overview/capabilities | GET `/api/v1/patients/me/dashboard/overview`, `/dashboard/capabilities` | No PatientId selector; null unavailable components with warnings; small recent lists; no bulk clinical export |
+| Patient | Own booking/queue/medical/finance/family navigation | Returned capabilities' existing routes | Show PatientsAheadNow, no exact waiting-time promise; self-only underlying data; private attachments reauthorize on read; guardian/cross-Doctor flags remain unchanged |
+| Export all approved actors | Catalog → preview → download → refresh | Actor `GET /reports/{code}/export?format=pdf|xlsx&language=ar|en` with same filters | Exact scope/AsOf in report; separate permission; binary response; correct filename/MIME; row/date/byte limits; localized503; JSON preview remains usable |
+
+All financial route fragments in the first three journeys use `/api/v1/doctors/me`. Doctor `GET /reports/{reportCode}` supplies JSON preview for all owned allow-listed report codes, including salary, expenses and recurring-expenses. Catalog entries publish concrete previewRoute/drilldownRoute/exportRoute values. No frontend should call an undocumented guessed route.
+
+## Form invariants and safe states
+
+| Form | Required business inputs | Conditional / nullable |
+|---|---|---|
+| Plan | amount, dueDay, effectiveFrom, allocations, descriptionAr | Salary receptionId; recurring category/cadence/amountPolicy; effectiveTo/descriptionEn optional; existing revision requires reason+rowVersion |
+| One-time expense | amount, businessDate, dueBusinessDate, category, descriptionAr, allocations, reason | descriptionEn optional; paidNow requires payment; supplied payment does not initiate transfer |
+| Settlement | exact full amount, paidBusinessDate, paymentMethod, current obligation rowVersion | reference/zone optional; backdateReason required for past date; PaidNow creates version atomically |
+| Reversal | businessDate, current obligation rowVersion, reason | explicit reportTimeZoneId optional; full original amount only |
+| Handover | summary | same-Practice optional linked IDs; action requires rowVersion; close outcome and annotation text required as applicable |
+| Investigation | titleAr, description, issueType | titleEn optional, priority defaultsNormal, optional authorized typed resource link; action rowVersion; assignee/outcome/notes as transition requires |
+| Insight follow-up | reason when dismissing/resolving | first persistence does not have a prior row version; subsequent transition uses returned version |
+
+Do not accept medical notes, diagnoses, results, national IDs, phone numbers, salary data or arbitrary URLs in operational notes. Validation is preventive and does not replace policy/operator training. Bilingual reference names may have null NameEn; fall back to NameAr. Unknown/disabled capability must have an unavailable UI state rather than a broken hyperlink.
+
+Acceptance suites: finance/domain/API + reconciliation; Doctor analytics/insights + foundation/operational unit tests; Reception/handover unit/API; platform/investigation unit/API; Patient dashboard plus Phase16 privacy regressions; export unit/API and live Chromium artifact QA; Phase18ContractTests checks every new discovered route's typed contract and retry header. Behavioral tests exercise journeys and denial paths; the API reference does not claim a separate end-to-end test for every read alias.

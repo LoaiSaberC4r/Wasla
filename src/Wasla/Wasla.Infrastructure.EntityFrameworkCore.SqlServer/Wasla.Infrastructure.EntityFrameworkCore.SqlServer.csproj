@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <PreserveCompilationReferences>true</PreserveCompilationReferences>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../BuildingBlock/BuildingBlock.Application/BuildingBlock.Application.csproj" />
     <ProjectReference Include="../../BuildingBlock/BuildingBlock.Infrastructure/BuildingBlock.Infrastructure.csproj" />
@@ -13,12 +17,16 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="ClosedXML" />
+    <PackageReference Include="PuppeteerSharp" />
+    <PackageReference Include="RazorLight" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Persistence/Seeding/Data/egypt-governorates.v1.json" />
+    <EmbeddedResource Include="Reports/Templates/Report.cshtml" />
     <EmbeddedResource Include="Persistence/Seeding/Data/egypt-cities.v1.json" />
     <EmbeddedResource Include="Persistence/Seeding/Data/egypt-areas.v1.json" />
   </ItemGroup>

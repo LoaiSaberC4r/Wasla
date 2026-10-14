@@ -134,7 +134,7 @@ public sealed class Phase16HardeningTests
         await app.WithDbAsync(async db =>
         {
             var ct = TestContext.Current.CancellationToken;
-            var previous = db.Database.GetMigrations().Last(m => !m.Contains("Phase16", StringComparison.Ordinal));
+            var previous = db.Database.GetMigrations().TakeWhile(m => !m.Contains("Phase16", StringComparison.Ordinal)).Last();
             // Rehearsal is isolated in the disposable fixture database; never a production connection.
             await db.GetService<IMigrator>().MigrateAsync(previous, ct);
             await db.GetService<IMigrator>().MigrateAsync(null, ct);

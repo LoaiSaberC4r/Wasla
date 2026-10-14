@@ -331,6 +331,10 @@ internal sealed class WaslaSecuritySeeder(
         mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(PermissionNames.DiagnosticPatientDefaults).ToArray();
         mappings[SystemRoleIds.Doctor] = mappings[SystemRoleIds.Doctor].Concat(new[] { PermissionNames.MedicalRecordsViewTreatingPatient, PermissionNames.MedicalEncounterVisibilityUpdateOwn, PermissionNames.MedicalEncounterVisibilityViewHistoryOwn, PermissionNames.HiddenEncounterAccessRequestsCreate, PermissionNames.HiddenEncounterAccessRequestsViewSent, PermissionNames.HiddenEncounterAccessRequestsViewIncoming, PermissionNames.HiddenEncounterAccessRequestsDecideOwn, PermissionNames.HiddenEncounterAccessRequestsRevokeOwn, PermissionNames.HiddenEncounterAccessRequestsViewHistoryOwn }).ToArray();
         mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(new[] { PermissionNames.MedicalRecordsViewOwn, PermissionNames.MedicalRecordsViewOwnAccessLog, PermissionNames.MedicalRecordsViewDependent }).ToArray();
+        mappings[SystemRoleIds.Doctor] = mappings[SystemRoleIds.Doctor].Concat(Phase18PermissionNames.DoctorDefaults).ToArray();
+        mappings[SystemRoleIds.Reception] = mappings[SystemRoleIds.Reception].Concat(Phase18PermissionNames.ReceptionDefaults).ToArray();
+        mappings[SystemRoleIds.SuperAdmin] = mappings[SystemRoleIds.SuperAdmin].Concat(Phase18PermissionNames.PlatformDefaults).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat([Phase18PermissionNames.PatientDashboard]).ToArray();
         foreach (var (roleId, permissionNames) in mappings)
         {
             foreach (var permissionName in permissionNames)
