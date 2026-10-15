@@ -8,8 +8,14 @@ this checkout. There is no automatic patient matching or merge.
 
 ## Configuration
 
-`MedicalRecord:CrossDoctorSharingEnabled` and
-`MedicalRecord:GuardianSharingEnabled` default **false** in appsettings.json.
+`MedicalRecord:CrossDoctorSharingEnabled` is **true** in base appsettings.json
+for verified development activation. `MedicalRecord:GuardianSharingEnabled`
+remains **false**. Production and Staging explicitly override both flags to
+**false** until their separate release gates are approved. The environment
+template also disables both flags. Every other deployment environment must
+explicitly set `MedicalRecord__CrossDoctorSharingEnabled=false` before deployment
+until its own gates are approved; the base flag is not deployment approval.
+See [activation evidence](PHASE-16-CROSS-DOCTOR-ACTIVATION-REPORT.md).
 Patient-self and owning-doctor visibility features are independent of sharing.
 Disabled sharing returns the same `404 MedicalRecord.Unavailable` before any
 resource lookup. Reception, administrators and catalog managers receive no new
