@@ -83,6 +83,8 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
             ["DatabaseInitialization:ApplyMigrationsOnStartup"] = "false",
             ["DatabaseInitialization:ApplySeedingOnStartup"] = "false",
             ["EmailOutbox:Enabled"] = "false",
+            ["Archive:Enabled"] = "false",
+            ["Archive:ReadModelsVerified"] = "false",
             ["MediaStorage:RootPath"] = _medicalMediaRoot,
             ["RootSuperAdmin:UserName"] = "root", ["RootSuperAdmin:Email"] = "root@example.test",
             ["RootSuperAdmin:NameAr"] = "المشرف", ["RootSuperAdmin:Password"] = Password
