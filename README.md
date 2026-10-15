@@ -346,9 +346,12 @@ Phase 16 adds the central patient record, current-output timeline, scoped privat
 media, encounter visibility and hidden-access request workflow. See
 [API contract and route status](PHASE-16-API-CHANGES.md),
 [rollout and privacy gates](PHASE-16-ROLLOUT.md), and
-[implementation/verification report](PHASE-16-IMPLEMENTATION-REPORT.md).
-Cross-doctor sharing defaults OFF. Guardian routes are inactive pending a
-separately approved policy. The [proposed addendum](SOURCE-OF-TRUTH-PHASE-16-ADDENDUM-PROPOSED.md)
+[final closure report](PHASE-16-CLOSURE-REPORT.md).
+Cross-doctor and Guardian sharing flags are enabled in base configuration;
+Production and Staging explicitly disable both. All six Guardian routes require
+approved policy configuration, current reviewed medical eligibility and per-read
+relationship, permission, restriction and under-16 checks. Base policy remains
+unapproved and fails closed. The [proposed addendum](SOURCE-OF-TRUTH-PHASE-16-ADDENDUM-PROPOSED.md)
 does not formally amend the master or grant production release approval.
 
 ## Source of Truth

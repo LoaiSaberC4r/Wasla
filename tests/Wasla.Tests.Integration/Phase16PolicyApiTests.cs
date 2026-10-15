@@ -88,10 +88,12 @@ public sealed class Phase16PolicyApiTests
         });
         using (var denied = await doctor.GetAsync(url + "/overview", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
     }
-    [Fact]
-    public async Task P16_04_current_prescription_and_safe_diagnosis_never_share_internal_amendment_notes_or_drafts()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task P16_04_current_prescription_and_safe_diagnosis_never_share_internal_amendment_notes_or_drafts(bool sql)
     {
-        await using var app = await Phase15DiagnosticApiTests.CreateAsync(); EnableSharing(app);
+        await using var app = await Phase15DiagnosticApiTests.CreateAsync(sql); EnableSharing(app);
         using var owner = await app.ClientAsync("doctor"); using var doctor = await app.ClientAsync("other-doctor"); using var reception = await app.ClientAsync("reception"); using var manager = await app.ClientAsync("catalog-manager"); using var patient = await app.ClientAsync("patient");
         var drug = await Phase14MedicationApiTests.CatalogDrugAsync(manager);
         var source = await Phase14MedicationApiTests.FinalizedAsync(app, owner, reception, drug.GetProperty("drugCatalogId").GetGuid()); var id = source.EncounterId; var prescription = source.Prescription.GetProperty("prescriptionId").GetGuid();
@@ -100,6 +102,13 @@ public sealed class Phase16PolicyApiTests
         var treating = await TreatingAsync(app); var url = TreatingUrl(app, treating.Ticket);
         var details = await GetAsync(doctor, url + $"/encounters/{id}"); Assert.DoesNotContain("Internal", details.GetRawText(), StringComparison.OrdinalIgnoreCase);
         Assert.Equal("Safe current diagnosis", details.GetProperty("diagnoses")[0].GetProperty("displayText").GetString());
+        var legacyPatient = await GetAsync(patient, $"/api/v1/encounters/mine/{id}");
+        Assert.DoesNotContain("Internal", legacyPatient.GetRawText(), StringComparison.OrdinalIgnoreCase);
+        var diagnosis = legacyPatient.GetProperty("currentActiveDiagnoses")[0];
+        Assert.Equal("Safe current diagnosis", diagnosis.GetProperty("displayText").GetString());
+        Assert.True(!diagnosis.TryGetProperty("notes", out var note) || note.ValueKind == System.Text.Json.JsonValueKind.Null);
+        var ownerDetails = await GetAsync(owner, app.EncounterUrl(id));
+        Assert.Equal("Internal diagnosis note", ownerDetails.GetProperty("diagnoses")[0].GetProperty("notes").GetString());
         foreach (var route in new[] { url + $"/items/prescription/{prescription}", $"/api/v1/patients/me/medical-record/items/prescription/{prescription}" })
         {
             var p = await GetAsync(route.StartsWith(url, StringComparison.Ordinal) ? doctor : patient, route);

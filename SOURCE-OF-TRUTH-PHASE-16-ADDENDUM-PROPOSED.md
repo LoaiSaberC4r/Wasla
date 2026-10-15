@@ -1,5 +1,10 @@
 # Phase 16 proposed addendum — pending formal adoption
 
+Current implementation and base sharing flags are recorded in
+[final closure](PHASE-16-CLOSURE-REPORT.md). Default-off and inactive-family
+statements below describe the original proposal. Formal Master adoption remains
+pending; this task does not supply missing privacy/legal approval.
+
 Status: **PROPOSED, UNAPPROVED**. Prepared 2026-10-12 against main
 `563e2111182f584986f225a3711a459a00e3b913`. The complete authoritative v1.2
 master is referenced by README but is not present in this checkout. The task

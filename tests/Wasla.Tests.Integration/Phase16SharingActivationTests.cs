@@ -39,7 +39,7 @@ public sealed class Phase16SharingActivationTests : IDisposable
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<MedicalRecordOptions>>().Value;
         Assert.Equal(enabled, options.CrossDoctorSharingEnabled);
-        Assert.False(options.GuardianSharingEnabled);
+        Assert.Equal(enabled, options.GuardianSharingEnabled);
         Assert.True(options.OpaqueEntryKey == _key, "The external opaque key must bind without being logged.");
     }
 
@@ -71,7 +71,7 @@ public sealed class Phase16SharingActivationTests : IDisposable
             config.AddEnvironmentVariables(_prefix)));
         var options = node.Services.GetRequiredService<IOptions<MedicalRecordOptions>>().Value;
         Assert.True(options.CrossDoctorSharingEnabled);
-        Assert.False(options.GuardianSharingEnabled);
+        Assert.True(options.GuardianSharingEnabled);
         Assert.True(options.OpaqueEntryKey == _key, "The API must bind the external opaque key.");
         using var owner = await app.ClientAsync("doctor");
         using var reception = await app.ClientAsync("reception");

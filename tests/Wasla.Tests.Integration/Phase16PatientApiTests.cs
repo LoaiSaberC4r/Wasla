@@ -19,6 +19,7 @@ namespace Wasla.Tests.Integration;
 public sealed class Phase16PatientApiTests
 {
     private const string PatientRecord = "/api/v1/patients/me/medical-record";
+    private static readonly string[] AccessLogFields = ["action", "actorCategory", "entryId", "occurredAtUtc"];
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -46,8 +47,12 @@ public sealed class Phase16PatientApiTests
         Assert.DoesNotContain("postVisitReason", order.GetRawText(), StringComparison.OrdinalIgnoreCase);
         var log = await GetAsync(patient, PatientRecord + "/access-log"); Assert.NotEmpty(log.GetProperty("items").EnumerateArray());
         Assert.DoesNotContain("reason", log.GetRawText(), StringComparison.OrdinalIgnoreCase);
+        foreach (var entry in log.GetProperty("items").EnumerateArray())
+            Assert.Equal(AccessLogFields, entry.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal));
         using (var bad = await patient.GetAsync(PatientRecord + "/timeline?cursor=forged", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.UnprocessableEntity, bad.StatusCode);
         using var foreignPatient = await app.ClientAsync("other-patient");
         using (var denied = await foreignPatient.GetAsync(PatientRecord + $"/encounters/{id}", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
+        var otherLog = await GetAsync(foreignPatient, PatientRecord + "/access-log");
+        Assert.Empty(otherLog.GetProperty("items").EnumerateArray());
     }
 }

@@ -1,5 +1,8 @@
 # Phase 16 Cross-Doctor Sharing activation
 
+Historical activation snapshot. Guardian/base configuration and current
+verification are superseded by [final closure](PHASE-16-CLOSURE-REPORT.md).
+
 Date: 2026-10-15 (Africa/Cairo). Branch:
 `codex/phase16-cross-doctor-sharing-activation`.
 

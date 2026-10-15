@@ -37,7 +37,7 @@ internal sealed class Phase16FamilyFixture : IAsyncDisposable
         p.Jurisdiction = "TEST"; p.TimeZoneId = "Africa/Cairo"; p.BasisReferences = ["TEST-reviewed-proof"];
         p.AllowedDocumentTypes = Enum.GetValues<FamilyRelationshipDocumentType>();
     }
-    public static async Task<Phase16FamilyFixture> CreateAsync(bool sql = false, bool approve = true)
+    public static async Task<Phase16FamilyFixture> CreateAsync(bool sql = false, bool approve = true, FamilyMemberRole adultRole = FamilyMemberRole.Father)
     {
         var app = await Phase15DiagnosticApiTests.CreateAsync(sql); var f = new Phase16FamilyFixture(app);
         ConfigurePolicy(app.Services.GetRequiredService<IOptions<FamilyMedicalPolicyOptions>>().Value);
@@ -52,14 +52,14 @@ internal sealed class Phase16FamilyFixture : IAsyncDisposable
                 Patient.Create(f.SecondChildId, "طفلة", "Second child", app.Today.AddYears(-8), Gender.Female, null, null, null, null, null, app.Today).Value);
             var family = Family.Create(Guid.NewGuid(), admin.Id).Value; f.FamilyId = family.Id;
             var r = FamilyRelationshipRequest.Create(Guid.NewGuid(), FamilyRelationshipRequestType.CreateFamily, null, app.PatientId, f.ChildId,
-                FamilyMemberRole.Father, FamilyMemberRole.Child, father.ApplicationUserId, app.Clock.UtcNow).Value;
+                adultRole, FamilyMemberRole.Child, father.ApplicationUserId, app.Clock.UtcNow).Value;
             r.AssignCreatedFamily(family.Id); r.Approve(admin.Id, app.Clock.UtcNow); db.Add(r);
-            family.AddMember(Guid.NewGuid(), app.PatientId, FamilyMemberRole.Father, app.Clock.UtcNow, admin.Id, r.Id);
+            family.AddMember(Guid.NewGuid(), app.PatientId, adultRole, app.Clock.UtcNow, admin.Id, r.Id);
             family.AddMember(Guid.NewGuid(), f.ChildId, FamilyMemberRole.Child, app.Clock.UtcNow, admin.Id, r.Id);
-            foreach (var pair in new[] { (Patient: app.OtherPatientId, Role: FamilyMemberRole.Mother), (Patient: f.SecondChildId, Role: FamilyMemberRole.Child) })
+            foreach (var pair in new[] { (Patient: app.OtherPatientId, Role: adultRole == FamilyMemberRole.Mother ? FamilyMemberRole.Father : FamilyMemberRole.Mother), (Patient: f.SecondChildId, Role: FamilyMemberRole.Child) })
             {
                 var add = FamilyRelationshipRequest.Create(Guid.NewGuid(), FamilyRelationshipRequestType.AddFamilyMember, family.Id, app.PatientId, pair.Patient,
-                    FamilyMemberRole.Father, pair.Role, father.ApplicationUserId, app.Clock.UtcNow).Value;
+                    adultRole, pair.Role, father.ApplicationUserId, app.Clock.UtcNow).Value;
                 add.Approve(admin.Id, app.Clock.UtcNow); db.Add(add);
                 family.AddMember(Guid.NewGuid(), pair.Patient, pair.Role, app.Clock.UtcNow, admin.Id, add.Id);
             }

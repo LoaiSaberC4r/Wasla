@@ -8,14 +8,15 @@ this checkout. There is no automatic patient matching or merge.
 
 ## Configuration
 
-`MedicalRecord:CrossDoctorSharingEnabled` is **true** in base appsettings.json
-for verified development activation. `MedicalRecord:GuardianSharingEnabled`
-remains **false**. Production and Staging explicitly override both flags to
+`MedicalRecord:CrossDoctorSharingEnabled` and `MedicalRecord:GuardianSharingEnabled`
+are **true** in base appsettings.json after local verification. Production and Staging explicitly override both flags to
 **false** until their separate release gates are approved. The environment
 template also disables both flags. Every other deployment environment must
-explicitly set `MedicalRecord__CrossDoctorSharingEnabled=false` before deployment
+explicitly set both `MedicalRecord__CrossDoctorSharingEnabled=false` and
+`MedicalRecord__GuardianSharingEnabled=false` before deployment
 until its own gates are approved; the base flag is not deployment approval.
-See [activation evidence](PHASE-16-CROSS-DOCTOR-ACTIVATION-REPORT.md).
+See [final closure evidence](PHASE-16-CLOSURE-REPORT.md) and the historical
+[cross-doctor activation evidence](PHASE-16-CROSS-DOCTOR-ACTIVATION-REPORT.md).
 Patient-self and owning-doctor visibility features are independent of sharing.
 Disabled sharing returns the same `404 MedicalRecord.Unavailable` before any
 resource lookup. Reception, administrators and catalog managers receive no new
@@ -37,11 +38,28 @@ Review at-rest key protection and recovery before activation. Key loss prevents
 old tokens/cursors from being read. Opaque-entry secret rotation requires the UI
 to reload timelines. No production secret is included in this branch.
 
-Guardian routes remain **inactive even if their flag is set true**. The exact
-legal/relationship/minor-data policy is not approved. Their handlers fail closed;
-they do not interpret booking eligibility as medical access. Implement that
-approved policy and under-16 per-read checks in a separate release package.
-Existing under-18 booking behavior remains in the original family policy.
+All six Guardian routes are implemented through the existing Family policy.
+The base sharing flag alone grants no access: base `FamilyMedicalPolicy` remains
+unapproved and unadopted, with no fabricated version, approval reference,
+jurisdiction, timezone, legal basis or proof taxonomy. Configure those values
+from signed policy before any real activation. `Approved` and
+`MasterSourceOfTruthAdopted` must both be true; all required policy fields must
+be valid. Test-only policy values in integration fixtures are not release approval.
+
+Every record read and clinical attachment download rechecks the active account,
+current database permission and verified patient link; verified Father, Mother,
+Guardian or LegalGuardian and Child memberships in the same active Family;
+under-16 age in the configured policy timezone; an Approved eligibility tied to
+those member IDs, current policy version and permitted basis; and absence of an
+active restriction. Eligibility approval requires current approved relationship
+proof of allowed types. Membership alone never authorizes records. At local
+midnight on the sixteenth birthday all new reads/downloads stop. Restoring a
+restriction does not approve or restore eligibility. Existing under-18 booking
+behavior remains independent. No Patient identity merge is performed.
+
+Production and Staging require their own signed policy configuration, deployment
+approval and separate flag enablement. Reverting either sharing flag to false
+blocks subsequent shared reads without changing medical eligibility or records.
 
 ## Migrations and mixed deployment
 
@@ -56,6 +74,12 @@ Apply in order through a reviewed migration artifact:
    restrictive FKs, all-status unique target/ticket index and immutable history.
 3. `20261012103620_Phase16MedicalRecordAudits`: metadata-only read audit table and
    patient/time and actor/time indexes.
+4. `20261012142810_Phase16FamilyMedicalAccess`: eligibility reviews, restrictions,
+   cases, private evidence references and immutable histories; legacy verified
+   pairs receive PendingReview candidates only. No Approved backfill or merge.
+
+This closure introduces no new migration. Rehearsal uses the existing isolated
+test databases; later schema migrations in the repository retain their own rollout.
 
 Back up first; rehearse against representative data; keep sharing disabled;
 deploy schema before new application instances; do not enable sharing while
@@ -96,6 +120,14 @@ persistence fails closed. Request and visibility mutations retain their own
 immutable histories. Inbox badge counts contain no PHI. Existing source-module
 audits remain in those modules; the new patient access-log currently displays
 Phase 16 read audits, not a historical export of every pre-Phase 16 audit table.
+The legacy `/api/v1/encounters/mine/{encounterId}` response now redacts diagnosis
+`Notes` to null (or omits null under configured serialization), preserving its
+nullable field contract and the owning Doctor's full private response. Patient,
+Guardian and treating-Doctor record projections exclude private diagnosis notes.
+No automatic audit/evidence deletion or retention duration is introduced; signed
+retention, minor-data classification, disclosure and recovery decisions remain
+required. Hidden critical information has no exception to Hidden authorization.
+Emergency access remains unavailable; no break-glass path or permission exists.
 
 Private downloads re-resolve exact current result/version/attachment ownership,
 recheck policy, restrict size to 25 MiB, sanitize filenames, verify stored size,
