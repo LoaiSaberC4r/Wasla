@@ -11,6 +11,28 @@ Physical archival is OFF by default (`Archive:Enabled=false`, `Archive:ReadModel
 5. Deploy the compatible read version with the feature OFF. Run SQL schema/location reconciliation, scope/privacy tests, admission/queue/reservation/clinical/finance/history/report/export parity and migration recovery rehearsals. Verify all required FKs, uniqueness and archive indexes are present and trusted. Persist/share Data Protection keys across instances; protect the database audit-key secret as database security material.
 6. Only after the operator has accepted staging evidence and its own environment/release gates, configure ReadModelsVerified and Enabled. This implementation does not authorize production activation. The automatic scheduler handles normal closure and bounded historical backfill; default batch size 50 (validated 1–250), interval 300 seconds (validated 30–3600). These are tunable technical limits, not retention periods or an SLA.
 
+## Startup error: Archive.RegistryPopulationRequired
+
+SQL error 51000 with `Archive.RegistryPopulationRequired` means the expansion is present but existing Ticket/Reservation identities have not all been registered. A successful solution build does not perform this data preparation. The guarded FK migration stops before replacing constraints, and restarting the API repeats the same error.
+
+Stop application writers and use the controlled preparation sequence above. For a verified local development database, run these commands from the repository root:
+
+```powershell
+$env:ConnectionStrings__Database = '<verified local development connection string>'
+$env:WASLA_ARCHIVE_MAINTENANCE_CONNECTION = $env:ConnectionStrings__Database
+
+# Only if expansion is still pending; never target an earlier migration to downgrade.
+dotnet ef database update 20261014170532_Phase18PartTwoArchiveExpansion --project src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer --startup-project src/Wasla/Wasla.Api
+
+# Repeat this bounded command until a successful invocation reports zero.
+dotnet run --project tools/Wasla.ArchiveMaintenance/Wasla.ArchiveMaintenance.csproj -- populate-registries
+
+# After zero is reported, apply the guarded cutover and remaining migrations.
+dotnet ef database update --project src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer --startup-project src/Wasla/Wasla.Api
+```
+
+If expansion is already applied, begin with population. Keep writers stopped until the final update succeeds, then restart the API with archival disabled. Population is additive, transactional and restartable; it does not change business status, move operational records, or enable archival. Preserve the coverage guard and migration history. Production preparation remains the separately authorized operator procedure described above.
+
 ## Health and control
 
 P18.2-16 returns enablement/readiness, pause state, last attempts/success, current mode, exception count and control rowVersion. Run IDs are omitted unless the actor can read runs. P18.2-17→18 and 19→20 are the run/exception producer→detail flows. P18.2-35 supplies exact bilingual modes/outcomes/failure codes.
