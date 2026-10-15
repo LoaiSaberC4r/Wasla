@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -40,7 +41,8 @@ internal sealed class StartVisitCommandHandler(
     ITicketQueueReader queueReader,
     IReservationNoShowRuntimeReader reservationNoShowReader,
     IReservationProjectionInvalidationOutbox projectionOutbox,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    ArchiveTicketReplay archiveReplay)
     : ICommandHandler<StartVisitCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -63,6 +65,9 @@ internal sealed class StartVisitCommandHandler(
         {
             return Result<TicketDetailsResponse>.Fail(key.Errors);
         }
+
+        var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, "StartVisit", key.Value, TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.RowVersion), request.PracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
 
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(request.TicketId), cancellationToken);

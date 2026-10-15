@@ -17,7 +17,7 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
                     (item.Status == TicketStatus.Waiting ||
                      item.Status == TicketStatus.Called ||
                      item.Status == TicketStatus.InProgress ||
-                     item.Status == TicketStatus.NoShow),
+                     item.Status == TicketStatus.NoShow && item.IsOperationallyOpen),
             cancellationToken);
 
     public Task<bool> HasCalledOrInProgressAsync(
@@ -62,14 +62,16 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
         Guid ticketId,
         CancellationToken cancellationToken = default)
     {
-        var ticket = await dbContext.Tickets.AsNoTracking()
-            .Include(item => item.CallAttempts)
+        var ticket = await dbContext.AllTickets
             .SingleOrDefaultAsync(item => item.Id == ticketId, cancellationToken);
         if (ticket is null)
         {
             return null;
         }
 
+        var location = await dbContext.TicketRegistry.AsNoTracking().SingleOrDefaultAsync(x => x.Id == ticketId, cancellationToken);
+        var attempts = await dbContext.AllTicketCallAttempts.Where(x => x.TicketId == ticketId).OrderBy(x => x.CallCycle).ThenBy(x => x.AttemptNumber).ToArrayAsync(cancellationToken);
+        var history = await dbContext.AllTicketHistories.Where(x => x.TicketId == ticketId).OrderByDescending(x => x.OccurredOnUtc).ThenByDescending(x => x.Id).Take(201).ToArrayAsync(cancellationToken);
         var names = await (from patient in dbContext.Patients.AsNoTracking()
             join practice in dbContext.DoctorPractices.AsNoTracking()
                 on ticket.DoctorPracticeId equals practice.Id
@@ -94,7 +96,7 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
                 .SingleOrDefaultAsync(item => item.PaymentId == payment.Id, cancellationToken);
         var neverStarted = ticket.Status == TicketStatus.Cancelled &&
             ticket.InProgressOnUtc is null &&
-            !await dbContext.TicketHistories.AsNoTracking().AnyAsync(
+            !await dbContext.AllTicketHistories.AnyAsync(
                 item => item.TicketId == ticket.Id &&
                         item.EventType == TicketHistoryEventType.InProgress,
                 cancellationToken);
@@ -137,7 +139,7 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
             patientsAhead,
             ticket.IsFastTrack,
             ticket.LastUpdatedOnUtc,
-            ticket.CallAttempts
+            attempts
                 .OrderBy(item => item.CallCycle)
                 .ThenBy(item => item.AttemptNumber)
                 .Select(item => new TicketAttemptResponse(
@@ -159,7 +161,11 @@ internal sealed class TicketQueueReader(WaslaDbContext dbContext) : ITicketQueue
             MedicalEncounterId: encounter?.Id,
             FollowUpEligibilityId: ticket.FollowUpEligibilityId,
             MedicalEncounterRowVersion: encounter is null ? null : Convert.ToBase64String(encounter.RowVersion),
-            PrescriptionId: encounter is null ? null : await dbContext.Prescriptions.AsNoTracking().Where(p => p.MedicalEncounterId == encounter.Id).Select(p => (Guid?)p.Id).SingleOrDefaultAsync(cancellationToken));
+            PrescriptionId: encounter is null ? null : await dbContext.Prescriptions.AsNoTracking().Where(p => p.MedicalEncounterId == encounter.Id).Select(p => (Guid?)p.Id).SingleOrDefaultAsync(cancellationToken),
+            IsArchived: location?.IsArchived == true, ArchivedAtUtc: location?.ArchivedAtUtc,
+            OperationalCapabilities: location?.IsArchived == true || ticket.Status == TicketStatus.NoShow && !ticket.IsOperationallyOpen ? new(false, false, false, false) : null,
+            Timeline: history.Take(200).OrderBy(x => x.OccurredOnUtc).ThenBy(x => x.Id).Select(x => new TicketTimelineItem(x.Id, x.EventType.ToString(), x.OccurredOnUtc, x.ReasonCode)).ToArray(),
+            PatientsAheadNowIsCurrent: location?.IsArchived != true, TimelineHasMore: history.Length > 200);
     }
 
     public async Task<PracticeQueueResponse> GetPracticeQueueAsync(

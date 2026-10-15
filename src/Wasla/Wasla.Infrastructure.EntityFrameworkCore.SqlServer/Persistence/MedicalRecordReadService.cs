@@ -41,7 +41,7 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
 {
     private IQueryable<MedicalEncounter> Completed(MedicalRecordScope s) => db.MedicalEncounters.AsNoTracking()
         .Where(e => e.PatientId == s.PatientId && e.Status == EncounterStatus.Completed &&
-            db.Tickets.Any(t => t.Id == e.TicketId && t.Status == TicketStatus.Completed && t.PatientId == e.PatientId &&
+            db.AllTickets.Any(t => t.Id == e.TicketId && t.Status == TicketStatus.Completed && t.PatientId == e.PatientId &&
                 t.DoctorId == e.DoctorId && t.DoctorPracticeId == e.DoctorPracticeId) &&
             db.DoctorPractices.Any(p => p.Id == e.DoctorPracticeId && p.DoctorId == e.DoctorId));
     private IQueryable<MedicalEncounter> Authorized(MedicalRecordScope s)
@@ -168,7 +168,7 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
         var hidden = new List<HiddenCandidate>();
         if (s.Mode == MedicalRecordMode.TreatingDoctor)
         {
-            var hiddenQ = from e in Completed(s) join t in db.Tickets on e.TicketId equals t.Id
+            var hiddenQ = from e in Completed(s) join t in db.AllTickets on e.TicketId equals t.Id
                 where !sources.Any(a => a.Id == e.Id) && e.DoctorId != s.DoctorId && e.Visibility == EncounterVisibility.Hidden &&
                     (!f.EncounterId.HasValue || e.Id == f.EncounterId) && e.CompletedAtUtc <= snapshot
                 select new HiddenCandidate { Date = t.BusinessDate, Id = e.Id, Revision = e.VisibilityRevision, Key = e.Id.ToString().ToLower(), RequestId = db.Set<HiddenEncounterAccessRequest>().Where(r => r.HiddenEncounterId == e.Id && r.RequestingTicketId == s.TicketId && r.RequestingDoctorId == s.DoctorId).Select(r => (Guid?)r.Id).FirstOrDefault(), Status = db.Set<HiddenEncounterAccessRequest>().Where(r => r.HiddenEncounterId == e.Id && r.RequestingTicketId == s.TicketId && r.RequestingDoctorId == s.DoctorId).Select(r => (HiddenAccessRequestStatus?)(r.Status == HiddenAccessRequestStatus.Pending && r.VisibilityRevisionAtRequest != e.VisibilityRevision || r.Status == HiddenAccessRequestStatus.Approved && r.VisibilityRevisionAtApproval != e.VisibilityRevision ? HiddenAccessRequestStatus.Expired : r.Status)).FirstOrDefault() };
@@ -209,7 +209,7 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
     private async Task<MedicalRecordEncounterDetailsResponse?> EncounterAsync(MedicalRecordScope s, Guid id, CancellationToken ct)
     {
         var row = await (from e in Authorized(s) join d in db.Doctors on e.DoctorId equals d.Id
-            join p in db.DoctorPractices on e.DoctorPracticeId equals p.Id join t in db.Tickets on e.TicketId equals t.Id
+            join p in db.DoctorPractices on e.DoctorPracticeId equals p.Id join t in db.AllTickets on e.TicketId equals t.Id
             where e.Id == id select new { e.Id, t.BusinessDate, Doctor = new ClinicalPartyResponse(d.Id, d.NameAr, d.NameEn), Practice = new ClinicalPartyResponse(p.Id, p.NameAr, p.NameEn) }).SingleOrDefaultAsync(ct);
         if (row is null) return null;
         var diagnoses = await db.Diagnoses.AsNoTracking().Where(d => d.MedicalEncounterId == id && !d.IsVoided).OrderBy(d => d.Type).ThenBy(d => d.Id)

@@ -1,3 +1,4 @@
+using Wasla.Domain.Archives;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -18,9 +19,9 @@ internal sealed class ReceptionHandoverConfiguration : IWriteEntityConfiguration
         b.Property(x => x.Summary).HasMaxLength(12000); b.Property(x => x.ClosureOutcome).HasMaxLength(12000);
         b.HasOne<DoctorPractice>().WithMany().HasForeignKey(x => new { x.DoctorId, x.DoctorPracticeId })
             .HasPrincipalKey(x => new { x.DoctorId, x.Id }).OnDelete(DeleteBehavior.Restrict);
-        b.HasOne<Reservation>().WithMany().HasForeignKey(x => new { x.DoctorPracticeId, x.ReservationId })
+        b.HasOne<ReservationRegistry>().WithMany().HasForeignKey(x => new { x.DoctorPracticeId, x.ReservationId })
             .HasPrincipalKey(x => new { x.DoctorPracticeId, x.Id }).OnDelete(DeleteBehavior.Restrict);
-        b.HasOne<Ticket>().WithMany().HasForeignKey(x => new { x.DoctorPracticeId, x.TicketId })
+        b.HasOne<TicketRegistry>().WithMany().HasForeignKey(x => new { x.DoctorPracticeId, x.TicketId })
             .HasPrincipalKey(x => new { x.DoctorPracticeId, x.Id }).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ReceptionHandover>().WithMany().HasForeignKey(x => new { x.DoctorPracticeId, x.PreviousHandoverId })
             .HasPrincipalKey(x => new { x.DoctorPracticeId, x.Id }).OnDelete(DeleteBehavior.Restrict);

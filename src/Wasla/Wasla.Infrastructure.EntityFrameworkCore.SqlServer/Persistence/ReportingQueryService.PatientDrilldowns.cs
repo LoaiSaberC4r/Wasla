@@ -14,7 +14,7 @@ internal sealed partial class ReportingQueryService
         if (metric == "PatientRetention90d")
         {
             var from = DateOnly.FromDayNumber(Math.Max(1, w.FromDate.DayNumber - 90));
-            var previous = await db.Tickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && scope.PracticeIds.Contains(t.DoctorPracticeId) &&
+            var previous = await db.AllTickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && scope.PracticeIds.Contains(t.DoctorPracticeId) &&
                 t.BusinessDate >= from && t.BusinessDate < w.FromDate && t.CheckInTimeUtc <= w.AsOfUtc)
                 .GroupBy(t => t.PatientId).Select(g => g.OrderBy(t => t.CheckInTimeUtc).ThenBy(t => t.Id)
                     .Select(t => new { t.Id, t.PatientId, t.DoctorPracticeId, t.BusinessDate, t.CheckInTimeUtc, t.TicketNumber }).First()).ToArrayAsync(ct);
@@ -25,7 +25,7 @@ internal sealed partial class ReportingQueryService
                 MetricValue: current.ContainsKey(t.PatientId) ? 1 : 0, MetricDenominator: 1, SourceRecordId: t.Id)).ToArray();
         }
         var ids = current.Keys.ToArray();
-        var first = await db.Tickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && ids.Contains(t.PatientId) && t.CheckInTimeUtc <= w.AsOfUtc)
+        var first = await db.AllTickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && ids.Contains(t.PatientId) && t.CheckInTimeUtc <= w.AsOfUtc)
             .GroupBy(t => t.PatientId).Select(g => g.OrderBy(t => t.CheckInTimeUtc).ThenBy(t => t.Id).Select(t => new { t.PatientId, t.BusinessDate }).First()).ToArrayAsync(ct);
         var selected = metric == "UniqueDoctorPatients" ? ids.ToHashSet() : first.Where(p => metric == "NewToDoctorPatients"
             ? OperationalKpiCalculator.InWindow(p.BusinessDate, w) : p.BusinessDate < w.FromDate).Select(p => p.PatientId).ToHashSet();
@@ -35,7 +35,7 @@ internal sealed partial class ReportingQueryService
     {
         var current = source.Tickets.Where(t => OperationalKpiCalculator.InWindow(t.BusinessDate, w)).ToArray();
         var ids = current.Select(t => t.PatientId).Distinct().ToArray();
-        var first = await db.Tickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && ids.Contains(t.PatientId) && t.CheckInTimeUtc <= w.AsOfUtc)
+        var first = await db.AllTickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && ids.Contains(t.PatientId) && t.CheckInTimeUtc <= w.AsOfUtc)
             .GroupBy(t => t.PatientId).Select(g => g.OrderBy(t => t.CheckInTimeUtc).ThenBy(t => t.Id).Select(t => new { t.PatientId, t.BusinessDate }).First()).ToArrayAsync(ct);
         return scope.PracticeIds.ToDictionary(practice => practice, practice =>
         {

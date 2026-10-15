@@ -86,6 +86,17 @@ public static class DependencyInjection
         services.AddScoped<ITicketNumberAllocator, TicketNumberAllocator>();
         services.AddScoped<IFinancialNumberAllocator, FinancialNumberAllocator>();
         services.AddScoped<ITicketQueueReader, TicketQueueReader>();
+        services.AddScoped<Wasla.Application.Features.Archives.IArchiveLocationResolver, ArchiveLocationResolver>();
+        services.AddScoped<ArchiveRegistryPopulation>();
+        services.AddScoped<ArchiveOperationalDays>();
+        services.AddScoped<ArchiveTokens>();
+        services.AddScoped<Wasla.Application.Features.Archives.IArchiveQueries, ArchiveQueries>();
+        services.AddScoped<Wasla.Application.Features.Archives.IArchiveOperations, ArchiveOperationsService>();
+        services.AddScoped<Wasla.Application.Features.Archives.IAuditExplorer, AuditExplorer>();
+        services.AddScoped<Wasla.Application.Features.Archives.IArchiveRequestAudit, ArchiveRequestAudit>();
+        services.AddOptions<ArchiveOptions>().Bind(configuration.GetSection("Archive"))
+            .Validate(x => x.BatchSize is >= 1 and <= 250 && x.IntervalSeconds is >= 30 and <= 3600, "Invalid archive limits.").ValidateOnStart();
+        services.AddScoped<ArchiveEngine>();
         services.AddScoped<IWalkInOptionsReader, WalkInOptionsReader>();
         services.AddScoped<IFinanceReadService, FinanceReadService>();
         services.AddOptions<Phase18Options>().Bind(configuration.GetSection("Phase18"))
@@ -154,6 +165,7 @@ public static class DependencyInjection
         services.AddHostedService<ReservationExpirationBackgroundService>();
         services.AddHostedService<ReservationProjectionInvalidationBackgroundService>();
         services.AddHostedService<TicketOperationalDayBackgroundService>();
+        services.AddHostedService<ArchiveBackgroundService>();
         services.AddHostedService<OperatingObligationBackgroundService>();
         services.AddHostedService<ReportingPolicyReconciler>();
         services.AddHostedService<Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports.ExportRuntimeProbeHostedService>();

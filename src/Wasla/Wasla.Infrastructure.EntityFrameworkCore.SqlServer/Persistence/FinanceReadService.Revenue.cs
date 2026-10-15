@@ -144,7 +144,7 @@ internal sealed partial class FinanceReadService
         DateOnly fromDate, DateOnly toDate, Guid? doctorId, Guid? practiceId)
     {
         var payments = from payment in db.Payments.AsNoTracking()
-            join ticket in db.Tickets.AsNoTracking() on payment.TicketId equals ticket.Id
+            join ticket in db.AllTickets.AsNoTracking() on payment.TicketId equals ticket.Id
             where payment.BusinessDate >= fromDate && payment.BusinessDate <= toDate &&
                   (!doctorId.HasValue || payment.DoctorId == doctorId.Value) &&
                   (!practiceId.HasValue || payment.DoctorPracticeId == practiceId.Value)
@@ -166,7 +166,7 @@ internal sealed partial class FinanceReadService
                 RefundCount = 0
             };
         var refunds = from refund in db.Refunds.AsNoTracking()
-            join ticket in db.Tickets.AsNoTracking() on refund.TicketId equals ticket.Id
+            join ticket in db.AllTickets.AsNoTracking() on refund.TicketId equals ticket.Id
             where refund.BusinessDate >= fromDate && refund.BusinessDate <= toDate &&
                   (!doctorId.HasValue || refund.DoctorId == doctorId.Value) &&
                   (!practiceId.HasValue || refund.DoctorPracticeId == practiceId.Value)

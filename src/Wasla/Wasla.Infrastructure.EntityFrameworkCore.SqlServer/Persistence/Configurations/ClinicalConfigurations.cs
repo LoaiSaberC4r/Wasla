@@ -1,3 +1,4 @@
+using Wasla.Domain.Archives;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -29,7 +30,7 @@ internal sealed class MedicalEncounterConfiguration : IWriteEntityConfiguration<
         builder.Property(e => e.StartedAtUtc).HasColumnType("datetime2(3)");
         builder.Property(e => e.CompletedAtUtc).HasColumnType("datetime2(3)");
         builder.Property(e => e.RowVersion).IsRowVersion().IsConcurrencyToken();
-        builder.HasOne<Ticket>().WithMany().HasForeignKey(e => e.TicketId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<TicketRegistry>().WithMany().HasForeignKey(e => e.TicketId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Doctor>().WithMany().HasForeignKey(e => e.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorPractice>().WithMany().HasForeignKey(e => e.DoctorPracticeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Patient>().WithMany().HasForeignKey(e => e.PatientId).OnDelete(DeleteBehavior.Restrict);
@@ -125,8 +126,8 @@ internal sealed class FollowUpEligibilityConfiguration : IWriteEntityConfigurati
         builder.HasOne<DoctorPractice>().WithMany().HasForeignKey(e => e.DoctorPracticeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Doctor>().WithMany().HasForeignKey(e => e.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Patient>().WithMany().HasForeignKey(e => e.PatientId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Reservation>().WithMany().HasForeignKey(e => e.ReservedReservationId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Ticket>().WithMany().HasForeignKey(e => e.ReservedTicketId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ReservationRegistry>().WithMany().HasForeignKey(e => e.ReservedReservationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<TicketRegistry>().WithMany().HasForeignKey(e => e.ReservedTicketId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(e => e.SourceMedicalEncounterId).IsUnique().HasDatabaseName("UX_FollowUpEligibilities_Source");
         builder.HasIndex(e => e.ReservedReservationId).IsUnique().HasFilter("[ReservedReservationId] IS NOT NULL");
         builder.HasIndex(e => e.ReservedTicketId).IsUnique().HasFilter("[ReservedTicketId] IS NOT NULL");

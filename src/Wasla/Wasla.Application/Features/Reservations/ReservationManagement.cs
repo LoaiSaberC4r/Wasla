@@ -1,3 +1,5 @@
+using Wasla.Application.Features.Archives;
+using Wasla.Application.Features.Reporting;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -116,7 +118,8 @@ public sealed record ReservationDetailsResponse(
     string RowVersion,
     Guid? FollowUpEligibilityId = null,
     FollowUpEligibilityStatus? FollowUpEligibilityStatus = null,
-    DateOnly? FollowUpValidUntil = null);
+    DateOnly? FollowUpValidUntil = null,
+    bool IsArchived = false, DateTime? ArchivedAtUtc = null, Guid? LinkedTicketId = null, bool CanViewLinkedTicket = false, bool TimelineHasMore = false);
 public sealed record ReservationListItemResponse(
     Guid ReservationId,
     string ReservationReference,
@@ -679,7 +682,8 @@ internal sealed partial class ReservationApplicationService(
     IPracticeReservationOccupancyReader occupancyReader,
     IReservationProjectionInvalidationOutbox projectionOutbox,
     IReservationNotificationRecipientResolver recipientResolver,
-    IReservationReferenceGenerator referenceGenerator)
+    IReservationReferenceGenerator referenceGenerator,
+    IArchiveLocationResolver archive, IReportingAccessGuard archiveGuard)
 {
     public async Task<Result<IReadOnlyList<BookablePatientResponse>>> ListBookablePatientsAsync(
         CancellationToken cancellationToken)
@@ -719,6 +723,11 @@ internal sealed partial class ReservationApplicationService(
         {
             return Result<ReservationDetailsResponse>.Fail(actor.Errors);
         }
+
+        var archivedReplay = await ArchivedReplayAsync("Create", idempotencyKey,
+            Fingerprint(patientId, practiceId, businessDate, slotStartTime, segmentId, visitTypeId, bookingNote, followUpEligibilityId, followUpEligibilityRowVersion),
+            scope, practiceId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
 
         var context = await LoadBookingContextAsync(practiceId, segmentId, visitTypeId, cancellationToken);
         if (context.IsFailure)
@@ -855,6 +864,9 @@ internal sealed partial class ReservationApplicationService(
         }
 
         idempotencyKey = validatedKey.Value;
+        var archivedReplay = await ArchivedReplayAsync("Cancel", idempotencyKey, Fingerprint(reservationId, reasonCode, comment, rowVersion), scope, routePracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
+
         var reservation = await dataStore.FindReservationAsync(reservationId, cancellationToken);
         if (reservation is null || routePracticeId.HasValue && reservation.DoctorPracticeId != routePracticeId.Value)
         {
@@ -970,6 +982,9 @@ internal sealed partial class ReservationApplicationService(
         }
 
         idempotencyKey = validatedKey.Value;
+        var archivedReplay = await ArchivedReplayAsync("Reschedule", idempotencyKey, Fingerprint(reservationId, businessDate, slotStartTime, patientConsentConfirmed, reason, rowVersion), scope, routePracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
+
         var reservation = await dataStore.FindReservationAsync(reservationId, cancellationToken);
         if (reservation is null || routePracticeId.HasValue && reservation.DoctorPracticeId != routePracticeId.Value)
         {
@@ -1112,6 +1127,9 @@ internal sealed partial class ReservationApplicationService(
         }
 
         idempotencyKey = validatedKey.Value;
+        var archivedReplay = await ArchivedReplayAsync("RestoreNoShow", idempotencyKey, Fingerprint(reservationId, rowVersion), ReservationOperationScope.Reception, practiceId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
+
         var reservation = await dataStore.FindReservationAsync(reservationId, cancellationToken);
         if (reservation is null || reservation.DoctorPracticeId != practiceId)
         {
@@ -1139,6 +1157,7 @@ internal sealed partial class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NoShowRestoreNotAllowed);
         }
 
+        if (await archive.IsNoShowDayFinalOrUnverifiableAsync(reservation.DoctorPracticeId, reservation.BusinessDate, reservation.TimeZoneIdSnapshot, cancellationToken)) return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NoShowRestoreNotAllowed);
         var restoreEligibility = await EvaluateRestoreEligibilityAsync(
             reservation, practice, configuration, segment, includeCapacity: false, cancellationToken);
         if (restoreEligibility.IsFailure)
@@ -1240,6 +1259,8 @@ internal sealed partial class ReservationApplicationService(
             scheduledBeforeUtc = clock.UtcNow;
         }
 
+        var historyAccess = currentUser.UserId is { } historyActor ? await dataStore.GetAccessSnapshotAsync(historyActor, cancellationToken) : null;
+        var includeArchived = scheduledBeforeUtc != null && historyAccess?.Permissions.Contains(Phase18PartTwoPermissionNames.ReservationsOwn) == true;
         var records = await dataStore.ListReservationViewsAsync(
             patientIds,
             null,
@@ -1256,7 +1277,7 @@ internal sealed partial class ReservationApplicationService(
             null,
             request.PageNumber,
             request.PageSize,
-            cancellationToken);
+            cancellationToken, includeArchived);
         return Result<ReservationPagedResponse>.Ok(MapPage(records, request.PageNumber, request.PageSize));
     }
 
@@ -2107,6 +2128,11 @@ internal sealed partial class ReservationApplicationService(
                     false));
         }
 
+        if (scope == ReservationOperationScope.Doctor && doctorPermission == Phase18PartTwoPermissionNames.ReservationsPractice)
+        {
+            var currentArchiveScope = await archiveGuard.AuthorizeAsync(ReportActor.Doctor, doctorPermission, reservation.DoctorPracticeId, null, cancellationToken);
+            return currentArchiveScope.IsFailure ? Result<ReservationActorAccess>.Fail(currentArchiveScope.Errors) : Result<ReservationActorAccess>.Ok(new(actorId, ReservationBookingSource.Patient, ReservationActionInitiator.Doctor, null, false));
+        }
         if (scope == ReservationOperationScope.Doctor)
         {
             var permission = await RequirePermissionAsync(doctorPermission, cancellationToken);
@@ -2243,12 +2269,16 @@ internal sealed partial class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NotFound);
         }
 
+        var location = await archive.ReservationAsync(reservationId, cancellationToken);
+        var archived = location?.IsArchived == true;
+        if (archived && scope == ReservationOperationScope.Patient && (await RequirePermissionAsync(Phase18PartTwoPermissionNames.ReservationsOwn, cancellationToken)).IsFailure)
+            return Result<ReservationDetailsResponse>.Fail(ReservationErrors.AccessDenied);
         var access = await AuthorizeExistingAsync(
             record.Reservation,
             scope,
-            PermissionNames.PracticeReservationsView,
-            PermissionNames.DoctorPracticeReservationsViewOwn,
-            PermissionNames.ReservationsViewOwn,
+            archived ? Phase18PartTwoPermissionNames.ReservationsAssigned : PermissionNames.PracticeReservationsView,
+            archived ? Phase18PartTwoPermissionNames.ReservationsPractice : PermissionNames.DoctorPracticeReservationsViewOwn,
+            archived ? Phase18PartTwoPermissionNames.ReservationsOwn : PermissionNames.ReservationsViewOwn,
             PermissionNames.ReservationsViewDependents,
             cancellationToken);
         if (access.IsFailure)
@@ -2256,8 +2286,10 @@ internal sealed partial class ReservationApplicationService(
             return Result<ReservationDetailsResponse>.Fail(access.Errors);
         }
 
-        return Result<ReservationDetailsResponse>.Ok(await MapDetailsAsync(
-            record, scope, includeBookingNote, cancellationToken));
+        var details = await MapDetailsAsync(record, scope, includeBookingNote, cancellationToken);
+        if (!archived && (details.IsArchived || (await archive.ReservationAsync(reservationId, cancellationToken))?.IsArchived == true))
+            return await GetDetailsForActorAsync(reservationId, scope, routePracticeId, includeBookingNote, cancellationToken);
+        return Result<ReservationDetailsResponse>.Ok(details);
     }
 
     private async Task<ReservationDetailsResponse> MapDetailsAsync(
@@ -2276,8 +2308,9 @@ internal sealed partial class ReservationApplicationService(
             reservation.SegmentId,
             reservation.VisitTypeId,
             cancellationToken);
+        var dayClosed = await archive.IsNoShowDayFinalOrUnverifiableAsync(reservation.DoctorPracticeId, reservation.BusinessDate, reservation.TimeZoneIdSnapshot, cancellationToken);
         var restoreEligibility = scope == ReservationOperationScope.Reception &&
-                                 reservation.Status == ReservationStatus.NoShow
+                                 reservation.Status == ReservationStatus.NoShow && !dayClosed
             ? await EvaluateRestoreEligibilityAsync(
                 reservation,
                 record.Practice,
@@ -2299,9 +2332,13 @@ internal sealed partial class ReservationApplicationService(
             currentCatalog.IsSuccess && liveClaim.IsSuccess,
             restoreEligibility.IsSuccess,
             restoreEligibility.IsFailure ? restoreEligibility.Errors[0].Code : null);
-        var timeline = reservation.History
+        var location = await archive.ReservationAsync(reservation.Id, cancellationToken);
+        var isArchived = location?.IsArchived == true;
+        if (isArchived) capabilities = capabilities with { CanCancel = false, CanReschedule = false, CanRestoreFromNoShow = false, CancelBlockedReason = "Archive.ReadOnly", RescheduleBlockedReason = "Archive.ReadOnly", RestoreBlockedReason = "Archive.ReadOnly" };
+        var timeline = (record.HistoricalTimeline ?? reservation.History.ToArray())
             .OrderBy(item => item.OccurredOnUtc)
             .ThenBy(item => item.Id)
+            .Take(200)
             .Select(item =>
             {
                 var label = ReservationMetadata.HistoryLabel(item.EventType);
@@ -2325,6 +2362,23 @@ internal sealed partial class ReservationApplicationService(
                     item.PatientConsentConfirmed);
             })
             .ToArray();
+        var linkedTicketId = await archive.LinkedTicketAsync(reservation.Id, cancellationToken);
+        var canViewLinkedTicket = false;
+        if (linkedTicketId is { } ticketId)
+        {
+            var ticketLocation = await archive.TicketAsync(ticketId, cancellationToken);
+            if (scope == ReservationOperationScope.Patient && currentUser.UserId is { } actorId)
+            {
+                var currentAccess = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
+                canViewLinkedTicket = currentAccess?.PatientId == ticketLocation?.PatientId && currentAccess?.Permissions.Contains(ticketLocation?.IsArchived == true ? Phase18PartTwoPermissionNames.TicketsOwn : PermissionNames.TicketsViewOwn) == true;
+            }
+            else if (scope is ReservationOperationScope.Doctor or ReservationOperationScope.Reception)
+            {
+                var actor = scope == ReservationOperationScope.Doctor ? ReportActor.Doctor : ReportActor.Reception;
+                var permission = scope == ReservationOperationScope.Doctor ? (ticketLocation?.IsArchived == true ? Phase18PartTwoPermissionNames.TicketsPractice : PermissionNames.DoctorPracticeTicketsViewOwn) : (ticketLocation?.IsArchived == true ? Phase18PartTwoPermissionNames.TicketsAssigned : PermissionNames.PracticeTicketsView);
+                canViewLinkedTicket = (await archiveGuard.AuthorizeAsync(actor, permission, reservation.DoctorPracticeId, null, cancellationToken)).IsSuccess;
+            }
+        }
         return new ReservationDetailsResponse(
             reservation.Id,
             reservation.ReservationReference,
@@ -2362,7 +2416,8 @@ internal sealed partial class ReservationApplicationService(
             timeline,
             RowVersionCodec.Encode(reservation.RowVersion), reservation.FollowUpEligibilityId,
             followUpState?.EffectiveStatus(await followUp.TodayAsync(reservation.DoctorPracticeId, cancellationToken)),
-            followUpState?.ValidUntil);
+            followUpState?.ValidUntil,
+            isArchived, location?.ArchivedAtUtc, linkedTicketId, canViewLinkedTicket, (record.HistoricalTimeline?.Count ?? reservation.History.Count) > 200);
     }
 
     private ReservationCapabilitiesResponse BuildCapabilities(

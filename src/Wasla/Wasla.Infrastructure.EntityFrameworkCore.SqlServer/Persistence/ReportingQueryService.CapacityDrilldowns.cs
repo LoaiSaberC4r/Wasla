@@ -33,7 +33,7 @@ internal sealed partial class ReportingQueryService
     {
         var lowerBound = DateOnly.FromDayNumber(Math.Max(0, w.FromDate.DayNumber - 2)).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var before = DateOnly.FromDayNumber(Math.Min(DateOnly.MaxValue.DayNumber, w.ToDate.DayNumber + 2)).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
-        var rows = await (from e in db.MedicalEncounters.AsNoTracking() join t in db.Tickets.AsNoTracking() on e.TicketId equals t.Id
+        var rows = await (from e in db.MedicalEncounters.AsNoTracking() join t in db.AllTickets.AsNoTracking() on e.TicketId equals t.Id
             where e.DoctorId == scope.DoctorId && scope.PracticeIds.Contains(e.DoctorPracticeId) && e.CompletedAtUtc != null && e.CompletedAtUtc <= w.AsOfUtc &&
                 e.CompletedAtUtc >= lowerBound && e.CompletedAtUtc <= before
             select new { e.Id, e.DoctorPracticeId, e.CompletedAtUtc, t.PracticeTimeZoneIdSnapshot }).ToArrayAsync(ct);

@@ -93,7 +93,7 @@ public sealed record ReservationViewRecord(
     Patient Patient,
     Doctor Doctor,
     DoctorPractice Practice,
-    DoctorPracticeConfiguration Configuration);
+    DoctorPracticeConfiguration Configuration, IReadOnlyList<ReservationHistory>? HistoricalTimeline = null);
 public sealed record ReservationPatientRecord(Reservation Reservation, Patient Patient);
 public sealed record ReservationNotificationRecipientRecord(
     Guid? PatientId,
@@ -340,7 +340,7 @@ public interface IWaslaDataStore
         string? search,
         int pageNumber,
         int pageSize,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken, bool includeArchived = false);
     Task<ReservationConflictSnapshot> GetReservationConflictSnapshotAsync(
         Guid patientId,
         Guid doctorId,
@@ -403,4 +403,3 @@ public interface IWaslaDataStore
     void SetOriginalRowVersion<TEntity>(TEntity entity, byte[] rowVersion) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
-

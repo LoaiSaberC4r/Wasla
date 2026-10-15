@@ -123,6 +123,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         QueueOrderTimeUtc = EnsureUtc(snapshot.QueueOrderTimeUtc);
         CheckInMode = snapshot.CheckInMode;
         Status = TicketStatus.Waiting;
+        IsOperationallyOpen = Status is TicketStatus.Waiting or TicketStatus.Called or TicketStatus.InProgress or TicketStatus.NoShow;
         CallCycle = 1;
         CreatedByApplicationUserId = snapshot.CreatedByApplicationUserId;
         CreatedOnUtc = CheckInTimeUtc;
@@ -168,6 +169,10 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
     public DateTime QueueOrderTimeUtc { get; private set; }
     public CheckInMode CheckInMode { get; private set; }
     public TicketStatus Status { get; private set; }
+    // Storage/liveness metadata, not a seventh business state. Closed-day NoShow releases
+    // the one-open-ticket lease even while physical archival is paused or quarantined.
+    public bool IsOperationallyOpen { get; private set; } = true;
+    public DateTime? OperationalFinalizedAtUtc { get; private set; }
     public bool IsFastTrack { get; private set; }
     public DateTime? FastTrackGrantedOnUtc { get; private set; }
     public int CallCycle { get; private set; }
@@ -186,8 +191,13 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
     public byte[] RowVersion { get; private set; } = [];
     public IReadOnlyCollection<TicketHistory> History => _history.AsReadOnly();
     public IReadOnlyCollection<TicketCallAttempt> CallAttempts => _callAttempts.AsReadOnly();
-    public bool IsOpen => Status is TicketStatus.Waiting or TicketStatus.Called or
-        TicketStatus.InProgress or TicketStatus.NoShow;
+    public bool IsOpen => IsOperationallyOpen;
+
+    public bool FinalizeNoShowForClosedDay(DateTime verifiedAtUtc)
+    {
+        if (Status != TicketStatus.NoShow || !IsOperationallyOpen) return false;
+        IsOperationallyOpen = false; OperationalFinalizedAtUtc = EnsureUtc(verifiedAtUtc); return true;
+    }
 
     public static Result<Ticket> CreateFromReservation(TicketCreationSnapshot snapshot)
         => Create(snapshot, TicketSource.Reservation);
@@ -240,6 +250,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         {
             var previous = Status;
             Status = TicketStatus.NoShow;
+        IsOperationallyOpen = Status is TicketStatus.Waiting or TicketStatus.Called or TicketStatus.InProgress or TicketStatus.NoShow;
             NoShowOnUtc = when;
             AppendHistory(TicketHistoryEventType.AutoNoShow, previous, Status,
                 null, when, "MaximumCallAttemptsReached", null);
@@ -254,6 +265,8 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         bool grantFastTrack,
         DateTime occurredOnUtc)
     {
+        if (!IsOperationallyOpen) return Result.Fail(TicketErrors.InvalidTransition);
+
         if (Status != TicketStatus.NoShow || actorApplicationUserId == Guid.Empty)
         {
             return Result.Fail(TicketErrors.InvalidTransition);
@@ -262,6 +275,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         var when = EnsureUtc(occurredOnUtc);
         var previous = Status;
         Status = TicketStatus.Waiting;
+        IsOperationallyOpen = Status is TicketStatus.Waiting or TicketStatus.Called or TicketStatus.InProgress or TicketStatus.NoShow;
         QueueOrderTimeUtc = when;
         CallCycle++;
         IsFastTrack = grantFastTrack;
@@ -296,6 +310,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
 
         var previous = Status;
         Status = TicketStatus.InProgress;
+        IsOperationallyOpen = Status is TicketStatus.Waiting or TicketStatus.Called or TicketStatus.InProgress or TicketStatus.NoShow;
         InProgressOnUtc = when;
         Touch(doctorApplicationUserId, when);
         AppendHistory(TicketHistoryEventType.InProgress, previous, Status,
@@ -313,6 +328,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         var when = EnsureUtc(occurredOnUtc);
         var previous = Status;
         Status = TicketStatus.Completed;
+        IsOperationallyOpen = Status is TicketStatus.Waiting or TicketStatus.Called or TicketStatus.InProgress or TicketStatus.NoShow;
         CompletedOnUtc = when;
         Touch(doctorApplicationUserId, when);
         AppendHistory(TicketHistoryEventType.Completed, previous, Status,
@@ -325,6 +341,8 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         string reason,
         DateTime occurredOnUtc)
     {
+        if (Status == TicketStatus.NoShow && !IsOperationallyOpen) return Result.Fail(TicketErrors.InvalidTransition);
+
         var normalizedReason = Normalize(reason);
         if (Status is not TicketStatus.Waiting and not TicketStatus.Called and not TicketStatus.NoShow ||
             actorApplicationUserId == Guid.Empty || normalizedReason is null ||
@@ -395,6 +413,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
         var when = EnsureUtc(occurredOnUtc);
         var previous = Status;
         Status = TicketStatus.Called;
+        IsOperationallyOpen = Status is TicketStatus.Waiting or TicketStatus.Called or TicketStatus.InProgress or TicketStatus.NoShow;
         CalledOnUtc = when;
         IsFastTrack = false;
         AddCallAttempt(when);
@@ -419,6 +438,7 @@ public sealed class Ticket : AggregateRoot<Guid>, IAuditableEntity
     {
         var previous = Status;
         Status = TicketStatus.Cancelled;
+        IsOperationallyOpen = Status is TicketStatus.Waiting or TicketStatus.Called or TicketStatus.InProgress or TicketStatus.NoShow;
         CancelledOnUtc = occurredOnUtc;
         CancellationReasonCode = reasonCode;
         CancellationReason = reason;

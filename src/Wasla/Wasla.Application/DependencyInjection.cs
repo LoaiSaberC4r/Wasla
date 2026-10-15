@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<ClinicalAccessService>();
         services.AddScoped<ClinicalMutationService>();
         services.AddScoped<ReservationCheckInWorkflow>();
+        services.AddScoped<Wasla.Application.Features.Archives.ArchiveTicketReplay>();
         services.AddSingleton<IPracticeReservationOccupancyReader, EmptyPracticeReservationOccupancyReader>();
         services.AddSingleton<IPublicDoctorPopularityReader, EmptyPublicDoctorPopularityReader>();
         services.AddSingleton<IPublicDiscoveryRankingProjectionRefresher,

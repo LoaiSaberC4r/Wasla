@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -29,7 +30,8 @@ internal sealed class CallNextCommandHandler(
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketQueueReader queueReader,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    ArchiveTicketReplay archiveReplay)
     : ICommandHandler<CallNextCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -94,6 +96,9 @@ internal sealed class CallNextCommandHandler(
         {
             return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
         }
+
+        var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, "CallNext", key.Value, TicketIdempotency.Fingerprint(request.PracticeId, businessDate), request.PracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
 
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(nextId.Value), cancellationToken);

@@ -48,7 +48,11 @@ public sealed class Phase11TicketPersistenceTests
             index.IsUnique && index.GetDatabaseName() == "UX_Tickets_PracticeDateNumber");
         Assert.Contains(ticket.GetIndexes(), index =>
             index.IsUnique && index.GetDatabaseName() == "UX_Tickets_OpenPatientPractice" &&
-            index.GetFilter() == "[Status] IN (1,2,3,4)");
+            index.GetFilter() == "[IsOperationallyOpen] = 1");
+        // Phase 18 Part Two preserves NoShow status after verified day closure
+        // while releasing the open-admission lease; the business status set is unchanged.
+        Assert.Contains(context.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(Ticket))!.GetCheckConstraints(),
+            constraint => constraint.Name == "CK_Tickets_OperationalLease");
         Assert.Contains(ticket.GetIndexes(), index =>
             index.IsUnique &&
             index.GetDatabaseName() == "UX_Tickets_OneCalledOrInProgressPerPractice" &&

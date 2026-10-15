@@ -23,7 +23,7 @@ internal sealed class HiddenAccessReader(WaslaDbContext db, IMedicalRecordTokens
     private IQueryable<HiddenEncounterAccessRequest> Requests => db.Set<HiddenEncounterAccessRequest>().AsNoTracking();
     private IQueryable<Guid> LiveIds => from r in Requests
         join s in db.MedicalEncounters on r.HiddenEncounterId equals s.Id
-        join original in db.Tickets on s.TicketId equals original.Id
+        join original in db.AllTickets on s.TicketId equals original.Id
         join t in db.Tickets on r.RequestingTicketId equals t.Id
         join e in db.MedicalEncounters on r.RequestingEncounterId equals e.Id
         join p in db.DoctorPractices on r.RequestingPracticeId equals p.Id
@@ -71,7 +71,7 @@ internal sealed class HiddenAccessReader(WaslaDbContext db, IMedicalRecordTokens
         var query = Requests.Where(r => sent ? r.RequestingDoctorId == actor.DoctorId && r.RequestingTicketId == q.TicketId && r.RequestingPracticeId == q.PracticeId :
             r.OwningDoctorId == actor.DoctorId && db.MedicalEncounters.Any(e => e.Id == r.HiddenEncounterId && e.DoctorId == actor.DoctorId &&
                 db.DoctorPractices.Any(p => p.Id == e.DoctorPracticeId && p.DoctorId == actor.DoctorId && p.IsActive)));
-        if (sent && !await db.Tickets.AnyAsync(t => t.Id == q.TicketId && t.DoctorId == actor.DoctorId && t.DoctorPracticeId == q.PracticeId && db.DoctorPractices.Any(p => p.Id == t.DoctorPracticeId && p.IsActive), ct)) return null;
+        if (sent && !await db.AllTickets.AnyAsync(t => t.Id == q.TicketId && t.DoctorId == actor.DoctorId && t.DoctorPracticeId == q.PracticeId && db.DoctorPractices.Any(p => p.Id == t.DoctorPracticeId && p.IsActive), ct)) return null;
         if (q.Read == HiddenAccessRead.InboxSummary)
             return new AccessInboxSummary(await query.CountAsync(r => r.Status == HiddenAccessRequestStatus.Pending, ct),
                 await query.CountAsync(r => r.Status == HiddenAccessRequestStatus.Pending && LiveIds.Contains(r.Id), ct),

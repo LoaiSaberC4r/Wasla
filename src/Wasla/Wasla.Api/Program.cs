@@ -30,6 +30,8 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Wasla.Api.xml"));
     options.SchemaFilter<Wasla.Api.OpenApi.MedicalRecordSchemaFilter>();
+    options.SchemaFilter<Wasla.Api.OpenApi.ArchiveSchemaFilter>();
+    options.OperationFilter<Wasla.Api.OpenApi.ArchiveOperationFilter>();
 });
 builder.Services.AddApiVersioning(options =>
 {
@@ -66,8 +68,18 @@ builder.Services.AddWaslaAuthentication();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, ct) =>
+    {
+        var seconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry) ? Math.Max(1, (int)Math.Ceiling(retry.TotalSeconds)) : 900;
+        context.HttpContext.Response.Headers.RetryAfter = seconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        context.HttpContext.Response.Headers.CacheControl = "no-store";
+        var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails { Status = 429, Title = "Too many requests / طلبات كثيرة", Type = "https://www.rfc-editor.org/rfc/rfc6585#section-4" };
+        problem.Extensions["code"] = "Request.RateLimited";
+        await context.HttpContext.Response.WriteAsJsonAsync(problem, options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json", cancellationToken: ct);
+    };
     AddFixedPolicy("medical-record", 1200);
     AddFixedPolicy("reports-export", 12);
+    AddFixedPolicy("archive-audit", 300);
     AddFixedPolicy("medical-record-media", 120);
     AddFixedPolicy("medical-record-request", 60);
     AddFixedPolicy("password-reset-request", 5);
@@ -76,7 +88,7 @@ builder.Services.AddRateLimiter(options =>
 
     void AddFixedPolicy(string name, int permitLimit)
         => options.AddPolicy(name, context => RateLimitPartition.GetFixedWindowLimiter(
-            name.StartsWith("medical-record", StringComparison.Ordinal) || name == "reports-export"
+            name.StartsWith("medical-record", StringComparison.Ordinal) || name == "reports-export" || name == "archive-audit"
                 ? context.User.FindFirst("sub")?.Value ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown"
                 : context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions

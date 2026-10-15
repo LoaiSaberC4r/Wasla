@@ -50,7 +50,7 @@ internal sealed class ReservationPublicReaders(WaslaDbContext dbContext)
         CancellationToken cancellationToken)
     {
         var ids = doctorIds.Distinct().ToArray();
-        var counts = await dbContext.Reservations.AsNoTracking()
+        var counts = await dbContext.AllReservations
             .Where(item => ids.Contains(item.DoctorId) &&
                            item.Status == ReservationStatus.ConvertedToTicket &&
                            item.ConvertedToTicketOnUtc >= sinceUtc)

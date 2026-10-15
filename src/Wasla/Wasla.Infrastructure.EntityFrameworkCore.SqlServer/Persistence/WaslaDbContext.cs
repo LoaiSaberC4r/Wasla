@@ -21,7 +21,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> options,
-    BuildingBlock.Application.Time.IDateTimeProvider? reportingClock = null)
+    BuildingBlock.Application.Time.IDateTimeProvider? reportingClock = null,
+    BuildingBlock.Application.Abstraction.Security.ICurrentUser? governanceActor = null)
     : DbContext(options)
 {
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
@@ -150,6 +151,11 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        var hasNewArchiveIdentities = HasNewArchiveIdentities;
+        await using var identityTransaction = hasNewArchiveIdentities && Database.CurrentTransaction is null
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        PrepareArchiveIdentities();
+        await CaptureArchiveGovernanceAsync(cancellationToken);
         var diagnosticCorrection = ChangeTracker.Entries<LabResultVersion>().Any(e => e.State == EntityState.Modified && e.Entity.Status == DiagnosticVersionStatus.Superseded) ||
             ChangeTracker.Entries<RadiologyResultVersion>().Any(e => e.State == EntityState.Modified && e.Entity.Status == DiagnosticVersionStatus.Superseded);
         await using var diagnosticTransaction = diagnosticCorrection && Database.CurrentTransaction is null
@@ -188,9 +194,28 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
             entry.Property(v => v.Status).IsModified = false;
         }
         var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (reportingPractices.Length > 0 || hasNewArchiveIdentities)
+        {
+            var observedNow = reportingClock?.UtcNow ?? DateTime.UtcNow;
+            var observedPractices = reportingPractices.Concat(ChangeTracker.Entries<Ticket>().Select(x => x.Entity.DoctorPracticeId))
+                .Concat(ChangeTracker.Entries<Reservation>().Select(x => x.Entity.DoctorPracticeId)).Distinct().ToArray();
+            foreach (var practiceId in observedPractices)
+            {
+                var config = await DoctorPracticeConfigurations.AsNoTracking().SingleOrDefaultAsync(x => x.DoctorPracticeId == practiceId, cancellationToken);
+                if (config == null || !TimeZoneInfo.TryFindSystemTimeZoneById(config.TimeZoneId, out var zone)) continue;
+                var currentDay = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(observedNow, DateTimeKind.Utc), zone));
+                var dates = await PracticeOperationalDays.AsNoTracking().Where(x => x.DoctorPracticeId == practiceId && x.ClosedAtUtc == null && x.EndsAtUtc > observedNow)
+                    .Select(x => x.BusinessDate).ToArrayAsync(cancellationToken);
+                foreach (var businessDate in dates.Append(currentDay).Concat(ChangeTracker.Entries<Reservation>().Where(x => x.Entity.DoctorPracticeId == practiceId).Select(x => x.Entity.BusinessDate)).Distinct())
+                    await ArchiveOperationalDays.ObserveAsync(this, practiceId, businessDate, observedNow, cancellationToken);
+            }
+            PrepareSqliteRowVersions();
+            result += await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
         if (ownedTransaction is not null) await ownedTransaction.CommitAsync(cancellationToken);
         if (diagnosticTransaction is not null) await diagnosticTransaction.CommitAsync(cancellationToken);
         if (reportingTransaction is not null) await reportingTransaction.CommitAsync(cancellationToken);
+        if (identityTransaction is not null) await identityTransaction.CommitAsync(cancellationToken);
         return result;
     }
 
@@ -358,12 +383,13 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyWriteConfigurations(typeof(WaslaDbContext).Assembly);
+        ConfigureArchives(modelBuilder);
         var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
             value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
         foreach (var entity in modelBuilder.Model.GetEntityTypes().Where(e => e.ClrType.Namespace is
-            "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations"))
+            "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations"))
             foreach (var property in entity.GetProperties().Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?)))
-                property.SetValueConverter(utcConverter);
+                if (!property.Name.Contains("Local", StringComparison.Ordinal)) property.SetValueConverter(utcConverter);
         modelBuilder.ApplySoftDeleteQueryFilter();
 
         if (string.Equals(

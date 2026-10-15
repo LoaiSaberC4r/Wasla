@@ -11,11 +11,11 @@ internal sealed partial class ReportingQueryService
         ReportingWindow w, bool clinicalAllowed, CancellationToken ct)
     {
         var current = tickets.Where(t => OperationalKpiCalculator.InWindow(t.BusinessDate, w)).Select(t => t.PatientId).Distinct().ToArray();
-        var history = await db.Tickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && current.Contains(t.PatientId) && t.CheckInTimeUtc <= w.AsOfUtc)
+        var history = await db.AllTickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && current.Contains(t.PatientId) && t.CheckInTimeUtc <= w.AsOfUtc)
             .GroupBy(t => t.PatientId).Select(g => g.OrderBy(t => t.CheckInTimeUtc).ThenBy(t => t.Id)
                 .Select(t => new { t.PatientId, t.BusinessDate }).First()).ToArrayAsync(ct);
         var priorFrom = DateOnly.FromDayNumber(Math.Max(0, w.FromDate.DayNumber - 90));
-        var prior = await db.Tickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && scope.PracticeIds.Contains(t.DoctorPracticeId) && t.BusinessDate >= priorFrom &&
+        var prior = await db.AllTickets.AsNoTracking().Where(t => t.DoctorId == scope.DoctorId && scope.PracticeIds.Contains(t.DoctorPracticeId) && t.BusinessDate >= priorFrom &&
             t.BusinessDate < w.FromDate && t.CheckInTimeUtc <= w.AsOfUtc).Select(t => t.PatientId).Distinct().ToArrayAsync(ct);
         var clinical = clinicalAllowed ? await ClinicalCompletionMetricAsync(scope, w, ct)
             : calculator.Missing("ClinicalWorkflowCompleted", ReportDataStatus.NotAvailable, "Report.ClinicalPermissionRequired");
@@ -30,7 +30,7 @@ internal sealed partial class ReportingQueryService
         var fromUtc = DateOnly.FromDayNumber(Math.Max(0, w.FromDate.DayNumber - 2)).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var before = DateOnly.FromDayNumber(Math.Min(DateOnly.MaxValue.DayNumber, w.ToDate.DayNumber + 2)).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
         var rows = await (from e in db.MedicalEncounters.AsNoTracking()
-            join t in db.Tickets.AsNoTracking() on e.TicketId equals t.Id
+            join t in db.AllTickets.AsNoTracking() on e.TicketId equals t.Id
             where scope.PracticeIds.Contains(e.DoctorPracticeId) && e.CompletedAtUtc != null && e.CompletedAtUtc <= w.AsOfUtc &&
                 e.CompletedAtUtc >= fromUtc && e.CompletedAtUtc <= before
             select new { e.PatientId, e.CompletedAtUtc, t.PracticeTimeZoneIdSnapshot }).ToArrayAsync(ct);
@@ -57,10 +57,10 @@ internal sealed partial class ReportingQueryService
         }).ToArray();
         var bounds = ReportingTimeScope.Bounds(w.FromDate, w.ToDate, w.ReportTimeZoneId);
         var trailing = w.AsOfUtc.AddDays(-30);
-        var activeDoctors = await db.Reservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) && r.CreatedOnUtc >= trailing && r.CreatedOnUtc <= w.AsOfUtc)
-            .Select(r => r.DoctorId).Union(db.Tickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) && t.CheckInTimeUtc >= trailing && t.CheckInTimeUtc <= w.AsOfUtc).Select(t => t.DoctorId)).Distinct().ToArrayAsync(ct);
-        var activePatients = await db.Reservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) && r.CreatedOnUtc >= trailing && r.CreatedOnUtc <= w.AsOfUtc)
-            .Select(r => r.PatientId).Union(db.Tickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) && t.CheckInTimeUtc >= trailing && t.CheckInTimeUtc <= w.AsOfUtc).Select(t => t.PatientId)).Distinct().ToArrayAsync(ct);
+        var activeDoctors = await db.AllReservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) && r.CreatedOnUtc >= trailing && r.CreatedOnUtc <= w.AsOfUtc)
+            .Select(r => r.DoctorId).Union(db.AllTickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) && t.CheckInTimeUtc >= trailing && t.CheckInTimeUtc <= w.AsOfUtc).Select(t => t.DoctorId)).Distinct().ToArrayAsync(ct);
+        var activePatients = await db.AllReservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) && r.CreatedOnUtc >= trailing && r.CreatedOnUtc <= w.AsOfUtc)
+            .Select(r => r.PatientId).Union(db.AllTickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) && t.CheckInTimeUtc >= trailing && t.CheckInTimeUtc <= w.AsOfUtc).Select(t => t.PatientId)).Distinct().ToArrayAsync(ct);
         var approved = states.Where(d => d.Status == DoctorApprovalStatus.Approved).Select(d => d.Id).ToArray();
         var unknownStates = states.LongCount(d => d.Status == null);
         ReportMetric StatusCount(string metric, long value) => calculator.Count(metric, value, states.LongLength - unknownStates,

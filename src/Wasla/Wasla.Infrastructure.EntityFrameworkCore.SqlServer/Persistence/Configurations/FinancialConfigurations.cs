@@ -1,3 +1,4 @@
+using Wasla.Domain.Archives;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -35,8 +36,8 @@ internal sealed class PaymentConfiguration : IWriteEntityConfiguration<Payment>
         builder.HasOne<Doctor>().WithMany().HasForeignKey(item => item.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorPractice>().WithMany().HasForeignKey(item => item.DoctorPracticeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Patient>().WithMany().HasForeignKey(item => item.PatientId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Reservation>().WithMany().HasForeignKey(item => item.ReservationId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Ticket>().WithMany().HasForeignKey(item => item.TicketId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ReservationRegistry>().WithMany().HasForeignKey(item => item.ReservationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<TicketRegistry>().WithMany().HasForeignKey(item => item.TicketId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.CollectedByApplicationUserId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(item => item.Refund).WithOne().HasForeignKey<Refund>(item => item.PaymentId)
@@ -78,7 +79,7 @@ internal sealed class RefundConfiguration : IWriteEntityConfiguration<Refund>
         builder.Property(item => item.BusinessDate).HasColumnType("date").IsRequired();
         builder.Property(item => item.RefundedOnUtc).HasColumnType("datetime2(3)").IsRequired();
         builder.Property(item => item.RowVersion).IsRowVersion().IsConcurrencyToken();
-        builder.HasOne<Ticket>().WithMany().HasForeignKey(item => item.TicketId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<TicketRegistry>().WithMany().HasForeignKey(item => item.TicketId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Patient>().WithMany().HasForeignKey(item => item.PatientId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Doctor>().WithMany().HasForeignKey(item => item.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorPractice>().WithMany().HasForeignKey(item => item.DoctorPracticeId).OnDelete(DeleteBehavior.Restrict);

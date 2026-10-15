@@ -1013,10 +1013,11 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             .Include(item => item.History)
             .SingleOrDefaultAsync(item => item.Id == reservationId, cancellationToken);
 
-    public Task<ReservationViewRecord?> GetReservationViewAsync(
+    public async Task<ReservationViewRecord?> GetReservationViewAsync(
         Guid reservationId,
         CancellationToken cancellationToken)
-        => (from reservation in dbContext.Reservations.AsNoTracking().Include(item => item.History)
+    {
+        var record = await (from reservation in dbContext.AllReservations
             join patient in dbContext.Patients.AsNoTracking() on reservation.PatientId equals patient.Id
             join doctor in dbContext.Doctors.AsNoTracking() on reservation.DoctorId equals doctor.Id
             join practice in dbContext.DoctorPractices.AsNoTracking() on reservation.DoctorPracticeId equals practice.Id
@@ -1025,6 +1026,8 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
             where reservation.Id == reservationId
             select new ReservationViewRecord(reservation, patient, doctor, practice, configuration))
             .SingleOrDefaultAsync(cancellationToken);
+        return record is null ? null : record with { HistoricalTimeline = await dbContext.AllReservationHistories.Where(x => x.ReservationId == reservationId).OrderBy(x => x.OccurredOnUtc).ThenBy(x => x.Id).Take(201).ToArrayAsync(cancellationToken) };
+    }
 
     public async Task<ReservationViewPage> ListReservationViewsAsync(
         IReadOnlyCollection<Guid>? patientIds,
@@ -1042,10 +1045,10 @@ internal sealed class WaslaDataStore(WaslaDbContext dbContext) : IWaslaDataStore
         string? search,
         int pageNumber,
         int pageSize,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, bool includeArchived = false)
     {
         var query =
-            from reservation in dbContext.Reservations.AsNoTracking()
+            from reservation in (includeArchived ? dbContext.AllReservations : dbContext.Reservations.AsNoTracking())
             join patient in dbContext.Patients.AsNoTracking() on reservation.PatientId equals patient.Id
             join doctor in dbContext.Doctors.AsNoTracking() on reservation.DoctorId equals doctor.Id
             join practice in dbContext.DoctorPractices.AsNoTracking() on reservation.DoctorPracticeId equals practice.Id

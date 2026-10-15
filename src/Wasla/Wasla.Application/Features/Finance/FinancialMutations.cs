@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -56,6 +57,7 @@ internal sealed class RefundPaymentCommandHandler(
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     IFinancialNumberAllocator numberAllocator,
+    IArchiveLocationResolver archive,
     IDateTimeProvider clock)
     : ICommandHandler<RefundPaymentCommand, RefundPaymentResponse>
 {
@@ -111,8 +113,7 @@ internal sealed class RefundPaymentCommandHandler(
             return Result<RefundPaymentResponse>.Fail(FinancialWriteErrors.AlreadyRefunded);
         }
 
-        var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
-            new TicketByIdForUpdateSpecification(payment.TicketId), cancellationToken);
+        var ticket = await archive.ReadTicketForFinanceAsync(payment.TicketId, cancellationToken);
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId ||
             ticket.DoctorId != payment.DoctorId || ticket.PatientId != payment.PatientId ||
             ticket.PriceSnapshot != payment.Amount || payment.CurrencyCode != FinancialPolicy.CurrencyCode ||
@@ -127,7 +128,7 @@ internal sealed class RefundPaymentCommandHandler(
         }
 
         if (ticket.InProgressOnUtc.HasValue ||
-            ticket.History.Any(history => history.EventType == TicketHistoryEventType.InProgress))
+            await archive.EverStartedAsync(ticket.Id, cancellationToken))
         {
             return Result<RefundPaymentResponse>.Fail(FinancialWriteErrors.ServiceAlreadyStarted);
         }

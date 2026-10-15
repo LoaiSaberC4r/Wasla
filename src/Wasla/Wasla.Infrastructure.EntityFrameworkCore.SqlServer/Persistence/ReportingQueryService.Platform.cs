@@ -15,10 +15,10 @@ internal sealed partial class ReportingQueryService
         var bounds = ReportingTimeScope.Bounds(w.FromDate, w.ToDate, w.ReportTimeZoneId);
         var size = w.ToDate.DayNumber - w.FromDate.DayNumber + 1;
         var preceding = ReportingTimeScope.Bounds(DateOnly.FromDayNumber(Math.Max(1, w.FromDate.DayNumber - size)), w.FromDate.AddDays(-1), w.ReportTimeZoneId);
-        var bookings = await db.Reservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) &&
+        var bookings = await db.AllReservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) &&
             r.CreatedOnUtc >= preceding.FromUtc && r.CreatedOnUtc < bounds.BeforeUtc && r.CreatedOnUtc <= w.AsOfUtc)
             .Select(r => new { r.DoctorId, r.PatientId, At = r.CreatedOnUtc }).ToArrayAsync(ct);
-        var checkIns = await db.Tickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) &&
+        var checkIns = await db.AllTickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) &&
             t.CheckInTimeUtc >= preceding.FromUtc && t.CheckInTimeUtc < bounds.BeforeUtc && t.CheckInTimeUtc <= w.AsOfUtc)
             .Select(t => new { t.DoctorId, t.PatientId, At = t.CheckInTimeUtc }).ToArrayAsync(ct);
         var activity = bookings.Concat(checkIns).ToArray();

@@ -554,11 +554,13 @@ public static class PermissionNames
         FamilyMedicalAccessEligibilityDecide,
         FamilyMedicalAccessEligibilityRevoke,
         .. Phase18PermissionNames.All,
+        .. Phase18PartTwoPermissionNames.All,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
         [
             .. Phase18PermissionNames.ReceptionDefaults,
+            .. Phase18PartTwoPermissionNames.ReceptionDefaults,
             PatientsSearchBasic,
             PatientsRegister,
             PracticeReservationsView,
@@ -609,4 +611,3 @@ public static class SystemPermissionIds
         return Guid.Parse($"20000000-0000-0000-0000-{index:D12}");
     }
 }
-

@@ -1,3 +1,4 @@
+using Wasla.Domain.Archives;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -19,6 +20,7 @@ internal sealed class TicketConfiguration : IWriteEntityConfiguration<Ticket>
         builder.ToTable("Tickets", table =>
         {
             table.HasCheckConstraint("CK_Tickets_Status", "[Status] IN (1,2,3,4,5,6)");
+            table.HasCheckConstraint("CK_Tickets_OperationalLease", "([Status] IN (1,2,3) AND [IsOperationallyOpen]=1) OR ([Status] IN (5,6) AND [IsOperationallyOpen]=0) OR [Status]=4");
             table.HasCheckConstraint("CK_Tickets_Source", "[Source] IN (1,2)");
             table.HasCheckConstraint("CK_Tickets_Number", "[TicketNumber] > 0");
             table.HasCheckConstraint("CK_Tickets_Price", "[PriceSnapshot] > 0");
@@ -28,6 +30,7 @@ internal sealed class TicketConfiguration : IWriteEntityConfiguration<Ticket>
         });
         builder.HasOne<FollowUpEligibility>().WithMany().HasForeignKey(item => item.FollowUpEligibilityId).OnDelete(DeleteBehavior.Restrict);
         builder.HasKey(item => item.Id);
+        builder.HasOne<TicketRegistry>().WithOne().HasForeignKey<Ticket>(item => item.Id).OnDelete(DeleteBehavior.Restrict);
         builder.Property(item => item.BusinessDate).HasColumnType("date").IsRequired();
         builder.Property(item => item.SegmentNameArSnapshot).HasMaxLength(200).IsRequired();
         builder.Property(item => item.SegmentNameEnSnapshot).HasMaxLength(200);
@@ -53,7 +56,7 @@ internal sealed class TicketConfiguration : IWriteEntityConfiguration<Ticket>
         builder.HasOne<Doctor>().WithMany().HasForeignKey(item => item.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorPractice>().WithMany().HasForeignKey(item => item.DoctorPracticeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Patient>().WithMany().HasForeignKey(item => item.PatientId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Reservation>().WithMany().HasForeignKey(item => item.ReservationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ReservationRegistry>().WithMany().HasForeignKey(item => item.ReservationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorPracticeSegment>().WithMany().HasForeignKey(item => item.SegmentId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorPracticeVisitType>().WithMany().HasForeignKey(item => item.VisitTypeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.CreatedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
@@ -69,7 +72,7 @@ internal sealed class TicketConfiguration : IWriteEntityConfiguration<Ticket>
         builder.HasIndex(item => new { item.DoctorPracticeId, item.BusinessDate, item.TicketNumber }).IsUnique()
             .HasDatabaseName("UX_Tickets_PracticeDateNumber");
         builder.HasIndex(item => new { item.PatientId, item.DoctorPracticeId }).IsUnique()
-            .HasFilter("[Status] IN (1,2,3,4)")
+            .HasFilter("[IsOperationallyOpen] = 1")
             .HasDatabaseName("UX_Tickets_OpenPatientPractice");
         builder.HasIndex(item => item.DoctorPracticeId).IsUnique()
             .HasFilter("[Status] IN (2,3)")
@@ -151,7 +154,7 @@ internal sealed class TicketIdempotencyRecordConfiguration
         builder.Property(item => item.RequestFingerprint).HasMaxLength(64).IsRequired();
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.ActorApplicationUserId)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Ticket>().WithMany().HasForeignKey(item => item.TicketId)
+        builder.HasOne<TicketRegistry>().WithMany().HasForeignKey(item => item.TicketId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(item => new { item.ActorApplicationUserId, item.Operation, item.IdempotencyKey })
             .IsUnique().HasDatabaseName("UX_TicketIdempotency_ActorOperationKey");

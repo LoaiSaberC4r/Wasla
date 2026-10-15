@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -36,7 +37,8 @@ internal sealed class CancelTicketCommandHandler(
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketQueueReader queueReader,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock, IArchiveLocationResolver archive,
+    ArchiveTicketReplay archiveReplay)
     : ICommandHandler<CancelTicketCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -60,6 +62,10 @@ internal sealed class CancelTicketCommandHandler(
         }
 
         await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase16:Treatment", request.TicketId.ToString("N"), cancellationToken);
+        var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, "CancelTicket", key.Value, TicketIdempotency.Fingerprint(
+                request.PracticeId, request.TicketId, request.Reason.Trim(), request.RowVersion), request.PracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
+
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(request.TicketId), cancellationToken);
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId)
@@ -67,6 +73,8 @@ internal sealed class CancelTicketCommandHandler(
             return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
         }
 
+        if (ticket.Status == TicketStatus.NoShow && await archive.IsNoShowDayFinalOrUnverifiableAsync(ticket.DoctorPracticeId, ticket.BusinessDate, ticket.PracticeTimeZoneIdSnapshot, cancellationToken))
+            return Result<TicketDetailsResponse>.Fail(TicketErrors.InvalidTransition);
         await queueLock.AcquirePracticeDayAsync(
             request.PracticeId, ticket.BusinessDate, cancellationToken);
         await queueLock.AcquireIdempotencyAsync(

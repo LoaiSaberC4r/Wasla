@@ -112,6 +112,7 @@ public sealed class Phase12WalkInPaymentTests
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.ReservationNoShowRuntimeReader")!);
         services.AddScoped(typeof(IFinancialNumberAllocator), persistenceAssembly.GetType(
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.FinancialNumberAllocator")!);
+        Phase12ArchiveTestServices.Add(services);
         using var provider = services.BuildServiceProvider();
         var command = new CreateWalkInCommand(
             practice.Id, patient.Id, segment.Id, visitType.Id,

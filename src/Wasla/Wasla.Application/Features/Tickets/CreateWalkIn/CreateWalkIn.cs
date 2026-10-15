@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -62,7 +63,7 @@ internal sealed class CreateWalkInCommandHandler(
     IFinancialNumberAllocator financialNumberAllocator,
     ITicketQueueReader queueReader,
     IReservationNoShowRuntimeReader reservationNoShowReader,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock, ArchiveTicketReplay archiveReplay)
     : ICommandHandler<CreateWalkInCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -88,6 +89,12 @@ internal sealed class CreateWalkInCommandHandler(
         {
             return Result<TicketDetailsResponse>.Fail(key.Errors);
         }
+
+        var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, "CreateWalkIn", key.Value,
+            FinancialWriteIdempotency.Fingerprint(request.PracticeId, request.PatientId, request.SegmentId, request.VisitTypeId,
+                request.PaidAmount, request.PaymentMethod, request.ReferenceNumber?.Trim(), request.Notes?.Trim(), request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion),
+            request.PracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
 
         var practice = await unitOfWork.WriteRepository<DoctorPractice>()
             .GetByIdAsync(request.PracticeId, cancellationToken);

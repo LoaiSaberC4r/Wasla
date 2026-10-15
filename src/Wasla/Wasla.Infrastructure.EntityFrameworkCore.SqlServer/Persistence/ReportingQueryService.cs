@@ -127,7 +127,7 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
         warnings.AddRange(metrics.Where(m => m.WarningCode != null).Select(m => m.WarningCode!).Distinct());
         var normalized = filter with { FromDate = window.FromDate, ToDate = window.ToDate, AsOfUtc = window.AsOfUtc, ReportTimeZoneId = window.ReportTimeZoneId };
         var quality = source.ExcludedSourceCount > 0 || metrics.Any(m => m.DataStatus != ReportDataStatus.Complete) ? ReportDataStatus.Partial : ReportDataStatus.Complete;
-        var sorted = OrderRecords(records, filter).ToArray();
+        var sorted = OrderRecords(await ArchiveLinksAsync(records, scope, ct), filter).ToArray();
         metrics = metrics.Select(m =>
         {
             var allowed = definition.Drilldown && SupportsDrilldown(scope, m.MetricCode) && m.Value != null;
@@ -249,7 +249,7 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
                 definition.Financial ? code : "operating-finance", report.Window, ct, report.AppliedFilters), report.Scope, report.Window, metric)
             : actor == ReportActor.SuperAdmin ? await PlatformDrilldownAsync(report.Scope, code, report.Window, metric, ct)
             : await OperationalDrilldownAsync(report.Scope, metric, await OperationalSourcesAsync(report.Scope, report.AppliedFilters, report.Window, ct), report.AppliedFilters, report.Window, ct);
-        var ordered = OrderRecords(rows, filter).ToArray();
+        var ordered = OrderRecords(await ArchiveLinksAsync(rows, report.Scope, ct), filter).ToArray();
         if (transaction != null) await transaction.CommitAsync(ct);
         var selected = report.Metrics.Single(m => m.MetricCode == metric);
         return Result<ReportPage<ReportRecord>>.Ok(new(ordered.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToArray(),
