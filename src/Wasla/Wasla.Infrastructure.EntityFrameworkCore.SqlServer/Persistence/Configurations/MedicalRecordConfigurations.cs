@@ -1,3 +1,4 @@
+using Wasla.Domain.Archives;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -52,7 +53,7 @@ internal sealed class HiddenEncounterAccessRequestConfiguration : IWriteEntityCo
         b.Property(r => r.DecidedAtUtc).HasColumnType("datetime2(3)"); b.Property(r => r.RevokedAtUtc).HasColumnType("datetime2(3)");
         b.HasOne<MedicalEncounter>().WithMany().HasForeignKey(r => r.HiddenEncounterId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<MedicalEncounter>().WithMany().HasForeignKey(r => r.RequestingEncounterId).OnDelete(DeleteBehavior.Restrict);
-        b.HasOne<Ticket>().WithMany().HasForeignKey(r => r.RequestingTicketId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<TicketRegistry>().WithMany().HasForeignKey(r => r.RequestingTicketId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Doctor>().WithMany().HasForeignKey(r => r.OwningDoctorId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Doctor>().WithMany().HasForeignKey(r => r.RequestingDoctorId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<DoctorPractice>().WithMany().HasForeignKey(r => r.RequestingPracticeId).OnDelete(DeleteBehavior.Restrict);

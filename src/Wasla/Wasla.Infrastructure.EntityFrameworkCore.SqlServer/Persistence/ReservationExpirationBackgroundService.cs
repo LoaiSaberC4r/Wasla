@@ -83,6 +83,25 @@ internal sealed class ReservationExpirationBackgroundService(
                 continue;
             }
 
+            var observed = await dbContext.PracticeOperationalDays.AsNoTracking().SingleOrDefaultAsync(d => d.DoctorPracticeId == reservation.DoctorPracticeId && d.BusinessDate == reservation.BusinessDate, cancellationToken);
+            if (observed != null)
+            {
+                if (observed.EvidenceVerified && nowUtc >= observed.EndsAtUtc && reservation.Expire(nowUtc).IsSuccess)
+                {
+                    changed = true;
+                    await projectionOutbox.QueueAsync(new QueueReservationProjectionInvalidation($"reservation-expired:{reservation.Id:N}:{reservation.History.Last().Id:N}",reservation.DoctorPracticeId,reservation.DoctorId,RefreshAvailability:true,RefreshPopularity:true),cancellationToken);
+                }
+                continue;
+            }
+            if (TimeZoneInfo.TryFindSystemTimeZoneById(reservation.TimeZoneIdSnapshot, out var originalZone) && reservation.BusinessDate < DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, originalZone)))
+            {
+                if (reservation.Expire(nowUtc).IsSuccess)
+                {
+                    changed = true;
+                    await projectionOutbox.QueueAsync(new QueueReservationProjectionInvalidation($"reservation-expired:{reservation.Id:N}:{reservation.History.Last().Id:N}",reservation.DoctorPracticeId,reservation.DoctorId,RefreshAvailability:true,RefreshPopularity:true),cancellationToken);
+                }
+                continue;
+            }
             var effective = DoctorPracticeAvailabilityCalculator.GetEffectiveWorkingPeriods(
                 reservation.BusinessDate,
                 periods[reservation.DoctorPracticeId],

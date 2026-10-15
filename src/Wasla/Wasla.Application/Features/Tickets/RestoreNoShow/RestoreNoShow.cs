@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -39,7 +40,9 @@ internal sealed class RestoreNoShowTicketCommandHandler(
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketQueueReader queueReader,
-    IDateTimeProvider clock)
+    IArchiveLocationResolver archive,
+    IDateTimeProvider clock,
+    ArchiveTicketReplay archiveReplay)
     : ICommandHandler<RestoreNoShowTicketCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -62,12 +65,18 @@ internal sealed class RestoreNoShowTicketCommandHandler(
             return Result<TicketDetailsResponse>.Fail(key.Errors);
         }
 
+        var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, "RestoreNoShowTicket", key.Value, TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.RowVersion), request.PracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
+
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(request.TicketId), cancellationToken);
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId || !ticket.NoShowOnUtc.HasValue)
         {
             return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
         }
+
+        if (await archive.IsNoShowDayFinalOrUnverifiableAsync(ticket.DoctorPracticeId, ticket.BusinessDate, ticket.PracticeTimeZoneIdSnapshot, cancellationToken))
+            return Result<TicketDetailsResponse>.Fail(TicketErrors.InvalidTransition);
 
         if (await unitOfWork.WriteRepository<Refund>().GetByPropertyAsync(
                 item => item.TicketId == ticket.Id, cancellationToken) is not null)

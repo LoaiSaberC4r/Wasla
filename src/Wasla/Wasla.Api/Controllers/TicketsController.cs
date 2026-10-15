@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.RateLimiting;
+using Wasla.Application.Features.Tickets.Common;
 using Asp.Versioning;
 using BuildingBlock.Api;
 using MediatR;
@@ -91,6 +93,9 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
             .ToIActionResult(cancellationToken);
 
     [HttpGet("tickets/{ticketId:guid}")]
+    [Wasla.Api.Security.ArchiveDeniedRequest]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None), EnableRateLimiting("archive-audit")]
+    [ProducesResponseType<TicketDetailsResponse>(200), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(401), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(403), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(404), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(422), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(429), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(503)]
     public async Task<IActionResult> Details(
         Guid practiceId,
         Guid ticketId,
@@ -210,6 +215,9 @@ public sealed class MyTicketsController(ISender sender) : ControllerBase
             .ToIActionResult(cancellationToken);
 
     [HttpGet("mine/{ticketId:guid}")]
+    [Wasla.Api.Security.ArchiveDeniedRequest]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None), EnableRateLimiting("archive-audit")]
+    [ProducesResponseType<TicketDetailsResponse>(200), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(401), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(403), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(404), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(422), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(429), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(503)]
     public async Task<IActionResult> Details(Guid ticketId, CancellationToken cancellationToken)
         => (await sender.Send(new GetMyTicketDetailsQuery(ticketId), cancellationToken))
             .ToIActionResult(cancellationToken);

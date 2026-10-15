@@ -1,3 +1,5 @@
+using Wasla.Application.Features.Archives;
+using Wasla.Application.Features.Reporting;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Application.Repositories;
@@ -65,7 +67,19 @@ public sealed record TicketDetailsResponse(
     Guid? MedicalEncounterId = null,
     Guid? FollowUpEligibilityId = null,
     string? MedicalEncounterRowVersion = null,
-    Guid? PrescriptionId = null);
+    Guid? PrescriptionId = null,
+    bool IsArchived = false,
+    DateTime? ArchivedAtUtc = null,
+    TicketOperationalCapabilities? OperationalCapabilities = null,
+    IReadOnlyList<TicketTimelineItem>? Timeline = null,
+    bool PatientsAheadNowIsCurrent = true,
+    bool TimelineHasMore = false);
+public sealed record TicketOperationalCapabilities(bool CanCancel, bool CanRestore, bool CanQueueMutate, bool CanMutateOperationalRecord)
+{
+    // Admission creates the Ticket; an existing Ticket can never be checked in again.
+    public bool CanCheckIn { get; }
+}
+public sealed record TicketTimelineItem(Guid EventId, string EventType, DateTime OccurredAtUtc, string? ReasonCode);
 
 public sealed record PracticeQueueTicketResponse(
     Guid TicketId,
@@ -202,13 +216,18 @@ internal sealed class TicketAccessService(
     IReadRepository<ApplicationUser, WaslaReadPersistence> users,
     IReadRepository<Doctor, WaslaReadPersistence> doctors,
     IReadRepository<DoctorPractice, WaslaReadPersistence> practices,
-    IReadRepository<PatientAccountLink, WaslaReadPersistence> patientLinks)
+    IReportingAccessGuard archiveGuard)
 {
     public async Task<Result<TicketActor>> AuthorizeReceptionAsync(
         Guid practiceId,
         string permission,
         CancellationToken cancellationToken)
     {
+        if (permission.StartsWith("Archives.", StringComparison.Ordinal))
+        {
+            var scopedArchive = await archiveGuard.AuthorizeAsync(ReportActor.Reception, permission, practiceId, null, cancellationToken);
+            return scopedArchive.IsFailure ? Result<TicketActor>.Fail(scopedArchive.Errors) : Result<TicketActor>.Ok(new(scopedArchive.Value.ActorId, false, true));
+        }
         if (!TryGetActor(out var actorId) || !HasRole(SystemRoleNames.Reception))
         {
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
@@ -226,6 +245,11 @@ internal sealed class TicketAccessService(
         string permission,
         CancellationToken cancellationToken)
     {
+        if (permission.StartsWith("Archives.", StringComparison.Ordinal))
+        {
+            var archiveAccess = await archiveGuard.AuthorizeAsync(ReportActor.Doctor, permission, practiceId, null, cancellationToken);
+            return archiveAccess.IsFailure ? Result<TicketActor>.Fail(archiveAccess.Errors) : Result<TicketActor>.Ok(new(archiveAccess.Value.ActorId, true, false));
+        }
         if (!TryGetActor(out var actorId) || !HasRole(SystemRoleNames.Doctor) ||
             !currentUser.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase))
         {
@@ -240,6 +264,8 @@ internal sealed class TicketAccessService(
 
         var doctor = await doctors.GetByPropertyAsync(
             item => item.ApplicationUserId == actorId, cancellationToken);
+        if ((await archiveGuard.AuthorizeAsync(ReportActor.Doctor, permission, practiceId, null, cancellationToken)).IsFailure)
+            return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         var practice = await practices.GetByIdAsync(practiceId, cancellationToken);
         return doctor is not null && doctor.ApprovalStatus == DoctorApprovalStatus.Approved &&
                practice is not null && practice.IsActive && practice.DoctorId == doctor.Id
@@ -261,19 +287,10 @@ internal sealed class TicketAccessService(
         return await AuthorizeReceptionAsync(practiceId, receptionPermission, cancellationToken);
     }
 
-    public async Task<Result<Guid>> ResolveOwnPatientIdAsync(CancellationToken cancellationToken)
+    public async Task<Result<Guid>> ResolveOwnPatientIdAsync(CancellationToken cancellationToken, bool archived = false)
     {
-        if (!TryGetActor(out var actorId) || !HasRole(SystemRoleNames.Patient) ||
-            !currentUser.Permissions.Contains(PermissionNames.TicketsViewOwn, StringComparer.OrdinalIgnoreCase))
-        {
-            return Result<Guid>.Fail(TicketErrors.AccessDenied);
-        }
-
-        var link = await patientLinks.GetByPropertyAsync(
-            item => item.ApplicationUserId == actorId, cancellationToken);
-        return link is null
-            ? Result<Guid>.Fail(TicketErrors.AccessDenied)
-            : Result<Guid>.Ok(link.PatientId);
+        var scope = await archiveGuard.AuthorizeAsync(ReportActor.Patient, archived ? Phase18PartTwoPermissionNames.TicketsOwn : PermissionNames.TicketsViewOwn, null, null, cancellationToken);
+        return scope.IsFailure || scope.Value.PatientId is not { } own ? Result<Guid>.Fail(TicketErrors.AccessDenied) : Result<Guid>.Ok(own);
     }
 
     private bool TryGetActor(out Guid actorId)

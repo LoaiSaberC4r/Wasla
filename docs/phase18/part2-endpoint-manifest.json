@@ -1,0 +1,230 @@
+[
+  {
+    "endpointId": "P18.2-01",
+    "method": "GET",
+    "route": "/api/v1/practices/{practiceId}/tickets/{ticketId}",
+    "response": "existing extension"
+  },
+  {
+    "endpointId": "P18.2-02",
+    "method": "GET",
+    "route": "/api/v1/tickets/mine/{ticketId}",
+    "response": "existing extension"
+  },
+  {
+    "endpointId": "P18.2-03",
+    "method": "GET",
+    "route": "/api/v1/reception/practices/{practiceId}/reservations/{reservationId}",
+    "response": "existing extension"
+  },
+  {
+    "endpointId": "P18.2-04",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/practices/{practiceId}/reservations/{reservationId}",
+    "response": "existing extension"
+  },
+  {
+    "endpointId": "P18.2-05",
+    "method": "GET",
+    "route": "/api/v1/reservations/mine/{reservationId}",
+    "response": "existing extension"
+  },
+  {
+    "endpointId": "P18.2-06",
+    "method": "GET",
+    "route": "/api/v1/admin/reservations/{reservationId}",
+    "response": "existing extension"
+  },
+  {
+    "endpointId": "P18.2-07",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/practices/{practiceId}/archives/tickets",
+    "response": "ArchivePage<ArchivedTicketItem>"
+  },
+  {
+    "endpointId": "P18.2-08",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/practices/{practiceId}/archives/reservations",
+    "response": "ArchivePage<ArchivedReservationItem>"
+  },
+  {
+    "endpointId": "P18.2-09",
+    "method": "GET",
+    "route": "/api/v1/reception/practices/{practiceId}/archives/tickets",
+    "response": "ArchivePage<ArchivedTicketItem>"
+  },
+  {
+    "endpointId": "P18.2-10",
+    "method": "GET",
+    "route": "/api/v1/reception/practices/{practiceId}/archives/reservations",
+    "response": "ArchivePage<ArchivedReservationItem>"
+  },
+  {
+    "endpointId": "P18.2-11",
+    "method": "GET",
+    "route": "/api/v1/tickets/mine/archived",
+    "response": "ArchivePage<ArchivedTicketItem>"
+  },
+  {
+    "endpointId": "P18.2-12",
+    "method": "GET",
+    "route": "/api/v1/reservations/mine/archived",
+    "response": "ArchivePage<ArchivedReservationItem>"
+  },
+  {
+    "endpointId": "P18.2-13",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/tickets",
+    "response": "ArchivePage<PlatformTicketMetadata>"
+  },
+  {
+    "endpointId": "P18.2-14",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/reservations",
+    "response": "ArchivePage<PlatformReservationMetadata>"
+  },
+  {
+    "endpointId": "P18.2-15",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/tickets/{ticketId}",
+    "response": "PlatformTicketMetadata"
+  },
+  {
+    "endpointId": "P18.2-16",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/operations/health",
+    "response": "ArchiveHealth"
+  },
+  {
+    "endpointId": "P18.2-17",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/operations/runs",
+    "response": "ArchivePage<ArchiveRunItem>"
+  },
+  {
+    "endpointId": "P18.2-18",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/operations/runs/{runId}",
+    "response": "ArchiveRunItem"
+  },
+  {
+    "endpointId": "P18.2-19",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/operations/exceptions",
+    "response": "ArchivePage<ArchiveExceptionItem>"
+  },
+  {
+    "endpointId": "P18.2-20",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/operations/exceptions/{exceptionId}",
+    "response": "ArchiveExceptionItem"
+  },
+  {
+    "endpointId": "P18.2-21",
+    "method": "POST",
+    "route": "/api/v1/admin/archives/operations/pause",
+    "response": "ArchiveControlResponse"
+  },
+  {
+    "endpointId": "P18.2-22",
+    "method": "POST",
+    "route": "/api/v1/admin/archives/operations/resume",
+    "response": "ArchiveControlResponse"
+  },
+  {
+    "endpointId": "P18.2-23",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/practices/{practiceId}/audit/events",
+    "response": "ArchivePage<SafeAuditEvent>"
+  },
+  {
+    "endpointId": "P18.2-24",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/practices/{practiceId}/audit/events/{eventKey}",
+    "response": "SafeAuditEvent"
+  },
+  {
+    "endpointId": "P18.2-25",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/practices/{practiceId}/audit/sensitive-access",
+    "response": "ArchivePage<SafeAuditEvent>"
+  },
+  {
+    "endpointId": "P18.2-26",
+    "method": "GET",
+    "route": "/api/v1/reception/practices/{practiceId}/audit/my-activity",
+    "response": "ArchivePage<SafeAuditEvent>"
+  },
+  {
+    "endpointId": "P18.2-27",
+    "method": "GET",
+    "route": "/api/v1/reception/practices/{practiceId}/audit/my-activity/{eventKey}",
+    "response": "SafeAuditEvent"
+  },
+  {
+    "endpointId": "P18.2-28",
+    "method": "GET",
+    "route": "/api/v1/admin/audit/events",
+    "response": "ArchivePage<SafeAuditEvent>"
+  },
+  {
+    "endpointId": "P18.2-29",
+    "method": "GET",
+    "route": "/api/v1/admin/audit/events/{eventKey}",
+    "response": "SafeAuditEvent"
+  },
+  {
+    "endpointId": "P18.2-30",
+    "method": "POST",
+    "route": "/api/v1/admin/audit/sensitive-access/search",
+    "response": "ArchivePage<SafeAuditEvent>"
+  },
+  {
+    "endpointId": "P18.2-31",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/reservations/{reservationId}",
+    "response": "PlatformReservationMetadata"
+  },
+  {
+    "endpointId": "P18.2-32",
+    "method": "GET",
+    "route": "/api/v1/archives/metadata",
+    "response": "ArchiveMetadata"
+  },
+  {
+    "endpointId": "P18.2-33",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/archives/practices/options",
+    "response": "OptionsPage<PracticeOption>"
+  },
+  {
+    "endpointId": "P18.2-34",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/practices/options",
+    "response": "OptionsPage<PracticeOption>"
+  },
+  {
+    "endpointId": "P18.2-35",
+    "method": "GET",
+    "route": "/api/v1/admin/archives/operations/filter-options",
+    "response": "ArchiveOperationsOptions"
+  },
+  {
+    "endpointId": "P18.2-36",
+    "method": "GET",
+    "route": "/api/v1/doctors/me/practices/{practiceId}/audit/filter-options",
+    "response": "AuditOptions"
+  },
+  {
+    "endpointId": "P18.2-37",
+    "method": "GET",
+    "route": "/api/v1/reception/practices/{practiceId}/audit/filter-options",
+    "response": "AuditOptions"
+  },
+  {
+    "endpointId": "P18.2-38",
+    "method": "GET",
+    "route": "/api/v1/admin/audit/filter-options",
+    "response": "AuditOptions"
+  }
+]

@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Repositories;
 using BuildingBlock.Application.Time;
 using BuildingBlock.Domain.Results;
@@ -25,7 +26,8 @@ internal sealed class ReservationCheckInWorkflow(
     IFinancialNumberAllocator financialNumberAllocator,
     ITicketQueueReader queueReader,
     IReservationProjectionInvalidationOutbox projectionOutbox,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    ArchiveTicketReplay archiveReplay)
 {
     public async Task<Result<TicketDetailsResponse>> ExecuteAsync(
         Guid practiceId,
@@ -71,6 +73,11 @@ internal sealed class ReservationCheckInWorkflow(
         {
             return Result<TicketDetailsResponse>.Fail(PaymentErrors.Invalid);
         }
+
+        var replayOperation = force ? "ForceCheckInReservation" : "CheckInReservation";
+        var replayFingerprint = FinancialWriteIdempotency.Fingerprint(practiceId, reservationId, paidAmount, force, reason?.Trim(), paymentMethod, referenceNumber?.Trim(), notes?.Trim());
+        var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, replayOperation, validatedKey.Value, replayFingerprint, practiceId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
 
         var reservationSnapshot = await reservationReader.GetByIdAsync(reservationId, cancellationToken);
         if (reservationSnapshot is null || reservationSnapshot.DoctorPracticeId != practiceId)

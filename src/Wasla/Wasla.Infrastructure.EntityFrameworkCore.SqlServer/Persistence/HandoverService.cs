@@ -74,11 +74,11 @@ internal sealed class HandoverService(WaslaDbContext db, IReportingAccessGuard g
         ReceptionHandover row;
         if (c.Operation == HandoverOperation.Create && c.Create is { } create)
         {
-            if (create.ReservationId is { } reservation && !await db.Reservations.AnyAsync(r => r.Id == reservation && r.DoctorPracticeId == c.PracticeId, ct) ||
-                create.TicketId is { } ticket && !await db.Tickets.AnyAsync(t => t.Id == ticket && t.DoctorPracticeId == c.PracticeId, ct) ||
+            if (create.ReservationId is { } reservation && !await db.ReservationRegistry.AnyAsync(r => r.Id == reservation && r.DoctorPracticeId == c.PracticeId, ct) ||
+                create.TicketId is { } ticket && !await db.TicketRegistry.AnyAsync(t => t.Id == ticket && t.DoctorPracticeId == c.PracticeId, ct) ||
                 create.PreviousHandoverId is { } previous && !await db.Set<ReceptionHandover>().AnyAsync(h => h.Id == previous && h.DoctorPracticeId == c.PracticeId, ct))
                 return Result<HandoverResponse>.Fail(ReportingErrors.NotFound);
-            if (create.ReservationId != null && create.TicketId != null && !await db.Tickets.AnyAsync(t => t.Id == create.TicketId && t.ReservationId == create.ReservationId, ct))
+            if (create.ReservationId != null && create.TicketId != null && !await db.TicketRegistry.AnyAsync(t => t.Id == create.TicketId && t.ReservationId == create.ReservationId, ct))
                 return Result<HandoverResponse>.Fail(OperatingFinanceErrors.Invalid("Handover.LinkedResourcesMismatch"));
             var doctorId = await db.DoctorPractices.Where(p => p.Id == c.PracticeId).Select(p => p.DoctorId).SingleAsync(ct);
             var result = ReceptionHandover.Create(Guid.NewGuid(), doctorId, c.PracticeId, create.Summary, create.ReservationId,

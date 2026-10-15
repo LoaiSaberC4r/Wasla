@@ -18,7 +18,7 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
         var query = from e in db.MedicalEncounters.AsNoTracking()
             join patient in db.Patients.AsNoTracking() on e.PatientId equals patient.Id
             join practice in db.DoctorPractices.AsNoTracking() on e.DoctorPracticeId equals practice.Id
-            join ticket in db.Tickets.AsNoTracking() on e.TicketId equals ticket.Id
+            join ticket in db.AllTickets.AsNoTracking() on e.TicketId equals ticket.Id
             where (doctorId == null || e.DoctorId == doctorId) && (practiceId == null || e.DoctorPracticeId == practiceId) &&
                 (patientId == null || e.PatientId == patientId) && (status == null || e.Status == status) &&
                 (fromUtc == null || e.StartedAtUtc >= fromUtc) && (throughUtc == null || e.StartedAtUtc < throughUtc)

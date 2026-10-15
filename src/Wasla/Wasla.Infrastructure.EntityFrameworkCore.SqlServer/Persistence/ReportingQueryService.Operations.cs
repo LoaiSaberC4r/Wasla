@@ -14,22 +14,26 @@ internal sealed partial class ReportingQueryService
     {
         var lower = DateOnly.FromDayNumber(Math.Max(0, w.FromDate.DayNumber - 2)).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var upper = DateOnly.FromDayNumber(Math.Min(DateOnly.MaxValue.DayNumber, w.ToDate.DayNumber + 2)).ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
-        var reservations = await db.Reservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) && r.CreatedOnUtc <= w.AsOfUtc &&
+        var reservations = await db.AllReservations.AsNoTracking().Where(r => scope.PracticeIds.Contains(r.DoctorPracticeId) && r.CreatedOnUtc <= w.AsOfUtc &&
             (f.SegmentId == null || r.SegmentId == f.SegmentId) && (f.VisitTypeId == null || r.VisitTypeId == f.VisitTypeId) &&
             (f.BookingSource == null || r.BookingSource == f.BookingSource) &&
             (r.CreatedOnUtc >= lower && r.CreatedOnUtc <= upper || r.BusinessDate >= w.FromDate && r.BusinessDate <= w.ToDate ||
-                r.History.Any(h => h.OccurredOnUtc <= w.AsOfUtc && (h.OccurredOnUtc >= lower && h.OccurredOnUtc <= upper ||
-                    h.NewBusinessDate >= w.FromDate && h.NewBusinessDate <= w.ToDate) || h.OldBusinessDate >= w.FromDate && h.OldBusinessDate <= w.ToDate)))
-            .Include(r => r.History).AsSplitQuery().ToArrayAsync(ct);
-        var tickets = await db.Tickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) && t.CheckInTimeUtc <= w.AsOfUtc &&
+                db.AllReservationHistories.Any(h => h.ReservationId == r.Id && (h.OccurredOnUtc <= w.AsOfUtc && (h.OccurredOnUtc >= lower && h.OccurredOnUtc <= upper ||
+                    h.NewBusinessDate >= w.FromDate && h.NewBusinessDate <= w.ToDate) || h.OldBusinessDate >= w.FromDate && h.OldBusinessDate <= w.ToDate))))
+            .ToArrayAsync(ct);
+        var tickets = await db.AllTickets.AsNoTracking().Where(t => scope.PracticeIds.Contains(t.DoctorPracticeId) && t.CheckInTimeUtc <= w.AsOfUtc &&
             (f.SegmentId == null || t.SegmentId == f.SegmentId) && (f.VisitTypeId == null || t.VisitTypeId == f.VisitTypeId) &&
-            (f.BookingSource == null || t.ReservationId != null && db.Reservations.Any(r => r.Id == t.ReservationId && r.BookingSource == f.BookingSource)) &&
-            (t.BusinessDate >= w.FromDate && t.BusinessDate <= w.ToDate || t.History.Any(h => h.OccurredOnUtc <= w.AsOfUtc && h.OccurredOnUtc >= lower && h.OccurredOnUtc <= upper) ||
+            (f.BookingSource == null || t.ReservationId != null && db.AllReservations.Any(r => r.Id == t.ReservationId && r.BookingSource == f.BookingSource)) &&
+            (t.BusinessDate >= w.FromDate && t.BusinessDate <= w.ToDate || db.AllTicketHistories.Any(h => h.TicketId == t.Id && h.OccurredOnUtc <= w.AsOfUtc && h.OccurredOnUtc >= lower && h.OccurredOnUtc <= upper) ||
                 t.ReservationId != null && reservations.Select(r => r.Id).Contains(t.ReservationId.Value)))
-            .Include(t => t.History.Where(h => h.OccurredOnUtc <= w.AsOfUtc)).AsSplitQuery().ToArrayAsync(ct);
+            .ToArrayAsync(ct);
+        var reservationIds = reservations.Select(x => x.Id).ToArray();
+        var ticketIds = tickets.Select(x => x.Id).ToArray();
+        var reservationHistory = (await db.AllReservationHistories.Where(x => reservationIds.Contains(x.ReservationId)).ToArrayAsync(ct)).ToLookup(x => x.ReservationId);
+        var ticketHistory = (await db.AllTicketHistories.Where(x => ticketIds.Contains(x.TicketId) && x.OccurredOnUtc <= w.AsOfUtc).ToArrayAsync(ct)).ToLookup(x => x.TicketId);
         var reservationFacts = reservations.Select(r =>
         {
-            var allHistory = r.History.OrderBy(h => h.OccurredOnUtc).ThenBy(h => h.EventType).ToArray();
+            var allHistory = reservationHistory[r.Id].OrderBy(h => h.OccurredOnUtc).ThenBy(h => h.EventType).ToArray();
             var history = allHistory.Where(h => h.OccurredOnUtc <= w.AsOfUtc).ToArray();
             var changes = history.Where(h => h.EventType == ReservationHistoryEventType.Rescheduled).ToArray();
             var original = allHistory.FirstOrDefault(h => h.EventType == ReservationHistoryEventType.Rescheduled)?.OldScheduledStartUtc
@@ -58,9 +62,9 @@ internal sealed partial class ReportingQueryService
         var ticketFacts = tickets.Select(t => new TicketReportingFact(t.Id, t.DoctorId, t.DoctorPracticeId, t.PatientId,
             t.ReservationId, t.SegmentId, t.VisitTypeId, t.VisitTypeCodeSnapshot, t.SegmentPrioritySnapshot, t.Source,
             t.BusinessDate, t.CheckInTimeUtc, t.LastUpdatedOnUtc <= w.AsOfUtc ? t.Status :
-                t.History.OrderBy(h => h.OccurredOnUtc).ThenBy(h => h.EventType).LastOrDefault(h => h.ToStatus != null)?.ToStatus,
+                ticketHistory[t.Id].OrderBy(h => h.OccurredOnUtc).ThenBy(h => h.EventType).LastOrDefault(h => h.ToStatus != null)?.ToStatus,
             t.PracticeTimeZoneIdSnapshot, t.TicketNumber,
-            t.History.Select(h => new TicketReportingEvent(h.EventType, h.OccurredOnUtc, h.ToStatus, h.ActorApplicationUserId, h.Id)).ToArray()))
+            ticketHistory[t.Id].Select(h => new TicketReportingEvent(h.EventType, h.OccurredOnUtc, h.ToStatus, h.ActorApplicationUserId, h.Id)).ToArray()))
             .Where(t => f.TicketStatus == null || t.Status == f.TicketStatus).ToArray();
         return new(reservationFacts, ticketFacts, reservations.Length - reservationFacts.Length +
             reservationFacts.LongCount(r => r.Status == null) + ticketFacts.LongCount(t => t.Status == null));

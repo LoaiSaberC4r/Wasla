@@ -135,14 +135,16 @@ public sealed class Phase16HardeningTests
         {
             var ct = TestContext.Current.CancellationToken;
             var previous = db.Database.GetMigrations().TakeWhile(m => !m.Contains("Phase16", StringComparison.Ordinal)).Last();
-            // Rehearsal is isolated in the disposable fixture database; never a production connection.
-            await db.GetService<IMigrator>().MigrateAsync(previous, ct);
-            await db.GetService<IMigrator>().MigrateAsync(null, ct);
-            var e = await db.MedicalEncounters.AsNoTracking().SingleAsync(e => e.Id == id, ct);
+            // Rehearse on a fresh legacy copy. The approved archive cutover has no automatic Down path.
+            await SqlLegacyMigrationRehearsal.RunAsync(db, previous, async migrated =>
+            {
+            var legacy = migrated;
+            var e = await legacy.MedicalEncounters.AsNoTracking().SingleAsync(e => e.Id == id, ct);
             Assert.Equal(EncounterVisibility.Hidden, e.Visibility); Assert.Equal(0, e.VisibilityRevision);
             Assert.Equal("Clinical documentation", e.ClinicalNotes);
-            var h = await db.Set<EncounterVisibilityHistory>().SingleAsync(h => h.MedicalEncounterId == id, ct);
+            var h = await legacy.Set<EncounterVisibilityHistory>().SingleAsync(h => h.MedicalEncounterId == id, ct);
             Assert.Equal("LegacyMigration", h.Source); Assert.Null(h.OldVisibility); Assert.Null(h.ActorApplicationUserId);
+            });
         });
         var next = await app.StartAsync(owner, await app.WalkInAsync(reception));
         Assert.Equal("Visible", (await GetAsync(owner, app.EncounterUrl(next.GetProperty("medicalEncounterId").GetGuid()))).GetProperty("visibility").GetString());

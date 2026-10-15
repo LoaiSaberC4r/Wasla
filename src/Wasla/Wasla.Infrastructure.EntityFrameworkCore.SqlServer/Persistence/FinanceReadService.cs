@@ -73,7 +73,7 @@ internal sealed partial class FinanceReadService(
         if (access.IsFailure) return Result<FinancialPaymentDetail>.Fail(access.Errors);
 
         var row = await (from payment in db.Payments.AsNoTracking()
-            join ticket in db.Tickets.AsNoTracking() on payment.TicketId equals ticket.Id
+            join ticket in db.AllTickets.AsNoTracking() on payment.TicketId equals ticket.Id
             join patient in db.Patients.AsNoTracking() on payment.PatientId equals patient.Id
             join doctor in db.Doctors.AsNoTracking() on payment.DoctorId equals doctor.Id
             join practice in db.DoctorPractices.AsNoTracking() on payment.DoctorPracticeId equals practice.Id
@@ -190,7 +190,7 @@ internal sealed partial class FinanceReadService(
     private IQueryable<PaymentReceiptData> PaymentReceiptQuery(
         Guid paymentId, Guid? practiceId, Guid? patientId, bool includeStaff)
         => from payment in db.Payments.AsNoTracking()
-           join ticket in db.Tickets.AsNoTracking() on payment.TicketId equals ticket.Id
+           join ticket in db.AllTickets.AsNoTracking() on payment.TicketId equals ticket.Id
            join patient in db.Patients.AsNoTracking() on payment.PatientId equals patient.Id
            join doctor in db.Doctors.AsNoTracking() on payment.DoctorId equals doctor.Id
            join practice in db.DoctorPractices.AsNoTracking() on payment.DoctorPracticeId equals practice.Id
@@ -207,7 +207,7 @@ internal sealed partial class FinanceReadService(
         Guid refundId, Guid? practiceId, Guid? patientId, bool includeStaff)
         => from refund in db.Refunds.AsNoTracking()
            join payment in db.Payments.AsNoTracking() on refund.PaymentId equals payment.Id
-           join ticket in db.Tickets.AsNoTracking() on refund.TicketId equals ticket.Id
+           join ticket in db.AllTickets.AsNoTracking() on refund.TicketId equals ticket.Id
            join patient in db.Patients.AsNoTracking() on refund.PatientId equals patient.Id
            join doctor in db.Doctors.AsNoTracking() on refund.DoctorId equals doctor.Id
            join practice in db.DoctorPractices.AsNoTracking() on refund.DoctorPracticeId equals practice.Id
@@ -243,7 +243,7 @@ internal sealed partial class FinanceReadService(
             (!filter.Method.HasValue || item.RefundMethod == filter.Method.Value) &&
             (filter.TransactionNumber == null || item.TransactionNumber.Contains(filter.TransactionNumber)));
         var paymentRows = from payment in payments
-            join ticket in db.Tickets.AsNoTracking() on payment.TicketId equals ticket.Id
+            join ticket in db.AllTickets.AsNoTracking() on payment.TicketId equals ticket.Id
             join patient in db.Patients.AsNoTracking() on payment.PatientId equals patient.Id
             join doctor in db.Doctors.AsNoTracking() on payment.DoctorId equals doctor.Id
             join practice in db.DoctorPractices.AsNoTracking() on payment.DoctorPracticeId equals practice.Id
@@ -281,7 +281,7 @@ internal sealed partial class FinanceReadService(
             };
         var refundRows = from refund in refunds
             join payment in db.Payments.AsNoTracking() on refund.PaymentId equals payment.Id
-            join ticket in db.Tickets.AsNoTracking() on refund.TicketId equals ticket.Id
+            join ticket in db.AllTickets.AsNoTracking() on refund.TicketId equals ticket.Id
             join patient in db.Patients.AsNoTracking() on refund.PatientId equals patient.Id
             join doctor in db.Doctors.AsNoTracking() on refund.DoctorId equals doctor.Id
             join practice in db.DoctorPractices.AsNoTracking() on refund.DoctorPracticeId equals practice.Id

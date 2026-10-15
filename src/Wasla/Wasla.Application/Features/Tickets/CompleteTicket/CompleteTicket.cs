@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -51,7 +52,8 @@ internal sealed class CompleteTicketCommandHandler(
     IUnitOfWork<WaslaWritePersistence> unitOfWork,
     ITicketQueueLock queueLock,
     ITicketQueueReader queueReader,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    ArchiveTicketReplay archiveReplay)
     : ICommandHandler<CompleteTicketCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -76,6 +78,11 @@ internal sealed class CompleteTicketCommandHandler(
         }
 
         await queueLock.AcquireIdempotencyAsync(Guid.Empty, "Phase16:Treatment", request.TicketId.ToString("N"), cancellationToken);
+        var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, "CompleteTicket", key.Value, request.Visibility is null or EncounterVisibility.Visible
+                ? TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion)
+                : TicketIdempotency.Fingerprint(request.PracticeId, request.TicketId, request.TicketRowVersion, request.EncounterRowVersion, request.PrescriptionRowVersion, request.LabRequestRowVersion, request.RadiologyRequestRowVersion, request.Visibility), request.PracticeId, cancellationToken);
+        if (archivedReplay != null) return archivedReplay;
+
         var ticket = await unitOfWork.WriteRepository<Ticket>().FirstOrDefaultAsync(
             new TicketByIdForUpdateSpecification(request.TicketId), cancellationToken);
         if (ticket is null || ticket.DoctorPracticeId != request.PracticeId)

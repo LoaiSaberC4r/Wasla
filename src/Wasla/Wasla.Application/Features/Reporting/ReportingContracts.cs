@@ -33,7 +33,7 @@ public sealed record ReportRecord(Guid Id, string ResourceType, Guid? PracticeId
     DateTime RecordedAtUtc, string Reference, string Status, Guid? PatientId = null,
     decimal? Amount = null, string? DetailRoute = null, IReadOnlyList<ReportAction>? AvailableActions = null,
     decimal? MetricValue = null, decimal? MetricDenominator = null, string? ExclusionReasonCode = null, Guid? SourceRecordId = null,
-    IReadOnlyList<Guid>? EvidenceSourceIds = null, Guid? RecordedByApplicationUserId = null);
+    IReadOnlyList<Guid>? EvidenceSourceIds = null, Guid? RecordedByApplicationUserId = null, bool IsArchived = false);
 public sealed record ReportPage<T>(IReadOnlyList<T> Items, long TotalCount, int PageNumber, int PageSize,
     ReportDataStatus DataStatus = ReportDataStatus.Complete, IReadOnlyList<string>? Warnings = null);
 public sealed record ReportModel(string ReportCode, string TitleAr, string TitleEn, string Description,

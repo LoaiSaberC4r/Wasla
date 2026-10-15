@@ -157,6 +157,7 @@ public sealed class Phase12TicketRefundProjectionTests
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.TicketQueueLock")!);
         services.AddScoped(typeof(IFinancialNumberAllocator), persistenceAssembly.GetType(
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.FinancialNumberAllocator")!);
+        Phase12ArchiveTestServices.Add(services);
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
         var detailsHandlerType = typeof(GetTicketDetailsQuery).Assembly.GetType(

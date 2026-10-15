@@ -4,9 +4,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BuildingBlock.Api.ProblemDetails
 {
-    internal sealed class BuildingBlockProblemActionResult : IActionResult
+    // Lets result filters inspect the existing mapped outcome before the writer
+    // starts the response, without duplicating the Error -> ProblemDetails rules.
+    public interface IProblemDetailsErrorResult : IActionResult
+    {
+        IReadOnlyCollection<Error> Errors { get; }
+    }
+
+    internal sealed class BuildingBlockProblemActionResult : IProblemDetailsErrorResult
     {
         private readonly IReadOnlyCollection<Error> _errors;
+        public IReadOnlyCollection<Error> Errors => _errors;
 
         public BuildingBlockProblemActionResult(IEnumerable<Error> errors)
         {

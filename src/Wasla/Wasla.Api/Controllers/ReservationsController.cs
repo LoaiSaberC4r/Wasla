@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.RateLimiting;
+using Wasla.Application.Features.Tickets.Common;
+using Wasla.Application.Features.Archives;
 using Asp.Versioning;
 using BuildingBlock.Api;
 using MediatR;
@@ -56,6 +59,9 @@ public sealed class ReservationsController(ISender sender) : ControllerBase
             .ToIActionResult(cancellationToken);
 
     [HttpGet("mine/{reservationId:guid}")]
+    [Wasla.Api.Security.ArchiveDeniedRequest]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None), EnableRateLimiting("archive-audit")]
+    [ProducesResponseType<ReservationDetailsResponse>(200), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(401), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(403), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(404), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(422), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(429), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(503)]
     public async Task<IActionResult> GetMine(Guid reservationId, CancellationToken cancellationToken)
         => (await sender.Send(new GetMineReservationQuery(reservationId), cancellationToken))
             .ToIActionResult(cancellationToken);
@@ -208,6 +214,9 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
             .ToIActionResult(cancellationToken);
 
     [HttpGet("reservations/{reservationId:guid}")]
+    [Wasla.Api.Security.ArchiveDeniedRequest]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None), EnableRateLimiting("archive-audit")]
+    [ProducesResponseType<ReservationDetailsResponse>(200), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(401), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(403), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(404), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(422), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(429), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(503)]
     public async Task<IActionResult> Get(
         Guid practiceId,
         Guid reservationId,
@@ -300,7 +309,9 @@ public sealed class DoctorReservationsController(ISender sender) : ControllerBas
             .ToIActionResult(cancellationToken);
 
     [HttpGet("{reservationId:guid}")]
-    [Permission(PermissionNames.DoctorPracticeReservationsViewOwn)]
+    [Wasla.Api.Security.ArchiveDeniedRequest]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None), EnableRateLimiting("archive-audit")]
+    [ProducesResponseType<ReservationDetailsResponse>(200), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(401), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(403), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(404), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(422), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(429), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(503)]
     public async Task<IActionResult> Get(Guid practiceId, Guid reservationId, CancellationToken cancellationToken)
         => (await sender.Send(new GetPracticeReservationQuery(
             practiceId, reservationId, true), cancellationToken)).ToIActionResult(cancellationToken);
@@ -357,7 +368,7 @@ public sealed class DoctorReservationsController(ISender sender) : ControllerBas
 [Route("api/v{version:apiVersion}/admin/reservations")]
 [Authorize]
 [Permission(PermissionNames.ReservationsViewAdministrative)]
-public sealed class AdministrativeReservationsController(ISender sender) : ControllerBase
+public sealed class AdministrativeReservationsController(ISender sender, IArchiveLocationResolver archive, IArchiveQueries archives) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List(
@@ -376,9 +387,19 @@ public sealed class AdministrativeReservationsController(ISender sender) : Contr
             pageNumber, pageSize), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpGet("{reservationId:guid}")]
+    [Wasla.Api.Security.ArchiveDeniedRequest]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None), EnableRateLimiting("archive-audit")]
+    [ProducesResponseType<ReservationDetailsResponse>(200), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(401), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(403), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(404), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(422), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(429), ProducesResponseType<Microsoft.AspNetCore.Mvc.ProblemDetails>(503)]
+    [ProducesResponseType<PlatformReservationMetadata>(200)]
     public async Task<IActionResult> Get(Guid reservationId, CancellationToken cancellationToken)
-        => (await sender.Send(new GetAdministrativeReservationQuery(reservationId), cancellationToken))
-            .ToIActionResult(cancellationToken);
+    {
+        var location = await archive.ReservationAsync(reservationId, cancellationToken);
+        if (location?.IsArchived == true) return (await archives.PlatformReservationAsync(reservationId, cancellationToken)).ToIActionResult(cancellationToken);
+        var result = await sender.Send(new GetAdministrativeReservationQuery(reservationId), cancellationToken);
+        if ((await archive.ReservationAsync(reservationId, cancellationToken))?.IsArchived == true)
+            return (await archives.PlatformReservationAsync(reservationId, cancellationToken)).ToIActionResult(cancellationToken);
+        return result.ToIActionResult(cancellationToken);
+    }
 }
 
 public sealed record CreateReservationRequest(

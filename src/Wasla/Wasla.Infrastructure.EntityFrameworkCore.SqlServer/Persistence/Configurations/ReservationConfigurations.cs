@@ -1,3 +1,4 @@
+using Wasla.Domain.Archives;
 using BuildingBlock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,6 +24,7 @@ internal sealed class ReservationConfiguration : IWriteEntityConfiguration<Reser
         });
         builder.HasOne<FollowUpEligibility>().WithMany().HasForeignKey(item => item.FollowUpEligibilityId).OnDelete(DeleteBehavior.Restrict);
         builder.HasKey(item => item.Id);
+        builder.HasOne<ReservationRegistry>().WithOne().HasForeignKey<Reservation>(item => item.Id).OnDelete(DeleteBehavior.Restrict);
         builder.Property(item => item.ReservationReference).HasMaxLength(32).IsRequired();
         builder.Property(item => item.BookedOnBehalfRelationshipSnapshot).HasMaxLength(100);
         builder.Property(item => item.ScheduledStartUtc).HasColumnType("datetime2(3)").IsRequired();
@@ -103,7 +105,7 @@ internal sealed class ReservationIdempotencyRecordConfiguration
         builder.Property(item => item.ResultReference).HasMaxLength(32);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.ActorApplicationUserId)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Reservation>().WithMany().HasForeignKey(item => item.ReservationId)
+        builder.HasOne<ReservationRegistry>().WithMany().HasForeignKey(item => item.ReservationId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(item => new { item.ActorApplicationUserId, item.Operation, item.IdempotencyKey })
             .IsUnique()

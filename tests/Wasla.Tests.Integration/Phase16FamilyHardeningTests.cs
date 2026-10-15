@@ -55,13 +55,14 @@ public sealed class Phase16FamilyHardeningTests
         await using var f = await Phase16FamilyFixture.CreateAsync(true, false);
         await f.App.WithDbAsync(async db => {
             var patients = await db.Patients.OrderBy(p => p.Id).Select(p => new { p.Id, p.NameAr, p.DateOfBirth }).ToArrayAsync();
-            var migrator = db.GetService<IMigrator>();
-            await migrator.MigrateAsync("20261012103620_Phase16MedicalRecordAudits", TestContext.Current.CancellationToken);
-            await migrator.MigrateAsync(null, TestContext.Current.CancellationToken);
-            var reviews = await db.Set<FamilyMedicalEligibilityReview>().AsNoTracking().ToArrayAsync(); Assert.Equal(4, reviews.Length);
-            Assert.All(reviews, r => Assert.Equal(FamilyMedicalEligibilityStatus.PendingReview, r.Status));
-            Assert.Empty(await db.Set<FamilyMedicalAccessRestriction>().ToArrayAsync());
-            Assert.Equal(patients, await db.Patients.OrderBy(p => p.Id).Select(p => new { p.Id, p.NameAr, p.DateOfBirth }).ToArrayAsync());
+            // Start from a fresh legacy schema rather than reversing the non-reversible archive cutover.
+            await SqlLegacyMigrationRehearsal.RunAsync(db, "20261012103620_Phase16MedicalRecordAudits", async migrated =>
+            {
+                var reviews = await migrated.Set<FamilyMedicalEligibilityReview>().AsNoTracking().ToArrayAsync(); Assert.Equal(4, reviews.Length);
+                Assert.All(reviews, r => Assert.Equal(FamilyMedicalEligibilityStatus.PendingReview, r.Status));
+                Assert.Empty(await migrated.Set<FamilyMedicalAccessRestriction>().ToArrayAsync());
+                Assert.Equal(patients, await migrated.Patients.OrderBy(p => p.Id).Select(p => new { p.Id, p.NameAr, p.DateOfBirth }).ToArrayAsync());
+            });
             var type = typeof(Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.WaslaDbContext).Assembly.GetType("Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.WaslaSecuritySeeder")!;
             var counts = (await db.Permissions.CountAsync(), await db.RolePermissions.CountAsync());
             await using var scope = f.App.Services.CreateAsyncScope(); var seeder = scope.ServiceProvider.GetRequiredService(type);

@@ -669,6 +669,9 @@ internal static class ReceptionPermissionCatalog
     {
         var (nameAr, nameEn) = permission.Name switch
         {
+            Phase18PartTwoPermissionNames.TicketsAssigned => ("عرض تذاكر الأرشيف للعيادات المعينة", "View assigned archived tickets"),
+            Phase18PartTwoPermissionNames.ReservationsAssigned => ("عرض حجوزات الأرشيف للعيادات المعينة", "View assigned archived reservations"),
+            Phase18PartTwoPermissionNames.AuditOwnActivity => ("عرض سجل النشاط الشخصي", "View own assigned activity audit"),
             Phase18PermissionNames.ReceptionDashboard => ("عرض لوحة الاستقبال للعيادات المعينة", "View assigned Reception dashboard"),
             Phase18PermissionNames.ReceptionReports => ("عرض تقارير التشغيل للعيادات المعينة", "View assigned operational reports"),
             Phase18PermissionNames.ReceptionExport => ("تصدير تقارير التشغيل للعيادات المعينة", "Export assigned operational reports"),
