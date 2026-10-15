@@ -1,5 +1,10 @@
 # Phase 16 implementation and verification report
 
+Historical report for the initial 2026-10-12 implementation. Its inactive-family
+status and default flags are superseded by the Family implementation and
+[2026-10-15 final closure report](PHASE-16-CLOSURE-REPORT.md). Verification counts
+below describe that historical run, not the current checkout.
+
 Status: **backend implemented for the 23 non-family routes; sharing release gated;
 6 family routes inactive/policy blocked. Phase 16 is NOT marked DONE.**
 

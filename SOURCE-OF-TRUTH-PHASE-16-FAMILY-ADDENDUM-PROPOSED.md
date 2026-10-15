@@ -1,5 +1,9 @@
 # Proposed Phase 16 family addendum — formal adoption pending
 
+The [final closure report](PHASE-16-CLOSURE-REPORT.md) records verification and
+base Guardian flag enablement. Production/Staging remain disabled and base
+policy remains unapproved; the final sentence below describes original defaults.
+
 Product decisions 01–28 in the supplied Family Medical Access task v1.0 are
 approved by the user. This document records implementation intent, not legal
 consent, Master adoption or production authorization.

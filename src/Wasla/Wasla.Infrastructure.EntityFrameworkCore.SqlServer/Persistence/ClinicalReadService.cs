@@ -69,7 +69,7 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
         var lab = labId is { } l ? await diagnostics.RequestAsync(DiagnosticKind.Lab, l, doctorId, false, [], ct) : null;
         var radio = radioId is { } r ? await diagnostics.RequestAsync(DiagnosticKind.Radiology, r, doctorId, false, [], ct) : null;
         return new(row.Id, row.TicketId, row.Doctor, row.Practice, row.Patient, row.Status, row.StartedAtUtc, row.CompletedAtUtc,
-            row.ClinicalNotes, await DiagnosesAsync(row.Id, ct), await SourceEligibilityAsync(row.Id, row.Patient.Id, ct),
+            row.ClinicalNotes, await DiagnosesAsync(row.Id, true, ct), await SourceEligibilityAsync(row.Id, row.Patient.Id, ct),
             new(false, false, false, false, false), Convert.ToBase64String(row.RowVersion), prescription, blockers, lab, radio, labPage.Items, radioPage.Items, row.Visibility, row.VisibilityRevision);
     }
 
@@ -84,12 +84,13 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
                 Doctor = new ClinicalPartyResponse(doctor.Id, doctor.NameAr, doctor.NameEn),
                 Practice = new ClinicalPartyResponse(practice.Id, practice.NameAr, practice.NameEn) }).SingleOrDefaultAsync(ct);
         return row is null ? null : new(row.Id, row.TicketId, row.Doctor, row.Practice, row.StartedAtUtc,
-            row.CompletedAtUtc!.Value, await DiagnosesAsync(row.Id, ct), await SourceEligibilityAsync(row.Id, patientId, ct));
+            row.CompletedAtUtc!.Value, await DiagnosesAsync(row.Id, false, ct), await SourceEligibilityAsync(row.Id, patientId, ct));
     }
 
-    private async Task<IReadOnlyList<DiagnosisResponse>> DiagnosesAsync(Guid id, CancellationToken ct)
+    private async Task<IReadOnlyList<DiagnosisResponse>> DiagnosesAsync(Guid id, bool includePrivateNotes, CancellationToken ct)
         => await db.Diagnoses.AsNoTracking().Where(d => d.MedicalEncounterId == id && !d.IsVoided).OrderBy(d => d.Type).ThenBy(d => d.Id)
-            .Select(d => new DiagnosisResponse(d.Id, d.Type, d.DisplayText, d.Notes)).ToArrayAsync(ct);
+            // Retain the nullable contract field; patient reads never select its private value.
+            .Select(d => new DiagnosisResponse(d.Id, d.Type, d.DisplayText, includePrivateNotes ? d.Notes : null)).ToArrayAsync(ct);
     private async Task<FollowUpEligibilityResponse?> SourceEligibilityAsync(Guid encounterId, Guid patientId, CancellationToken ct)
     {
         var id = await db.FollowUpEligibilities.AsNoTracking().Where(e => e.SourceMedicalEncounterId == encounterId)

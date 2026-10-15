@@ -2,8 +2,10 @@
 
 Local backend implementation; **production sharing is not approved**. The full
 master v1.2 is not checked in. Read the proposed addendum and rollout gates.
-The 23 non-family routes have working handlers; shared routes default OFF. The
-six family routes are deliberately inactive until their exact policy is approved.
+All 29 routes have working handlers. Both sharing flags are true in base configuration;
+Production and Staging disable both. Guardian routes additionally require approved
+policy configuration and current reviewed eligibility; base policy fails closed.
+See [final closure](PHASE-16-CLOSURE-REPORT.md) for current verification.
 
 All routes use API version 1, authenticated actors, current DB permissions and
 server-derived subjects. No self route accepts PatientId. Every treating route
@@ -42,12 +44,12 @@ of resource existence. Gated does not mean approved for production.
 | P16-21 | GET | `/api/v1/doctors/me/medical-record-access-requests/{requestId}/history` | `HiddenEncounterAccessRequests.ViewHistoryOwn` | Request history | **GATED (implemented)** |
 | P16-22 | PATCH | `/api/v1/doctors/me/practices/{practiceId}/encounters/{encounterId}/visibility` | `MedicalEncounterVisibility.UpdateOwn` | Visibility | **IMPLEMENTED** |
 | P16-23 | GET | `/api/v1/doctors/me/practices/{practiceId}/encounters/{encounterId}/visibility/history` | `MedicalEncounterVisibility.ViewHistoryOwn` | Visibility-history page | **IMPLEMENTED** |
-| P16-24 | GET | `/api/v1/families/mine/medical-record-dependents` | `MedicalRecords.ViewDependent` | Unavailable until policy approval | **GATED / BLOCKED (inactive)** |
-| P16-25 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/overview` | `MedicalRecords.ViewDependent` | Overview | **GATED / BLOCKED (inactive)** |
-| P16-26 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/timeline` | `MedicalRecords.ViewDependent` | Timeline page | **GATED / BLOCKED (inactive)** |
-| P16-27 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/encounters/{encounterId}` | `MedicalRecords.ViewDependent` | Encounter details | **GATED / BLOCKED (inactive)** |
-| P16-28 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/items/{resourceType}/{sourceId}` | `MedicalRecords.ViewDependent` | Item details | **GATED / BLOCKED (inactive)** |
-| P16-29 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/items/{resourceType}/{sourceId}/attachments/{attachmentId}/content` | `MedicalRecords.ViewDependent` | Private bytes | **GATED / BLOCKED (inactive)** |
+| P16-24 | GET | `/api/v1/families/mine/medical-record-dependents` | `MedicalRecords.ViewDependent` | Eligible dependent page | **GATED (implemented)** |
+| P16-25 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/overview` | `MedicalRecords.ViewDependent` | Overview | **GATED (implemented)** |
+| P16-26 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/timeline` | `MedicalRecords.ViewDependent` | Timeline page | **GATED (implemented)** |
+| P16-27 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/encounters/{encounterId}` | `MedicalRecords.ViewDependent` | Encounter details | **GATED (implemented)** |
+| P16-28 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/items/{resourceType}/{sourceId}` | `MedicalRecords.ViewDependent` | Item details | **GATED (implemented)** |
+| P16-29 | GET | `/api/v1/families/mine/dependents/{dependentPatientId}/medical-record/items/{resourceType}/{sourceId}/attachments/{attachmentId}/content` | `MedicalRecords.ViewDependent` | Private bytes | **GATED (implemented)** |
 
 | Extension | Existing route | Additive behavior | Status |
 |---|---|---|---|
@@ -58,7 +60,7 @@ of resource existence. Gated does not mean approved for production.
 Permissions are appended to PermissionNames.All to preserve position-derived
 IDs. Doctor receives ViewTreatingPatient, both visibility permissions and all six
 request permissions. Patient receives ViewOwn, ViewOwnAccessLog and ViewDependent
-(the latter confers no access while the guardian implementation is inactive).
+(ViewDependent additionally requires approved policy, relationship and eligibility).
 Reception/SuperAdmin/catalog roles receive none of these permissions by default.
 The existing seed is repeatable. Ownership/relationship checks still apply to
 explicit permission grants; permissions or GUIDs alone never grant clinical access.
@@ -165,6 +167,22 @@ detail and attachment metadata come from items. Current diagnoses contain no
 Notes. Own Hidden encounters are visible to the verified patient; treating
 Hidden details require the exact effective approved grant (or source ownership).
 The original owner's private consultation APIs remain available for own work.
+
+Privacy correction to the existing `/api/v1/encounters/mine/{encounterId}` DTO:
+`currentActiveDiagnoses[].notes` now returns null (or is omitted by null-value
+serialization). Diagnosis IDs, types, display text and the response shape are
+preserved. The owning Doctor's `diagnoses[].notes` remains private and populated.
+The Phase 16 patient, treating-Doctor and dependent DTOs have no Notes field.
+
+Dependent reads use the same patient-safe completed outputs, including Hidden
+encounters; the separate Doctor-to-Doctor request workflow does not approve
+Guardian access. P16-24 returns `{items:[{patientId,nameAr,nameEn,medicalAccess}],
+nextCursor:null,hasMore:false}` for currently eligible children only. Permission,
+verified relationship in the same active Family, an Approved eligibility tied to
+the current memberships/policy/basis, no restriction, and age under 16 must all
+hold. No eligibility or an ineligible child is omitted from P16-24; direct reads
+return `404 MedicalRecord.Unavailable`. An unavailable policy or permission denies
+P16-24 itself. All clinical reads and downloads revalidate these requirements.
 
 ```json
 {"resourceType":"lab-result","sourceId":"00000000-0000-0000-0000-000000000006","encounterId":"00000000-0000-0000-0000-000000000002","status":"Official","currentVersion":1,
@@ -281,7 +299,7 @@ payload. Retention and expanded patient disclosure policy remain governance gate
 | D hidden request | 08 date-only token → 14 required reason → poll 13 → Approved navigation ID → 09/10/11 | 422 blank reason; 409 duplicate; stale token/ended treatment 404; Rejected/Revoked/Expired terminal CTA disabled. |
 | E global owner inbox | 15 badge → 16 list → 17 detail → 18/19 → 20 → 21 | Backend capabilities; no practice switching; fresh version refetch after 409; late approval 409 Expired. |
 | F owner visibility | EXT-03 list → EXT-02 detail; EXT-01 chosen Hidden completion; 22 toggle → 23 history | Atomic completion; stale version 409; completed owner/practice only; subsequent shared reads reauthorize. |
-| G guardian | Existing families listing → 24 → future 25–29 | GATED/BLOCKED: deterministic safe 404 until exact policy adoption; do not expose a child record or interpret booking permission as medical permission. |
+| G guardian | Existing families listing/capabilities → 24 → 25–29 | Current configured approved policy, reviewed eligibility, verified relationship and age under 16 required. Restriction/revocation/birthday immediately blocks new reads and downloads. Restoration only removes restriction. |
 
 No foreign drill-down uses an original owner-only Rx/Lab/Radiology API. After
 mutations, current status/capabilities/rowversion are returned without an extra
