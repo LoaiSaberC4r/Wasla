@@ -1,356 +1,547 @@
-[
-  {
-    "run": "phase5-final-closure-baseline",
-    "file": "TestResults/phase5-final-closure-baseline/p_NTX-DEV-01_2026-10-18_16_22_48_net10.0.trx",
-    "counts": {
-      "total": "270",
-      "executed": "270",
-      "passed": "270",
-      "failed": "0",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "branch": "codex/phase5-final-closure",
+  "mainBaseline": "17c9e0b96af87de0143ca4ac4978bc970ca6f9dd",
+  "implementationCommit": "0a396d6193ba76d0fa757ba695a2c07667c7d2a3",
+  "ciCorrectionCommit": "bea8b0aa62012578d7020dc447d9935899efbfd5",
+  "notes": [
+    "No SQL fixture tests were skipped in final acceptance runs.",
+    "The first baseline run was interrupted; completed native baseline is phase5-final-closure-baseline-sql.",
+    "The final-solution run predates the last self-registration soft-duplicate audit addition. The final focused run revalidates all Phase5 integration tests against that addition.",
+    "BuildingBlock baseline failures are separate from Wasla product tests; five approved public API baseline pairs remain absent."
+  ],
+  "remoteCi": [
+    {
+      "id": 39139538569,
+      "url": "https://github.com/LoaiSaberC4r/Wasla/actions/runs/39139538569",
+      "commit": "0a396d6193ba76d0fa757ba695a2c07667c7d2a3",
+      "conclusion": "failure",
+      "unitPassed": 290,
+      "integrationPassed": 241,
+      "integrationFailed": 1,
+      "integrationSkipped": 0,
+      "sqlConcurrencyStep": "not executed after integration failure",
+      "architectureStep": "not executed after integration failure",
+      "cause": "Phase16SharingActivationTests used the unconfigured base host for the approving doctor; corrected test explicitly proves that host still fails closed."
     },
-    "failedTests": []
-  },
-  {
-    "run": "phase5-final-closure-baseline",
-    "file": "TestResults/phase5-final-closure-baseline/p_NTX-DEV-01_2026-10-18_16_22_52_net10.0.trx",
-    "counts": {
-      "total": "21",
-      "executed": "21",
-      "passed": "21",
-      "failed": "0",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "id": 39154768257,
+      "url": "https://github.com/LoaiSaberC4r/Wasla/actions/runs/39154768257",
+      "commit": "bea8b0aa62012578d7020dc447d9935899efbfd5",
+      "conclusion": "in_progress"
+    }
+  ],
+  "runs": [
+    {
+      "run": "phase5-final-closure-baseline",
+      "file": "TestResults/phase5-final-closure-baseline/p_NTX-DEV-01_2026-10-18_16_22_48_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 270,
+        "executed": 270,
+        "passed": 270,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": []
-  },
-  {
-    "run": "phase5-final-closure-baseline",
-    "file": "TestResults/phase5-final-closure-baseline/p_NTX-DEV-01_2026-10-18_16_22_55_net10.0.trx",
-    "counts": {
-      "total": "260",
-      "executed": "168",
-      "passed": "167",
-      "failed": "1",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-final-closure-baseline",
+      "file": "TestResults/phase5-final-closure-baseline/p_NTX-DEV-01_2026-10-18_16_22_52_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 21,
+        "executed": 21,
+        "passed": 21,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": [
-      "Wasla.Tests.Integration.Phase18PatientDashboardApiTests.Dashboard_composes_self_handlers_and_disabled_guardian_access_is_unavailable(sql: False)"
-    ]
-  },
-  {
-    "run": "phase5-final-closure-baseline-sql",
-    "file": "TestResults/phase5-final-closure-baseline-sql/p_NTX-DEV-01_2026-10-18_16_31_18_net10.0.trx",
-    "counts": {
-      "total": "260",
-      "executed": "260",
-      "passed": "258",
-      "failed": "2",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-final-closure-baseline",
+      "file": "TestResults/phase5-final-closure-baseline/p_NTX-DEV-01_2026-10-18_16_22_55_net10.0.trx",
+      "outcome": "Failed",
+      "counts": {
+        "total": 260,
+        "executed": 168,
+        "passed": 167,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": [
+        {
+          "name": "Wasla.Tests.Integration.Phase18PatientDashboardApiTests.Dashboard_composes_self_handlers_and_disabled_guardian_access_is_unavailable(sql: False)",
+          "message": "Assert.False() Failure\r\nExpected: False\r\nActual:   True"
+        }
+      ]
     },
-    "failedTests": [
-      "Wasla.Tests.Integration.Phase18PatientDashboardApiTests.Dashboard_composes_self_handlers_and_disabled_guardian_access_is_unavailable(sql: False)",
-      "Wasla.Tests.Integration.Phase18PatientDashboardApiTests.Dashboard_composes_self_handlers_and_disabled_guardian_access_is_unavailable(sql: True)"
-    ]
-  },
-  {
-    "run": "phase5-buildingblock-baseline",
-    "file": "TestResults/phase5-buildingblock-baseline/p_NTX-DEV-01_2026-10-18_17_24_13_net10.0.trx",
-    "counts": {
-      "total": "323",
-      "executed": "323",
-      "passed": "316",
-      "failed": "7",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-final-closure-baseline-sql",
+      "file": "TestResults/phase5-final-closure-baseline-sql/p_NTX-DEV-01_2026-10-18_16_31_18_net10.0.trx",
+      "outcome": "Failed",
+      "counts": {
+        "total": 260,
+        "executed": 260,
+        "passed": 258,
+        "failed": 2,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": [
+        {
+          "name": "Wasla.Tests.Integration.Phase18PatientDashboardApiTests.Dashboard_composes_self_handlers_and_disabled_guardian_access_is_unavailable(sql: False)",
+          "message": "Assert.False() Failure\r\nExpected: False\r\nActual:   True"
+        },
+        {
+          "name": "Wasla.Tests.Integration.Phase18PatientDashboardApiTests.Dashboard_composes_self_handlers_and_disabled_guardian_access_is_unavailable(sql: True)",
+          "message": "Assert.False() Failure\r\nExpected: False\r\nActual:   True"
+        }
+      ]
     },
-    "failedTests": [
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Application\", assembly: BuildingBlock.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Api\", assembly: BuildingBlock.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.GlobalQueryFilterTests.BuildingBlock_source_does_not_call_unrestricted_ignore_query_filters",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure.EntityFrameworkCore.S\"\u00b7\u00b7\u00b7, assembly: BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.Phase1FoundationTests.Global_json_pins_a_stable_dotnet10_feature_band_to_patch_roll_forward",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Domain\", assembly: BuildingBlock.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure\", assembly: BuildingBlock.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)"
-    ]
-  },
-  {
-    "run": "phase5-buildingblock",
-    "file": "TestResults/phase5-buildingblock/p_NTX-DEV-01_2026-10-18_17_22_34_net10.0.trx",
-    "counts": {
-      "total": "323",
-      "executed": "323",
-      "passed": "315",
-      "failed": "8",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-buildingblock-baseline",
+      "file": "TestResults/phase5-buildingblock-baseline/p_NTX-DEV-01_2026-10-18_17_24_13_net10.0.trx",
+      "outcome": "Failed",
+      "counts": {
+        "total": 323,
+        "executed": 323,
+        "passed": 316,
+        "failed": 7,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": [
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Application\", assembly: BuildingBlock.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'C:\\Users\\p\\AppData\\Local\\Temp\\WaslaPhase5Baseline_ff13320d88e74168bba990123bfe7a16\\BuildingBlock.Application\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Api\", assembly: BuildingBlock.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'C:\\Users\\p\\AppData\\Local\\Temp\\WaslaPhase5Baseline_ff13320d88e74168bba990123bfe7a16\\BuildingBlock.Api\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.GlobalQueryFilterTests.BuildingBlock_source_does_not_call_unrestricted_ignore_query_filters",
+          "message": "Assert.Empty() Failure: Collection was not empty\r\nCollection: [\"tests\\\\Wasla.Tests.Integration\\\\DoctorOnboardingPe\"···, \"tests\\\\Wasla.Tests.Integration\\\\DoctorOnboardingPe\"···, \"tests\\\\Wasla.Tests.Integration\\\\TrustAccessApiTest\"···, \"src\\\\Wasla\\\\Wasla.Infrastructure.EntityFrameworkCo\"···, \"src\\\\Wasla\\\\Wasla.Infrastructure.EntityFrameworkCo\"···, ···]"
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure.EntityFrameworkCore.S\"···, assembly: BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'C:\\Users\\p\\AppData\\Local\\Temp\\WaslaPhase5Baseline_ff13320d88e74168bba990123bfe7a16\\BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase1FoundationTests.Global_json_pins_a_stable_dotnet10_feature_band_to_patch_roll_forward",
+          "message": "Assert.Equal() Failure: Strings differ\r\n                 ↓ (pos 6)\r\nExpected: \"latestPatch\"\r\nActual:   \"latestFeature\"\r\n                 ↑ (pos 6)"
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Domain\", assembly: BuildingBlock.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'C:\\Users\\p\\AppData\\Local\\Temp\\WaslaPhase5Baseline_ff13320d88e74168bba990123bfe7a16\\BuildingBlock.Domain\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure\", assembly: BuildingBlock.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'C:\\Users\\p\\AppData\\Local\\Temp\\WaslaPhase5Baseline_ff13320d88e74168bba990123bfe7a16\\BuildingBlock.Infrastructure\\PublicAPI.Shipped.txt'."
+        }
+      ]
     },
-    "failedTests": [
-      "BuildingBlock.Tests.Phase1FoundationTests.Global_json_pins_a_stable_dotnet10_feature_band_to_patch_roll_forward",
-      "BuildingBlock.Tests.Phase1FoundationTests.Project_metadata_preserves_layer_boundaries_and_contains_no_reference_cycles",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure\", assembly: BuildingBlock.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Application\", assembly: BuildingBlock.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure.EntityFrameworkCore.S\"\u00b7\u00b7\u00b7, assembly: BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Domain\", assembly: BuildingBlock.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
-      "BuildingBlock.Tests.GlobalQueryFilterTests.BuildingBlock_source_does_not_call_unrestricted_ignore_query_filters",
-      "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Api\", assembly: BuildingBlock.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)"
-    ]
-  },
-  {
-    "run": "phase5-focused-complete",
-    "file": "TestResults/phase5-focused-complete/p_NTX-DEV-01_2026-10-18_17_20_01_net10.0.trx",
-    "counts": {
-      "total": "14",
-      "executed": "14",
-      "passed": "14",
-      "failed": "0",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-buildingblock",
+      "file": "TestResults/phase5-buildingblock/p_NTX-DEV-01_2026-10-18_17_22_34_net10.0.trx",
+      "outcome": "Failed",
+      "counts": {
+        "total": 323,
+        "executed": 323,
+        "passed": 315,
+        "failed": 8,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": [
+        {
+          "name": "BuildingBlock.Tests.Phase1FoundationTests.Global_json_pins_a_stable_dotnet10_feature_band_to_patch_roll_forward",
+          "message": "Assert.Equal() Failure: Strings differ\r\n                 ↓ (pos 6)\r\nExpected: \"latestPatch\"\r\nActual:   \"latestFeature\"\r\n                 ↑ (pos 6)"
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase1FoundationTests.Project_metadata_preserves_layer_boundaries_and_contains_no_reference_cycles",
+          "message": "System.InvalidOperationException : Sequence contains more than one matching element"
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure\", assembly: BuildingBlock.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'E:\\Wasla\\BuildingBlock.Infrastructure\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Application\", assembly: BuildingBlock.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'E:\\Wasla\\BuildingBlock.Application\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure.EntityFrameworkCore.S\"···, assembly: BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'E:\\Wasla\\BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Domain\", assembly: BuildingBlock.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'E:\\Wasla\\BuildingBlock.Domain\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.GlobalQueryFilterTests.BuildingBlock_source_does_not_call_unrestricted_ignore_query_filters",
+          "message": "Assert.Empty() Failure: Collection was not empty\r\nCollection: [\"tests\\\\Wasla.Tests.Integration\\\\DoctorOnboardingPe\"···, \"tests\\\\Wasla.Tests.Integration\\\\DoctorOnboardingPe\"···, \"tests\\\\Wasla.Tests.Integration\\\\TrustAccessApiTest\"···, \"src\\\\Wasla\\\\Wasla.Infrastructure.EntityFrameworkCo\"···, \"src\\\\Wasla\\\\Wasla.Infrastructure.EntityFrameworkCo\"···, ···]"
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Api\", assembly: BuildingBlock.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.DirectoryNotFoundException : Could not find a part of the path 'E:\\Wasla\\BuildingBlock.Api\\PublicAPI.Shipped.txt'."
+        }
+      ]
     },
-    "failedTests": []
-  },
-  {
-    "run": "phase5-contract-guardian-regression",
-    "file": "TestResults/phase5-contract-guardian-regression/p_NTX-DEV-01_2026-10-18_17_29_44_net10.0.trx",
-    "counts": {
-      "total": "54",
-      "executed": "54",
-      "passed": "53",
-      "failed": "1",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-final-solution",
+      "file": "TestResults/phase5-final-solution/p_NTX-DEV-01_2026-10-18_18_04_25_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 23,
+        "executed": 23,
+        "passed": 23,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": [
-      "Wasla.Tests.Integration.Phase5FinalContractTests.Swagger_publishes_exact_twenty_routes_and_purpose_and_header_contracts"
-    ]
-  },
-  {
-    "run": "phase5-final-focused",
-    "file": "TestResults/phase5-final-focused/p_NTX-DEV-01_2026-10-18_17_36_21_net10.0.trx",
-    "counts": {
-      "total": "27",
-      "executed": "27",
-      "passed": "26",
-      "failed": "1",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-final-solution",
+      "file": "TestResults/phase5-final-solution/p_NTX-DEV-01_2026-10-18_18_04_26_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 290,
+        "executed": 290,
+        "passed": 290,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": [
-      "Wasla.Tests.Integration.Phase12WalkInPaymentTests.Walk_in_and_reservation_check_in_persist_numbered_EGP_payments_with_tickets"
-    ]
-  },
-  {
-    "run": "phase5-payment-verified",
-    "file": "TestResults/phase5-payment-verified/p_NTX-DEV-01_2026-10-18_17_40_04_net10.0.trx",
-    "counts": {
-      "total": "1",
-      "executed": "1",
-      "passed": "1",
-      "failed": "0",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-final-solution",
+      "file": "TestResults/phase5-final-solution/p_NTX-DEV-01_2026-10-18_18_04_45_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 281,
+        "executed": 281,
+        "passed": 281,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": []
-  },
-  {
-    "run": "phase5-final-unit",
-    "file": "TestResults/phase5-final-unit/p_NTX-DEV-01_2026-10-18_16_56_06_net10.0.trx",
-    "counts": {
-      "total": "290",
-      "executed": "290",
-      "passed": "288",
-      "failed": "2",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-closure-final-unit",
+      "file": "TestResults/phase5-closure-final-unit/p_NTX-DEV-01_2026-10-18_21_29_21_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 290,
+        "executed": 290,
+        "passed": 290,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": [
-      "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Restricted_permission_has_no_default_or_delegation_and_existing_prefix_order_is_preserved",
-      "Wasla.Tests.Unit.Phase18ReportingFoundationTests.New_permissions_are_appended_and_private_finance_is_never_assignment_scoped"
-    ]
-  },
-  {
-    "run": "phase5-final-unit",
-    "file": "TestResults/phase5-final-unit/p_NTX-DEV-01_2026-10-18_17_06_40_net10.0.trx",
-    "counts": {
-      "total": "290",
-      "executed": "290",
-      "passed": "288",
-      "failed": "2",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-closure-final-architecture",
+      "file": "TestResults/phase5-closure-final-architecture/p_NTX-DEV-01_2026-10-18_21_29_42_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 23,
+        "executed": 23,
+        "passed": 23,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": [
-      "Wasla.Tests.Unit.Phase5PersistenceContractTests.Model_EnforcesIdentityAndFamilyCardinalityWithoutUniquePhone",
-      "Wasla.Tests.Unit.Phase5FinalIdentityApplicationTests.New_mutations_require_uuid_idempotency_keys"
-    ]
-  },
-  {
-    "run": "phase5-final-unit",
-    "file": "TestResults/phase5-final-unit/p_NTX-DEV-01_2026-10-18_17_44_47_net10.0.trx",
-    "counts": {
-      "total": "290",
-      "executed": "290",
-      "passed": "290",
-      "failed": "0",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-closure-final-focused",
+      "file": "TestResults/phase5-closure-final-focused/p_NTX-DEV-01_2026-10-18_21_29_50_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 21,
+        "executed": 21,
+        "passed": 21,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
     },
-    "failedTests": []
-  },
-  {
-    "run": "phase5-final-architecture",
-    "file": "TestResults/phase5-final-architecture/p_NTX-DEV-01_2026-10-18_17_45_14_net10.0.trx",
-    "counts": {
-      "total": "23",
-      "executed": "23",
-      "passed": "23",
-      "failed": "0",
-      "error": "0",
-      "timeout": "0",
-      "aborted": "0",
-      "inconclusive": "0",
-      "passedButRunAborted": "0",
-      "notRunnable": "0",
-      "notExecuted": "0",
-      "disconnected": "0",
-      "warning": "0",
-      "completed": "0",
-      "inProgress": "0",
-      "pending": "0"
+    {
+      "run": "phase5-closure-foundation",
+      "file": "TestResults/phase5-closure-foundation/p_NTX-DEV-01_2026-10-18_21_31_55_net10.0.trx",
+      "outcome": "Failed",
+      "counts": {
+        "total": 323,
+        "executed": 323,
+        "passed": 318,
+        "failed": 5,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": [
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure.EntityFrameworkCore.S\"···, assembly: BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.FileNotFoundException : Could not find file 'E:\\Wasla\\src\\BuildingBlock\\BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Domain\", assembly: BuildingBlock.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.FileNotFoundException : Could not find file 'E:\\Wasla\\src\\BuildingBlock\\BuildingBlock.Domain\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Application\", assembly: BuildingBlock.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.FileNotFoundException : Could not find file 'E:\\Wasla\\src\\BuildingBlock\\BuildingBlock.Application\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Api\", assembly: BuildingBlock.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.FileNotFoundException : Could not find file 'E:\\Wasla\\src\\BuildingBlock\\BuildingBlock.Api\\PublicAPI.Shipped.txt'."
+        },
+        {
+          "name": "BuildingBlock.Tests.Phase5PublicApiBaselineTests.Shipped_baseline_covers_exported_types_and_members(projectName: \"BuildingBlock.Infrastructure\", assembly: BuildingBlock.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null)",
+          "message": "System.IO.FileNotFoundException : Could not find file 'E:\\Wasla\\src\\BuildingBlock\\BuildingBlock.Infrastructure\\PublicAPI.Shipped.txt'."
+        }
+      ]
     },
-    "failedTests": []
-  }
-]
+    {
+      "run": "phase5-ci-sharing-fix",
+      "file": "TestResults/phase5-ci-sharing-fix/p_NTX-DEV-01_2026-10-18_21_33_17_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 7,
+        "executed": 7,
+        "passed": 7,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
+    },
+    {
+      "run": "phase5-final-boundaries",
+      "file": "TestResults/phase5-final-boundaries/p_NTX-DEV-01_2026-10-18_21_40_38_net10.0.trx",
+      "outcome": "Failed",
+      "counts": {
+        "total": 3,
+        "executed": 3,
+        "passed": 2,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": [
+        {
+          "name": "Wasla.Tests.Integration.Phase5FinalBoundaryTests.Minor_claim_requires_basic_and_manual_review_and_claim_attestation_is_email_and_expiry_bound",
+          "message": "Assert.Equal() Failure: Values differ\r\nExpected: UnprocessableEntity\r\nActual:   BadRequest"
+        }
+      ]
+    },
+    {
+      "run": "phase5-final-boundaries-verified",
+      "file": "TestResults/phase5-final-boundaries-verified/p_NTX-DEV-01_2026-10-18_21_41_40_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
+    },
+    {
+      "run": "phase5-final-acceptance",
+      "file": "TestResults/phase5-final-acceptance/p_NTX-DEV-01_2026-10-18_21_42_51_net10.0.trx",
+      "outcome": "Completed",
+      "counts": {
+        "total": 24,
+        "executed": 24,
+        "passed": 24,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failedTests": []
+    }
+  ]
+}

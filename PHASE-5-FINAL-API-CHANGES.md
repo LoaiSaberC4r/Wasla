@@ -7,59 +7,32 @@ Approval: 2026-10-18. Base path `/api/v1`. This is the implementation handoff; u
 All identity command/query operations use `PatientIdentityWorkflow` through MediatR, FluentValidation and the existing Wasla transaction behavior. Older Basic/profile commands retain their existing handlers. This follows the existing product-specific CQRS envelope pattern used in later Wasla phases. No API controller calls EF or infrastructure implementations.
 
 | ID | Method / path | Permission / proof | Handler | Success | Coverage |
-
 |---|---|---|---|---|---|
-
 | E01 | POST `/api/v1/auth/patients/register` | anonymous verified email | `RegisterPatientCommand -> PatientIdentityCommand(Register)` | 201 | Registration |
-
 | E02 | POST `/api/v1/patients` | Patients.Register + active Reception assignment | `CreateReceptionPatientCommand` | 201 | Registration / SQL |
-
 | E03 | GET `/api/v1/patients/search` | Patients.SearchBasic + active Reception assignment | `SearchPatientsQuery` | 200 | Security / DoctorOnboarding |
-
 | E04 | GET `/api/v1/patients/me` | PatientProfile.ViewOwn + active linked Patient | `GetMyPatientProfileQuery` | 200 | Transition |
-
 | E05 | PUT `/api/v1/patients/me` | PatientProfile.UpdateOwn + active linked Patient | `UpdateMyPatientProfileCommand` | 200 | Transition |
-
 | E06 | GET `/api/v1/auth/me` | authenticated active account + existing live access checks | `MeQuery` | 200 | TrustAccess |
-
 | N01 | POST `/api/v1/patients/full` | Patients.RegisterFull + active Reception assignment | `PatientIdentityCommand(Full)` | 201 | Registration |
-
 | N02 | POST `/api/v1/patients/registration-matches` | Patients.RegistrationMatch + active Reception assignment | `PatientIdentityQuery(Matches) / PatientIdentityCommand(ConfirmReuse|ConfirmClaimIdentity)` | 200 | Security |
-
 | N03 | POST `/api/v1/patient-onboarding/start` | anonymous Register/Claim; active Patient EmailChange | `PatientIdentityCommand(Start)` | 202 | Registration / Security / Transition |
-
 | N04 | POST `/api/v1/patient-onboarding/verify-email` | opaque challenge and correct OTP; EmailChange bound to current Patient | `PatientIdentityCommand(Verify)` | 200 | Registration / Security / Transition |
-
 | N05 | POST `/api/v1/patient-onboarding/register` | anonymous RegisterNew continuation for same email | `PatientIdentityCommand(Register)` | 201 | Registration |
-
 | N06 | POST `/api/v1/patient-onboarding/claims` | anonymous Claim continuation + independent evidence | `PatientIdentityCommand(SubmitClaim)` | 201 | Claims / Transition |
-
 | N07 | GET `/api/v1/patient-onboarding/claims/{id}` | X-Onboarding-Token, same verified applicant | `PatientIdentityQuery(OwnClaim)` | 200 | Claims (owned status and denial) |
-
 | N08 | POST `/api/v1/patient-onboarding/claims/{id}/resubmit` | fresh unconsumed X-Onboarding-Token, same applicant | `PatientIdentityCommand(ResubmitClaim)` | 200 | Transition |
-
 | N09 | POST `/api/v1/patient-onboarding/activate` | anonymous one-use invitation | `PatientIdentityCommand(Activate)` | 200 | Registration / Claims / native Transition |
-
 | N10 | POST `/api/v1/patient-onboarding/activation/resend` | generic Full; Claim requires verified same-email Claim proof | `PatientIdentityCommand(Resend)` | 202 | Claims expiry/resend |
-
 | N11 | GET `/api/v1/admin/patient-claims` | SuperAdmin + PatientClaims.ViewAll (live DB) | `PatientIdentityQuery(Claims)` | 200 | Claims list and Security denial |
-
 | N12 | GET `/api/v1/admin/patient-claims/{id}` | SuperAdmin + PatientClaims.ViewDetails (live DB) | `PatientIdentityQuery(ClaimDetails)` | 200 | Claims / Transition |
-
 | N13 | GET `/api/v1/admin/patient-claims/{id}/evidence/{evidenceId}` | SuperAdmin + PatientClaims.ViewEvidence (live DB/resource) | `PatientIdentityQuery(ClaimEvidence)` | 200 | Claims |
-
 | N14 | POST `/api/v1/admin/patient-claims/{id}/approve` | SuperAdmin + PatientClaims.Approve (live DB) | `PatientIdentityCommand(Approve)` | 200 | Claims / native Transition |
-
 | N15 | POST `/api/v1/admin/patient-claims/{id}/reject` | SuperAdmin + PatientClaims.Reject (live DB) | `PatientIdentityCommand(Reject)` | 200 | Transition |
-
 | N16 | POST `/api/v1/admin/patient-claims/{id}/request-modification` | SuperAdmin + PatientClaims.RequestModification (live DB) | `PatientIdentityCommand(Modify)` | 200 | Transition |
-
 | N17 | GET `/api/v1/admin/patient-claims/{id}/history` | SuperAdmin + PatientClaims.ViewDetails (live DB) | `PatientIdentityQuery(ClaimHistory)` | 200 | Claims immutable history route |
-
 | N18 | GET `/api/v1/admin/patient-duplicates` | SuperAdmin + PatientDuplicates.View (live DB) | `PatientIdentityQuery(Duplicates)` | 200 | Duplicate API / domain |
-
 | N19 | GET `/api/v1/admin/patient-duplicates/{id}` | SuperAdmin + PatientDuplicates.View (live DB) | `PatientIdentityQuery(DuplicateDetails)` | 200 | Duplicate API / domain |
-
 | N20 | POST `/api/v1/admin/patient-duplicates/{id}/resolve` | SuperAdmin + PatientDuplicates.Resolve (live DB) | `PatientIdentityCommand(ResolveDuplicate)` | 200 | Duplicate API / domain |
 
 ## Shared contracts
@@ -353,17 +326,11 @@ Retain `POST /api/v1/reception/practices/{practiceId}/reservations` and **curren
 The existing BuildingBlock ProblemDetails envelope remains `{type,title,status,detail,instance,...,errors:[{code,message,...}]}`. Product result filtering maps malformed Phase 5 validation to400 while keeping age/proof rejections422. Unrelated endpoint mappings remain intact. Arabic resources and English translations are used; error text contains no email, phone, OTP, token or document content.
 
 | HTTP | Stable codes / client action |
-
 |---|---|
-
 | 400 | Patient.Invalid; PatientOnboarding.OtpInvalidOrExpired; malformed fields/header |
-
 | 401/403/404 | authentication / permission denied / unavailable own claim or file; do not infer identity from404 |
-
 | 409 | Patient.AlreadyExists (Reception search/reuse), Patient.ClaimRequired (Claim), Patient.AlreadyLinked, Patient.IdentityConflict, Patient.NoClaimableProfile, Identity.EmailOwnedByAnotherAccount, Identity.AlreadyRegistered, Patient.IdentityAttestationRequired/Invalid, Patient.EmailVerificationRequired, PatientOnboarding.VerificationRequired, PatientOnboarding.TokenInvalidOrExpired, PatientActivation.InvalidOrExpired, PatientClaims.InvalidState/PendingAlreadyExists/ConcurrencyConflict, PatientDuplicates.InvalidResolution, PatientIdentity.IdempotencyKeyReused |
-
 | 422 | Patient.FullRegistrationAgeRestricted; Patient.SelfRegistrationAgeRestricted; PatientClaims.ProofInsufficient |
-
 | 429 | PatientOnboarding.TooManyAttempts; PatientIdentity.RateLimited; obey Retry-After |
 
 Legacy E01 is intentionally breaking: obtain email proof via N03/N04, add emailVerificationToken and Idempotency-Key. Missing proof returns actionable VerificationRequired with no write. Both E01 and N05 call the same workflow. Under18 direct self/full fails422; age16–17 uses existing Basic + manual Claim, under16 no standalone login. E03 replaces raw phoneNumber with phoneNumberMasked and adds emailMasked; send bounded search criteria. E05 retains email field but verified changes require exact-email EmailChange proof. All other existing profile properties are preserved.

@@ -37,9 +37,16 @@ public sealed class Phase5FinalClaimsApiTests
         var claim = (await JsonAsync(claimResponse)).GetProperty("claimRequestId").GetGuid();
         using var ownedRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/patient-onboarding/claims/{claim}"); ownedRequest.Headers.Add("X-Onboarding-Token", proof);
         using var owned = await applicant.SendAsync(ownedRequest, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.OK, owned.StatusCode); Assert.Equal("PendingReview", (await JsonAsync(owned)).GetProperty("status").GetString());
+        var foreignProof = await Phase5IdentityApi.VerifyAsync(app, applicant, "foreign-claim-reader@example.test", "Claim");
+        using var foreignRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/patient-onboarding/claims/{claim}"); foreignRequest.Headers.Add("X-Onboarding-Token", foreignProof);
+        using var foreignRead = await applicant.SendAsync(foreignRequest, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.NotFound, foreignRead.StatusCode);
         var list = await GetAsync(admin, "/api/v1/admin/patient-claims?status=PendingReview&pageSize=20"); Assert.Single(list.GetProperty("items").EnumerateArray());
         using var guessed = await applicant.GetAsync($"/api/v1/patient-onboarding/claims/{claim}", TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.NotFound, guessed.StatusCode);
         var details = await GetAsync(admin, $"/api/v1/admin/patient-claims/{claim}"); var evidence = details.GetProperty("evidence")[0].GetProperty("evidenceId").GetGuid();
+        Guid evidenceGrant = default;
+        await app.WithDbAsync(async db => { var grant = await db.RolePermissions.SingleAsync(g => g.RoleId == SystemRoleIds.SuperAdmin && g.PermissionId == SystemPermissionIds.For(PermissionNames.PatientClaimsViewEvidence)); evidenceGrant = grant.Id; db.RolePermissions.Remove(grant); await db.SaveChangesAsync(); });
+        using var noEvidencePermission = await admin.GetAsync($"/api/v1/admin/patient-claims/{claim}/evidence/{evidence}", TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.Forbidden, noEvidencePermission.StatusCode);
+        await app.WithDbAsync(async db => { db.RolePermissions.Add(new(evidenceGrant, SystemRoleIds.SuperAdmin, SystemPermissionIds.For(PermissionNames.PatientClaimsViewEvidence))); await db.SaveChangesAsync(); });
         using var document = await admin.GetAsync($"/api/v1/admin/patient-claims/{claim}/evidence/{evidence}", TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.OK, document.StatusCode); Assert.True(document.Headers.CacheControl!.NoStore);
         using var approved = await PostAsync(admin, $"/api/v1/admin/patient-claims/{claim}/approve", new { targetPatientId = patient, rowVersion = details.GetProperty("rowVersion").GetString(), reviewedEvidenceIds = new[] { evidence }, reviewNote = "Synthetic identity evidence reviewed" }); Assert.Equal(HttpStatusCode.OK, approved.StatusCode);
         await app.WithDbAsync(async db => Assert.False(await db.PatientAccountLinks.AnyAsync(l => l.PatientId == patient)));
