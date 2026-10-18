@@ -265,11 +265,18 @@ public sealed class Phase5PatientFamilyValidationTests
 public sealed class Phase5RegistrationApplicationTests
 {
     [Fact]
-    public async Task SelfRegistration_CreatesUserPatientLinkAndRole()
+    public async Task SelfRegistration_WithoutVerifiedProofCannotCreateUserPatientLinkOrRole()
     {
         var store = DispatchProxy.Create<IWaslaDataStore, RegistrationDataStoreProxy>();
         var services = new ServiceCollection();
         services.AddSingleton(store);
+        services.AddSingleton(DispatchProxy.Create<Wasla.Application.Persistence.IPatientIdentityStore, UnusedIdentityDependencyProxy>());
+        services.AddSingleton(DispatchProxy.Create<BuildingBlock.Application.Abstraction.Security.ICurrentUser, UnusedIdentityDependencyProxy>());
+        services.AddSingleton(DispatchProxy.Create<Wasla.Application.Features.Practices.IReceptionPracticeAuthorizationService, UnusedIdentityDependencyProxy>());
+        services.AddSingleton(DispatchProxy.Create<Wasla.Application.Security.IPasswordResetProtector, UnusedIdentityDependencyProxy>());
+        services.AddSingleton(DispatchProxy.Create<Wasla.Application.Media.IPrivateMediaReader, UnusedIdentityDependencyProxy>());
+        services.AddSingleton(DispatchProxy.Create<Wasla.Application.Email.IEmailOutbox, UnusedIdentityDependencyProxy>());
+        services.AddSingleton(DispatchProxy.Create<Wasla.Application.Features.PatientOnboarding.IPatientIdentityMediaCompensation, UnusedIdentityDependencyProxy>());
         services.AddSingleton<IPasswordService, RegistrationPasswordService>();
         services.AddSingleton<IMediaService, UnusedMediaService>();
         services.AddSingleton<IDateTimeProvider, RegistrationClock>();
@@ -282,16 +289,10 @@ public sealed class Phase5RegistrationApplicationTests
         var result = await handler.Handle(command, TestContext.Current.CancellationToken);
         var proxy = (RegistrationDataStoreProxy)(object)store;
 
-        Assert.True(result.IsSuccess);
-        Assert.Contains(proxy.Added, item => item is ApplicationUser user && user.Id == result.Value.ApplicationUserId);
-        Assert.Contains(proxy.Added, item => item is Patient patient && patient.Id == result.Value.PatientId &&
-                                            patient.PhoneNumber == "01012345678" && patient.Email == "patient@example.test");
-        Assert.Contains(proxy.Added, item => item is PatientAccountLink link &&
-                                            link.ApplicationUserId == result.Value.ApplicationUserId &&
-                                            link.PatientId == result.Value.PatientId &&
-                                            link.Source == PatientAccountLinkSource.SelfRegistration);
-        Assert.Contains(proxy.Added, item => item is UserRole role && role.ApplicationUserId == result.Value.ApplicationUserId &&
-                                            role.RoleId == SystemRoleIds.Patient);
+        // The approved final task removes the old unverified self-registration bypass.
+        Assert.True(result.IsFailure);
+        Assert.Equal("PatientOnboarding.VerificationRequired", result.Errors[0].Code);
+        Assert.Empty(proxy.Added);
     }
 }
 
@@ -310,7 +311,7 @@ public sealed class Phase5PersistenceContractTests
 
         Assert.Null(patient.FindProperty("ApplicationUserId"));
         Assert.True(patient.FindProperty(nameof(Patient.RowVersion))!.IsConcurrencyToken);
-        Assert.False(patient.GetIndexes().Single(index => index.Properties.Single().Name == nameof(Patient.PhoneNumber)).IsUnique);
+        Assert.False(patient.GetIndexes().Single(index => index.Properties.Count == 1 && index.Properties[0].Name == nameof(Patient.PhoneNumber)).IsUnique);
         Assert.Contains(link.GetIndexes(), index => index.IsUnique && index.Properties.Single().Name == nameof(PatientAccountLink.ApplicationUserId));
         Assert.Contains(link.GetIndexes(), index => index.IsUnique && index.Properties.Single().Name == nameof(PatientAccountLink.PatientId));
         Assert.Contains(member.GetIndexes(), index => index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual([nameof(FamilyMember.FamilyId), nameof(FamilyMember.Role)]) && index.GetFilter()!.Contains("[Role] IN (1, 2)", StringComparison.Ordinal));
@@ -424,4 +425,9 @@ internal sealed class UnusedMediaService : IMediaService
 internal sealed class RegistrationClock : IDateTimeProvider
 {
     public DateTime UtcNow => new(2026, 9, 8, 12, 0, 0, DateTimeKind.Utc);
+}
+
+public class UnusedIdentityDependencyProxy : DispatchProxy
+{
+    protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) => throw new InvalidOperationException("Unverified registration must stop before any dependency is invoked.");
 }

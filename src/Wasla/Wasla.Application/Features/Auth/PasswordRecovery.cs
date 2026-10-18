@@ -78,7 +78,7 @@ internal sealed class RequestPasswordResetOtpCommandHandler(
         var user = await dataStore.FindUserByIdentifierAsync(
             request.Email.Trim().ToLowerInvariant(),
             cancellationToken);
-        if (user is null)
+        if (user is null || user is { IsActive: false, UserType: Wasla.Domain.Common.UserType.Patient })
         {
             return Accepted(opaqueRequestId);
         }
@@ -226,6 +226,8 @@ internal sealed class ResetPasswordCommandHandler(
         {
             return Result.Fail(AuthErrors.UserNotFound);
         }
+
+        if (user is { IsActive: false, UserType: Wasla.Domain.Common.UserType.Patient }) return Result.Fail(PasswordResetErrors.ResetTokenInvalid);
 
         if (!passwordService.IsStrongPassword(request.NewPassword))
         {

@@ -35,6 +35,13 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<DoctorQualification> DoctorQualifications => Set<DoctorQualification>();
     public DbSet<DoctorStatusHistory> DoctorStatusHistories => Set<DoctorStatusHistory>();
+    public DbSet<PatientOnboardingChallenge> PatientOnboardingChallenges => Set<PatientOnboardingChallenge>();
+    public DbSet<PatientClaimRequest> PatientClaimRequests => Set<PatientClaimRequest>();
+    public DbSet<PatientClaimEvidence> PatientClaimEvidences => Set<PatientClaimEvidence>();
+    public DbSet<PatientClaimHistory> PatientClaimHistories => Set<PatientClaimHistory>();
+    public DbSet<PatientActivationInvitation> PatientActivationInvitations => Set<PatientActivationInvitation>();
+    public DbSet<PatientDuplicateCase> PatientDuplicateCases => Set<PatientDuplicateCase>();
+    public DbSet<PatientIdentityAttestation> PatientIdentityAttestations => Set<PatientIdentityAttestation>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<PatientAccountLink> PatientAccountLinks => Set<PatientAccountLink>();
     public DbSet<PatientContact> PatientContacts => Set<PatientContact>();
@@ -154,6 +161,8 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         var hasNewArchiveIdentities = HasNewArchiveIdentities;
         await using var identityTransaction = hasNewArchiveIdentities && Database.CurrentTransaction is null
             ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        if (ChangeTracker.Entries<PatientClaimHistory>().Any(e => e.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Patient claim history is append-only; aggregate retention uses the restricted worker.");
         PrepareArchiveIdentities();
         await CaptureArchiveGovernanceAsync(cancellationToken);
         var diagnosticCorrection = ChangeTracker.Entries<LabResultVersion>().Any(e => e.State == EntityState.Modified && e.Entity.Status == DiagnosticVersionStatus.Superseded) ||
@@ -387,7 +396,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
             value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
         foreach (var entity in modelBuilder.Model.GetEntityTypes().Where(e => e.ClrType.Namespace is
-            "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations"))
+            "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations" or "Wasla.Domain.Patients"))
             foreach (var property in entity.GetProperties().Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?)))
                 if (!property.Name.Contains("Local", StringComparison.Ordinal)) property.SetValueConverter(utcConverter);
         modelBuilder.ApplySoftDeleteQueryFilter();
@@ -398,6 +407,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
                 StringComparison.Ordinal))
         {
             ConfigureSqliteConcurrencyFallback(modelBuilder);
+            modelBuilder.Entity<Patient>().ToTable("Patients", t => t.HasCheckConstraint("CK_Patients_Email", "[Email] IS NULL OR length(trim([Email])) > 0"));
             modelBuilder.Entity<HiddenEncounterAccessRequest>().ToTable("HiddenEncounterAccessRequests", t => t.HasCheckConstraint("CK_HiddenAccessRequests_Reason", "length(trim([Reason])) > 0"));
             modelBuilder.Entity<MedicalEncounter>().ToTable("MedicalEncounters", table =>
                 table.HasCheckConstraint("CK_MedicalEncounters_Completion", "([Status] = 1 AND [CompletedAtUtc] IS NULL) OR ([Status] = 2 AND [CompletedAtUtc] IS NOT NULL AND length(trim([ClinicalNotes])) > 0 AND [ClinicalNotes] IS NOT NULL)"));

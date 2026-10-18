@@ -26,6 +26,7 @@ public sealed class PatientContact : Entity<Guid>, IAuditableEntity, ISoftDelete
     public Guid PatientId { get; private set; }
     public string NameAr { get; private set; } = string.Empty;
     public string? NameEn { get; private set; }
+    public string? ContactEmail { get; private set; }
     public string PhoneNumber { get; private set; } = string.Empty;
     public PatientContactRelationshipType RelationshipType { get; private set; }
     public Guid? LinkedPatientId { get; private set; }
@@ -36,29 +37,31 @@ public sealed class PatientContact : Entity<Guid>, IAuditableEntity, ISoftDelete
     public DateTime? DeletedOnUtc { get; set; }
     public DateTime? RestoredOnUtc { get; set; }
 
-    public static Result<PatientContact> Create(Guid id, Guid patientId, string nameAr, string? nameEn, string phoneNumber, PatientContactRelationshipType relationshipType, Guid? linkedPatientId, bool isPrimary)
+    public static Result<PatientContact> Create(Guid id, Guid patientId, string nameAr, string? nameEn, string phoneNumber, PatientContactRelationshipType relationshipType, Guid? linkedPatientId, bool isPrimary, string? contactEmail = null)
     {
         var item = new PatientContact(id);
-        var validation = item.Apply(id, patientId, nameAr, nameEn, phoneNumber, relationshipType, linkedPatientId, isPrimary);
+        var validation = item.Apply(id, patientId, nameAr, nameEn, phoneNumber, relationshipType, linkedPatientId, isPrimary, contactEmail);
         return validation.IsFailure ? Result<PatientContact>.Fail(validation.Errors) : Result<PatientContact>.Ok(item);
     }
 
-    public Result Update(string nameAr, string? nameEn, string phoneNumber, PatientContactRelationshipType relationshipType, Guid? linkedPatientId, bool isPrimary)
-        => Apply(Id, PatientId, nameAr, nameEn, phoneNumber, relationshipType, linkedPatientId, isPrimary);
+    public Result Update(string nameAr, string? nameEn, string phoneNumber, PatientContactRelationshipType relationshipType, Guid? linkedPatientId, bool isPrimary, string? contactEmail = null)
+        => Apply(Id, PatientId, nameAr, nameEn, phoneNumber, relationshipType, linkedPatientId, isPrimary, contactEmail);
 
-    private Result Apply(Guid id, Guid patientId, string nameAr, string? nameEn, string phoneNumber, PatientContactRelationshipType relationshipType, Guid? linkedPatientId, bool isPrimary)
+    private Result Apply(Guid id, Guid patientId, string nameAr, string? nameEn, string phoneNumber, PatientContactRelationshipType relationshipType, Guid? linkedPatientId, bool isPrimary, string? contactEmail = null)
     {
+        var normalizedEmail = PatientIdentityEmail.Normalize(contactEmail);
         var normalizedAr = nameAr?.Trim() ?? string.Empty;
         var normalizedEn = string.IsNullOrWhiteSpace(nameEn) ? null : nameEn.Trim();
         var normalizedPhone = phoneNumber?.Trim() ?? string.Empty;
         if (id == Guid.Empty || patientId == Guid.Empty || normalizedAr.Length is 0 or > 200 ||
             normalizedEn?.Length > 200 || normalizedPhone.Length is 0 or > 30 ||
-            !Enum.IsDefined(relationshipType) || linkedPatientId == patientId)
+            !PatientIdentityEmail.IsValid(normalizedEmail) || !Enum.IsDefined(relationshipType) || linkedPatientId == patientId)
         {
             return Result.Fail(PatientErrors.InvalidContact);
         }
 
         PatientId = patientId;
+        ContactEmail = normalizedEmail;
         NameAr = normalizedAr;
         NameEn = normalizedEn;
         PhoneNumber = normalizedPhone;

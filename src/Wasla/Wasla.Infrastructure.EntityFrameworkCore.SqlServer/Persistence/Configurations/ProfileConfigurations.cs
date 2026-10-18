@@ -97,9 +97,17 @@ internal sealed class PatientConfiguration : IWriteEntityConfiguration<Patient>
         builder.HasKey(patient => patient.Id);
         builder.Property(patient => patient.NameAr).HasMaxLength(200).IsRequired();
         builder.Property(patient => patient.NameEn).HasMaxLength(200);
+        builder.Property<string>("NormalizedSearchNameAr").HasMaxLength(200).HasComputedColumnSql("UPPER(LTRIM(RTRIM([NameAr])))", stored: true);
+        builder.Property<string>("NormalizedSearchNameEn").HasMaxLength(200).HasComputedColumnSql("UPPER(LTRIM(RTRIM([NameEn])))", stored: true);
+        builder.HasIndex("NormalizedSearchNameAr", nameof(Patient.DateOfBirth), nameof(Patient.Gender));
+        builder.HasIndex("NormalizedSearchNameEn", nameof(Patient.DateOfBirth));
         builder.Property(patient => patient.Gender).HasConversion<int>().IsRequired();
         builder.Property(patient => patient.PhoneNumber).HasMaxLength(30);
         builder.Property(patient => patient.Email).HasMaxLength(200);
+        builder.Property<string>("NormalizedEmail").HasMaxLength(200).HasComputedColumnSql("LOWER(LTRIM(RTRIM([Email])))", stored: true);
+        // SQL Server forbids computed columns in a filtered predicate; Email null iff NormalizedEmail null.
+        builder.HasIndex("NormalizedEmail").IsUnique().HasFilter("[Email] IS NOT NULL").HasDatabaseName("UX_Patients_NormalizedEmail");
+        builder.ToTable("Patients", t => t.HasCheckConstraint("CK_Patients_Email", "[Email] IS NULL OR LEN(LTRIM(RTRIM([Email]))) > 0"));
         builder.Property(patient => patient.ProfileImageMediaKey).HasMaxLength(1000);
         builder.Property(patient => patient.PersonalIdFrontMediaKey).HasMaxLength(1000);
         builder.Property(patient => patient.PersonalIdBackMediaKey).HasMaxLength(1000);
@@ -133,6 +141,7 @@ internal sealed class PatientContactConfiguration : IWriteEntityConfiguration<Pa
         builder.Property(item => item.NameAr).HasMaxLength(200).IsRequired();
         builder.Property(item => item.NameEn).HasMaxLength(200);
         builder.Property(item => item.PhoneNumber).HasMaxLength(30).IsRequired();
+        builder.Property(item => item.ContactEmail).HasMaxLength(200);
         builder.Property(item => item.RelationshipType).HasConversion<int>().IsRequired();
         builder.Property(item => item.IsPrimary).IsRequired();
         builder.HasIndex(item => item.PatientId).HasDatabaseName("IX_PatientContacts_PatientId");

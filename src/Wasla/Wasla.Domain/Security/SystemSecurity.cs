@@ -22,6 +22,17 @@ public static class SystemRoleIds
 
 public static class PermissionNames
 {
+    public const string PatientsRegisterFull = "Patients.RegisterFull";
+    public const string PatientsRegistrationMatch = "Patients.RegistrationMatch";
+    public const string PatientClaimsViewAll = "PatientClaims.ViewAll";
+    public const string PatientClaimsViewDetails = "PatientClaims.ViewDetails";
+    public const string PatientClaimsViewEvidence = "PatientClaims.ViewEvidence";
+    public const string PatientClaimsApprove = "PatientClaims.Approve";
+    public const string PatientClaimsReject = "PatientClaims.Reject";
+    public const string PatientClaimsRequestModification = "PatientClaims.RequestModification";
+    public const string PatientDuplicatesView = "PatientDuplicates.View";
+    public const string PatientDuplicatesResolve = "PatientDuplicates.Resolve";
+
     public const string FamilyMedicalAccessRequestsCreateOwn = "FamilyMedicalAccessRequests.CreateOwn";
     public const string FamilyMedicalAccessRequestsViewOwn = "FamilyMedicalAccessRequests.ViewOwn";
     public const string FamilyMedicalAccessRequestsWithdrawOwn = "FamilyMedicalAccessRequests.WithdrawOwn";
@@ -555,12 +566,25 @@ public static class PermissionNames
         FamilyMedicalAccessEligibilityRevoke,
         .. Phase18PermissionNames.All,
         .. Phase18PartTwoPermissionNames.All,
+        PatientsRegisterFull,
+        PatientsRegistrationMatch,
+        PatientClaimsViewAll,
+        PatientClaimsViewDetails,
+        PatientClaimsViewEvidence,
+        PatientClaimsApprove,
+        PatientClaimsReject,
+        PatientClaimsRequestModification,
+        PatientDuplicatesView,
+        PatientDuplicatesResolve,
+
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(
         [
             .. Phase18PermissionNames.ReceptionDefaults,
             .. Phase18PartTwoPermissionNames.ReceptionDefaults,
+            PatientsRegisterFull,
+            PatientsRegistrationMatch,
             PatientsSearchBasic,
             PatientsRegister,
             PracticeReservationsView,

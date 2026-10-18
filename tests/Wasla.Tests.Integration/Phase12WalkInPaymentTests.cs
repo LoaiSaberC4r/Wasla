@@ -58,6 +58,7 @@ public sealed class Phase12WalkInPaymentTests
             Guid.NewGuid(), "مريض", "Patient", new DateOnly(1990, 1, 1),
             Gender.Male, null, null, null, null, null,
             new DateOnly(2026, 9, 30)).Value;
+        patient.StampReceptionRegistration(practice.Id, receptionActorId, now);
         var reservedPatient = Patient.Create(
             Guid.NewGuid(), "مريض آخر", "Another patient", new DateOnly(1991, 1, 1),
             Gender.Male, null, null, null, null, null,

@@ -1,3 +1,4 @@
+using Wasla.Application.Features.PatientIdentityMatching;
 using Wasla.Application.Features.Archives;
 using Wasla.Application.Features.Reporting;
 using System.Net;
@@ -206,7 +207,7 @@ public sealed record CreatePracticeReservationCommand(
     string? BookingNote,
     string IdempotencyKey,
     Guid? FollowUpEligibilityId = null,
-    string? FollowUpEligibilityRowVersion = null)
+    string? FollowUpEligibilityRowVersion = null, Guid? PatientIdentityAttestationId = null)
     : ICommand<ReservationDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record CancelMineReservationCommand(
     Guid ReservationId,
@@ -494,7 +495,7 @@ internal sealed class CreatePracticeReservationCommandHandler(ReservationApplica
             request.BookingNote,
             request.IdempotencyKey,
             ReservationOperationScope.Reception,
-            cancellationToken, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion);
+            cancellationToken, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion, request.PatientIdentityAttestationId);
 }
 
 internal sealed class CancelMineReservationCommandHandler(ReservationApplicationService service)
@@ -683,7 +684,7 @@ internal sealed partial class ReservationApplicationService(
     IReservationProjectionInvalidationOutbox projectionOutbox,
     IReservationNotificationRecipientResolver recipientResolver,
     IReservationReferenceGenerator referenceGenerator,
-    IArchiveLocationResolver archive, IReportingAccessGuard archiveGuard)
+    IArchiveLocationResolver archive, IReportingAccessGuard archiveGuard, PatientIdentityReuseGuard identityReuse)
 {
     public async Task<Result<IReadOnlyList<BookablePatientResponse>>> ListBookablePatientsAsync(
         CancellationToken cancellationToken)
@@ -709,7 +710,7 @@ internal sealed partial class ReservationApplicationService(
         ReservationOperationScope scope,
         CancellationToken cancellationToken,
         Guid? followUpEligibilityId = null,
-        string? followUpEligibilityRowVersion = null)
+        string? followUpEligibilityRowVersion = null, Guid? patientIdentityAttestationId = null)
     {
         var validatedKey = ValidateIdempotencyKey(idempotencyKey);
         if (validatedKey.IsFailure)
@@ -766,6 +767,14 @@ internal sealed partial class ReservationApplicationService(
         if (idempotency.Value.ExistingReservationId is { } existingId)
         {
             return await GetDetailsForActorAsync(existingId, scope, practiceId, includeBookingNote: true, cancellationToken);
+        }
+
+        PatientIdentityAttestation? identityAttestation = null;
+        if (scope == ReservationOperationScope.Reception)
+        {
+            var identity = await identityReuse.ValidateAsync(patientId, practiceId, actor.Value.ActorApplicationUserId, patientIdentityAttestationId, cancellationToken);
+            if (identity.IsFailure) return Result<ReservationDetailsResponse>.Fail(identity.Errors);
+            identityAttestation = identity.Value;
         }
 
         var followUpSelection = await followUp.ValidateSelectionAsync(followUpEligibilityId, visitType.Type,
@@ -838,6 +847,7 @@ internal sealed partial class ReservationApplicationService(
                 businessDate, actor.Value.ActorApplicationUserId, clock.UtcNow);
             if (claim.IsFailure) return Result<ReservationDetailsResponse>.Fail(claim.Errors);
         }
+        identityAttestation?.Associate(created.Value.Id, null, clock.UtcNow);
         dataStore.Add(created.Value);
         idempotency.Value.Record!.Complete(created.Value.Id, created.Value.ReservationReference, clock.UtcNow);
         await QueueNotificationAsync(created.Value, "created", cancellationToken);

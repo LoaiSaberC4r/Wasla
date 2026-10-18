@@ -33,7 +33,11 @@ public sealed record CurrentUserResponse(
     bool IsFirstLogin,
     Guid? DoctorId,
     Guid? PatientId,
-    Guid? ReceptionId);
+    Guid? ReceptionId)
+{
+    public string? AccountStatus => UserType == UserType.Patient ? "Active" : null;
+    public bool? PatientIdentityEmailVerified => UserType == UserType.Patient ? true : null;
+}
 
 public sealed record ChangePasswordCommand(
     string CurrentPassword,

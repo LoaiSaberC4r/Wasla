@@ -1,3 +1,4 @@
+using Wasla.Application.Features.PatientOnboarding;
 using BuildingBlock.Application.Bootstrap;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,13 @@ public static class DependencyInjection
         services.AddTransient<MediatR.IPipelineBehavior<DiagnosticResultCommand, BuildingBlock.Domain.Results.Result<DiagnosticResultMutationResponse>>, DiagnosticMediaCompensationBehavior>();
         services.AddScoped<DiagnosticMediaCompensation>();
         services.AddTransient<MediatR.IPipelineBehavior<FamilyMedicalCommand, BuildingBlock.Domain.Results.Result<object>>, FamilyMedicalMediaCompensationBehavior>();
+        services.AddScoped<PatientIdentityWorkflow>();
+        services.AddScoped<Wasla.Application.Features.PatientIdentityMatching.PatientIdentityReuseGuard>();
+        services.AddOptions<PatientIdentityOptions>();
+        services.AddTransient<MediatR.IPipelineBehavior<PatientIdentityCommand, BuildingBlock.Domain.Results.Result<object>>, PatientIdentityMediaBehavior<PatientIdentityCommand, object>>();
+        services.AddTransient<MediatR.IPipelineBehavior<Wasla.Application.Features.Registration.RegisterPatientCommand, BuildingBlock.Domain.Results.Result<Wasla.Application.Features.Registration.RegisterPatientResponse>>, PatientIdentityMediaBehavior<Wasla.Application.Features.Registration.RegisterPatientCommand, Wasla.Application.Features.Registration.RegisterPatientResponse>>();
+        services.AddTransient<MediatR.IPipelineBehavior<Wasla.Application.Features.Patients.CreateReceptionPatientCommand, BuildingBlock.Domain.Results.Result<Wasla.Application.Features.Patients.CreateReceptionPatientResponse>>, PatientIdentityMediaBehavior<Wasla.Application.Features.Patients.CreateReceptionPatientCommand, Wasla.Application.Features.Patients.CreateReceptionPatientResponse>>();
+        services.AddTransient<MediatR.IPipelineBehavior<Wasla.Application.Features.Patients.UpdateMyPatientProfileCommand, BuildingBlock.Domain.Results.Result<Wasla.Application.Features.Patients.PatientProfileResponse>>, PatientIdentityMediaBehavior<Wasla.Application.Features.Patients.UpdateMyPatientProfileCommand, Wasla.Application.Features.Patients.PatientProfileResponse>>();
         services.AddBuildingBlockApplicationBehaviors();
         services.AddScoped<DoctorLifecycleService>();
         services.AddScoped<Wasla.Application.Features.Dashboards.PatientDashboardComposer>();

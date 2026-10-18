@@ -1,3 +1,4 @@
+using Wasla.Application.Features.PatientOnboarding;
 using Microsoft.AspNetCore.DataProtection;
 using Wasla.Application.Email;
 using Wasla.Application.Features.Clinical;
@@ -74,6 +75,12 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailOutbox, EmailOutbox>();
         services.AddScoped<IWaslaDataStore, WaslaDataStore>();
+        services.AddScoped<IPatientIdentityStore, PatientIdentityStore>();
+        services.AddScoped<PatientIdentityRetention>();
+        services.AddHostedService<PatientIdentityRetentionBackgroundService>();
+        services.AddScoped<IPatientIdentityMediaCompensation, PatientIdentityMediaCompensation>();
+        services.Insert(0, ServiceDescriptor.Singleton<IExceptionToErrorMapper, PatientIdentityPersistenceErrorMapper>());
+        services.AddOptions<PatientIdentityOptions>().Bind(configuration.GetSection("PatientIdentity")).Validate(o => o.IsValid(), "Invalid patient identity options.").ValidateOnStart();
         services.AddScoped<IPublicDiscoveryService, PublicDiscoveryService>();
         services.AddScoped<ReservationPublicReaders>();
         services.AddScoped<IPracticeReservationOccupancyReader>(provider => provider.GetRequiredService<ReservationPublicReaders>());

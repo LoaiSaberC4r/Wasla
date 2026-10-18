@@ -1,3 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Wasla.Application.Features.Clinical;
 using System.Net;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +17,10 @@ public sealed class Phase18PatientDashboardApiTests
         await using var app = await Phase13ApiFixture.CreateAsync(sql); using var patient = await app.ClientAsync("patient");
         var capabilities = await GetAsync(patient, "/api/v1/patients/me/dashboard/capabilities");
         Assert.Equal(app.PatientId, capabilities.GetProperty("patientId").GetGuid());
-        Assert.False(capabilities.GetProperty("guardianSharingEnabled").GetBoolean());
+        // Configuration reports rollout flags; effective access still fails closed under the unapproved policy.
+        Assert.Equal(app.Services.GetRequiredService<IOptions<MedicalRecordOptions>>().Value.GuardianSharingEnabled, capabilities.GetProperty("guardianSharingEnabled").GetBoolean());
+        using var policyDenied = await patient.GetAsync("/api/v1/families/mine/medical-record-dependents", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, policyDenied.StatusCode);
         var family = capabilities.GetProperty("capabilities").EnumerateArray().Single(c => c.GetProperty("code").GetString() == "FamilyMedicalEligibility");
         Assert.False(family.GetProperty("available").GetBoolean()); Assert.Equal(JsonValueKind.Null, family.GetProperty("route").ValueKind);
         var overview = await GetAsync(patient, "/api/v1/patients/me/dashboard/overview?patientId=" + app.OtherPatientId);
