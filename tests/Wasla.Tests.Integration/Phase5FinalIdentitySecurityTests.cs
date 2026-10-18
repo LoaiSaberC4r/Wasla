@@ -41,6 +41,8 @@ public sealed class Phase5FinalIdentitySecurityTests
     [Fact] public async Task Neutral_start_attempt_accounting_bounded_search_and_minors_are_enforced_by_real_middleware()
     {
         await using var app = await Phase13ApiFixture.CreateAsync(); using var client = app.CreateClient(); using var staff = await app.ClientAsync("reception");
+        using var unauthenticatedChange = await client.PostAsJsonAsync("/api/v1/patient-onboarding/start", new { email = "change@example.test", purpose = "EmailChange" }, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.Unauthorized, unauthenticatedChange.StatusCode);
+        using var wrongRoleChange = await staff.PostAsJsonAsync("/api/v1/patient-onboarding/start", new { email = "change@example.test", purpose = "EmailChange" }, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.Forbidden, wrongRoleChange.StatusCode);
         foreach (var email in new[] { "patient@example.test", "unregistered@example.test", "doctor@example.test" })
         {
             using var r = await client.PostAsJsonAsync("/api/v1/patient-onboarding/start", new { email, purpose = "Register" }, TestContext.Current.CancellationToken);

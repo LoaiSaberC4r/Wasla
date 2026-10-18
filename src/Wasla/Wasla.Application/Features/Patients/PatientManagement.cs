@@ -335,7 +335,7 @@ internal sealed class UpdateMyPatientProfileCommandHandler(
         }
 
         await identityStore.LockAsync(cancellationToken);
-        var changedEmail = PatientIdentityEmail.Normalize(request.Email) != patient.Email;
+        var changedEmail = PatientIdentityEmail.Normalize(request.Email) != PatientIdentityEmail.Normalize(patient.Email);
         PatientOnboardingChallenge? emailProof = null;
         if (changedEmail)
         {

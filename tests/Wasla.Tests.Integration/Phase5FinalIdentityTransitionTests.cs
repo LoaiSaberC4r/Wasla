@@ -67,6 +67,11 @@ public sealed class Phase5FinalIdentityTransitionTests
     {
         await using var app = await Phase13ApiFixture.CreateAsync(); using var patient = await app.ClientAsync("patient");
         await app.WithDbAsync(async db => { var p = await db.Patients.SingleAsync(p => p.Id == app.PatientId); Assert.True(p.UpdateProfile(p.NameAr, p.NameEn, "01000000000", "patient@example.test").IsSuccess); db.Patients.Add(Patient.Create(Guid.NewGuid(), "حساب آخر تجريبي", null, new(1990, 1, 1), Gender.Male, "01000000001", "occupied@example.test", null, null, null, app.Today).Value); await db.SaveChangesAsync(); });
+        await app.WithDbAsync(async db => { await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [Patients] SET [Email] = {" PATIENT@Example.Test "} WHERE [Id] = {app.PatientId}", TestContext.Current.CancellationToken); });
+        var unchanged = await GetAsync(patient, "/api/v1/patients/me");
+        using var unchangedForm = new MultipartFormDataContent();
+        foreach (var (key, value) in new Dictionary<string, string> { ["nameAr"] = unchanged.GetProperty("nameAr").GetString()!, ["phoneNumber"] = "01000000000", ["email"] = "patient@example.test", ["rowVersion"] = unchanged.GetProperty("rowVersion").GetString()! }) unchangedForm.Add(new StringContent(value), key);
+        using var normalizedOnly = await patient.PutAsync("/api/v1/patients/me", unchangedForm, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.OK, normalizedOnly.StatusCode);
         foreach (var destination in new[] { "occupied@example.test", "changed@example.test" })
         {
             var proof = await Phase5IdentityApi.VerifyAsync(app, patient, destination, "EmailChange"); var profile = await GetAsync(patient, "/api/v1/patients/me");

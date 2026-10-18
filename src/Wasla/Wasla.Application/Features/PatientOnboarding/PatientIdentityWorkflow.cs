@@ -132,7 +132,8 @@ public sealed partial class PatientIdentityWorkflow(IWaslaDataStore data, IPatie
         {
             var snapshot = Actor == Guid.Empty ? null : await data.GetAccessSnapshotAsync(Actor, cancellationToken);
             if (snapshot is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.Patient, PatientId: not null })
-                return Result<object>.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
+                return Result<object>.Fail(snapshot is { User.IsActive: true } ? PatientErrors.AccessForbidden
+                    : Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
             userId = Actor;
         }
         var id = Guid.NewGuid();

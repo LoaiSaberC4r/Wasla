@@ -22,6 +22,9 @@ public sealed class Phase5FinalClaimsApiTests
         const string email = "claim-basic@example.test";
         using var basic = await Phase5IdentityApi.FormAsync(staff, "/api/v1/patients", Phase5IdentityApi.Profile(app, email)); Assert.Equal(HttpStatusCode.Created, basic.StatusCode);
         var patient = (await JsonAsync(basic)).GetProperty("patientId").GetGuid();
+        // A valid pre-migration identity may retain historical casing/outer spaces;
+        // schema rollout must not rewrite it, and claim comparisons use normalization.
+        await app.WithDbAsync(async db => { await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [Patients] SET [Email] = {" CLAIM-BASIC@Example.Test "} WHERE [Id] = {patient}", TestContext.Current.CancellationToken); });
         var proof = await Phase5IdentityApi.VerifyAsync(app, applicant, email, "Register"); // Register routes existing Basic to Claim without a second OTP.
         var fields = Phase5IdentityApi.Profile(app, email); fields["emailVerificationToken"] = proof;
         using (var invalidForm = new MultipartFormDataContent())

@@ -124,7 +124,7 @@ public sealed partial class PatientIdentityWorkflow
             var target = await data.FindPatientByIdAsync(p.TargetPatientId, ct);
             if (target is null) return Result<object>.Fail(PatientIdentityErrors.NotFound);
             if (await store.LinkByPatientAsync(target.Id, ct) is not null) return Conflict("Patient.AlreadyLinked");
-            if (target.Email is not null && target.Email != claim.ClaimantNormalizedEmail) return Conflict("Patient.IdentityConflict");
+            if (target.Email is not null && PatientIdentityEmail.Normalize(target.Email) != claim.ClaimantNormalizedEmail) return Conflict("Patient.IdentityConflict");
             if (target.DateOfBirth != claim.ApplicantDateOfBirth || target.Gender != claim.ApplicantGender || Age(target.DateOfBirth, Now) < 16 ||
                 claim.PatientReference is { } reference && reference != target.Id && string.IsNullOrWhiteSpace(p.Reason)) return Result<object>.Fail(PatientIdentityErrors.Proof);
             var existingAccount = await store.UserByEmailAsync(claim.ClaimantNormalizedEmail, ct);
@@ -173,7 +173,7 @@ public sealed partial class PatientIdentityWorkflow
             var link = user is null ? null : await data.FindPatientAccountLinkAsync(user.Id, ct);
             patient = link is null ? null : await data.FindPatientByIdAsync(link.PatientId, ct);
             if (user is not { UserType: UserType.Patient, IsActive: false, IsFirstLogin: true } || patient is null || user.Email != invitation.NormalizedEmail ||
-                patient.Email != invitation.NormalizedEmail || link?.Source != PatientAccountLinkSource.ReceptionFullRegistration || Age(patient.DateOfBirth, Now) < 18) return Conflict("PatientActivation.InvalidOrExpired");
+                PatientIdentityEmail.Normalize(patient.Email) != invitation.NormalizedEmail || link?.Source != PatientAccountLinkSource.ReceptionFullRegistration || Age(patient.DateOfBirth, Now) < 18) return Conflict("PatientActivation.InvalidOrExpired");
         }
         else
         {
@@ -181,7 +181,7 @@ public sealed partial class PatientIdentityWorkflow
             if (claim is not { Status: PatientClaimStatus.ApprovedPendingActivation, ApprovedTargetPatientId: not null } ||
                 Now >= claim.LastActivityOnUtc.AddDays(Options.ClaimInactivityExpiryDays) || claim.ClaimantNormalizedEmail != invitation.NormalizedEmail) return Conflict("PatientActivation.InvalidOrExpired");
             patient = await data.FindPatientByIdAsync(claim.ApprovedTargetPatientId.Value, ct);
-            if (patient is null || patient.Email is not null && patient.Email != invitation.NormalizedEmail || Age(patient.DateOfBirth, Now) < 16) return Conflict("Patient.IdentityConflict");
+            if (patient is null || patient.Email is not null && PatientIdentityEmail.Normalize(patient.Email) != invitation.NormalizedEmail || Age(patient.DateOfBirth, Now) < 16) return Conflict("Patient.IdentityConflict");
             if (await store.LinkByPatientAsync(patient.Id, ct) is not null) return Conflict("Patient.AlreadyLinked");
             var existing = await store.UserByEmailAsync(invitation.NormalizedEmail, ct);
             if (existing is not null) return Conflict(existing.UserType == UserType.Patient ? "Identity.AlreadyRegistered" : "Identity.EmailOwnedByAnotherAccount");
