@@ -38,7 +38,7 @@ public sealed class GlobalQueryFilterTests
     [Fact]
     public void BuildingBlock_source_does_not_call_unrestricted_ignore_query_filters()
     {
-        var root = FindRepositoryRoot();
+        var root = Path.Combine(FindRepositoryRoot(), "src", "BuildingBlock");
         var unsafeCall = new Regex("Ignore" + "QueryFilters\\s*\\(\\s*\\)", RegexOptions.Compiled);
         var matches = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))

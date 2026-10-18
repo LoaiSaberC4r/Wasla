@@ -31,10 +31,16 @@ jobs:
       - run: dotnet restore Wasla.sln
       - run: dotnet build Wasla.sln --configuration Release --no-restore
       - name: Unit tests
-        run: dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --configuration Release --no-build
+        run: dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --configuration Release --no-build --logger trx --results-directory TestResults/unit
       - name: Integration tests
-        run: dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --configuration Release --no-build --filter "Category!=SQLServerConcurrency"
-      - name: SQL Server reservation concurrency tests
-        run: dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --configuration Release --no-build --filter "Category=SQLServerConcurrency"
+        run: dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --configuration Release --no-build --filter "Category!=SQLServerConcurrency" --logger trx --results-directory TestResults/integration -- xUnit.MaxParallelThreads=2
+      - name: SQL Server concurrency tests
+        run: dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --configuration Release --no-build --filter "Category=SQLServerConcurrency" --logger trx --results-directory TestResults/sql-concurrency -- xUnit.MaxParallelThreads=2
       - name: Architecture tests
-        run: dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --configuration Release --no-build
+        run: dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --configuration Release --no-build --logger trx --results-directory TestResults/architecture
+      - name: Test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/**/*.trx

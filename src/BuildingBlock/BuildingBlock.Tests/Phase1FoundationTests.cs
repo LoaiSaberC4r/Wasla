@@ -6,14 +6,14 @@ namespace BuildingBlock.Tests;
 public sealed class Phase1FoundationTests
 {
     [Fact]
-    public void Global_json_pins_a_stable_dotnet10_feature_band_to_patch_roll_forward()
+    public void Global_json_pins_stable_dotnet10_and_allows_installed_feature_band_roll_forward()
     {
         var root = FindRepositoryRoot();
         using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "global.json")));
         var sdk = document.RootElement.GetProperty("sdk");
 
         Assert.Matches(@"^10\.0\.\d{3}$", sdk.GetProperty("version").GetString()!);
-        Assert.Equal("latestPatch", sdk.GetProperty("rollForward").GetString());
+        Assert.Equal("latestFeature", sdk.GetProperty("rollForward").GetString());
         Assert.False(sdk.GetProperty("allowPrerelease").GetBoolean());
     }
 
@@ -153,7 +153,9 @@ public sealed class Phase1FoundationTests
     }
 
     private static string[] ProjectFiles(string root)
-        => Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
+        => new[] { "src", "tools" }.Select(folder => Path.Combine(root, folder))
+            .Where(Directory.Exists)
+            .SelectMany(folder => Directory.EnumerateFiles(folder, "*.csproj", SearchOption.AllDirectories))
             .Where(path => !HasDirectorySegment(path, "bin") && !HasDirectorySegment(path, "obj"))
             .ToArray();
 

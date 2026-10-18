@@ -56,7 +56,7 @@ public sealed class Phase5PublicApiBaselineTests
 
     private static string[] ReadBaseline(string projectName, string state)
     {
-        var path = Path.Combine(FindRepositoryRoot(), projectName, $"PublicAPI.{state}.txt");
+        var path = Path.Combine(FindRepositoryRoot(), "src", "BuildingBlock", projectName, $"PublicAPI.{state}.txt");
 
         return File.ReadAllLines(path)
             .Select(line => line.Trim())
