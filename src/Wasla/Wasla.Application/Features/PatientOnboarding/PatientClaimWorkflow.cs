@@ -127,7 +127,9 @@ public sealed partial class PatientIdentityWorkflow
             if (target.Email is not null && target.Email != claim.ClaimantNormalizedEmail) return Conflict("Patient.IdentityConflict");
             if (target.DateOfBirth != claim.ApplicantDateOfBirth || target.Gender != claim.ApplicantGender || Age(target.DateOfBirth, Now) < 16 ||
                 claim.PatientReference is { } reference && reference != target.Id && string.IsNullOrWhiteSpace(p.Reason)) return Result<object>.Fail(PatientIdentityErrors.Proof);
-            if (await data.EmailExistsAsync(claim.ClaimantNormalizedEmail, null, ct)) return Conflict("Identity.AlreadyRegistered");
+            var existingAccount = await store.UserByEmailAsync(claim.ClaimantNormalizedEmail, ct);
+            if (existingAccount is not null) return Conflict(existingAccount.UserType == UserType.Patient
+                ? "Identity.AlreadyRegistered" : "Identity.EmailOwnedByAnotherAccount");
             var emailPatient = await store.PatientByEmailAsync(claim.ClaimantNormalizedEmail, ct);
             if (emailPatient is not null && emailPatient.Id != target.Id) return Conflict("Patient.IdentityConflict");
             if (await store.OpenClaimAsync(claim.ClaimantNormalizedEmail, target.Id, claim.Id, ct)) return Conflict("PatientClaims.PendingAlreadyExists");
