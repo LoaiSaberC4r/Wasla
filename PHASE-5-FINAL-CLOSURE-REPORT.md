@@ -1,6 +1,6 @@
 # Phase 5 Final Closure Report
 
-Status: **Phase 5 IN-PROGRESS**. Approval: 2026-10-18. Branch `codex/phase5-final-closure`; fresh main/origin/main baseline `17c9e0b96af87de0143ca4ac4978bc970ca6f9dd`. Product code, migration, tests and handoff are implemented; final acceptance is not asserted until every gate below is verified. This is not a production-readiness declaration.
+Status: **Phase 5 COMPLETED**. Approval: 2026-10-18. Branch `codex/phase5-final-closure`; fresh main/origin/main baseline `17c9e0b96af87de0143ca4ac4978bc970ca6f9dd`. The Definition of Done is verified by final remote CI run 39160421337 on source commit d79658a568dbfc4273b9b9dc1bab695043d316ab: 922 passed, 0 failed, 0 skipped, plus the clean EF model check and additive migration evidence below. This is not a production-readiness declaration.
 
 ## 1. Business implementation outcome
 
@@ -37,11 +37,11 @@ The task provides grouped P5 decision descriptions rather than a full individual
 | P5-27 | Implemented | OTP/continuation/invitation purpose, expiry, attempts, live authorization, privacy and transactional outbox; native identity races, uncertain-commit compensation and SQL retention/legal-hold checks pass. Production scanner provisioning is a separate release gate. |
 | P5-28 | Implemented | OTP/continuation/invitation purpose, expiry, attempts, live authorization, privacy and transactional outbox; native identity races, uncertain-commit compensation and SQL retention/legal-hold checks pass. Production scanner provisioning is a separate release gate. |
 | P5-29 | Implemented | OTP/continuation/invitation purpose, expiry, attempts, live authorization, privacy and transactional outbox; native identity races, uncertain-commit compensation and SQL retention/legal-hold checks pass. Production scanner provisioning is a separate release gate. |
-| P5-30 | Blocked | Grouped final closure/retention/security/API/permission/migration/regression evidence requirements: full DoD and fresh CI verification remain open. |
-| P5-31 | Blocked | Grouped final closure/retention/security/API/permission/migration/regression evidence requirements: full DoD and fresh CI verification remain open. |
-| P5-32 | Blocked | Grouped final closure/retention/security/API/permission/migration/regression evidence requirements: full DoD and fresh CI verification remain open. |
-| P5-33 | Blocked | Grouped final closure/retention/security/API/permission/migration/regression evidence requirements: full DoD and fresh CI verification remain open. |
-| P5-34 | Blocked | Grouped final closure/retention/security/API/permission/migration/regression evidence requirements: full DoD and fresh CI verification remain open. |
+| P5-30 | Implemented | Final grouped closure/retention/security/API/permission/migration/regression gates verified; final CI includes all Wasla and BuildingBlock suites. |
+| P5-31 | Implemented | Final grouped closure/retention/security/API/permission/migration/regression gates verified; final CI includes all Wasla and BuildingBlock suites. |
+| P5-32 | Implemented | Final grouped closure/retention/security/API/permission/migration/regression gates verified; final CI includes all Wasla and BuildingBlock suites. |
+| P5-33 | Implemented | Final grouped closure/retention/security/API/permission/migration/regression gates verified; final CI includes all Wasla and BuildingBlock suites. |
+| P5-34 | Implemented | Final grouped closure/retention/security/API/permission/migration/regression gates verified; final CI includes all Wasla and BuildingBlock suites. |
 | P5-D01.1 | Implemented | Optional unique Patient identity email; nonunique phone and separate nonunique ContactEmail; existing PatientId reused without clinical escalation |
 | P5-D01.2 | Implemented | Additive migration; preflight fails on collisions; no historical cleanup, automatic merge or app reset |
 | P5-D01 | Implemented | Actual medical-record merge remains unsupported; duplicate classification cannot move clinical rows |
@@ -51,7 +51,7 @@ The task provides grouped P5 decision descriptions rather than a full individual
 
 ## 2. Route-by-route diff
 
-[API changes](PHASE-5-FINAL-API-CHANGES.md) contains every E01–E06/N01–N20 method/path, actual CQRS operation/handler, permission/proof, request/response projection, examples, pagination, rowversions, idempotency, errors and coverage. Four new controllers publish exactly20 new operations; typed OpenAPI projections and headers are supplied. Existing legacy self-registration delegates to the same verified workflow. Existing booking and Walk-In accept one optional attestation field.
+[API changes](PHASE-5-FINAL-API-CHANGES.md) contains every E01–E06/N01–N20 method/path, actual CQRS operation/handler, permission/proof, request/response projection, examples, pagination, rowversions, idempotency, errors and coverage. Four new controllers publish exactly 20 new operations; typed OpenAPI projections and headers are supplied. Existing legacy self-registration delegates to the same verified workflow. Existing booking and Walk-In accept one optional attestation field.
 
 Owner-approved corrections: preserve `/api/v1/practices/{practiceId}/tickets/walk-in`; no move/alias. Verified Claim with no exact email/reference receives Claim-scoped continuation; N06 evaluates eligibility and evidence. No other business rule or route divergence is approved or intentionally introduced.
 
@@ -138,9 +138,11 @@ Owner-approved corrections: preserve `/api/v1/practices/{practiceId}/tickets/wal
 
 | Change | File |
 |---|---|
+| Added | [src/BuildingBlock/BuildingBlock.Tests/API-BASELINE-PROVENANCE.md](src/BuildingBlock/BuildingBlock.Tests/API-BASELINE-PROVENANCE.md) |
 | Modified | [src/BuildingBlock/BuildingBlock.Tests/GlobalQueryFilterTests.cs](src/BuildingBlock/BuildingBlock.Tests/GlobalQueryFilterTests.cs) |
 | Modified | [src/BuildingBlock/BuildingBlock.Tests/Phase1FoundationTests.cs](src/BuildingBlock/BuildingBlock.Tests/Phase1FoundationTests.cs) |
 | Modified | [src/BuildingBlock/BuildingBlock.Tests/Phase5PublicApiBaselineTests.cs](src/BuildingBlock/BuildingBlock.Tests/Phase5PublicApiBaselineTests.cs) |
+| Added | [src/BuildingBlock/BuildingBlock.Tests/PublicApiSignatures.cs](src/BuildingBlock/BuildingBlock.Tests/PublicApiSignatures.cs) |
 | Added | [tests/Wasla.Tests.Architecture/Phase5FinalIdentityArchitectureTests.cs](tests/Wasla.Tests.Architecture/Phase5FinalIdentityArchitectureTests.cs) |
 | Modified | [tests/Wasla.Tests.Integration/DoctorOnboardingApiTests.cs](tests/Wasla.Tests.Integration/DoctorOnboardingApiTests.cs) |
 | Modified | [tests/Wasla.Tests.Integration/Phase12ArchiveTestServices.cs](tests/Wasla.Tests.Integration/Phase12ArchiveTestServices.cs) |
@@ -149,10 +151,10 @@ Owner-approved corrections: preserve `/api/v1/practices/{practiceId}/tickets/wal
 | Modified | [tests/Wasla.Tests.Integration/Phase16SharingActivationTests.cs](tests/Wasla.Tests.Integration/Phase16SharingActivationTests.cs) |
 | Modified | [tests/Wasla.Tests.Integration/Phase18PatientDashboardApiTests.cs](tests/Wasla.Tests.Integration/Phase18PatientDashboardApiTests.cs) |
 | Added | [tests/Wasla.Tests.Integration/Phase5FinalBoundaryTests.cs](tests/Wasla.Tests.Integration/Phase5FinalBoundaryTests.cs) |
-| Added | [tests/Wasla.Tests.Integration/Phase5FinalFaultTests.cs](tests/Wasla.Tests.Integration/Phase5FinalFaultTests.cs) |
 | Added | [tests/Wasla.Tests.Integration/Phase5FinalClaimsApiTests.cs](tests/Wasla.Tests.Integration/Phase5FinalClaimsApiTests.cs) |
 | Added | [tests/Wasla.Tests.Integration/Phase5FinalContractTests.cs](tests/Wasla.Tests.Integration/Phase5FinalContractTests.cs) |
 | Added | [tests/Wasla.Tests.Integration/Phase5FinalDuplicateApiTests.cs](tests/Wasla.Tests.Integration/Phase5FinalDuplicateApiTests.cs) |
+| Added | [tests/Wasla.Tests.Integration/Phase5FinalFaultTests.cs](tests/Wasla.Tests.Integration/Phase5FinalFaultTests.cs) |
 | Added | [tests/Wasla.Tests.Integration/Phase5FinalIdentitySecurityTests.cs](tests/Wasla.Tests.Integration/Phase5FinalIdentitySecurityTests.cs) |
 | Added | [tests/Wasla.Tests.Integration/Phase5FinalIdentitySqlServerTests.cs](tests/Wasla.Tests.Integration/Phase5FinalIdentitySqlServerTests.cs) |
 | Added | [tests/Wasla.Tests.Integration/Phase5FinalIdentityTransitionTests.cs](tests/Wasla.Tests.Integration/Phase5FinalIdentityTransitionTests.cs) |
@@ -168,6 +170,21 @@ Owner-approved corrections: preserve `/api/v1/practices/{practiceId}/tickets/wal
 | Added | [tests/Wasla.Tests.Unit/Phase5FinalIdentityApplicationTests.cs](tests/Wasla.Tests.Unit/Phase5FinalIdentityApplicationTests.cs) |
 | Added | [tests/Wasla.Tests.Unit/Phase5FinalIdentityDomainTests.cs](tests/Wasla.Tests.Unit/Phase5FinalIdentityDomainTests.cs) |
 | Modified | [tests/Wasla.Tests.Unit/Phase5PatientFamilyTests.cs](tests/Wasla.Tests.Unit/Phase5PatientFamilyTests.cs) |
+
+### Foundation compatibility references
+
+| Change | File |
+|---|---|
+| Added | [src/BuildingBlock/BuildingBlock.Api/PublicAPI.Shipped.txt](src/BuildingBlock/BuildingBlock.Api/PublicAPI.Shipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Api/PublicAPI.Unshipped.txt](src/BuildingBlock/BuildingBlock.Api/PublicAPI.Unshipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Application/PublicAPI.Shipped.txt](src/BuildingBlock/BuildingBlock.Application/PublicAPI.Shipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Application/PublicAPI.Unshipped.txt](src/BuildingBlock/BuildingBlock.Application/PublicAPI.Unshipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Domain/PublicAPI.Shipped.txt](src/BuildingBlock/BuildingBlock.Domain/PublicAPI.Shipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Domain/PublicAPI.Unshipped.txt](src/BuildingBlock/BuildingBlock.Domain/PublicAPI.Unshipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer/PublicAPI.Shipped.txt](src/BuildingBlock/BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer/PublicAPI.Shipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer/PublicAPI.Unshipped.txt](src/BuildingBlock/BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer/PublicAPI.Unshipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Infrastructure/PublicAPI.Shipped.txt](src/BuildingBlock/BuildingBlock.Infrastructure/PublicAPI.Shipped.txt) |
+| Added | [src/BuildingBlock/BuildingBlock.Infrastructure/PublicAPI.Unshipped.txt](src/BuildingBlock/BuildingBlock.Infrastructure/PublicAPI.Unshipped.txt) |
 
 ### Operations and build
 
@@ -217,29 +234,21 @@ Retention tests prove90d boundaries, legal hold placement/release authorization,
 
 ## 6. Test evidence and commands
 
-Environment: Windows, PowerShell, .NET SDK 10.0.401, EF CLI 10.0.10, local `.\SQLEXPRESS` using integrated authentication. Fixture catalogs have random GUID names and synthetic data; no development/non-disposable database was reset. Native tests receive `WASLA_SQLSERVER_CONNECTION_STRING` only in their process. [Machine-readable results](PHASE-5-FINAL-TEST-EVIDENCE.json) records TRX counts and exact failed test names; raw logs/TRX remain in ignored TestResults and CI uploads its TRX artifacts.
+**Final remote CI: [run 39160421337](https://github.com/LoaiSaberC4r/Wasla/actions/runs/39160421337), source d79658a568dbfc4273b9b9dc1bab695043d316ab, PASS.** Final build reports 0 warnings / 0 errors. Test totals: **922 passed, 0 failed, 0 skipped**. Raw TRX files are uploaded as the run's test-results artifact. Machine-readable counts, prior failures and local TRX paths are in [test evidence](PHASE-5-FINAL-TEST-EVIDENCE.json).
 
-| Run | Passed | Failed | Skipped | Evidence |
-|---|---:|---:|---:|---|
-| Fresh main Wasla unit | 270 | 0 | 0 | phase5-final-closure-baseline |
-| Fresh main Wasla architecture | 21 | 0 | 0 | phase5-final-closure-baseline |
-| Fresh main native integration | 258 | 2 | 0 | phase5-final-closure-baseline-sql |
-| Full Wasla solution: unit | 290 | 0 | 0 | phase5-final-solution |
-| Full Wasla solution: native integration/regression | 281 | 0 | 0 | phase5-final-solution; 21m46s |
-| Full Wasla solution: architecture | 23 | 0 | 0 | phase5-final-solution |
-| Latest-source unit | 290 | 0 | 0 | phase5-closure-final-unit |
-| Latest-source architecture | 23 | 0 | 0 | phase5-closure-final-architecture |
-| Latest-source Phase5 integration, including native SQL races | 21 | 0 | 0 | phase5-closure-final-focused; 1m39s |
-| Final Phase5 acceptance (including new native identity race, OTP boundaries, minors, attestation and live evidence denial) | 24 | 0 | 0 | phase5-final-acceptance; 1m54s |
-| Additional compensation / SQL retention fault tests | 2 | 0 | 0 | phase5-final-faults; 30s |
-| Corrected Phase16 sharing configuration tests | 7 | 0 | 0 | phase5-ci-sharing-fix; 49s |
-| Clean archived main BuildingBlock | 316 | 7 | 0 | phase5-buildingblock-baseline |
-| Intermediate BuildingBlock run (before independent baseline capture) | 318 | 5 | 0 | phase5-closure-foundation; 35s |
-| Final BuildingBlock / frozen-main compatibility | 323 | 0 | 0 | phase5-final-foundation; 23s |
+| Final CI category | Passed | Failed | Skipped |
+|---|---:|---:|---:|
+| Wasla unit | 290 | 0 | 0 |
+| Wasla integration/regression | 245 | 0 | 0 |
+| SQL Server concurrency | 41 | 0 | 0 |
+| Wasla architecture | 23 | 0 | 0 |
+| BuildingBlock foundation/compatibility | 323 | 0 | 0 |
 
-The full 281 integration run precedes the final self-registration soft-duplicate audit addition; all 21 Phase5 integration tests were then rerun against that final source. The 7-test Phase16 rerun validates the subsequent test-host correction. Three further boundary tests pass together with all existing Phase5 tests in the final24-test run; this also validates denial of another verified applicant and live removal of evidence permission from an ordinary SuperAdmin. One initial new test omitted its required evidenceType field and correctly received400; the corrected well-formed-but-evidence-free request receives422. Both attempt and final results are retained in machine evidence. Fresh remote CI is recorded separately below. No local run is presented as remote CI evidence.
+Local environment: Windows/PowerShell, SDK10.0.401, EF CLI10.0.10, SQL Express using integrated authentication. Remote: Ubuntu, SDK10.0.402/runtime10.0.13, SQL Server2022 service container. Only disposable GUID fixture databases and synthetic .test addresses/documents were used. No development/non-disposable database was reset. Two concurrent xUnit fixture threads bound SQL load; race tests still use genuinely concurrent requests.
 
-Commands executed (Release configuration):
+Additional final local evidence: unit290passed, Phase5 hosted API/native SQL26passed, BuildingBlock323passed; EF reports no pending model changes. These runs cover all 20 new routes and six affected contracts, ordinary SuperAdmin review and live evidence-permission revocation, wrong applicant denial, activation expiry during password hashing, original-Patient linking, normalization of valid historical email variants, role-specific409, 401/403 email-change authorization, original submission-based90d expiry, SQL identity/approval/activation/duplicate races, private media rollback/uncertain commit, legal-hold contention and durable purge retry. The final CI reruns the complete solution and foundation suites against final source.
+
+Commands executed; process SQL connection configuration is intentionally omitted from published examples:
 
 ```powershell
 dotnet --info
@@ -249,44 +258,53 @@ dotnet test tests/Wasla.Tests.Unit --configuration Release --no-build
 dotnet test tests/Wasla.Tests.Integration --configuration Release --no-build
 dotnet test tests/Wasla.Tests.Architecture --configuration Release --no-build
 dotnet test Wasla.sln --configuration Release --no-build --logger trx --results-directory TestResults/phase5-final-solution -v quiet -- xUnit.MaxParallelThreads=2 xUnit.LongRunningTestSeconds=90 xUnit.DiagnosticMessages=true
-dotnet build Wasla.sln --configuration Release --artifacts-path TestResults/phase5-closure-final-artifacts -warnaserror -v quiet
-dotnet test tests/Wasla.Tests.Unit --configuration Release --artifacts-path TestResults/phase5-closure-final-artifacts --no-build --logger trx --results-directory TestResults/phase5-closure-final-unit -v quiet
-dotnet test tests/Wasla.Tests.Architecture --configuration Release --artifacts-path TestResults/phase5-closure-final-artifacts --no-build --logger trx --results-directory TestResults/phase5-closure-final-architecture -v quiet
-dotnet test tests/Wasla.Tests.Integration --configuration Release --artifacts-path TestResults/phase5-closure-final-artifacts --no-build --filter FullyQualifiedName~Phase5Final --logger trx --results-directory TestResults/phase5-closure-final-focused -v quiet -- xUnit.MaxParallelThreads=2
-dotnet test tests/Wasla.Tests.Integration --configuration Release --no-build --filter FullyQualifiedName~Phase16SharingActivationTests --logger trx --results-directory TestResults/phase5-ci-sharing-fix -v quiet -- xUnit.MaxParallelThreads=2
-dotnet test tests/Wasla.Tests.Integration --configuration Release --no-build --filter FullyQualifiedName~Phase5Final --logger trx --results-directory TestResults/phase5-final-acceptance -v quiet -- xUnit.MaxParallelThreads=2
-dotnet test tests/Wasla.Tests.Integration --configuration Release --no-build --filter FullyQualifiedName~Phase5FinalFaultTests --logger trx --results-directory TestResults/phase5-final-faults -v quiet -- xUnit.MaxParallelThreads=2
-dotnet test src/BuildingBlock/BuildingBlock.Tests --configuration Release --logger trx --results-directory TestResults/phase5-closure-foundation -v quiet
+dotnet test tests/Wasla.Tests.Integration --configuration Release --no-build --filter FullyQualifiedName~Phase5Final --logger trx --results-directory TestResults/phase5-final-normalization -v quiet -- xUnit.MaxParallelThreads=2
+dotnet test src/BuildingBlock/BuildingBlock.Tests --configuration Release --logger trx --results-directory TestResults/phase5-final-foundation -v quiet
 dotnet build tools/Wasla.PatientIdentityMaintenance --configuration Release -warnaserror
 dotnet ef migrations has-pending-model-changes --project src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer --startup-project src/Wasla/Wasla.Api --context WaslaDbContext --configuration Release --no-build
 ```
 
-Two concurrent xUnit fixture threads bound local SQL Express load; the race tests still issue concurrent requests with Task.WhenAll. No tests were disabled/skipped. Current build logs phase5-closure-final-build and phase5-ci-fix-build both report zero warnings/errors. The final model check reports no changes since the new migration. Earlier overlapping Windows test hosts caused assembly-copy locks and SQL fixture contention; those interrupted intermediate runs are not acceptance evidence.
+CI executes unit, architecture and both complementary integration filters Category!=SQLServerConcurrency / Category=SQLServerConcurrency with TRX output and xUnit.MaxParallelThreads=2, then runs the BuildingBlock project. The two filters cover the full integration assembly. Earlier isolated artifacts builds used --artifacts-path TestResults/phase5-closure-final-artifacts; all exact local runs remain in the evidence manifest.
 
-Baseline attribution and fixes:
+Baseline attribution and resolution:
 
-- The two fresh-main Phase18 dashboard failures expected a stale false configuration flag. Assertions now follow actual configuration while retaining the effective fail-closed family policy and a denied dependent read.
-- Appendix A's Phase16 SQL approval failure did not reproduce in the completed local baseline, but did reproduce in [branch CI run 39139538569](https://github.com/LoaiSaberC4r/Wasla/actions/runs/39139538569): build passed, 290 unit passed, integration 241 passed/1 failed of 242; later SQL/architecture steps were not executed. Investigation found that the requesting doctor used the explicitly keyed host, but the approving doctor used the unconfigured base host. Local developer secrets masked this in Windows; CI correctly denied approval. Both actors now use the configured host, and the test explicitly verifies the unconfigured host still returns404. No clinical privacy gate changed. The 7-test native rerun passes.
-- BuildingBlock's clean archived-main baseline had seven failures. The SDK policy assertion now checks the repository's adopted latestFeature policy; project inventory is limited to actual src/tools trees instead of ignored copies; the query-filter test scans its named BuildingBlock boundary; the public API test uses the actual src/BuildingBlock layout. The remaining five missing API-reference failures were resolved by independently capturing the pre-change main assemblies built during the initial baseline run. Each reference records the main revision and assembly SHA256. The test now compares every frozen public type/member signature, retaining every former assertion. These are new independent main references, not a claim to have recovered omitted historical files. All323 foundation tests pass; see API-BASELINE-PROVENANCE.md in the BuildingBlock test project.
-- The prior checkout-only eighth BuildingBlock failure came from an ignored _local-data source copy; the bounded src/tools inventory resolves it without deleting user data. Intermediate registration/search/Walk-In fixture errors were corrected by obtaining required OTP/attestation or legitimate registration provenance, preserving operational/privacy assertions.
-- Testcontainers transitively pulled SSH.NET2025.1.0. A central transitive pin to2026.0.0 resolves the two reported advisories without changing product behavior; the corrected restore/build reports no NU1903. Maintainer remediation references: [remote-path handling](https://github.com/advisories/GHSA-mggc-4xg6-vcxf), [recursive filename handling](https://github.com/advisories/GHSA-q939-rpr3-3284).
+- Fresh main:270unit/21architecture pass; native integration258pass/2fail of260. The two Phase18 dashboard failures asserted an outdated false base flag. Tests now compare actual configuration while retaining effective fail-closed family policy and denied dependent reads.
+- Appendix A's Phase16 sharing failure did not reproduce in the completed local baseline but did reproduce in [initial branch CI39139538569](https://github.com/LoaiSaberC4r/Wasla/actions/runs/39139538569). Investigation found a configured requesting host and an unconfigured approving host; local developer secrets masked the latter. Both doctors now use the explicitly keyed host, with a new assertion that the unconfigured host still denies approval. No clinical privacy flag or rule was weakened. Final CI passes this SQL scenario.
+- Clean archived main BuildingBlock:316pass/7fail of323. Wrong source-layout assumptions, an outdated SDK policy assertion and a source-boundary scan were corrected. An ignored source copy caused an extra checkout-only duplicate-project failure; restricting project inventory to actual src/tools trees resolved it without deleting user files.
+- Five API-reference pairs were missing from both source trees/history. They were independently captured from the clean pre-change main assemblies built during initial baseline execution, with source revision/assembly SHA256 recorded. The compatibility test now compares all 744 frozen public type/member signatures, retaining every former assertion. [Provenance](src/BuildingBlock/BuildingBlock.Tests/API-BASELINE-PROVENANCE.md) records the independent capture and its limits; these are not claimed to be recovered historical files or snapshots of the code under test. All323 foundation tests now pass locally and in CI.
+- SSH.NET2025.1.0 arrived transitively through Testcontainers. Central transitive pin2026.0.0 resolves the reported advisories; no NU1903 remains in final runs. Maintainer references: [remote-path handling](https://github.com/advisories/GHSA-mggc-4xg6-vcxf), [recursive filename handling](https://github.com/advisories/GHSA-q939-rpr3-3284).
+- Intermediate setup/compile/assertion failures were corrected, not hidden: legacy fixtures now obtain OTP/attestation or legitimate new-registration provenance; a new missing-evidence test now supplies the required evidenceType so it tests422 rather than malformed400. Earlier overlapping Windows hosts caused assembly-copy locks/SQL contention; interrupted runs are not final acceptance evidence. No test was disabled, removed or skipped.
 
-Fresh [CI run 39154768257](https://github.com/LoaiSaberC4r/Wasla/actions/runs/39154768257) **passed** on correction commit bea8b0aa62012578d7020dc447d9935899efbfd5: build0warnings/errors, unit290, integration242, native SQL concurrency39, architecture23; zero failed/skipped. Ubuntu runner SDK10.0.402, runtime10.0.13. This validates all runtime product changes. Further commits add acceptance tests/documentation; [run 39155689534](https://github.com/LoaiSaberC4r/Wasla/actions/runs/39155689534) is recorded separately while pending. The workflow preserves every test category and now uploads TRX on success/failure.
+Final contract review additionally corrected the separate-UserType approval conflict code, modification-request inactivity timestamps, expiry during asynchronous hashing, preservation of the existing Patient.ConcurrencyConflict code, conditional EmailChange401/403 and normalized comparison of valid historical identity emails. Regression assertions cover each correction. No migration cleanup or business-rule substitution was used.
 
 ## 7. Change control
 
-[Binding approved addendum](SOURCE-OF-TRUTH-PHASE-5-FINAL-ADDENDUM.md) preserves superseded text and both owner execution clarifications. Master v1.2 was absent; no claim is made to editing it. Suggested Master amendment: adopt this addendum and record Phase5 as IN-PROGRESS until all gates below pass. Existing Phase16/18 approved source addenda are not overwritten. No Jira updates, multi-UserType login, account conversion, medical merge or extra public API were introduced.
+[Binding approved addendum](SOURCE-OF-TRUTH-PHASE-5-FINAL-ADDENDUM.md) preserves superseded text and both owner execution clarifications. Master v1.2 was absent; no claim is made to editing it. Suggested Master amendment: adopt this addendum and record Phase5 as COMPLETED with the final CI/source evidence in this report; production release gates remain separate. Existing Phase16/18 approved source addenda are not overwritten. No Jira updates, multi-UserType login, account conversion, medical merge or extra public API were introduced.
 
 ## 8. Frontend handoff
 
 [Frontend handoff](PHASE-5-FINAL-FRONTEND-HANDOFF.md) covers Basic/Full, global search/Use Existing Patient, OTP nextAction, independent Claim proof/review/modification/rejection, secure activation/resend/Login, email change, localization, age guidance and retry conflicts. [API reference](PHASE-5-FINAL-API-CHANGES.md) provides all payloads and compatibility impacts. Legacy E01 requires proof/header; E03 redacts raw phone; E05 requires verified changed email; existing operational routes remain.
 
-## 9. Closure determination — explicit remaining gates
+## 9. Closure determination
 
-**Phase5 IN-PROGRESS.** Completion is blocked until all of the following are closed with evidence:
+**Phase5 COMPLETED.** Final source and CI evidence above verify the Definition of Done. No unresolved implementation blocker or known failing regression remains.
 
-- Fresh remote CI must finish successfully against final source; the completed local full and focused results are recorded above.
-The earlier baseline-file input request is resolved: independent pre-change main compatibility references now pass all323 tests, and the CI workflow includes the complete foundation suite. No external baseline file is required to finish the current verification.
-The final security fault checks cover lost commit acknowledgement, unreferenced-file compensation, durable deletion failure/retry, and independent SQL retention versus committed legal hold. Actual scanner/mail provisioning and production throughput/extended network-chaos rehearsal remain release work; no such deployment execution is claimed.
+| Definition of Done | Evidence |
+|---|---|
+| New scoped adult Full with disabled invitation-only credentials | Registration API / expiry / live delegation tests |
+| Basic minimum contact preserved, no ApplicationUser | Existing Phase5 unit / Basic / duplicate API tests |
+| Optional normalized unique identity email, shared phones/contact emails | Native SQL migration/constraints and normalization tests |
+| Same global Patient reused in existing reservation/Walk-In without clinical escalation | Cross-doctor reservation and foreign-patient Walk-In tests |
+| Existing Basic email routes verified self-registration to Claim | Registration / Claim tests, including legacy alias |
+| Claim review/modification/resubmission/rejection/approval/link/expiry/history | Claim / transition / retention tests |
+| Original Patient linked once after activation, relationships preserved | Native approval/activation race tests and unchanged PatientId/FK model |
+| One operational UserType and unique account email | Account-conflict / authentication regression tests |
+| Six affected and exactly 20 new routes | Swagger contract / architecture tests, API handoff |
+| Ten appended permissions, prior 303 IDs unchanged, live authorization | Frozen permission IDs / delegation / evidence revocation tests |
+| OTP10m/5/60s, continuation30m, one-use48h invitation and outbox | Domain / API boundary / resend / rollback tests |
+| Private evidence, safe matching, no enumeration, localization and audit | Security / evidence / architecture / existing localization tests |
+| Retention90d/24m, durable tombstones/retry, legal hold | Retention / native worker contention / real CLI tests |
+| Additive migration, clean model, SQL native uniqueness/rowversion/races | Migration/SQL artifact and final EF/native tests |
+| Complete cross-phase/foundation regression evidence and handoff | Final CI922 passed / 0 failed / 0 skipped; all listed deliverables |
 
-Release gates remain separate: production legal/privacy retention approval, actual malware scanner and secure transport/secrets provisioning, controlled SQL rehearsal/backup/recovery and load/observability acceptance. Purge flags remain false. Do not label production ready.
+Production release remains gated by jurisdiction-specific legal/privacy retention approval, actual malware scanner and secure SMTP/secrets provisioning, controlled deployment/backup/recovery and throughput/monitoring acceptance. Sensitive purging stays false by default. This report does not declare production ready. Final documentation-only changes do not modify the runtime/test/CI source verified at the commit above.

@@ -10,10 +10,9 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current task:** Phase 5 Final Patient Identity Closure — **IN-PROGRESS**.
+**Current task:** Phase 5 Final Patient Identity Closure — **COMPLETED**.
 The implementation branch adds verified onboarding/Claim/activation, scoped
-patient reuse, normalized unique identity email and retention controls. Full
-closure remains gated by the evidence and blockers in the
+patient reuse, normalized unique identity email and retention controls. Final CI verified 922 passed tests with no failures/skips; see the
 [final closure report](PHASE-5-FINAL-CLOSURE-REPORT.md).
 
 [Approved addendum](SOURCE-OF-TRUTH-PHASE-5-FINAL-ADDENDUM.md),
