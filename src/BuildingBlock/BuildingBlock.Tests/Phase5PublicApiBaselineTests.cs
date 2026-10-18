@@ -43,12 +43,14 @@ public sealed class Phase5PublicApiBaselineTests
     {
         var shipped = ReadBaseline(projectName, "Shipped");
         var unshipped = ReadBaseline(projectName, "Unshipped");
-        var exportedTypes = assembly.GetExportedTypes().Select(FormatTypeName).ToArray();
+        var exportedTypes = assembly.GetExportedTypes().Select(PublicApiSignatures.TypeName).ToArray();
+        var current = PublicApiSignatures.Read(assembly);
 
         Assert.NotEmpty(shipped);
         Assert.Contains(shipped, line => line.Contains(" -> ", StringComparison.Ordinal));
         Assert.All(exportedTypes, typeName => Assert.Contains(typeName, shipped));
         Assert.Empty(unshipped);
+        Assert.Equal(shipped, current);
         Assert.DoesNotContain(
             shipped,
             line => RemovedApiFragments.Any(fragment => line.Contains(fragment, StringComparison.Ordinal)));
@@ -63,18 +65,6 @@ public sealed class Phase5PublicApiBaselineTests
             .Where(line => line.Length > 0 && !line.StartsWith('#'))
             .Order(StringComparer.Ordinal)
             .ToArray();
-    }
-
-    private static string FormatTypeName(Type type)
-        => type.DeclaringType is null
-            ? $"{type.Namespace}.{CleanName(type)}"
-            : $"{FormatTypeName(type.DeclaringType)}.{CleanName(type)}";
-
-    private static string CleanName(Type type)
-    {
-        var name = type.Name;
-        var tick = name.IndexOf('`');
-        return tick < 0 ? name : $"{name[..tick]}<{string.Join(", ", type.GetGenericArguments().Select(argument => argument.Name))}>";
     }
 
     private static string FindRepositoryRoot()

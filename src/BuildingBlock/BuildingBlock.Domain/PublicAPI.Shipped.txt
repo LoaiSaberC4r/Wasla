@@ -1,0 +1,173 @@
+# Independently captured from clean main 17c9e0b96af87de0143ca4ac4978bc970ca6f9dd (Release, SDK10.0.401).
+# Source assembly SHA256: 6DE0C0F40606EA28E89AEFD58DD9F1BC0B7B3E7AA534EC24A3F4A10BBD2BDB76
+BuildingBlock.Domain.EntitiesHelper.AggregateRoot<TKey>
+BuildingBlock.Domain.EntitiesHelper.AggregateRoot<TKey>.ClearDomainEvents() -> System.Void
+BuildingBlock.Domain.EntitiesHelper.AggregateRoot<TKey>.DomainEvents { get; } -> System.Collections.Generic.IReadOnlyCollection<BuildingBlock.Domain.Primitive.IDomainEvent>
+BuildingBlock.Domain.EntitiesHelper.AggregateRoot<TKey>.RemoveDomainEvents(System.Collections.Generic.IReadOnlyCollection<BuildingBlock.Domain.Primitive.IDomainEvent>) -> System.Void
+BuildingBlock.Domain.EntitiesHelper.AuditableEntity<TKey>
+BuildingBlock.Domain.EntitiesHelper.AuditableEntity<TKey>.CreatedOnUtc { get; set; } -> System.DateTime
+BuildingBlock.Domain.EntitiesHelper.AuditableEntity<TKey>.ModifiedOnUtc { get; set; } -> System.Nullable<System.DateTime>
+BuildingBlock.Domain.EntitiesHelper.Entity<TKey>
+BuildingBlock.Domain.EntitiesHelper.Entity<TKey>.Id { get; } -> TKey
+BuildingBlock.Domain.Enums.SortDirection
+BuildingBlock.Domain.Enums.SortDirection.Ascending -> BuildingBlock.Domain.Enums.SortDirection
+BuildingBlock.Domain.Enums.SortDirection.Descending -> BuildingBlock.Domain.Enums.SortDirection
+BuildingBlock.Domain.Enums.SortDirection.value__ -> System.Int32
+BuildingBlock.Domain.Enums.TrackingBehavior
+BuildingBlock.Domain.Enums.TrackingBehavior.NoTracking -> BuildingBlock.Domain.Enums.TrackingBehavior
+BuildingBlock.Domain.Enums.TrackingBehavior.NoTrackingWithIdentityResolution -> BuildingBlock.Domain.Enums.TrackingBehavior
+BuildingBlock.Domain.Enums.TrackingBehavior.TrackAll -> BuildingBlock.Domain.Enums.TrackingBehavior
+BuildingBlock.Domain.Enums.TrackingBehavior.value__ -> System.Int32
+BuildingBlock.Domain.Primitive.IAggregateRoot
+BuildingBlock.Domain.Primitive.IAuditableEntity
+BuildingBlock.Domain.Primitive.IAuditableEntity.CreatedOnUtc { get; set; } -> System.DateTime
+BuildingBlock.Domain.Primitive.IAuditableEntity.ModifiedOnUtc { get; set; } -> System.Nullable<System.DateTime>
+BuildingBlock.Domain.Primitive.IDomainEvent
+BuildingBlock.Domain.Primitive.IHasDomainEvents
+BuildingBlock.Domain.Primitive.IHasDomainEvents.ClearDomainEvents() -> System.Void
+BuildingBlock.Domain.Primitive.IHasDomainEvents.DomainEvents { get; } -> System.Collections.Generic.IReadOnlyCollection<BuildingBlock.Domain.Primitive.IDomainEvent>
+BuildingBlock.Domain.Primitive.IHasDomainEvents.RemoveDomainEvents(System.Collections.Generic.IReadOnlyCollection<BuildingBlock.Domain.Primitive.IDomainEvent>) -> System.Void
+BuildingBlock.Domain.Primitive.ISoftDeleteEntity
+BuildingBlock.Domain.Primitive.ISoftDeleteEntity.DeletedOnUtc { get; set; } -> System.Nullable<System.DateTime>
+BuildingBlock.Domain.Primitive.ISoftDeleteEntity.IsDeleted { get; set; } -> System.Boolean
+BuildingBlock.Domain.Primitive.ISoftDeleteEntity.RestoredOnUtc { get; set; } -> System.Nullable<System.DateTime>
+BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.<Clone>$() -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.Code { get; set; } -> System.String
+BuildingBlock.Domain.Results.Error.Conflict(System.String, System.String, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.CorrelationId { get; set; } -> System.String
+BuildingBlock.Domain.Results.Error.Deconstruct(out System.String&, out System.String&, out BuildingBlock.Domain.Results.ErrorType&, out System.String&, out System.String&, out System.String&, out System.Nullable<System.TimeSpan>&) -> System.Void
+BuildingBlock.Domain.Results.Error.Details { get; set; } -> System.String
+BuildingBlock.Domain.Results.Error.Domain(System.String, System.String, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.Equals(BuildingBlock.Domain.Results.Error) -> System.Boolean
+BuildingBlock.Domain.Results.Error.Equals(System.Object) -> System.Boolean
+BuildingBlock.Domain.Results.Error.GetHashCode() -> System.Int32
+BuildingBlock.Domain.Results.Error.Infra(System.String, System.String, System.String, System.String, System.Nullable<System.TimeSpan>) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.Message { get; set; } -> System.String
+BuildingBlock.Domain.Results.Error.NotFound(System.String, System.String, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.RateLimit(System.String, System.String, System.TimeSpan, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.RetryAfter { get; set; } -> System.Nullable<System.TimeSpan>
+BuildingBlock.Domain.Results.Error.Security(System.String, System.String, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.Source { get; set; } -> System.String
+BuildingBlock.Domain.Results.Error.ToString() -> System.String
+BuildingBlock.Domain.Results.Error.Type { get; set; } -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.Error.Unauthorized(System.String, System.String, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.Unknown(System.String, System.String, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.Validation(System.String, System.String, System.String, System.String) -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Domain.Results.Error.ctor(System.String, System.String, BuildingBlock.Domain.Results.ErrorType, System.String, System.String, System.String, System.Nullable<System.TimeSpan>) -> System.Void
+BuildingBlock.Domain.Results.Error.op_Equality(BuildingBlock.Domain.Results.Error, BuildingBlock.Domain.Results.Error) -> System.Boolean
+BuildingBlock.Domain.Results.Error.op_Inequality(BuildingBlock.Domain.Results.Error, BuildingBlock.Domain.Results.Error) -> System.Boolean
+BuildingBlock.Domain.Results.ErrorCodes
+BuildingBlock.Domain.Results.ErrorCodes.Common
+BuildingBlock.Domain.Results.ErrorCodes.Common.BadRequest -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.Conflict -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.Forbidden -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.Infrastructure -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.MethodNotAllowed -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.NotFound -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.RateLimited -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.Unauthorized -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.Unknown -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.UnsupportedMediaType -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Common.Validation -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Persistence
+BuildingBlock.Domain.Results.ErrorCodes.Persistence.Concurrency -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Persistence.Deadlock -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Persistence.Timeout -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Persistence.Unavailable -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Persistence.UniqueConstraint -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Validation
+BuildingBlock.Domain.Results.ErrorCodes.Validation.Invalid -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Validation.InvalidJson -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Validation.ModelBinding -> System.String
+BuildingBlock.Domain.Results.ErrorCodes.Validation.Required -> System.String
+BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.Conflict -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.Domain -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.Infrastructure -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.NotFound -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.RateLimit -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.Security -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.Unauthorized -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.Unknown -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.Validation -> BuildingBlock.Domain.Results.ErrorType
+BuildingBlock.Domain.Results.ErrorType.value__ -> System.Int32
+BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.Combine(BuildingBlock.Domain.Results.Result[]) -> BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.Conflict(System.String, System.String) -> BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.Conflict<T>(System.String, System.String) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.Result.Errors { get; } -> System.Collections.Immutable.ImmutableArray<BuildingBlock.Domain.Results.Error>
+BuildingBlock.Domain.Results.Result.Fail(BuildingBlock.Domain.Results.Error) -> BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.Fail(System.Collections.Generic.IEnumerable<BuildingBlock.Domain.Results.Error>) -> BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.FirstFailureOrOk(BuildingBlock.Domain.Results.Result[]) -> BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.IsFailure { get; } -> System.Boolean
+BuildingBlock.Domain.Results.Result.IsSuccess { get; } -> System.Boolean
+BuildingBlock.Domain.Results.Result.NotFound(System.String, System.String) -> BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.NotFound<T>(System.String, System.String) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.Result.Ok() -> BuildingBlock.Domain.Results.Result
+BuildingBlock.Domain.Results.Result.ToString() -> System.String
+BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.Result<T>.Combine(BuildingBlock.Domain.Results.Result<T>[]) -> BuildingBlock.Domain.Results.Result<System.Collections.Generic.IReadOnlyList<T>>
+BuildingBlock.Domain.Results.Result<T>.Deconstruct(out System.Boolean&, out T&, out System.Collections.Immutable.ImmutableArray<BuildingBlock.Domain.Results.Error>&) -> System.Void
+BuildingBlock.Domain.Results.Result<T>.Errors { get; } -> System.Collections.Immutable.ImmutableArray<BuildingBlock.Domain.Results.Error>
+BuildingBlock.Domain.Results.Result<T>.Fail(BuildingBlock.Domain.Results.Error) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.Result<T>.Fail(System.Collections.Generic.IEnumerable<BuildingBlock.Domain.Results.Error>) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.Result<T>.IsFailure { get; } -> System.Boolean
+BuildingBlock.Domain.Results.Result<T>.IsSuccess { get; } -> System.Boolean
+BuildingBlock.Domain.Results.Result<T>.Ok(T) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.Result<T>.ToString() -> System.String
+BuildingBlock.Domain.Results.Result<T>.Value { get; } -> T
+BuildingBlock.Domain.Results.ResultExtensions
+BuildingBlock.Domain.Results.ResultExtensions.Bind<TIn, TOut>(BuildingBlock.Domain.Results.Result<TIn>, System.Func<TIn, BuildingBlock.Domain.Results.Result<TOut>>) -> BuildingBlock.Domain.Results.Result<TOut>
+BuildingBlock.Domain.Results.ResultExtensions.BindAsync<TIn, TOut>(BuildingBlock.Domain.Results.Result<TIn>, System.Func<TIn, System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<TOut>>>) -> System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<TOut>>
+BuildingBlock.Domain.Results.ResultExtensions.Ensure<T>(BuildingBlock.Domain.Results.Result<T>, System.Func<T, System.Boolean>, BuildingBlock.Domain.Results.Error) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.ResultExtensions.EnsureAsync<T>(BuildingBlock.Domain.Results.Result<T>, System.Func<T, System.Threading.Tasks.ValueTask<System.Boolean>>, BuildingBlock.Domain.Results.Error) -> System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<T>>
+BuildingBlock.Domain.Results.ResultExtensions.Map<TIn, TOut>(BuildingBlock.Domain.Results.Result<TIn>, System.Func<TIn, TOut>) -> BuildingBlock.Domain.Results.Result<TOut>
+BuildingBlock.Domain.Results.ResultExtensions.MapAsync<TIn, TOut>(BuildingBlock.Domain.Results.Result<TIn>, System.Func<TIn, System.Threading.Tasks.ValueTask<TOut>>) -> System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<TOut>>
+BuildingBlock.Domain.Results.ResultExtensions.Match<T, TOut>(BuildingBlock.Domain.Results.Result<T>, System.Func<T, TOut>, System.Func<System.Collections.Immutable.ImmutableArray<BuildingBlock.Domain.Results.Error>, TOut>) -> TOut
+BuildingBlock.Domain.Results.ResultExtensions.MatchAsync<T, TOut>(BuildingBlock.Domain.Results.Result<T>, System.Func<T, System.Threading.Tasks.ValueTask<TOut>>, System.Func<System.Collections.Immutable.ImmutableArray<BuildingBlock.Domain.Results.Error>, System.Threading.Tasks.ValueTask<TOut>>) -> System.Threading.Tasks.ValueTask<TOut>
+BuildingBlock.Domain.Results.ResultExtensions.Tap<T>(BuildingBlock.Domain.Results.Result<T>, System.Action<T>) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.ResultExtensions.TapAsync<T>(System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<T>>, System.Action<T>) -> System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<T>>
+BuildingBlock.Domain.Results.ResultExtensions.TapError<T>(BuildingBlock.Domain.Results.Result<T>, System.Action<System.Collections.Generic.IReadOnlyList<BuildingBlock.Domain.Results.Error>>) -> BuildingBlock.Domain.Results.Result<T>
+BuildingBlock.Domain.Results.ResultExtensions.TapErrorAsync<T>(System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<T>>, System.Action<System.Collections.Generic.IReadOnlyList<BuildingBlock.Domain.Results.Error>>) -> System.Threading.Tasks.ValueTask<BuildingBlock.Domain.Results.Result<T>>
+BuildingBlock.Domain.SharedDto.PagedResult<T>
+BuildingBlock.Domain.SharedDto.PagedResult<T>.<Clone>$() -> BuildingBlock.Domain.SharedDto.PagedResult<T>
+BuildingBlock.Domain.SharedDto.PagedResult<T>.Equals(BuildingBlock.Domain.SharedDto.PagedResult<T>) -> System.Boolean
+BuildingBlock.Domain.SharedDto.PagedResult<T>.Equals(System.Object) -> System.Boolean
+BuildingBlock.Domain.SharedDto.PagedResult<T>.GetHashCode() -> System.Int32
+BuildingBlock.Domain.SharedDto.PagedResult<T>.HasNextPage { get; } -> System.Boolean
+BuildingBlock.Domain.SharedDto.PagedResult<T>.HasPreviousPage { get; } -> System.Boolean
+BuildingBlock.Domain.SharedDto.PagedResult<T>.Items { get; } -> System.Collections.Generic.IReadOnlyList<T>
+BuildingBlock.Domain.SharedDto.PagedResult<T>.PageNumber { get; } -> System.Int32
+BuildingBlock.Domain.SharedDto.PagedResult<T>.PageSize { get; } -> System.Int32
+BuildingBlock.Domain.SharedDto.PagedResult<T>.ToString() -> System.String
+BuildingBlock.Domain.SharedDto.PagedResult<T>.TotalItems { get; } -> System.Int64
+BuildingBlock.Domain.SharedDto.PagedResult<T>.TotalPages { get; } -> System.Int64
+BuildingBlock.Domain.SharedDto.PagedResult<T>.ctor(System.Int32, System.Int32, System.Int64, System.Collections.Generic.IEnumerable<T>) -> System.Void
+BuildingBlock.Domain.SharedDto.PagedResult<T>.op_Equality(BuildingBlock.Domain.SharedDto.PagedResult<T>, BuildingBlock.Domain.SharedDto.PagedResult<T>) -> System.Boolean
+BuildingBlock.Domain.SharedDto.PagedResult<T>.op_Inequality(BuildingBlock.Domain.SharedDto.PagedResult<T>, BuildingBlock.Domain.SharedDto.PagedResult<T>) -> System.Boolean
+BuildingBlock.Domain.Specification.IOrderExpression<TEntity>
+BuildingBlock.Domain.Specification.IOrderExpression<TEntity>.ApplyInitial(System.Linq.IQueryable<TEntity>) -> System.Linq.IOrderedQueryable<TEntity>
+BuildingBlock.Domain.Specification.IOrderExpression<TEntity>.ApplyThen(System.Linq.IOrderedQueryable<TEntity>) -> System.Linq.IOrderedQueryable<TEntity>
+BuildingBlock.Domain.Specification.IOrderExpression<TEntity>.Descending { get; } -> System.Boolean
+BuildingBlock.Domain.Specification.IOrderExpression<TEntity>.KeySelector { get; } -> System.Linq.Expressions.LambdaExpression
+BuildingBlock.Domain.Specification.Specification<TEntity, TOut>
+BuildingBlock.Domain.Specification.Specification<TEntity, TOut>.Selector { get; } -> System.Linq.Expressions.Expression<System.Func<TEntity, TOut>>
+BuildingBlock.Domain.Specification.Specification<TEntity>
+BuildingBlock.Domain.Specification.Specification<TEntity>.Criteria { get; } -> System.Linq.Expressions.Expression<System.Func<TEntity, System.Boolean>>
+BuildingBlock.Domain.Specification.Specification<TEntity>.IncludeExpressions { get; } -> System.Collections.Generic.IReadOnlyList<System.Linq.Expressions.Expression<System.Func<TEntity, System.Object>>>
+BuildingBlock.Domain.Specification.Specification<TEntity>.IsDistinct { get; } -> System.Boolean
+BuildingBlock.Domain.Specification.Specification<TEntity>.IsPagingEnabled { get; } -> System.Boolean
+BuildingBlock.Domain.Specification.Specification<TEntity>.IsSingleQuery { get; } -> System.Boolean
+BuildingBlock.Domain.Specification.Specification<TEntity>.IsSplitQuery { get; } -> System.Boolean
+BuildingBlock.Domain.Specification.Specification<TEntity>.IsTotalCountEnabled { get; } -> System.Boolean
+BuildingBlock.Domain.Specification.Specification<TEntity>.MaximumPageSize { get; } -> System.Int32
+BuildingBlock.Domain.Specification.Specification<TEntity>.OrderExpressions { get; } -> System.Collections.Generic.IReadOnlyList<BuildingBlock.Domain.Specification.IOrderExpression<TEntity>>
+BuildingBlock.Domain.Specification.Specification<TEntity>.PageNumber { get; } -> System.Int32
+BuildingBlock.Domain.Specification.Specification<TEntity>.PageSize { get; } -> System.Int32
+BuildingBlock.Domain.Specification.Specification<TEntity>.QueryTags { get; } -> System.Collections.Generic.IReadOnlyList<System.String>
+BuildingBlock.Domain.Specification.Specification<TEntity>.Skip { get; } -> System.Int32
+BuildingBlock.Domain.Specification.Specification<TEntity>.Take { get; } -> System.Int32
+BuildingBlock.Domain.Specification.Specification<TEntity>.Tracking { get; } -> BuildingBlock.Domain.Enums.TrackingBehavior
+BuildingBlock.Domain.Specification.SpecificationDefaults
+BuildingBlock.Domain.Specification.SpecificationDefaults.DefaultMaximumPageSize -> System.Int32

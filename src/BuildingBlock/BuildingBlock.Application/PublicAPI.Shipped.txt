@@ -1,0 +1,392 @@
+# Independently captured from clean main 17c9e0b96af87de0143ca4ac4978bc970ca6f9dd (Release, SDK10.0.401).
+# Source assembly SHA256: 1EC2F67A24700768C035AA97FB4004D7FC4C067C336147343E342418FEB48A8D
+BuildingBlock.Application.Abstraction.CacheScope
+BuildingBlock.Application.Abstraction.CacheScope.Context -> BuildingBlock.Application.Abstraction.CacheScope
+BuildingBlock.Application.Abstraction.CacheScope.Global -> BuildingBlock.Application.Abstraction.CacheScope
+BuildingBlock.Application.Abstraction.CacheScope.Tenant -> BuildingBlock.Application.Abstraction.CacheScope
+BuildingBlock.Application.Abstraction.CacheScope.User -> BuildingBlock.Application.Abstraction.CacheScope
+BuildingBlock.Application.Abstraction.CacheScope.value__ -> System.Int32
+BuildingBlock.Application.Abstraction.Caching.CacheKeyIgnoreAttribute
+BuildingBlock.Application.Abstraction.Caching.CacheKeyIgnoreAttribute.ctor() -> System.Void
+BuildingBlock.Application.Abstraction.Caching.DefaultCacheScopeValueProvider
+BuildingBlock.Application.Abstraction.Caching.DefaultCacheScopeValueProvider.TryGetScopeValue(BuildingBlock.Application.Abstraction.CacheScope, out System.String&) -> System.Boolean
+BuildingBlock.Application.Abstraction.Caching.DefaultCacheScopeValueProvider.ctor(BuildingBlock.Application.Abstraction.Security.ICurrentUser) -> System.Void
+BuildingBlock.Application.Abstraction.Caching.ICacheScopeValueProvider
+BuildingBlock.Application.Abstraction.Caching.ICacheScopeValueProvider.TryGetScopeValue(BuildingBlock.Application.Abstraction.CacheScope, out System.String&) -> System.Boolean
+BuildingBlock.Application.Abstraction.Caching.KeyedSemaphore
+BuildingBlock.Application.Abstraction.Caching.KeyedSemaphore.WaitAsync(System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.IDisposable>
+BuildingBlock.Application.Abstraction.Caching.KeyedSemaphore.ctor() -> System.Void
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.<Clone>$() -> BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.Deconstruct(out System.String&, out System.String&, out System.Boolean&) -> System.Void
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.Equals(BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.KeyId { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.Plaintext { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.ReEncryptionRequired { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.ToString() -> System.String
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.ctor(System.String, System.String, System.Boolean) -> System.Void
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.op_Equality(BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult, BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult.op_Inequality(BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult, BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.IEncryptionService
+BuildingBlock.Application.Abstraction.Encryption.IEncryptionService.Decrypt(System.String) -> System.String
+BuildingBlock.Application.Abstraction.Encryption.IEncryptionService.DecryptDetailed(System.String) -> BuildingBlock.Application.Abstraction.Encryption.EncryptionDecryptionResult
+BuildingBlock.Application.Abstraction.Encryption.IEncryptionService.Encrypt(System.String) -> System.String
+BuildingBlock.Application.Abstraction.Encryption.IPasswordService
+BuildingBlock.Application.Abstraction.Encryption.IPasswordService.Hash(System.String) -> System.String
+BuildingBlock.Application.Abstraction.Encryption.IPasswordService.HashAsync(System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.String>
+BuildingBlock.Application.Abstraction.Encryption.IPasswordService.IsStrongPassword(System.String) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.IPasswordService.Verify(System.String, System.String) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.IPasswordService.VerifyAsync(System.String, System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Boolean>
+BuildingBlock.Application.Abstraction.Encryption.IPasswordService.VerifyDetailed(System.String, System.String) -> BuildingBlock.Application.Abstraction.Encryption.PasswordVerification
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.MaximumLength { get; set; } -> System.Int32
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.RequireDigit { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.RequireLowercase { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.RequireNonAlphanumeric { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.RequireUppercase { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.RequiredLength { get; set; } -> System.Int32
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.SectionName -> System.String
+BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions.ctor() -> System.Void
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.<Clone>$() -> BuildingBlock.Application.Abstraction.Encryption.PasswordVerification
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.Deconstruct(out System.Boolean&, out System.Boolean&) -> System.Void
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.Equals(BuildingBlock.Application.Abstraction.Encryption.PasswordVerification) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.IsValid { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.SuccessRehashNeeded { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.ToString() -> System.String
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.ctor(System.Boolean, System.Boolean) -> System.Void
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.op_Equality(BuildingBlock.Application.Abstraction.Encryption.PasswordVerification, BuildingBlock.Application.Abstraction.Encryption.PasswordVerification) -> System.Boolean
+BuildingBlock.Application.Abstraction.Encryption.PasswordVerification.op_Inequality(BuildingBlock.Application.Abstraction.Encryption.PasswordVerification, BuildingBlock.Application.Abstraction.Encryption.PasswordVerification) -> System.Boolean
+BuildingBlock.Application.Abstraction.ICacheInvalidator
+BuildingBlock.Application.Abstraction.ICacheInvalidator.Tags { get; } -> System.Collections.Generic.IEnumerable<System.String>
+BuildingBlock.Application.Abstraction.ICacheService
+BuildingBlock.Application.Abstraction.ICacheService.ClearAllAsync(System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.ICacheService.InvalidateByTagsAsync(System.Collections.Generic.IEnumerable<System.String>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.ICacheService.RemoveAsync(System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.ICacheService.SetAsync<T>(System.String, T, System.TimeSpan, System.Collections.Generic.IEnumerable<System.String>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.ICacheService.TryGetAsync<T>(System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.ValueTuple<System.Boolean, T>>
+BuildingBlock.Application.Abstraction.ICacheableQuery<TResponse>
+BuildingBlock.Application.Abstraction.ICacheableRequest
+BuildingBlock.Application.Abstraction.ICacheableRequest.CacheKey { get; } -> System.String
+BuildingBlock.Application.Abstraction.ICacheableRequest.Scope { get; } -> BuildingBlock.Application.Abstraction.CacheScope
+BuildingBlock.Application.Abstraction.ICacheableRequest.Tags { get; } -> System.Collections.Generic.IEnumerable<System.String>
+BuildingBlock.Application.Abstraction.ICacheableRequest.TimeToLive { get; } -> System.Nullable<System.TimeSpan>
+BuildingBlock.Application.Abstraction.ICommand
+BuildingBlock.Application.Abstraction.ICommand<TResponse>
+BuildingBlock.Application.Abstraction.ICommandHandler<TCommand, TResponse>
+BuildingBlock.Application.Abstraction.ICommandHandler<TCommand>
+BuildingBlock.Application.Abstraction.IDomainEventDispatcher
+BuildingBlock.Application.Abstraction.IDomainEventDispatcher.DispatchAsync(BuildingBlock.Domain.Primitive.IDomainEvent, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.IDomainEventHandler<TEvent>
+BuildingBlock.Application.Abstraction.IDomainEventHandler<TEvent>.Handle(TEvent, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.IQuery<TResponse>
+BuildingBlock.Application.Abstraction.IQueryHandler<TQuery, TResponse>
+BuildingBlock.Application.Abstraction.Media.IMalwareScanner
+BuildingBlock.Application.Abstraction.Media.IMalwareScanner.ScanAsync(System.IO.Stream, System.String, System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<BuildingBlock.Application.Abstraction.Media.MalwareScanResult>
+BuildingBlock.Application.Abstraction.Media.IMediaService
+BuildingBlock.Application.Abstraction.Media.IMediaService.DeleteAsync(System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.Media.IMediaService.DeleteRangeAsync(System.Collections.Generic.IEnumerable<System.String>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.Media.IMediaService.SaveAsync(BuildingBlock.Application.Abstraction.Media.MediaUpload, BuildingBlock.Application.Abstraction.Media.MediaStorageRequest, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<BuildingBlock.Application.Abstraction.Media.StoredMedia>
+BuildingBlock.Application.Abstraction.Media.IMediaService.SaveAsync(System.Collections.Generic.IEnumerable<BuildingBlock.Application.Abstraction.Media.MediaUpload>, BuildingBlock.Application.Abstraction.Media.MediaStorageRequest, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BuildingBlock.Application.Abstraction.Media.StoredMedia>>
+BuildingBlock.Application.Abstraction.Media.IMediaStorage
+BuildingBlock.Application.Abstraction.Media.IMediaStorage.DeleteAsync(System.String, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.Media.IMediaStorage.SaveAsync(BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload, BuildingBlock.Application.Abstraction.Media.MediaStorageRequest, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<BuildingBlock.Application.Abstraction.Media.StoredMedia>
+BuildingBlock.Application.Abstraction.Media.IMediaUploadValidator
+BuildingBlock.Application.Abstraction.Media.IMediaUploadValidator.ValidateAsync(BuildingBlock.Application.Abstraction.Media.MediaUpload, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload>
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.<Clone>$() -> BuildingBlock.Application.Abstraction.Media.MalwareScanResult
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.Deconstruct(out System.Boolean&, out System.String&) -> System.Void
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.Equals(BuildingBlock.Application.Abstraction.Media.MalwareScanResult) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.IsSafe { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.Reason { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.Safe { get; } -> BuildingBlock.Application.Abstraction.Media.MalwareScanResult
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.ToString() -> System.String
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.Unsafe(System.String) -> BuildingBlock.Application.Abstraction.Media.MalwareScanResult
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.ctor(System.Boolean, System.String) -> System.Void
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.op_Equality(BuildingBlock.Application.Abstraction.Media.MalwareScanResult, BuildingBlock.Application.Abstraction.Media.MalwareScanResult) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MalwareScanResult.op_Inequality(BuildingBlock.Application.Abstraction.Media.MalwareScanResult, BuildingBlock.Application.Abstraction.Media.MalwareScanResult) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.<Clone>$() -> BuildingBlock.Application.Abstraction.Media.MediaStorageRequest
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.Deconstruct(out System.String&, out System.String&) -> System.Void
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.Equals(BuildingBlock.Application.Abstraction.Media.MediaStorageRequest) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.FileName { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.FolderName { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.ToString() -> System.String
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.ctor(System.String, System.String) -> System.Void
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.op_Equality(BuildingBlock.Application.Abstraction.Media.MediaStorageRequest, BuildingBlock.Application.Abstraction.Media.MediaStorageRequest) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaStorageRequest.op_Inequality(BuildingBlock.Application.Abstraction.Media.MediaStorageRequest, BuildingBlock.Application.Abstraction.Media.MediaStorageRequest) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaUpload
+BuildingBlock.Application.Abstraction.Media.MediaUpload.<Clone>$() -> BuildingBlock.Application.Abstraction.Media.MediaUpload
+BuildingBlock.Application.Abstraction.Media.MediaUpload.Content { get; set; } -> System.IO.Stream
+BuildingBlock.Application.Abstraction.Media.MediaUpload.ContentType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.MediaUpload.Deconstruct(out System.IO.Stream&, out System.String&, out System.String&, out System.Nullable<System.Int64>&) -> System.Void
+BuildingBlock.Application.Abstraction.Media.MediaUpload.Equals(BuildingBlock.Application.Abstraction.Media.MediaUpload) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaUpload.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaUpload.FileName { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.MediaUpload.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.Media.MediaUpload.Length { get; set; } -> System.Nullable<System.Int64>
+BuildingBlock.Application.Abstraction.Media.MediaUpload.ToString() -> System.String
+BuildingBlock.Application.Abstraction.Media.MediaUpload.ctor(System.IO.Stream, System.String, System.String, System.Nullable<System.Int64>) -> System.Void
+BuildingBlock.Application.Abstraction.Media.MediaUpload.op_Equality(BuildingBlock.Application.Abstraction.Media.MediaUpload, BuildingBlock.Application.Abstraction.Media.MediaUpload) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.MediaUpload.op_Inequality(BuildingBlock.Application.Abstraction.Media.MediaUpload, BuildingBlock.Application.Abstraction.Media.MediaUpload) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.StoredMedia
+BuildingBlock.Application.Abstraction.Media.StoredMedia.<Clone>$() -> BuildingBlock.Application.Abstraction.Media.StoredMedia
+BuildingBlock.Application.Abstraction.Media.StoredMedia.ContentType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.StoredMedia.Deconstruct(out System.String&, out System.String&, out System.String&, out System.String&, out System.Int64&) -> System.Void
+BuildingBlock.Application.Abstraction.Media.StoredMedia.Equals(BuildingBlock.Application.Abstraction.Media.StoredMedia) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.StoredMedia.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.StoredMedia.Extension { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.StoredMedia.FileName { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.StoredMedia.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.Media.StoredMedia.Key { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.StoredMedia.Length { get; set; } -> System.Int64
+BuildingBlock.Application.Abstraction.Media.StoredMedia.ToString() -> System.String
+BuildingBlock.Application.Abstraction.Media.StoredMedia.ctor(System.String, System.String, System.String, System.String, System.Int64) -> System.Void
+BuildingBlock.Application.Abstraction.Media.StoredMedia.op_Equality(BuildingBlock.Application.Abstraction.Media.StoredMedia, BuildingBlock.Application.Abstraction.Media.StoredMedia) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.StoredMedia.op_Inequality(BuildingBlock.Application.Abstraction.Media.StoredMedia, BuildingBlock.Application.Abstraction.Media.StoredMedia) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.<Clone>$() -> BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.Content { get; set; } -> System.IO.Stream
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.ContentType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.Deconstruct(out System.IO.Stream&, out System.String&, out System.String&, out System.String&, out System.String&, out System.Int64&, out System.Boolean&) -> System.Void
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.DisposeAsync() -> System.Threading.Tasks.ValueTask
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.Equals(BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.Extension { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.Length { get; set; } -> System.Int64
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.OriginalFileName { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.OwnsStream { get; set; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.SafeFileName { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.ToString() -> System.String
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.ctor(System.IO.Stream, System.String, System.String, System.String, System.String, System.Int64, System.Boolean) -> System.Void
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.op_Equality(BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload, BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload) -> System.Boolean
+BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload.op_Inequality(BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload, BuildingBlock.Application.Abstraction.Media.ValidatedMediaUpload) -> System.Boolean
+BuildingBlock.Application.Abstraction.Persistence.IApplicationTransaction
+BuildingBlock.Application.Abstraction.Persistence.IApplicationTransaction.CommitAsync(System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.Persistence.IApplicationTransaction.RollbackAsync(System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.Persistence.IApplicationTransactionManager<TWriteMarker>
+BuildingBlock.Application.Abstraction.Persistence.IApplicationTransactionManager<TWriteMarker>.BeginTransactionAsync(System.Threading.CancellationToken) -> System.Threading.Tasks.Task<BuildingBlock.Application.Abstraction.Persistence.IApplicationTransaction>
+BuildingBlock.Application.Abstraction.Persistence.IReadModelUnitOfWork<TReadMarker>
+BuildingBlock.Application.Abstraction.Persistence.IReadModelUnitOfWork<TReadMarker>.SaveChangesAsync(System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Int32>
+BuildingBlock.Application.Abstraction.Persistence.IReadModelUnitOfWork<TReadMarker>.Writer<TEntity>() -> BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.AddAsync(TEntity, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.AddRangeAsync(System.Collections.Generic.IEnumerable<TEntity>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.AnyAsync(System.Linq.Expressions.Expression<System.Func<TEntity, System.Boolean>>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Boolean>
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.FindByIdAsync<TKey>(TKey, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.Remove(TEntity) -> System.Void
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.RemoveRange(System.Collections.Generic.IEnumerable<TEntity>) -> System.Void
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.Update(TEntity) -> System.Void
+BuildingBlock.Application.Abstraction.Persistence.IReadModelWriter<TEntity, TReadMarker>.UpdateRange(System.Collections.Generic.IEnumerable<TEntity>) -> System.Void
+BuildingBlock.Application.Abstraction.Persistence.IReadPersistenceMarker
+BuildingBlock.Application.Abstraction.Persistence.ITransactionalCommand
+BuildingBlock.Application.Abstraction.Persistence.ITransactionalCommand<TWriteMarker>
+BuildingBlock.Application.Abstraction.Persistence.IWritePersistenceMarker
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.<Clone>$() -> BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.Content { get; set; } -> System.Byte[]
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.ContentType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.Deconstruct(out System.Byte[]&, out System.String&, out System.String&) -> System.Void
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.Equals(BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode) -> System.Boolean
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.FileExtension { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.ToString() -> System.String
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.ctor(System.Byte[], System.String, System.String) -> System.Void
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.op_Equality(BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode, BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode) -> System.Boolean
+BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode.op_Inequality(BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode, BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode) -> System.Boolean
+BuildingBlock.Application.Abstraction.QrCode.IQRCodeService
+BuildingBlock.Application.Abstraction.QrCode.IQRCodeService.Generate(BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest) -> BuildingBlock.Application.Abstraction.QrCode.GeneratedQrCode
+BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel
+BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel.H -> BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel
+BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel.L -> BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel
+BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel.M -> BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel
+BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel.Q -> BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel
+BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel.value__ -> System.Int32
+BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat
+BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat.Png -> BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat
+BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat.Svg -> BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat
+BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat.value__ -> System.Int32
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.<Clone>$() -> BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.Deconstruct(out System.String&, out BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat&, out BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel&, out System.Int32&) -> System.Void
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.Equals(BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest) -> System.Boolean
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.ErrorCorrectionLevel { get; set; } -> BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.Format { get; set; } -> BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.FromJson<T>(T, BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat, BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel, System.Int32, System.Text.Json.JsonSerializerOptions) -> BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.GetHashCode() -> System.Int32
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.Payload { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.PixelsPerModule { get; set; } -> System.Int32
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.ToString() -> System.String
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.ctor(System.String, BuildingBlock.Application.Abstraction.QrCode.QrCodeImageFormat, BuildingBlock.Application.Abstraction.QrCode.QrCodeErrorCorrectionLevel, System.Int32) -> System.Void
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.op_Equality(BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest, BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest) -> System.Boolean
+BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest.op_Inequality(BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest, BuildingBlock.Application.Abstraction.QrCode.QrCodeRequest) -> System.Boolean
+BuildingBlock.Application.Abstraction.Security.ClaimsPrincipalExtensions
+BuildingBlock.Application.Abstraction.Security.ClaimsPrincipalExtensions.GetClaimValue(System.Security.Claims.ClaimsPrincipal, System.String) -> System.String
+BuildingBlock.Application.Abstraction.Security.ClaimsPrincipalExtensions.GetClaimValues(System.Security.Claims.ClaimsPrincipal, System.String) -> System.Collections.Generic.IEnumerable<System.String>
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.EmailClaimType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.MaximumClaimValueLength { get; set; } -> System.Int32
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.MaximumPermissions { get; set; } -> System.Int32
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.MaximumRoles { get; set; } -> System.Int32
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.PermissionClaimType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.RoleClaimType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.SectionName -> System.String
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.UserIdClaimType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.UserNameClaimType { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions.ctor() -> System.Void
+BuildingBlock.Application.Abstraction.Security.ICurrentUser
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.Email { get; } -> System.String
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.GetClaimValue(System.String) -> System.String
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.GetClaimValues(System.String) -> System.Collections.Generic.IReadOnlyCollection<System.String>
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.IsAuthenticated { get; } -> System.Boolean
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.Permissions { get; } -> System.Collections.Generic.IReadOnlyCollection<System.String>
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.Roles { get; } -> System.Collections.Generic.IReadOnlyCollection<System.String>
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.UserId { get; } -> System.Nullable<System.Guid>
+BuildingBlock.Application.Abstraction.Security.ICurrentUser.UserName { get; } -> System.String
+BuildingBlock.Application.Abstraction.Security.ITokenReader
+BuildingBlock.Application.Abstraction.Security.ITokenReader.ReadFromPrincipal(System.Security.Claims.ClaimsPrincipal) -> BuildingBlock.Application.Abstraction.Security.TokenInfoDto
+BuildingBlock.Application.Abstraction.Security.ITokenReader.TryGet<T>(System.Security.Claims.ClaimsPrincipal, System.String) -> System.ValueTuple<System.Boolean, T>
+BuildingBlock.Application.Abstraction.Security.ITokenReader.TryGetClaim(System.Security.Claims.ClaimsPrincipal, System.String, out System.String&) -> System.Boolean
+BuildingBlock.Application.Abstraction.Security.JwtClaimTypesCustom
+BuildingBlock.Application.Abstraction.Security.JwtClaimTypesCustom.Email -> System.String
+BuildingBlock.Application.Abstraction.Security.JwtClaimTypesCustom.Permission -> System.String
+BuildingBlock.Application.Abstraction.Security.JwtClaimTypesCustom.Role -> System.String
+BuildingBlock.Application.Abstraction.Security.JwtClaimTypesCustom.UserId -> System.String
+BuildingBlock.Application.Abstraction.Security.JwtClaimTypesCustom.UserName -> System.String
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.Audience { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.Email { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.ExpiresAtUtc { get; set; } -> System.Nullable<System.DateTime>
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.IssuedAtUtc { get; set; } -> System.Nullable<System.DateTime>
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.Issuer { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.JwtId { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.Permissions { get; set; } -> System.String[]
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.Roles { get; set; } -> System.String[]
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.Subject { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.UserId { get; set; } -> System.Nullable<System.Guid>
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.UserName { get; set; } -> System.String
+BuildingBlock.Application.Abstraction.Security.TokenInfoDto.ctor() -> System.Void
+BuildingBlock.Application.Bootstrap.DependencyInjection
+BuildingBlock.Application.Bootstrap.DependencyInjection.AddBuildingBlockApplicationBehaviors(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.ActivitySource -> System.Diagnostics.ActivitySource
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.ActivitySourceName -> System.String
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.GetRequestKind(System.Type) -> System.String
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.Meter -> System.Diagnostics.Metrics.Meter
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.MeterName -> System.String
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordCacheHit() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordCacheInvalidation() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordCacheInvalidationFailure() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordCacheMiss() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordCacheSet() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordDomainEventDispatched() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordDomainEventFailure(System.String) -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordEmailFailure(System.String) -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordEmailSent() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordMediaFailure(System.String, System.String) -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordMediaFileSaved(System.Int64) -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordQrCodeFailure(System.String, System.String) -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordQrCodeGenerated(System.String) -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordRequest(System.String, System.String, System.Double) -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordTransactionCommitFailed() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordTransactionCommitted() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordTransactionRollbackFailed() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordTransactionRolledBack() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordTransactionStarted() -> System.Void
+BuildingBlock.Application.Diagnostics.BuildingBlockDiagnostics.RecordValidationFailures(System.String, System.Int64) -> System.Void
+BuildingBlock.Application.Email.EmailAttachment
+BuildingBlock.Application.Email.EmailAttachment.Content { get; } -> System.IO.Stream
+BuildingBlock.Application.Email.EmailAttachment.ContentType { get; } -> System.String
+BuildingBlock.Application.Email.EmailAttachment.Dispose() -> System.Void
+BuildingBlock.Application.Email.EmailAttachment.DisposeAsync() -> System.Threading.Tasks.ValueTask
+BuildingBlock.Application.Email.EmailAttachment.FileName { get; } -> System.String
+BuildingBlock.Application.Email.EmailAttachment.FromBytes(System.String, System.Byte[], System.String) -> BuildingBlock.Application.Email.EmailAttachment
+BuildingBlock.Application.Email.EmailAttachment.LeaveOpen { get; } -> System.Boolean
+BuildingBlock.Application.Email.EmailAttachment.Length { get; } -> System.Nullable<System.Int64>
+BuildingBlock.Application.Email.EmailAttachment.ctor(System.String, System.IO.Stream, System.String, System.Nullable<System.Int64>, System.Boolean) -> System.Void
+BuildingBlock.Application.Email.EmailMessage
+BuildingBlock.Application.Email.EmailMessage.Attachments { get; set; } -> System.Collections.Generic.IReadOnlyList<BuildingBlock.Application.Email.EmailAttachment>
+BuildingBlock.Application.Email.EmailMessage.Bcc { get; set; } -> System.Collections.Generic.IReadOnlyList<System.String>
+BuildingBlock.Application.Email.EmailMessage.Cc { get; set; } -> System.Collections.Generic.IReadOnlyList<System.String>
+BuildingBlock.Application.Email.EmailMessage.HtmlBody { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailMessage.ReplyTo { get; set; } -> System.Collections.Generic.IReadOnlyList<System.String>
+BuildingBlock.Application.Email.EmailMessage.Subject { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailMessage.TextBody { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailMessage.To { get; set; } -> System.Collections.Generic.IReadOnlyList<System.String>
+BuildingBlock.Application.Email.EmailMessage.ctor() -> System.Void
+BuildingBlock.Application.Email.EmailTemplateRequest
+BuildingBlock.Application.Email.EmailTemplateRequest.<Clone>$() -> BuildingBlock.Application.Email.EmailTemplateRequest
+BuildingBlock.Application.Email.EmailTemplateRequest.Culture { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailTemplateRequest.Deconstruct(out System.String&, out System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object>&, out System.String&) -> System.Void
+BuildingBlock.Application.Email.EmailTemplateRequest.Equals(BuildingBlock.Application.Email.EmailTemplateRequest) -> System.Boolean
+BuildingBlock.Application.Email.EmailTemplateRequest.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Email.EmailTemplateRequest.GetHashCode() -> System.Int32
+BuildingBlock.Application.Email.EmailTemplateRequest.Model { get; set; } -> System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object>
+BuildingBlock.Application.Email.EmailTemplateRequest.TemplateName { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailTemplateRequest.ToString() -> System.String
+BuildingBlock.Application.Email.EmailTemplateRequest.ctor(System.String, System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object>, System.String) -> System.Void
+BuildingBlock.Application.Email.EmailTemplateRequest.op_Equality(BuildingBlock.Application.Email.EmailTemplateRequest, BuildingBlock.Application.Email.EmailTemplateRequest) -> System.Boolean
+BuildingBlock.Application.Email.EmailTemplateRequest.op_Inequality(BuildingBlock.Application.Email.EmailTemplateRequest, BuildingBlock.Application.Email.EmailTemplateRequest) -> System.Boolean
+BuildingBlock.Application.Email.EmailTemplateResult
+BuildingBlock.Application.Email.EmailTemplateResult.<Clone>$() -> BuildingBlock.Application.Email.EmailTemplateResult
+BuildingBlock.Application.Email.EmailTemplateResult.Deconstruct(out System.String&, out System.String&, out System.String&) -> System.Void
+BuildingBlock.Application.Email.EmailTemplateResult.Equals(BuildingBlock.Application.Email.EmailTemplateResult) -> System.Boolean
+BuildingBlock.Application.Email.EmailTemplateResult.Equals(System.Object) -> System.Boolean
+BuildingBlock.Application.Email.EmailTemplateResult.GetHashCode() -> System.Int32
+BuildingBlock.Application.Email.EmailTemplateResult.HtmlBody { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailTemplateResult.Subject { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailTemplateResult.TextBody { get; set; } -> System.String
+BuildingBlock.Application.Email.EmailTemplateResult.ToString() -> System.String
+BuildingBlock.Application.Email.EmailTemplateResult.ctor(System.String, System.String, System.String) -> System.Void
+BuildingBlock.Application.Email.EmailTemplateResult.op_Equality(BuildingBlock.Application.Email.EmailTemplateResult, BuildingBlock.Application.Email.EmailTemplateResult) -> System.Boolean
+BuildingBlock.Application.Email.EmailTemplateResult.op_Inequality(BuildingBlock.Application.Email.EmailTemplateResult, BuildingBlock.Application.Email.EmailTemplateResult) -> System.Boolean
+BuildingBlock.Application.Email.IEmailSender
+BuildingBlock.Application.Email.IEmailSender.SendAsync(BuildingBlock.Application.Email.EmailMessage, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Email.IEmailTemplateRenderer
+BuildingBlock.Application.Email.IEmailTemplateRenderer.RenderAsync(BuildingBlock.Application.Email.EmailTemplateRequest, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<BuildingBlock.Application.Email.EmailTemplateResult>
+BuildingBlock.Application.Exceptions.IExceptionToErrorMapper
+BuildingBlock.Application.Exceptions.IExceptionToErrorMapper.TryMap(System.Exception, out BuildingBlock.Domain.Results.Error&) -> System.Boolean
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.AnyAsync(System.Linq.Expressions.Expression<System.Func<TEntity, System.Boolean>>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Boolean>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.FirstOrDefaultAsync(BuildingBlock.Domain.Specification.Specification<TEntity>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.FirstOrDefaultAsync<TOut>(BuildingBlock.Domain.Specification.Specification<TEntity, TOut>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TOut>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.GetByIdAsync<TKey>(TKey, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.GetByPropertyAsync(System.Linq.Expressions.Expression<System.Func<TEntity, System.Boolean>>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.ListAsync(BuildingBlock.Domain.Specification.Specification<TEntity>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<TEntity>>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.ListAsync<TOut>(BuildingBlock.Domain.Specification.Specification<TEntity, TOut>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<TOut>>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.ListWithLongCountAsync(BuildingBlock.Domain.Specification.Specification<TEntity>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.ValueTuple<System.Collections.Generic.IReadOnlyList<TEntity>, System.Int64>>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.ListWithLongCountAsync<TOut>(BuildingBlock.Domain.Specification.Specification<TEntity, TOut>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.ValueTuple<System.Collections.Generic.IReadOnlyList<TOut>, System.Int64>>
+BuildingBlock.Application.Repositories.IReadRepository<TEntity, TReadMarker>.LongCountAsync(System.Linq.Expressions.Expression<System.Func<TEntity, System.Boolean>>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Int64>
+BuildingBlock.Application.Repositories.ISoftDeletedReadRepository<TEntity, TReadMarker>
+BuildingBlock.Application.Repositories.ISoftDeletedReadRepository<TEntity, TReadMarker>.GetDeletedByIdAsync<TKey>(TKey, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.ISoftDeletedReadRepository<TEntity, TReadMarker>.ListDeletedAsync(BuildingBlock.Domain.Specification.Specification<TEntity>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<TEntity>>
+BuildingBlock.Application.Repositories.ISoftDeletedWriteRepository<TEntity, TWriteMarker>
+BuildingBlock.Application.Repositories.ISoftDeletedWriteRepository<TEntity, TWriteMarker>.GetDeletedTrackedByIdAsync<TKey>(TKey, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.ISoftDeletedWriteRepository<TEntity, TWriteMarker>.PermanentDelete(TEntity) -> System.Void
+BuildingBlock.Application.Repositories.IUnitOfWork<TWriteMarker>
+BuildingBlock.Application.Repositories.IUnitOfWork<TWriteMarker>.BeginTransactionAsync(System.Threading.CancellationToken) -> System.Threading.Tasks.Task<BuildingBlock.Application.Abstraction.Persistence.IApplicationTransaction>
+BuildingBlock.Application.Repositories.IUnitOfWork<TWriteMarker>.SaveChangesAsync(System.Threading.CancellationToken) -> System.Threading.Tasks.Task<System.Int32>
+BuildingBlock.Application.Repositories.IUnitOfWork<TWriteMarker>.WriteRepository<TEntity>() -> BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.AddAsync(TEntity, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.AddRangeAsync(System.Collections.Generic.IEnumerable<TEntity>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.Delete(TEntity) -> System.Void
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.DeleteRange(System.Collections.Generic.IEnumerable<TEntity>) -> System.Void
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.FirstOrDefaultAsync(BuildingBlock.Domain.Specification.Specification<TEntity>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.GetByIdAsync<TKey>(TKey, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.GetByPropertyAsync(System.Linq.Expressions.Expression<System.Func<TEntity, System.Boolean>>, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<TEntity>
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.Update(TEntity) -> System.Void
+BuildingBlock.Application.Repositories.IWriteRepository<TEntity, TWriteMarker>.UpdateRange(System.Collections.Generic.IEnumerable<TEntity>) -> System.Void
+BuildingBlock.Application.Time.IDateTimeProvider
+BuildingBlock.Application.Time.IDateTimeProvider.UtcNow { get; } -> System.DateTime

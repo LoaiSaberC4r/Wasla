@@ -1,0 +1,97 @@
+# Independently captured from clean main 17c9e0b96af87de0143ca4ac4978bc970ca6f9dd (Release, SDK10.0.401).
+# Source assembly SHA256: D194814BA547F5391794C87616D4260C9958653C9E20C41EFC66BFAF23560B59
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockAuditing(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockCaching(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockDbContext<TMarker, TContext>(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockDomainEvent(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockEncryption(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockEntityFrameworkCore(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockEntityFrameworkCore<TWriteMarker>(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockFileSystemMediaStorage(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockInterceptors(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockMailKitEmail(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockMailKitEmail(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<BuildingBlock.Infrastructure.Options.SmtpOptions>) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockMedia(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockMedia(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<BuildingBlock.Infrastructure.Options.MediaStorageOptions>) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockPasswordHashing(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockPasswordHashing(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<BuildingBlock.Application.Abstraction.Encryption.PasswordPolicyOptions>) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockQrCode(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockQrCode(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<BuildingBlock.Infrastructure.Options.QrCodeOptions>) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockSoftDelete(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockTokenReader(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.AddBuildingBlockTokenReader(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<BuildingBlock.Application.Abstraction.Security.CurrentUserClaimOptions>) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.Bootstrap.DependencyInjection.UseBuildingBlockInterceptors(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder, System.IServiceProvider) -> Microsoft.EntityFrameworkCore.DbContextOptionsBuilder
+BuildingBlock.Infrastructure.Exceptions.EmailServiceException
+BuildingBlock.Infrastructure.Exceptions.EmailServiceException.ctor(BuildingBlock.Domain.Results.Error, System.Exception) -> System.Void
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Email
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Email.AuthenticationFailed -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Email.ConnectionFailed -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Email.InvalidMessage -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Email.SendFailed -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Email.Timeout -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Media
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Media.FileTooLarge -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Media.InvalidFile -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Media.MalwareDetected -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Media.SignatureMismatch -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Media.StorageUnavailable -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.Media.UnsupportedType -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.QrCode
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.QrCode.GenerationFailed -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.QrCode.InvalidPayload -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceErrorCodes.QrCode.PayloadTooLarge -> System.String
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceException
+BuildingBlock.Infrastructure.Exceptions.ExternalServiceException.Error { get; } -> BuildingBlock.Domain.Results.Error
+BuildingBlock.Infrastructure.Exceptions.MediaServiceException
+BuildingBlock.Infrastructure.Exceptions.MediaServiceException.ctor(BuildingBlock.Domain.Results.Error, System.Exception) -> System.Void
+BuildingBlock.Infrastructure.Exceptions.QrCodeServiceException
+BuildingBlock.Infrastructure.Exceptions.QrCodeServiceException.ctor(BuildingBlock.Domain.Results.Error, System.Exception) -> System.Void
+BuildingBlock.Infrastructure.Extensions.ModelBuilderGlobalQueryFilterExtensions
+BuildingBlock.Infrastructure.Extensions.ModelBuilderGlobalQueryFilterExtensions.ApplySoftDeleteQueryFilter(Microsoft.EntityFrameworkCore.ModelBuilder) -> System.Void
+BuildingBlock.Infrastructure.Options.EncryptionOptions
+BuildingBlock.Infrastructure.Options.EncryptionOptions.CurrentKeyId { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.EncryptionOptions.GetConfiguredKeys() -> System.Collections.Generic.Dictionary<System.String, System.String>
+BuildingBlock.Infrastructure.Options.EncryptionOptions.GetConfiguredLegacyKeys() -> System.Collections.Generic.Dictionary<System.String, System.String>
+BuildingBlock.Infrastructure.Options.EncryptionOptions.KeyBase64 { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.EncryptionOptions.Keys { get; set; } -> System.Collections.Generic.Dictionary<System.String, System.String>
+BuildingBlock.Infrastructure.Options.EncryptionOptions.LegacyKeyBase64 { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.EncryptionOptions.LegacyKeys { get; set; } -> System.Collections.Generic.Dictionary<System.String, System.String>
+BuildingBlock.Infrastructure.Options.EncryptionOptions.SectionName -> System.String
+BuildingBlock.Infrastructure.Options.EncryptionOptions.ctor() -> System.Void
+BuildingBlock.Infrastructure.Options.MediaStorageOptions
+BuildingBlock.Infrastructure.Options.MediaStorageOptions.AllowedExtensions { get; set; } -> System.String[]
+BuildingBlock.Infrastructure.Options.MediaStorageOptions.AllowedMimeTypes { get; set; } -> System.String[]
+BuildingBlock.Infrastructure.Options.MediaStorageOptions.ContentRootPath { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.MediaStorageOptions.MaxFileSizeBytes { get; set; } -> System.Int64
+BuildingBlock.Infrastructure.Options.MediaStorageOptions.RequireMalwareScanner { get; set; } -> System.Boolean
+BuildingBlock.Infrastructure.Options.MediaStorageOptions.RootPath { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.MediaStorageOptions.ctor() -> System.Void
+BuildingBlock.Infrastructure.Options.QrCodeOptions
+BuildingBlock.Infrastructure.Options.QrCodeOptions.MaximumPayloadBytes { get; set; } -> System.Int32
+BuildingBlock.Infrastructure.Options.QrCodeOptions.MaximumPixelsPerModule { get; set; } -> System.Int32
+BuildingBlock.Infrastructure.Options.QrCodeOptions.MinimumPixelsPerModule { get; set; } -> System.Int32
+BuildingBlock.Infrastructure.Options.QrCodeOptions.ctor() -> System.Void
+BuildingBlock.Infrastructure.Options.SmtpOptions
+BuildingBlock.Infrastructure.Options.SmtpOptions.FromEmail { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.SmtpOptions.FromName { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.SmtpOptions.Host { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.SmtpOptions.MaxAttachmentBytes { get; set; } -> System.Int64
+BuildingBlock.Infrastructure.Options.SmtpOptions.MaxAttachments { get; set; } -> System.Int32
+BuildingBlock.Infrastructure.Options.SmtpOptions.MaxRecipients { get; set; } -> System.Int32
+BuildingBlock.Infrastructure.Options.SmtpOptions.MaxTotalAttachmentBytes { get; set; } -> System.Int64
+BuildingBlock.Infrastructure.Options.SmtpOptions.Password { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.SmtpOptions.Port { get; set; } -> System.Int32
+BuildingBlock.Infrastructure.Options.SmtpOptions.RequireStartTls { get; set; } -> System.Boolean
+BuildingBlock.Infrastructure.Options.SmtpOptions.TimeoutMilliseconds { get; set; } -> System.Int32
+BuildingBlock.Infrastructure.Options.SmtpOptions.UseSsl { get; set; } -> System.Boolean
+BuildingBlock.Infrastructure.Options.SmtpOptions.UserName { get; set; } -> System.String
+BuildingBlock.Infrastructure.Options.SmtpOptions.ctor() -> System.Void
+BuildingBlock.Infrastructure.Persistence.IReadEntityConfiguration<TEntity>
+BuildingBlock.Infrastructure.Persistence.IReadEntityConfiguration<TEntity>.ConfigureReadModel(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity>) -> System.Void
+BuildingBlock.Infrastructure.Persistence.IWriteEntityConfiguration<TEntity>
+BuildingBlock.Infrastructure.Persistence.IWriteEntityConfiguration<TEntity>.ConfigureAggregate(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity>) -> System.Void
+BuildingBlock.Infrastructure.Persistence.ModelBuilderConfigExtensions
+BuildingBlock.Infrastructure.Persistence.ModelBuilderConfigExtensions.ApplyReadConfigurations(Microsoft.EntityFrameworkCore.ModelBuilder, System.Reflection.Assembly) -> System.Void
+BuildingBlock.Infrastructure.Persistence.ModelBuilderConfigExtensions.ApplyWriteConfigurations(Microsoft.EntityFrameworkCore.ModelBuilder, System.Reflection.Assembly) -> System.Void

@@ -1,0 +1,85 @@
+# Independently captured from clean main 17c9e0b96af87de0143ca4ac4978bc970ca6f9dd (Release, SDK10.0.401).
+# Source assembly SHA256: DAC0E2A1FDF36AC9A074B975710447F2B220D9DF7B30278D44689A5D4094D6CE
+BuildingBlock.Api.Bootstrap.LocalizationExtensions
+BuildingBlock.Api.Bootstrap.LocalizationExtensions.AddBuildingBlockLocalization(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Api.Bootstrap.LocalizationExtensions.AddBuildingBlockLocalization(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<BuildingBlock.Api.Options.SharedLocalizationOptions>) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Api.Bootstrap.LocalizationExtensions.UseBuildingBlockLocalization(Microsoft.AspNetCore.Builder.IApplicationBuilder) -> Microsoft.AspNetCore.Builder.IApplicationBuilder
+BuildingBlock.Api.ControllerTemplate.ControllerTemplate
+BuildingBlock.Api.ControllerTemplate.ControllerTemplate.sender -> MediatR.ISender
+BuildingBlock.Api.Logging.ILogRedactionPolicy
+BuildingBlock.Api.Logging.ILogRedactionPolicy.Redact(System.String, System.Object) -> BuildingBlock.Api.Logging.LogRedactionResult
+BuildingBlock.Api.Logging.LogRedactionOptions
+BuildingBlock.Api.Logging.LogRedactionOptions.Mask { get; set; } -> System.String
+BuildingBlock.Api.Logging.LogRedactionOptions.MaximumDepth { get; set; } -> System.Int32
+BuildingBlock.Api.Logging.LogRedactionOptions.MaximumStringLength { get; set; } -> System.Int32
+BuildingBlock.Api.Logging.LogRedactionOptions.RedactBearerTokens { get; set; } -> System.Boolean
+BuildingBlock.Api.Logging.LogRedactionOptions.RedactEmailAddresses { get; set; } -> System.Boolean
+BuildingBlock.Api.Logging.LogRedactionOptions.RedactPhoneNumbers { get; set; } -> System.Boolean
+BuildingBlock.Api.Logging.LogRedactionOptions.SensitivePropertyNames { get; set; } -> System.String[]
+BuildingBlock.Api.Logging.LogRedactionOptions.ctor() -> System.Void
+BuildingBlock.Api.Logging.LogRedactionResult
+BuildingBlock.Api.Logging.LogRedactionResult.<Clone>$() -> BuildingBlock.Api.Logging.LogRedactionResult
+BuildingBlock.Api.Logging.LogRedactionResult.Changed { get; set; } -> System.Boolean
+BuildingBlock.Api.Logging.LogRedactionResult.Deconstruct(out System.Object&, out System.Boolean&) -> System.Void
+BuildingBlock.Api.Logging.LogRedactionResult.Equals(BuildingBlock.Api.Logging.LogRedactionResult) -> System.Boolean
+BuildingBlock.Api.Logging.LogRedactionResult.Equals(System.Object) -> System.Boolean
+BuildingBlock.Api.Logging.LogRedactionResult.GetHashCode() -> System.Int32
+BuildingBlock.Api.Logging.LogRedactionResult.ToString() -> System.String
+BuildingBlock.Api.Logging.LogRedactionResult.Value { get; set; } -> System.Object
+BuildingBlock.Api.Logging.LogRedactionResult.ctor(System.Object, System.Boolean) -> System.Void
+BuildingBlock.Api.Logging.LogRedactionResult.op_Equality(BuildingBlock.Api.Logging.LogRedactionResult, BuildingBlock.Api.Logging.LogRedactionResult) -> System.Boolean
+BuildingBlock.Api.Logging.LogRedactionResult.op_Inequality(BuildingBlock.Api.Logging.LogRedactionResult, BuildingBlock.Api.Logging.LogRedactionResult) -> System.Boolean
+BuildingBlock.Api.Logging.SerilogBootstrapper
+BuildingBlock.Api.Logging.SerilogBootstrapper.AddBuildingBlockLogRedaction(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Api.Logging.SerilogBootstrapper.AddBuildingBlockSerilog(Microsoft.AspNetCore.Builder.WebApplicationBuilder, System.String) -> Microsoft.AspNetCore.Builder.WebApplicationBuilder
+BuildingBlock.Api.Logging.SerilogBootstrapper.MapBuildingBlockLoggingDiagnostics(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.String) -> Microsoft.AspNetCore.Routing.IEndpointRouteBuilder
+BuildingBlock.Api.Logging.SerilogBootstrapper.UseBuildingBlockSerilog(Microsoft.AspNetCore.Builder.IApplicationBuilder) -> Microsoft.AspNetCore.Builder.IApplicationBuilder
+BuildingBlock.Api.OpenApi.SwaggerServiceCollectionExtensions
+BuildingBlock.Api.OpenApi.SwaggerServiceCollectionExtensions.AddBuildingBlockSwagger(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<BuildingBlock.Api.Options.BuildingBlockSwaggerOptions>) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Api.Options.BuildingBlockSwaggerOptions
+BuildingBlock.Api.Options.BuildingBlockSwaggerOptions.ApiTitle { get; set; } -> System.String
+BuildingBlock.Api.Options.BuildingBlockSwaggerOptions.ctor() -> System.Void
+BuildingBlock.Api.Options.LoggingOptions
+BuildingBlock.Api.Options.LoggingOptions.Sampling { get; set; } -> BuildingBlock.Api.Options.LoggingOptions.SamplingOptions
+BuildingBlock.Api.Options.LoggingOptions.SamplingOptions
+BuildingBlock.Api.Options.LoggingOptions.SamplingOptions.Enabled { get; set; } -> System.Boolean
+BuildingBlock.Api.Options.LoggingOptions.SamplingOptions.KeepRate { get; set; } -> System.Double
+BuildingBlock.Api.Options.LoggingOptions.SamplingOptions.MaxLevelToSample { get; set; } -> System.String
+BuildingBlock.Api.Options.LoggingOptions.SamplingOptions.ctor() -> System.Void
+BuildingBlock.Api.Options.LoggingOptions.ctor() -> System.Void
+BuildingBlock.Api.Options.RequestLoggingOptions
+BuildingBlock.Api.Options.RequestLoggingOptions.AllowedRequestHeaders { get; set; } -> System.String[]
+BuildingBlock.Api.Options.RequestLoggingOptions.AllowedResponseHeaders { get; set; } -> System.String[]
+BuildingBlock.Api.Options.RequestLoggingOptions.ExcludedPaths { get; set; } -> System.String[]
+BuildingBlock.Api.Options.RequestLoggingOptions.IncludeClientIp { get; set; } -> System.Boolean
+BuildingBlock.Api.Options.RequestLoggingOptions.IncludeQueryString { get; set; } -> System.Boolean
+BuildingBlock.Api.Options.RequestLoggingOptions.IncludeRequestHeaders { get; set; } -> System.Boolean
+BuildingBlock.Api.Options.RequestLoggingOptions.IncludeResponseHeaders { get; set; } -> System.Boolean
+BuildingBlock.Api.Options.RequestLoggingOptions.IncludeUserAgent { get; set; } -> System.Boolean
+BuildingBlock.Api.Options.RequestLoggingOptions.MaximumValueLength { get; set; } -> System.Int32
+BuildingBlock.Api.Options.RequestLoggingOptions.ctor() -> System.Void
+BuildingBlock.Api.Options.SharedLocalizationOptions
+BuildingBlock.Api.Options.SharedLocalizationOptions.AllowQueryStringLang { get; set; } -> System.Boolean
+BuildingBlock.Api.Options.SharedLocalizationOptions.DefaultCulture { get; set; } -> System.String
+BuildingBlock.Api.Options.SharedLocalizationOptions.SectionName -> System.String
+BuildingBlock.Api.Options.SharedLocalizationOptions.SupportedCultures { get; set; } -> System.String[]
+BuildingBlock.Api.Options.SharedLocalizationOptions.Validate() -> System.Void
+BuildingBlock.Api.Options.SharedLocalizationOptions.ctor() -> System.Void
+BuildingBlock.Api.ProblemDetails.IProblemDetailsErrorResult
+BuildingBlock.Api.ProblemDetails.IProblemDetailsErrorResult.Errors { get; } -> System.Collections.Generic.IReadOnlyCollection<BuildingBlock.Domain.Results.Error>
+BuildingBlock.Api.ProblemDetails.IProblemDetailsMapper
+BuildingBlock.Api.ProblemDetails.IProblemDetailsMapper.Map(Microsoft.AspNetCore.Http.HttpContext, System.Collections.Generic.IReadOnlyCollection<BuildingBlock.Domain.Results.Error>) -> Microsoft.AspNetCore.Mvc.ProblemDetails
+BuildingBlock.Api.ProblemDetails.IProblemDetailsMapper.MapException(Microsoft.AspNetCore.Http.HttpContext, System.Exception) -> Microsoft.AspNetCore.Mvc.ProblemDetails
+BuildingBlock.Api.ProblemDetails.ProblemDetailsServiceCollectionExtensions
+BuildingBlock.Api.ProblemDetails.ProblemDetailsServiceCollectionExtensions.AddBuildingBlockProblemDetails(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Api.ProblemDetails.ProblemDetailsServiceCollectionExtensions.UseBuildingBlockProblemDetailsStatusCodes(Microsoft.AspNetCore.Builder.IApplicationBuilder) -> Microsoft.AspNetCore.Builder.IApplicationBuilder
+BuildingBlock.Api.ProblemDetailsMapping
+BuildingBlock.Api.ProblemDetailsMapping.ToIResult(BuildingBlock.Domain.Results.Result, Microsoft.AspNetCore.Http.HttpContext) -> Microsoft.AspNetCore.Http.IResult
+BuildingBlock.Api.ProblemDetailsMapping.ToIResult<T>(BuildingBlock.Domain.Results.Result<T>, Microsoft.AspNetCore.Http.HttpContext) -> Microsoft.AspNetCore.Http.IResult
+BuildingBlock.Api.ProblemDetailsMapping.ToProblem(System.Collections.Generic.IEnumerable<BuildingBlock.Domain.Results.Error>, Microsoft.AspNetCore.Http.HttpContext) -> Microsoft.AspNetCore.Http.IResult
+BuildingBlock.Api.ProblemDetailsMappingMvc
+BuildingBlock.Api.ProblemDetailsMappingMvc.ToActionProblem(System.Collections.Generic.IEnumerable<BuildingBlock.Domain.Results.Error>, System.Threading.CancellationToken) -> Microsoft.AspNetCore.Mvc.IActionResult
+BuildingBlock.Api.ProblemDetailsMappingMvc.ToIActionResult(BuildingBlock.Domain.Results.Result, System.Threading.CancellationToken) -> Microsoft.AspNetCore.Mvc.IActionResult
+BuildingBlock.Api.ProblemDetailsMappingMvc.ToIActionResult<T>(BuildingBlock.Domain.Results.Result<T>, System.Threading.CancellationToken) -> Microsoft.AspNetCore.Mvc.IActionResult
+BuildingBlock.Api.Security.SecurityServiceCollectionExtensions
+BuildingBlock.Api.Security.SecurityServiceCollectionExtensions.AddBuildingBlockCurrentUser(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
