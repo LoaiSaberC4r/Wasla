@@ -7,6 +7,10 @@ using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
 using Wasla.Domain.Common;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
+using BuildingBlock.Application.Abstraction.Encryption;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Wasla.Tests.Integration;
 public sealed class Phase5FinalRegistrationApiTests
 {
@@ -27,6 +31,15 @@ public sealed class Phase5FinalRegistrationApiTests
         using var denied = await Phase5IdentityApi.FormAsync(missingPermission, "/api/v1/patients/full", Phase5IdentityApi.Profile(app, "denied@example.test", true)); Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
         var token = await Phase5IdentityApi.InvitationAsync(app, email);
         using var loginBefore = await anonymous.PostAsJsonAsync("/api/v1/auth/login", new { identifier = email, password = "SyntheticPass123!" }, TestContext.Current.CancellationToken); Assert.NotEqual(HttpStatusCode.OK, loginBefore.StatusCode);
+        var beforeHash = app.Clock.UtcNow;
+        await using (var expiringNode = app.WithWebHostBuilder(b => b.ConfigureServices(s => { s.RemoveAll<IPasswordService>(); s.AddSingleton<IPasswordService>(new ExpiringPasswordService(app.Services.GetRequiredService<IPasswordService>(), app.Clock)); })))
+        {
+            using var expiring = expiringNode.CreateClient();
+            using var expiredDuringHash = await expiring.PostAsJsonAsync("/api/v1/patient-onboarding/activate", new { invitationToken = token, password = "SyntheticPass123!", confirmPassword = "SyntheticPass123!" }, TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.Conflict, expiredDuringHash.StatusCode);
+            await app.WithDbAsync(async db => { Assert.False((await db.ApplicationUsers.SingleAsync(u => u.Id == user)).IsActive); Assert.Null((await db.PatientActivationInvitations.SingleAsync(i => i.ApplicationUserId == user)).ConsumedOnUtc); });
+        }
+        app.Clock.UtcNow = beforeHash;
         using var activate = await anonymous.PostAsJsonAsync("/api/v1/patient-onboarding/activate", new { invitationToken = token, password = "SyntheticPass123!", confirmPassword = "SyntheticPass123!" }, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, activate.StatusCode); Assert.Equal(patient, (await JsonAsync(activate)).GetProperty("patientId").GetGuid());
         using var used = await anonymous.PostAsJsonAsync("/api/v1/patient-onboarding/activate", new { invitationToken = token, password = "SyntheticPass123!", confirmPassword = "SyntheticPass123!" }, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.Conflict, used.StatusCode);
@@ -49,6 +62,15 @@ public sealed class Phase5FinalRegistrationApiTests
         using var replay = await Phase5IdentityApi.FormAsync(client, "/api/v1/patient-onboarding/register", fields, key); Assert.Equal(HttpStatusCode.Created, replay.StatusCode);
         using var stolen = await Phase5IdentityApi.FormAsync(client, "/api/v1/auth/patients/register", fields); Assert.Equal(HttpStatusCode.Conflict, stolen.StatusCode);
         await app.WithDbAsync(async db => { Assert.Equal(email, (await db.Patients.SingleAsync(p => p.Id == id)).Email); Assert.Equal(1, await db.PatientAccountLinks.CountAsync(l => l.PatientId == id)); Assert.Equal(1, await db.PatientDuplicateCases.CountAsync(c => c.FirstPatientId == id || c.SecondPatientId == id)); });
+    }
+    private sealed class ExpiringPasswordService(IPasswordService inner, Phase13Clock clock) : IPasswordService
+    {
+        public string Hash(string password) => inner.Hash(password);
+        public bool Verify(string password, string passwordHash) => inner.Verify(password, passwordHash);
+        public PasswordVerification VerifyDetailed(string password, string passwordHash) => inner.VerifyDetailed(password, passwordHash);
+        public bool IsStrongPassword(string password) => inner.IsStrongPassword(password);
+        public Task<bool> VerifyAsync(string password, string passwordHash, CancellationToken cancellationToken = default) => inner.VerifyAsync(password, passwordHash, cancellationToken);
+        public async Task<string> HashAsync(string password, CancellationToken cancellationToken = default) { var hash = await inner.HashAsync(password, cancellationToken); clock.UtcNow = clock.UtcNow.AddHours(48); return hash; }
     }
 }
 internal static class Phase5IdentityApi

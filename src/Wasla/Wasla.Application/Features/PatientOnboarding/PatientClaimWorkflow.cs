@@ -198,7 +198,9 @@ public sealed partial class PatientIdentityWorkflow
             var linked = claim.Link(user.Id, Now); if (linked.IsFailure) return Result<object>.Fail(linked.Errors);
             History(claim, PatientClaimStatus.ApprovedPendingActivation, PatientClaimAction.Activated, null);
         }
-        user.ChangePassword(await passwords.HashAsync(p.Password, ct), Now); user.Activate(); invitation.Consume(Now);
+        var passwordHash = await passwords.HashAsync(p.Password, ct); var activatedAt = Now;
+        if (!invitation.CanActivate(activatedAt)) return Conflict("PatientActivation.InvalidOrExpired");
+        user.ChangePassword(passwordHash, activatedAt); user.Activate(); invitation.Consume(activatedAt);
         return Ok(new { patientId = patient.Id, applicationUserId = user.Id, accountStatus = "Active", requiresLogin = true });
     }
     private async Task<Result<object>> ResendAsync(PatientIdentityCommand command, CancellationToken ct)

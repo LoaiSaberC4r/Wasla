@@ -4,6 +4,8 @@ using Wasla.Domain.Common;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
+using BuildingBlock.Application.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 namespace Wasla.Tests.Integration;
 public sealed class Phase5FinalIdentitySqlServerTests
 {
@@ -53,6 +55,16 @@ public sealed class Phase5FinalIdentitySqlServerTests
             await db.SaveChangesAsync(); Assert.Equal(8, (await db.Patients.SingleAsync(p => p.Id == first)).RowVersion.Length);
             // Bypass application normalization to prove that SQL itself arbitrates whitespace/case variants.
             await Assert.ThrowsAsync<Microsoft.Data.SqlClient.SqlException>(() => db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [Patients] SET [Email] = {" NATIVE@Example.Test "} WHERE [Id] = {second}", TestContext.Current.CancellationToken));
+        });
+        await app.WithDbAsync(async db =>
+        {
+            var profile = await db.Patients.SingleAsync(p => p.Id == first);
+            Assert.True(profile.UpdateProfile(profile.NameAr, "Local pending edit", profile.PhoneNumber, profile.Email).IsSuccess);
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE [Patients] SET [NameEn] = {"Concurrent committed edit"} WHERE [Id] = {first}", TestContext.Current.CancellationToken);
+            var exception = await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => db.SaveChangesAsync(TestContext.Current.CancellationToken));
+            await using var mapperScope = app.Services.CreateAsyncScope();
+            var mapper = mapperScope.ServiceProvider.GetServices<IExceptionToErrorMapper>().Single(m => m.GetType().Name == "PatientIdentityPersistenceErrorMapper");
+            Assert.True(mapper.TryMap(exception, out var error)); Assert.Equal("Patient.ConcurrencyConflict", error.Code);
         });
         using var staff = await app.ClientAsync("reception");
         var a = Phase5IdentityApi.Profile(app, "race@example.test"); a["phoneNumber"] = "01000000001";

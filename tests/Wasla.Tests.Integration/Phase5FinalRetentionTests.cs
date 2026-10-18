@@ -56,8 +56,11 @@ public sealed class Phase5FinalRetentionTests
             Assert.True((await sender.Send(new SetPatientClaimLegalHoldCommand("root", "Phase13TestPass123!", id, false, "Synthetic reviewed release"), TestContext.Current.CancellationToken)).IsSuccess);
             Assert.True((await sender.Send(new SetPatientClaimLegalHoldCommand("root", "Phase13TestPass123!", id, true, "Synthetic renewed legal hold"), TestContext.Current.CancellationToken)).IsSuccess);
         }
-        app.Clock.UtcNow = now.AddDays(90).AddTicks(-1); await RunAsync(app);
+        app.Clock.UtcNow = now.AddDays(89); await RunAsync(app);
         await app.WithDbAsync(async db => Assert.Equal(PatientClaimStatus.PendingReview, (await db.PatientClaimRequests.SingleAsync(c => c.Id == id)).Status));
+        await app.WithDbAsync(async db => { var c = await db.PatientClaimRequests.SingleAsync(c => c.Id == id); Assert.True(c.Decide(PatientClaimStatus.ModificationRequested, (await db.ApplicationUsers.SingleAsync(u => u.UserName == "root")).Id, "Synthetic evidence clarification", null, app.Clock.UtcNow).IsSuccess); await db.SaveChangesAsync(); });
+        app.Clock.UtcNow = now.AddDays(90).AddTicks(-1); await RunAsync(app);
+        await app.WithDbAsync(async db => Assert.Equal(PatientClaimStatus.ModificationRequested, (await db.PatientClaimRequests.SingleAsync(c => c.Id == id)).Status));
         app.Clock.UtcNow = now.AddDays(90); await RunAsync(app);
         app.Clock.UtcNow = now.AddDays(181); await RunAsync(app);
         await app.WithDbAsync(async db => { var c = await db.PatientClaimRequests.SingleAsync(c => c.Id == id); Assert.Equal(PatientClaimStatus.Expired, c.Status); Assert.True(c.IsUnderLegalHold); Assert.Null((await db.PatientClaimEvidences.SingleAsync(e => e.ClaimRequestId == id)).PurgedOnUtc); Assert.Equal(2, await db.Patients.CountAsync()); Assert.Equal(2, await db.PatientAccountLinks.CountAsync()); });

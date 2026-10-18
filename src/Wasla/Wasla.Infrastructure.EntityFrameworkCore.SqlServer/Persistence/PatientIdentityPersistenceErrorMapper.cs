@@ -10,7 +10,9 @@ internal sealed class PatientIdentityPersistenceErrorMapper : IExceptionToErrorM
     {
         error = null!;
         if (exception is SqlException { Number: 51005 }) { error = PatientIdentityErrors.Conflict("PatientClaims.ConcurrencyConflict"); return true; }
-        if (exception is DbUpdateConcurrencyException c && c.Entries.Any(e => e.Entity is Patient or PatientClaimRequest or PatientOnboardingChallenge or PatientActivationInvitation or PatientIdentityAttestation or PatientDuplicateCase))
+        if (exception is DbUpdateConcurrencyException profile && profile.Entries.Any(e => e.Entity is Patient))
+        { error = PatientErrors.ConcurrencyConflict; return true; }
+        if (exception is DbUpdateConcurrencyException c && c.Entries.Any(e => e.Entity is PatientClaimRequest or PatientOnboardingChallenge or PatientActivationInvitation or PatientIdentityAttestation or PatientDuplicateCase))
         { error = PatientIdentityErrors.Conflict("PatientClaims.ConcurrencyConflict"); return true; }
         if (exception is DbUpdateException { InnerException: SqlException sql } && sql.Number is 2601 or 2627)
         {

@@ -55,7 +55,10 @@ public sealed class PatientClaimRequest : AggregateRoot<Guid>, IAuditableEntity
             return Result.Fail(PatientIdentityErrors.Conflict("PatientClaims.InvalidState"));
         if (reason?.Length > 1000 || status != PatientClaimStatus.ApprovedPendingActivation && string.IsNullOrWhiteSpace(reason) ||
             status == PatientClaimStatus.ApprovedPendingActivation && (target is null || target == Guid.Empty)) return Result.Fail(PatientIdentityErrors.Proof);
-        Status = status; ReviewedByApplicationUserId = reviewer; ReviewedOnUtc = LastActivityOnUtc = now; DecisionReason = reason?.Trim();
+        Status = status; ReviewedByApplicationUserId = reviewer; ReviewedOnUtc = now; DecisionReason = reason?.Trim();
+        // Pending/modification inactivity runs from the applicant's last submission.
+        // Approval issues an invitation and begins its separate activity window.
+        if (status != PatientClaimStatus.ModificationRequested) LastActivityOnUtc = now;
         if (status == PatientClaimStatus.ApprovedPendingActivation) ApprovedTargetPatientId = TargetPatientId = target;
         if (status == PatientClaimStatus.Rejected) ClosedOnUtc = now;
         return Result.Ok();

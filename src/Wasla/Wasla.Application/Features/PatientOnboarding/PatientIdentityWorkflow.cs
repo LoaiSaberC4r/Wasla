@@ -169,8 +169,10 @@ public sealed partial class PatientIdentityWorkflow(IWaslaDataStore data, IPatie
                 return Ok(new PatientOtpVerificationFailure(PatientIdentityErrors.Otp));
             action = PatientOnboardingAction.EmailChange;
         }
-        var token = protector.GenerateResetToken(); var expires = Now.AddMinutes(Options.VerifiedContinuationTtlMinutes);
-        c.Verify(ContinuationHash(token), action, Now, expires);
+        var verifiedAt = Now;
+        if (!c.CanVerify(verifiedAt)) return Ok(new PatientOtpVerificationFailure(PatientIdentityErrors.Otp));
+        var token = protector.GenerateResetToken(); var expires = verifiedAt.AddMinutes(Options.VerifiedContinuationTtlMinutes);
+        c.Verify(ContinuationHash(token), action, verifiedAt, expires);
         return Ok(new { verificationToken = token, expiresOnUtc = expires, nextAction = action == PatientOnboardingAction.Claim ? "ClaimExisting" : action.ToString() });
     }
     private async Task<Result<object>> RegisterAsync(PatientIdentityCommand command, string fingerprint, CancellationToken cancellationToken)

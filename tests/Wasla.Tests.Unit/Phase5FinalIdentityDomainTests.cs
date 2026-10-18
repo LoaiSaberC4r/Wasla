@@ -47,6 +47,10 @@ public sealed class Phase5FinalIdentityDomainTests
         var c = Claim(); Assert.False(c.Expire(Now.AddDays(90).AddTicks(-1), 90));
         c.SetLegalHold(true, Guid.NewGuid(), "Synthetic preservation request", Now);
         Assert.True(c.Expire(Now.AddDays(90), 90)); Assert.True(c.IsUnderLegalHold); Assert.NotNull(c.LegalHoldSetByApplicationUserId);
+        var modified = Claim(); Assert.True(modified.Decide(PatientClaimStatus.ModificationRequested, Guid.NewGuid(), "Synthetic modification review", null, Now.AddDays(89)).IsSuccess);
+        Assert.Equal(Now, modified.LastActivityOnUtc); Assert.True(modified.Expire(Now.AddDays(90), 90));
+        var resubmitted = Claim(); Assert.True(resubmitted.Decide(PatientClaimStatus.ModificationRequested, Guid.NewGuid(), "Synthetic modification review", null, Now.AddDays(89)).IsSuccess);
+        Assert.True(resubmitted.Resubmit(Now.AddDays(89)).IsSuccess); Assert.False(resubmitted.Expire(Now.AddDays(90), 90)); Assert.True(resubmitted.Expire(Now.AddDays(179), 90));
     }
     [Fact] public void Invite_is_single_use_scoped_and_invalid_at_exact_48_hours()
     {
