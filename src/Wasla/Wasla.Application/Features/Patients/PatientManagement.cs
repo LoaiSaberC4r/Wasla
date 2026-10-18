@@ -365,7 +365,16 @@ internal sealed class UpdateMyPatientProfileCommandHandler(
                 await CleanupAsync();
                 return Result<PatientProfileResponse>.Fail(updated.Errors);
             }
-            emailProof?.Consume(clock.UtcNow, "email-change");
+            if (emailProof is not null)
+            {
+                var consumedAt = clock.UtcNow;
+                if (!emailProof.CanUse(PatientOnboardingAction.EmailChange, consumedAt))
+                {
+                    await CleanupAsync();
+                    return Result<PatientProfileResponse>.Fail(PatientIdentityErrors.Conflict("Patient.EmailVerificationRequired"));
+                }
+                emailProof.Consume(consumedAt, "email-change");
+            }
             dataStore.SetOriginalRowVersion(patient, supplied);
             await dataStore.SaveChangesAsync(cancellationToken);
             return Result<PatientProfileResponse>.Ok(PatientMapper.Profile(patient));

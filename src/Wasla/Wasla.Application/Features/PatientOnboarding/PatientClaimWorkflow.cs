@@ -37,7 +37,7 @@ public sealed partial class PatientIdentityWorkflow
             p.Gender, p.PhoneNumber, proof.Id, command.IdempotencyKey!, fingerprint, Now);
         data.Add(claim); await AddEvidenceAsync(claim, p, ct);
         History(claim, null, PatientClaimAction.Submitted, null);
-        proof.Consume(Now, fingerprint);
+        if (!ConsumeProof(proof, PatientOnboardingAction.Claim, fingerprint)) return Conflict("PatientOnboarding.TokenInvalidOrExpired");
         await NotifyClaimAsync(claim, "submitted", ct);
         return ClaimSubmitted(claim);
     }
@@ -107,7 +107,8 @@ public sealed partial class PatientIdentityWorkflow
         if (!await SufficientSubmissionProofAsync(command.Input, claim.TargetPatientId, claim.ClaimantNormalizedEmail, ct)) return Result<object>.Fail(PatientIdentityErrors.Proof);
         var from = claim.Status; var result = claim.Resubmit(Now); if (result.IsFailure) return Result<object>.Fail(result.Errors);
         await AddEvidenceAsync(claim, command.Input, ct); History(claim, from, PatientClaimAction.Resubmitted, null, command.Input.Reason);
-        proof.Consume(Now, fingerprint); await NotifyClaimAsync(claim, "resubmitted", ct);
+        if (!ConsumeProof(proof, PatientOnboardingAction.Claim, fingerprint)) return Conflict("PatientOnboarding.TokenInvalidOrExpired");
+        await NotifyClaimAsync(claim, "resubmitted", ct);
         await data.SaveChangesAsync(ct);
         var response = new { claimRequestId = claim.Id, status = "PendingReview", revisionNumber = claim.EvidenceRevision, rowVersion = Convert.ToBase64String(claim.RowVersion) };
         proof.CompleteMutation(command.IdempotencyKey!, JsonSerializer.Serialize(response, StoredJson)); return Ok(response);

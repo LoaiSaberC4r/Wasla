@@ -57,20 +57,29 @@ public sealed class Phase5FinalRegistrationApiTests
         var fields = Phase5IdentityApi.Profile(app, email); fields["userName"] = "self-new"; fields["password"] = fields["confirmPassword"] = "SyntheticPass123!";
         using var legacyUnverified = await Phase5IdentityApi.FormAsync(client, "/api/v1/auth/patients/register", fields); Assert.Equal(HttpStatusCode.Conflict, legacyUnverified.StatusCode);
         fields["emailVerificationToken"] = await Phase5IdentityApi.VerifyAsync(app, client, email, "Register"); var key = Guid.NewGuid().ToString();
+        var beforeRegistrationHash = app.Clock.UtcNow;
+        await using (var expiringNode = app.WithWebHostBuilder(b => b.ConfigureServices(s => { s.RemoveAll<IPasswordService>(); s.AddSingleton<IPasswordService>(new ExpiringPasswordService(app.Services.GetRequiredService<IPasswordService>(), app.Clock, TimeSpan.FromMinutes(30))); })))
+        {
+            using var expiring = expiringNode.CreateClient();
+            using var lateProof = await Phase5IdentityApi.FormAsync(expiring, "/api/v1/patient-onboarding/register", fields);
+            Assert.Equal(HttpStatusCode.Conflict, lateProof.StatusCode);
+            await app.WithDbAsync(async db => { Assert.False(await db.Patients.AnyAsync(p => p.Email == email)); Assert.False(await db.ApplicationUsers.AnyAsync(u => u.Email == email)); });
+        }
+        app.Clock.UtcNow = beforeRegistrationHash;
         using var created = await Phase5IdentityApi.FormAsync(client, "/api/v1/patient-onboarding/register", fields, key); Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         var id = (await JsonAsync(created)).GetProperty("patientId").GetGuid();
         using var replay = await Phase5IdentityApi.FormAsync(client, "/api/v1/patient-onboarding/register", fields, key); Assert.Equal(HttpStatusCode.Created, replay.StatusCode);
         using var stolen = await Phase5IdentityApi.FormAsync(client, "/api/v1/auth/patients/register", fields); Assert.Equal(HttpStatusCode.Conflict, stolen.StatusCode);
         await app.WithDbAsync(async db => { Assert.Equal(email, (await db.Patients.SingleAsync(p => p.Id == id)).Email); Assert.Equal(1, await db.PatientAccountLinks.CountAsync(l => l.PatientId == id)); Assert.Equal(1, await db.PatientDuplicateCases.CountAsync(c => c.FirstPatientId == id || c.SecondPatientId == id)); });
     }
-    private sealed class ExpiringPasswordService(IPasswordService inner, Phase13Clock clock) : IPasswordService
+    private sealed class ExpiringPasswordService(IPasswordService inner, Phase13Clock clock, TimeSpan? advance = null) : IPasswordService
     {
         public string Hash(string password) => inner.Hash(password);
         public bool Verify(string password, string passwordHash) => inner.Verify(password, passwordHash);
         public PasswordVerification VerifyDetailed(string password, string passwordHash) => inner.VerifyDetailed(password, passwordHash);
         public bool IsStrongPassword(string password) => inner.IsStrongPassword(password);
         public Task<bool> VerifyAsync(string password, string passwordHash, CancellationToken cancellationToken = default) => inner.VerifyAsync(password, passwordHash, cancellationToken);
-        public async Task<string> HashAsync(string password, CancellationToken cancellationToken = default) { var hash = await inner.HashAsync(password, cancellationToken); clock.UtcNow = clock.UtcNow.AddHours(48); return hash; }
+        public async Task<string> HashAsync(string password, CancellationToken cancellationToken = default) { var hash = await inner.HashAsync(password, cancellationToken); clock.UtcNow += advance ?? TimeSpan.FromHours(48); return hash; }
     }
 }
 internal static class Phase5IdentityApi

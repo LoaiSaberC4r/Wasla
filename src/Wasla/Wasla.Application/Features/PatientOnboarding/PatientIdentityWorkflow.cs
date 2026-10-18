@@ -123,6 +123,12 @@ public sealed partial class PatientIdentityWorkflow(IWaslaDataStore data, IPatie
         var c = await store.ContinuationAsync(ContinuationHash(token), cancellationToken);
         return c is not null && c.CanUse(action, Now, mutation) ? c : null;
     }
+    private bool ConsumeProof(PatientOnboardingChallenge proof, PatientOnboardingAction action, string fingerprint)
+    {
+        var consumedAt = Now;
+        if (!proof.CanUse(action, consumedAt)) return false;
+        proof.Consume(consumedAt, fingerprint); return true;
+    }
     private async Task<Result<object>> StartAsync(PatientIdentityInput p, CancellationToken cancellationToken)
     {
         var email = PatientIdentityEmail.Normalize(p.Email);
@@ -218,7 +224,8 @@ public sealed partial class PatientIdentityWorkflow(IWaslaDataStore data, IPatie
         data.Add(PatientAccountLink.Create(Guid.NewGuid(), userId, id, PatientAccountLinkSource.SelfRegistration, Now).Value);
         var possible = await store.MatchAsync(new(null, p.PhoneNumber, p.NameAr, p.DateOfBirth, p.Gender), 1, 20, true, cancellationToken);
         await OpenDuplicatesAsync(id, possible.Items, cancellationToken, userId);
-        var response = new VerifiedPatientRegistrationResponse(id, userId); proof.Consume(Now, fingerprint); proof.CompleteMutation(command.IdempotencyKey!, JsonSerializer.Serialize(response, StoredJson));
+        if (!ConsumeProof(proof, PatientOnboardingAction.RegisterNew, fingerprint)) return Conflict("PatientOnboarding.TokenInvalidOrExpired");
+        var response = new VerifiedPatientRegistrationResponse(id, userId); proof.CompleteMutation(command.IdempotencyKey!, JsonSerializer.Serialize(response, StoredJson));
         return Ok(response);
     }
     private async Task<Result<object>> FullAsync(PatientIdentityInput p, CancellationToken cancellationToken)
