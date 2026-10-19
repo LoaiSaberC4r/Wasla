@@ -23,6 +23,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
     [HttpGet("me")]
     [Authorize]
+    [ProducesResponseType<CurrentUserResponse>(200)]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)
         => (await sender.Send(new MeQuery(), cancellationToken)).ToIActionResult(cancellationToken);
 
@@ -61,8 +62,10 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [HttpPost("patients/register")]
+    [EnableRateLimiting("patient-identity")]
     [AllowAnonymous]
     [Consumes("multipart/form-data")]
+    [ProducesResponseType<RegisterPatientResponse>(201)]
     public async Task<IActionResult> RegisterPatient(
         [FromForm] RegisterPatientRequest request,
         CancellationToken cancellationToken)
@@ -79,7 +82,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
             request.Gender,
             ToUpload(request.ProfileImage),
             ToUpload(request.PersonalIdFrontImage),
-            ToUpload(request.PersonalIdBackImage)), cancellationToken);
+            ToUpload(request.PersonalIdBackImage), request.EmailVerificationToken, Request.Headers["Idempotency-Key"].ToString()), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -135,6 +138,7 @@ public sealed class RegisterDoctorRequest
 
 public sealed class RegisterPatientRequest
 {
+    public string? EmailVerificationToken { get; set; }
     public string UserName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;

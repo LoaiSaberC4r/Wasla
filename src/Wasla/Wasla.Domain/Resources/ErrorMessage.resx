@@ -495,4 +495,14 @@
   </data>
   <data name="Phase18ExportTooLarge" xml:space="preserve"><value>The export exceeds the allowed period, row count, or file size. Narrow the filters.</value></data>
   <data name="Phase18ExportUnavailable" xml:space="preserve"><value>The PDF rendering runtime is unavailable.</value></data>
+  <data name="PatientIdentityConflict" xml:space="preserve"><value>The identity operation conflicts with the current state. Verify the email or use the approved claim workflow.</value></data>
+  <data name="PatientIdentityInvalid" xml:space="preserve"><value>Valid patient identity and contact details are required.</value></data>
+  <data name="PatientIdentityProofRequired" xml:space="preserve"><value>Independent identity evidence must be reviewed before approval.</value></data>
+  <data name="PatientIdentityAgeRestricted" xml:space="preserve"><value>Direct account registration requires age 18. Ages 16–17 require an existing basic profile and supervised claim review.</value></data>
+  <data name="PatientIdentityAccessDenied" xml:space="preserve"><value>You do not have access to this identity operation.</value></data>
+  <data name="PatientIdentityNotFound" xml:space="preserve"><value>The requested identity resource is unavailable.</value></data>
+  <data name="PatientIdentityOtpInvalid" xml:space="preserve"><value>The verification code is invalid or expired.</value></data>
+  <data name="PatientIdentityRateLimited" xml:space="preserve"><value>Too many attempts. Please retry after the cooldown.</value></data>
+  <data name="PatientIdentityStartAccepted" xml:space="preserve"><value>If the request is eligible, a verification message will be sent.</value></data>
+  <data name="PatientIdentityResendAccepted" xml:space="preserve"><value>If activation is available, a new invitation will be sent.</value></data>
 </root>

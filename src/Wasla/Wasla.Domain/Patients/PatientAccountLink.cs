@@ -6,7 +6,8 @@ namespace Wasla.Domain.Patients;
 public enum PatientAccountLinkSource
 {
     SelfRegistration = 1,
-    PatientClaim = 2
+    PatientClaim = 2,
+    ReceptionFullRegistration = 3
 }
 
 public sealed class PatientAccountLink : Entity<Guid>

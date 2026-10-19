@@ -10,7 +10,23 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current Stage:** Phase 15 — Diagnostic Orders & Results — DONE
+**Current task:** Phase 5 Final Patient Identity Closure — **COMPLETED**.
+The implementation branch adds verified onboarding/Claim/activation, scoped
+patient reuse, normalized unique identity email and retention controls. Final CI verified 922 passed tests with no failures/skips; see the
+[final closure report](PHASE-5-FINAL-CLOSURE-REPORT.md).
+
+[Approved addendum](SOURCE-OF-TRUTH-PHASE-5-FINAL-ADDENDUM.md),
+[API changes E01–E06/N01–N20](PHASE-5-FINAL-API-CHANGES.md),
+[security matrix](PHASE-5-FINAL-SECURITY-MATRIX.md),
+[migration plan](PHASE-5-FINAL-DATABASE-MIGRATION-PLAN.md),
+[frontend handoff](PHASE-5-FINAL-FRONTEND-HANDOFF.md), and
+[test evidence](PHASE-5-FINAL-TEST-EVIDENCE.json) document the change.
+Legacy Patient registration now requires email verification and idempotency.
+The existing Walk-In path remains `/api/v1/practices/{practiceId}/tickets/walk-in`.
+Sensitive retention purging defaults off; production legal/privacy and controlled
+deployment approval remain separate release gates.
+
+**Prior documented milestone:** Phase 15 — Diagnostic Orders & Results — DONE
 
 Identity, permission-based authorization, authentication/password recovery,
 Doctor and Patient self-registration, Doctor approval governance, Root

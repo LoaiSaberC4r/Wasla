@@ -152,6 +152,8 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
             db.DoctorPracticeSchedulePeriods.Add(DoctorPracticeSchedulePeriod.Create(Guid.NewGuid(), PracticeId, day, new TimeOnly(8, 0), new TimeOnly(23, 0), 20, doctorUser.Id).Value);
         db.Patients.AddRange(Patient.Create(PatientId, "مريض", "Patient", new DateOnly(1990, 1, 1), Gender.Male, null, null, null, null, null, Today).Value,
             Patient.Create(OtherPatientId, "مريض آخر", "Other patient", new DateOnly(1991, 1, 1), Gender.Male, null, null, null, null, null, Today).Value);
+        // Synthetic fixture provenance models a patient newly registered in this Reception workflow.
+        db.Patients.Local.Single(p => p.Id == PatientId).StampReceptionRegistration(PracticeId, receptionUser.Id, now);
         db.PatientAccountLinks.AddRange(PatientAccountLink.Create(Guid.NewGuid(), patientUser.Id, PatientId, PatientAccountLinkSource.SelfRegistration, now).Value,
             PatientAccountLink.Create(Guid.NewGuid(), otherPatientUser.Id, OtherPatientId, PatientAccountLinkSource.SelfRegistration, now).Value);
         db.DoctorPracticeSegments.Add(DoctorPracticeSegment.CreateDefault(SegmentId, PracticeId, doctorUser.Id).Value);
@@ -193,9 +195,22 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
     }
     public async Task<JsonElement> WalkInAsync(HttpClient reception, Guid? eligibilityId = null, Guid? patientId = null)
     {
+        var target = patientId ?? PatientId;
+        Guid? identityAttestation = null;
+        var established = false;
+        await WithDbAsync(async db => established = await db.Reservations.AnyAsync(r => r.PatientId == target && r.DoctorPracticeId == PracticeId) ||
+            await db.Tickets.AnyAsync(t => t.PatientId == target && t.DoctorPracticeId == PracticeId));
+        if (!established)
+        {
+            // Test journeys explicitly perform the newly required staff verification; no product guard is bypassed.
+            using var confirmed = await PostAsync(reception, "/api/v1/patients/registration-matches", new
+            { mode = "ConfirmReuse", doctorPracticeId = PracticeId, patientId = target, verifiedInPerson = true, verificationBasis = "GovernmentIdSeen" });
+            Assert.Equal(HttpStatusCode.OK, confirmed.StatusCode);
+            identityAttestation = (await JsonAsync(confirmed)).GetProperty("attestationId").GetGuid();
+        }
         using var response = await PostAsync(reception, $"/api/v1/practices/{PracticeId}/tickets/walk-in", new
         {
-            patientId = patientId ?? PatientId, segmentId = SegmentId, visitTypeId = eligibilityId is null ? ConsultationTypeId : FollowUpTypeId,
+            patientId = target, patientIdentityAttestationId = identityAttestation, segmentId = SegmentId, visitTypeId = eligibilityId is null ? ConsultationTypeId : FollowUpTypeId,
             followUpEligibilityId = eligibilityId, paidAmount = eligibilityId is null ? 300 : 100, paymentMethod = "Cash"
         });
         Assert.True(response.StatusCode == HttpStatusCode.Created, await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));

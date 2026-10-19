@@ -21,7 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddBuildingBlockSerilog("Wasla.Api");
 
 builder.Services
-    .AddControllers()
+    .AddControllers(o => o.Filters.Add<PatientIdentityProblemDetailsFilter>())
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
     .AddApplicationPart(typeof(BuildingBlock.Api.ProblemDetailsMappingMvc).Assembly);
@@ -29,6 +29,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Wasla.Api.xml"));
+    options.OperationFilter<Wasla.Api.OpenApi.PatientIdentityOperationFilter>();
     options.SchemaFilter<Wasla.Api.OpenApi.MedicalRecordSchemaFilter>();
     options.SchemaFilter<Wasla.Api.OpenApi.ArchiveSchemaFilter>();
     options.OperationFilter<Wasla.Api.OpenApi.ArchiveOperationFilter>();
@@ -58,6 +59,8 @@ builder.Services.PostConfigure<LogRedactionOptions>(options =>
 builder.Services.PostConfigure<LogRedactionOptions>(options => options.SensitivePropertyNames = [.. options.SensitivePropertyNames,
     "Amount", "PlannedAmount", "Allocations", "Plan", "Expense", "Settlement", "Reversal", "Summary", "Description", "DescriptionAr", "DescriptionEn",
     "TitleAr", "TitleEn", "ResolutionNotes", "ClosureNotes", "Outcome", "Annotation", "EvidenceJson", "PolicyJson", "AppliedFiltersJson", "RowVersion", "ReceiptSnapshotJson"]);
+builder.Services.PostConfigure<LogRedactionOptions>(options => options.SensitivePropertyNames = [.. options.SensitivePropertyNames,
+    "Otp", "EmailVerificationToken", "VerificationToken", "InvitationToken", "X-Onboarding-Token", "IdentityFront", "IdentityBack", "BirthCertificate", "GuardianRelationshipDocument", "ClaimantNormalizedEmail", "ApplicantNameAr", "VerificationNote", "OperatorPassword"]);
 builder.Services.AddWaslaCors(builder.Configuration);
 builder.Services.AddWaslaApplication();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
@@ -73,6 +76,13 @@ builder.Services.AddRateLimiter(options =>
         var seconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry) ? Math.Max(1, (int)Math.Ceiling(retry.TotalSeconds)) : 900;
         context.HttpContext.Response.Headers.RetryAfter = seconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
         context.HttpContext.Response.Headers.CacheControl = "no-store";
+        if (context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute>()?.PolicyName == "patient-identity")
+        {
+            var mapped = context.HttpContext.RequestServices.GetRequiredService<IProblemDetailsMapper>().Map(context.HttpContext,
+                new[] { BuildingBlock.Domain.Results.Error.RateLimit("PatientIdentity.RateLimited", Wasla.Domain.Resources.ErrorMessage.PatientIdentityRateLimited, TimeSpan.FromSeconds(seconds)) });
+            await context.HttpContext.Response.WriteAsJsonAsync(mapped, options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json", cancellationToken: ct);
+            return;
+        }
         var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails { Status = 429, Title = "Too many requests / طلبات كثيرة", Type = "https://www.rfc-editor.org/rfc/rfc6585#section-4" };
         problem.Extensions["code"] = "Request.RateLimited";
         await context.HttpContext.Response.WriteAsJsonAsync(problem, options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json", cancellationToken: ct);
@@ -82,6 +92,7 @@ builder.Services.AddRateLimiter(options =>
     AddFixedPolicy("archive-audit", 300);
     AddFixedPolicy("medical-record-media", 120);
     AddFixedPolicy("medical-record-request", 60);
+    AddFixedPolicy("patient-identity", 120);
     AddFixedPolicy("password-reset-request", 5);
     AddFixedPolicy("password-reset-verify", 30);
     AddFixedPolicy("password-reset-complete", 10);

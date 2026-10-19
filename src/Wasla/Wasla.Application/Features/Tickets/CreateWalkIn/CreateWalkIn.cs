@@ -1,3 +1,4 @@
+using Wasla.Application.Features.PatientIdentityMatching;
 using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
@@ -33,7 +34,7 @@ public sealed record CreateWalkInCommand(
     string? ReferenceNumber = null,
     string? Notes = null,
     Guid? FollowUpEligibilityId = null,
-    string? FollowUpEligibilityRowVersion = null)
+    string? FollowUpEligibilityRowVersion = null, Guid? PatientIdentityAttestationId = null)
     : ICommand<TicketDetailsResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 internal sealed class CreateWalkInCommandValidator : AbstractValidator<CreateWalkInCommand>
@@ -63,7 +64,7 @@ internal sealed class CreateWalkInCommandHandler(
     IFinancialNumberAllocator financialNumberAllocator,
     ITicketQueueReader queueReader,
     IReservationNoShowRuntimeReader reservationNoShowReader,
-    IDateTimeProvider clock, ArchiveTicketReplay archiveReplay)
+    IDateTimeProvider clock, ArchiveTicketReplay archiveReplay, PatientIdentityReuseGuard identityReuse)
     : ICommandHandler<CreateWalkInCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -166,6 +167,9 @@ internal sealed class CreateWalkInCommandHandler(
             return await LoadDetailsAsync(existingId, cancellationToken);
         }
 
+        var identity = await identityReuse.ValidateAsync(request.PatientId, request.PracticeId, actor.Value.ApplicationUserId, request.PatientIdentityAttestationId, cancellationToken);
+        if (identity.IsFailure) return Result<TicketDetailsResponse>.Fail(identity.Errors);
+
         var followUpSelection = await followUp.ValidateSelectionAsync(request.FollowUpEligibilityId, visitType.Type,
             request.PatientId, request.PracticeId, doctor.Id, businessDate, cancellationToken);
         if (followUpSelection.IsFailure) return Result<TicketDetailsResponse>.Fail(followUpSelection.Errors);
@@ -241,6 +245,7 @@ internal sealed class CreateWalkInCommandHandler(
             var claim = eligibility.Reserve(null, ticketId, businessDate, businessDate, actor.Value.ApplicationUserId, nowUtc);
             if (claim.IsFailure) return Result<TicketDetailsResponse>.Fail(claim.Errors);
         }
+        identity.Value?.Associate(null, ticket.Value.Id, clock.UtcNow);
         await unitOfWork.WriteRepository<Ticket>().AddAsync(ticket.Value, cancellationToken);
         await unitOfWork.WriteRepository<Payment>().AddAsync(payment.Value, cancellationToken);
         idempotency.Value.Record!.Complete(ticketId, nowUtc);

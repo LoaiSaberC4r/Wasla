@@ -35,8 +35,10 @@ public sealed class Phase18PartTwoDomainTests
     [Fact]
     public void Restricted_permission_has_no_default_or_delegation_and_existing_prefix_order_is_preserved()
     {
-        var original=PermissionNames.All.Take(PermissionNames.All.Count-Phase18PartTwoPermissionNames.All.Count).ToArray();
-        Assert.Equal(Phase18PartTwoPermissionNames.All,PermissionNames.All.Skip(original.Length));
+        // Later phases may append grants; Phase 18's original contiguous block and IDs stay fixed.
+        var start=PermissionNames.All.ToList().IndexOf(Phase18PartTwoPermissionNames.All[0]);
+        Assert.Equal(285,start);
+        Assert.Equal(Phase18PartTwoPermissionNames.All,PermissionNames.All.Skip(start).Take(Phase18PartTwoPermissionNames.All.Count));
         Assert.DoesNotContain(Phase18PartTwoPermissionNames.SensitiveRestricted,Phase18PartTwoPermissionNames.PlatformDefaults);
         Assert.DoesNotContain(Phase18PartTwoPermissionNames.SensitiveRestricted,PermissionNames.ReceptionAssignmentScoped);
         Assert.Equal(3,Phase18PartTwoPermissionNames.ReceptionDefaults.Count);

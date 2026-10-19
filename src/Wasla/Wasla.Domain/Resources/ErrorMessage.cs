@@ -5,6 +5,17 @@ namespace Wasla.Domain.Resources;
 
 public static class ErrorMessage
 {
+    public static string PatientIdentityConflict => GetString(nameof(PatientIdentityConflict));
+    public static string PatientIdentityInvalid => GetString(nameof(PatientIdentityInvalid));
+    public static string PatientIdentityProofRequired => GetString(nameof(PatientIdentityProofRequired));
+    public static string PatientIdentityAgeRestricted => GetString(nameof(PatientIdentityAgeRestricted));
+    public static string PatientIdentityAccessDenied => GetString(nameof(PatientIdentityAccessDenied));
+    public static string PatientIdentityNotFound => GetString(nameof(PatientIdentityNotFound));
+    public static string PatientIdentityOtpInvalid => GetString(nameof(PatientIdentityOtpInvalid));
+    public static string PatientIdentityRateLimited => GetString(nameof(PatientIdentityRateLimited));
+    public static string PatientIdentityStartAccepted => GetString(nameof(PatientIdentityStartAccepted));
+    public static string PatientIdentityResendAccepted => GetString(nameof(PatientIdentityResendAccepted));
+
     private static readonly ResourceManager Manager = new(
         "Wasla.Domain.Resources.ErrorMessage",
         typeof(ErrorMessage).Assembly);

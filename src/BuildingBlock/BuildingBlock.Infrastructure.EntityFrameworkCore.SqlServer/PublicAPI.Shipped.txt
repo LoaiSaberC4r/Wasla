@@ -1,0 +1,7 @@
+# Independently captured from clean main 17c9e0b96af87de0143ca4ac4978bc970ca6f9dd (Release, SDK10.0.401).
+# Source assembly SHA256: A1A707F7740FB7229A238F1508AF2E29DB911555CC26C29452EE926B5925B017
+BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer.SqlServerExceptionMappingServiceCollectionExtensions
+BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer.SqlServerExceptionMappingServiceCollectionExtensions.AddBuildingBlockSqlServerExceptionMapping(Microsoft.Extensions.DependencyInjection.IServiceCollection) -> Microsoft.Extensions.DependencyInjection.IServiceCollection
+BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer.SqlServerExceptionToErrorMapper
+BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer.SqlServerExceptionToErrorMapper.TryMap(System.Exception, out BuildingBlock.Domain.Results.Error&) -> System.Boolean
+BuildingBlock.Infrastructure.EntityFrameworkCore.SqlServer.SqlServerExceptionToErrorMapper.ctor() -> System.Void

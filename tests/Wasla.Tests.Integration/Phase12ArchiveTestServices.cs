@@ -1,6 +1,7 @@
 using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Domain.Results;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wasla.Application.Features.Archives;
 using Wasla.Application.Features.Reporting;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
@@ -14,6 +15,10 @@ internal static class Phase12ArchiveTestServices
     internal static void Add(IServiceCollection services)
     {
         services.AddLogging();
+        services.TryAddScoped(typeof(Wasla.Application.Persistence.IWaslaDataStore), typeof(WaslaDbContext).Assembly.GetType(
+            "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.WaslaDataStore")!);
+        services.AddScoped(typeof(Wasla.Application.Persistence.IPatientIdentityStore), typeof(WaslaDbContext).Assembly.GetType(
+            "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.PatientIdentityStore")!);
         services.AddScoped(typeof(IArchiveLocationResolver), typeof(WaslaDbContext).Assembly.GetType(
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.ArchiveLocationResolver")!);
         services.AddScoped<IReportingAccessGuard, ComponentGuard>();

@@ -49,10 +49,12 @@ public sealed record RegisterPatientCommand(
     Gender Gender,
     MediaUpload? ProfileImage,
     MediaUpload? PersonalIdFrontImage,
-    MediaUpload? PersonalIdBackImage)
+    MediaUpload? PersonalIdBackImage,
+    string? EmailVerificationToken = null,
+    string? IdempotencyKey = null)
     : ICommand<RegisterPatientResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
-public sealed record RegisterPatientResponse(Guid PatientId, Guid ApplicationUserId);
+public sealed record RegisterPatientResponse(Guid PatientId, Guid ApplicationUserId, string AccountStatus = "Active");
 
 internal sealed class RegisterDoctorCommandValidator : AbstractValidator<RegisterDoctorCommand>
 {
@@ -253,123 +255,22 @@ internal sealed class RegisterDoctorCommandHandler(
     }
 }
 
-internal sealed class RegisterPatientCommandHandler(
-    IWaslaDataStore dataStore,
-    IPasswordService passwordService,
-    IMediaService mediaService,
-    IDateTimeProvider clock)
+internal sealed class RegisterPatientCommandHandler(Wasla.Application.Features.PatientOnboarding.PatientIdentityWorkflow workflow)
     : ICommandHandler<RegisterPatientCommand, RegisterPatientResponse>
 {
-    public async Task<Result<RegisterPatientResponse>> Handle(
-        RegisterPatientCommand request,
-        CancellationToken cancellationToken)
+    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new(System.Text.Json.JsonSerializerDefaults.Web);
+    public async Task<Result<RegisterPatientResponse>> Handle(RegisterPatientCommand request, CancellationToken cancellationToken)
     {
-        var duplicate = await RegistrationChecks.CheckDuplicatesAsync(
-            dataStore,
-            request.UserName,
-            request.Email,
-            cancellationToken);
-        if (duplicate is not null)
-        {
-            return Result<RegisterPatientResponse>.Fail(duplicate);
-        }
-
-        if (!passwordService.IsStrongPassword(request.Password))
-        {
-            return Result<RegisterPatientResponse>.Fail(AuthRegistrationErrors.PasswordInvalid);
-        }
-
-        var role = await dataStore.FindRoleByNameAsync(SystemRoleNames.Patient, cancellationToken);
-        if (role is null)
-        {
-            return Result<RegisterPatientResponse>.Fail(AuthRegistrationErrors.SecurityDataMissing);
-        }
-
-        var patientId = Guid.NewGuid();
-        var applicationUserId = Guid.NewGuid();
-        var storedKeys = new List<string>(3);
-        try
-        {
-            var profile = await SaveOptionalAsync(request.ProfileImage, $"Patients/{patientId}/Profile");
-            var personalFront = await SaveOptionalAsync(request.PersonalIdFrontImage, $"Patients/{patientId}/Verification/PersonalIdentity/Front");
-            var personalBack = await SaveOptionalAsync(request.PersonalIdBackImage, $"Patients/{patientId}/Verification/PersonalIdentity/Back");
-            var now = clock.UtcNow;
-            var userResult = ApplicationUser.Create(
-                applicationUserId,
-                request.UserName,
-                request.Email,
-                request.PhoneNumber,
-                await passwordService.HashAsync(request.Password, cancellationToken),
-                UserType.Patient,
-                isFirstLogin: false,
-                now);
-            var patientResult = Patient.Create(
-                patientId,
-                request.NameAr,
-                request.NameEn,
-                request.DateOfBirth,
-                request.Gender,
-                request.PhoneNumber,
-                request.Email,
-                profile,
-                personalFront,
-                personalBack,
-                DateOnly.FromDateTime(now));
-            var linkResult = PatientAccountLink.Create(
-                Guid.NewGuid(),
-                applicationUserId,
-                patientId,
-                PatientAccountLinkSource.SelfRegistration,
-                now);
-            if (userResult.IsFailure || patientResult.IsFailure || linkResult.IsFailure)
-            {
-                await CleanupAsync();
-                return Result<RegisterPatientResponse>.Fail(
-                    userResult.IsFailure ? userResult.Errors :
-                    patientResult.IsFailure ? patientResult.Errors : linkResult.Errors);
-            }
-
-            dataStore.Add(userResult.Value);
-            dataStore.Add(patientResult.Value);
-            dataStore.Add(linkResult.Value);
-            dataStore.Add(new UserRole(Guid.NewGuid(), applicationUserId, role.Id));
-            await dataStore.SaveChangesAsync(cancellationToken);
-            return Result<RegisterPatientResponse>.Ok(new RegisterPatientResponse(patientId, applicationUserId));
-        }
-        catch
-        {
-            await CleanupAsync();
-            throw;
-        }
-
-        async Task<string?> SaveOptionalAsync(MediaUpload? upload, string folder)
-        {
-            if (upload is null)
-            {
-                return null;
-            }
-
-            var stored = await mediaService.SaveAsync(upload, new MediaStorageRequest(folder), cancellationToken);
-            storedKeys.Add(stored.Key);
-            return stored.Key;
-        }
-
-        async Task CleanupAsync()
-        {
-            if (storedKeys.Count == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                await mediaService.DeleteRangeAsync(storedKeys, CancellationToken.None);
-            }
-            catch
-            {
-                // Best-effort compensation must not hide the original failure.
-            }
-        }
+        var result = await workflow.Handle(new Wasla.Application.Features.PatientOnboarding.PatientIdentityCommand(Wasla.Application.Features.PatientOnboarding.PatientIdentityMutation.Register,
+            new Wasla.Application.Features.PatientOnboarding.PatientIdentityInput {
+                UserName = request.UserName, Email = request.Email, PhoneNumber = request.PhoneNumber, Password = request.Password,
+                ConfirmPassword = request.ConfirmPassword, NameAr = request.NameAr, NameEn = request.NameEn, DateOfBirth = request.DateOfBirth,
+                Gender = request.Gender, ProfileImage = request.ProfileImage, PersonalIdFrontImage = request.PersonalIdFrontImage,
+                PersonalIdBackImage = request.PersonalIdBackImage, EmailVerificationToken = request.EmailVerificationToken
+            }, request.IdempotencyKey), cancellationToken);
+        if (result.IsFailure) return Result<RegisterPatientResponse>.Fail(result.Errors);
+        return Result<RegisterPatientResponse>.Ok(System.Text.Json.JsonSerializer.Deserialize<RegisterPatientResponse>(
+            System.Text.Json.JsonSerializer.Serialize(result.Value), JsonOptions)!);
     }
 }
 

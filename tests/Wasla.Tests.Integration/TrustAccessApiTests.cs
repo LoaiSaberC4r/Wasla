@@ -147,20 +147,20 @@ public sealed class TrustAccessApiTests
         Assert.Equal("verification mismatch", rejectedOnboardingJson.GetProperty("rejectionReason").GetString());
 
         using var patientRegistration = CreatePatientRegistration("patient1", "patient1@example.test");
-        var patientRegistered = await anonymous.PostAsync("/api/v1/auth/patients/register", patientRegistration, testToken);
+        var patientRegistered = await RegisterVerifiedPatientAsync(factory, anonymous, patientRegistration, "patient1@example.test", testToken);
         Assert.Equal(HttpStatusCode.Created, patientRegistered.StatusCode);
         using (var duplicateUserName = CreatePatientRegistration("patient1", "another@example.test"))
         {
             Assert.Equal(
                 HttpStatusCode.Conflict,
-                (await anonymous.PostAsync("/api/v1/auth/patients/register", duplicateUserName, testToken)).StatusCode);
+                (await RegisterVerifiedPatientAsync(factory, anonymous, duplicateUserName, "another@example.test", testToken)).StatusCode);
         }
 
         using (var duplicateEmail = CreatePatientRegistration("another-patient", "patient1@example.test"))
         {
             Assert.Equal(
                 HttpStatusCode.Conflict,
-                (await anonymous.PostAsync("/api/v1/auth/patients/register", duplicateEmail, testToken)).StatusCode);
+                (await RegisterVerifiedPatientAsync(factory, anonymous, duplicateEmail, "patient1@example.test", testToken, "Claim")).StatusCode);
         }
 
         var patientToken = await LoginAsync(anonymous, "patient1@example.test", "PatientPass123", testToken);
@@ -259,7 +259,7 @@ public sealed class TrustAccessApiTests
         using var registration = CreatePatientRegistration("recover", "recover@example.test");
         Assert.Equal(
             HttpStatusCode.Created,
-            (await client.PostAsync("/api/v1/auth/patients/register", registration, testToken)).StatusCode);
+            (await RegisterVerifiedPatientAsync(factory, client, registration, "recover@example.test", testToken)).StatusCode);
 
         var request = await client.PostAsJsonAsync(
             "/api/v1/auth/forgot-password/request-otp",
@@ -439,6 +439,21 @@ public sealed class TrustAccessApiTests
         AddFile(content, "PersonalIdBackImage", "back.png");
         AddFile(content, "SyndicateCardFrontImage", "syndicate.png");
         return content;
+    }
+
+    internal static async Task<HttpResponseMessage> RegisterVerifiedPatientAsync(WebApplicationFactory<Program> factory, HttpClient client, MultipartFormDataContent form, string email, CancellationToken ct, string purpose = "Register")
+    {
+        using var start = await client.PostAsJsonAsync("/api/v1/patient-onboarding/start", new { email, purpose }, ct);
+        Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
+        var id = (await ReadJsonAsync(start, ct)).GetProperty("requestId").GetGuid();
+        await using var scope = factory.Services.CreateAsyncScope(); var db = scope.ServiceProvider.GetRequiredService<WaslaDbContext>();
+        var message = await db.EmailOutboxMessages.SingleAsync(m => m.IdempotencyKey == "patient-otp:" + id.ToString("N"), ct);
+        var otp = Regex.Match(message.TextBody!, @"Verification code: (\d+)", RegexOptions.CultureInvariant).Groups[1].Value;
+        using var verified = await client.PostAsJsonAsync("/api/v1/patient-onboarding/verify-email", new { requestId = id, otp }, ct);
+        Assert.Equal(HttpStatusCode.OK, verified.StatusCode);
+        form.Add(new StringContent((await ReadJsonAsync(verified, ct)).GetProperty("verificationToken").GetString()!), "emailVerificationToken");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/patients/register") { Content = form };
+        request.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString()); return await client.SendAsync(request, ct);
     }
 
     private static MultipartFormDataContent CreatePatientRegistration(string userName, string email)

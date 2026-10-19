@@ -35,6 +35,15 @@ public sealed class Patient : AggregateRoot<Guid>, IAuditableEntity
         PersonalIdBackMediaKey = personalIdBackMediaKey;
     }
 
+    // Registration provenance is audit metadata, never Patient ownership or clinical scope.
+    public Guid? RegistrationDoctorPracticeId { get; private set; }
+    public Guid? RegistrationReceptionApplicationUserId { get; private set; }
+    public DateTime? ReceptionRegisteredOnUtc { get; private set; }
+    public void StampReceptionRegistration(Guid practice, Guid actor, DateTime now)
+    {
+        if (practice == Guid.Empty || actor == Guid.Empty || RegistrationDoctorPracticeId is not null) throw new InvalidOperationException("Registration provenance already stamped or invalid.");
+        RegistrationDoctorPracticeId = practice; RegistrationReceptionApplicationUserId = actor; ReceptionRegisteredOnUtc = now;
+    }
     public string NameAr { get; private set; } = string.Empty;
     public string? NameEn { get; private set; }
     public DateOnly DateOfBirth { get; private set; }
@@ -67,7 +76,7 @@ public sealed class Patient : AggregateRoot<Guid>, IAuditableEntity
         var normalizedEmail = Normalize(email)?.ToLowerInvariant();
         if (id == Guid.Empty ||
             normalizedAr.Length is 0 or > 200 || normalizedEn?.Length > 200 ||
-            normalizedPhone?.Length > 30 || normalizedEmail?.Length > 200 ||
+            normalizedPhone?.Length > 30 || !PatientIdentityEmail.IsValid(normalizedEmail) ||
             dateOfBirth == default || dateOfBirth > today ||
             gender is not Gender.Male and not Gender.Female)
         {
@@ -92,7 +101,7 @@ public sealed class Patient : AggregateRoot<Guid>, IAuditableEntity
         var normalizedPhone = Normalize(phoneNumber);
         var normalizedEmail = Normalize(email)?.ToLowerInvariant();
         if (normalizedAr.Length is 0 or > 200 || normalizedEn?.Length > 200 ||
-            normalizedPhone?.Length > 30 || normalizedEmail?.Length > 200)
+            normalizedPhone?.Length > 30 || !PatientIdentityEmail.IsValid(normalizedEmail))
         {
             return Result.Fail(PatientErrors.Invalid);
         }

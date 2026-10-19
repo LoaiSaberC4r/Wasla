@@ -39,7 +39,8 @@ public sealed class Phase18ReportingFoundationTests
     [Fact]
     public void New_permissions_are_appended_and_private_finance_is_never_assignment_scoped()
     {
-        Assert.Equal(Phase18PermissionNames.All, PermissionNames.All.Take(PermissionNames.All.Count - Phase18PartTwoPermissionNames.All.Count).TakeLast(Phase18PermissionNames.All.Count));
+        var start = PermissionNames.All.ToList().IndexOf(Phase18PermissionNames.All[0]);
+        Assert.Equal(Phase18PermissionNames.All, PermissionNames.All.Skip(start).Take(Phase18PermissionNames.All.Count));
         Assert.All(Phase18PermissionNames.ReceptionDefaults, p => Assert.Contains(p, PermissionNames.ReceptionAssignmentScoped));
         Assert.DoesNotContain(Phase18PermissionNames.ExpensesView, PermissionNames.ReceptionAssignmentScoped);
         Assert.DoesNotContain(Phase18PermissionNames.DoctorExportFinancial, Phase18PermissionNames.PlatformDefaults);

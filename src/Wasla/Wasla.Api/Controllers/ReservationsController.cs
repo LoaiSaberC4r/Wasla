@@ -185,7 +185,7 @@ public sealed class ReceptionReservationsController(ISender sender) : Controller
             request.SegmentId,
             request.VisitTypeId,
             request.BookingNote,
-            idempotencyKey ?? string.Empty, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion), cancellationToken);
+            idempotencyKey ?? string.Empty, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion, request.PatientIdentityAttestationId), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -420,7 +420,7 @@ public sealed record CreatePracticeReservationRequest(
     Guid VisitTypeId,
     string? BookingNote,
     Guid? FollowUpEligibilityId = null,
-    string? FollowUpEligibilityRowVersion = null);
+    string? FollowUpEligibilityRowVersion = null, Guid? PatientIdentityAttestationId = null);
 public sealed record CancelReservationRequest(string ReasonCode, string? Comment, string RowVersion);
 public sealed record RescheduleReservationRequest(
     DateOnly BusinessDate,

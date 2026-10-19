@@ -4,8 +4,10 @@ using BuildingBlock.Application.Abstraction.Media;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Wasla.Api.Security;
 using Wasla.Application.Features.Patients;
+using Wasla.Application.Features.Doctors;
 using Wasla.Domain.Common;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
@@ -15,37 +17,40 @@ namespace Wasla.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/patients")]
-[Authorize]
+[Authorize, EnableRateLimiting("patient-identity")]
 public sealed class PatientsController(ISender sender) : ControllerBase
 {
     [HttpPost]
     [Consumes("multipart/form-data")]
     [Permission(PermissionNames.PatientsRegister)]
+    [ProducesResponseType<CreateReceptionPatientResponse>(201)]
     public async Task<IActionResult> Create([FromForm] CreateReceptionPatientRequest request, CancellationToken cancellationToken)
     {
         PatientContactInput? contact = request.PrimaryContactNameAr is null && request.PrimaryContactPhoneNumber is null
             ? null
             : new(request.PrimaryContactNameAr ?? string.Empty, request.PrimaryContactNameEn,
                 request.PrimaryContactPhoneNumber ?? string.Empty, request.PrimaryContactRelationshipType,
-                request.PrimaryContactLinkedPatientId, request.PrimaryContactIsPrimary);
+                request.PrimaryContactLinkedPatientId, request.PrimaryContactIsPrimary, request.PrimaryContactEmail);
         var result = await sender.Send(new CreateReceptionPatientCommand(
             request.NameAr, request.NameEn, request.DateOfBirth, request.Gender, request.PhoneNumber,
-            request.Email, ToUpload(request.ProfileImage), contact, request.DoctorPracticeId), cancellationToken);
+            request.Email, ToUpload(request.ProfileImage), contact, request.DoctorPracticeId, request.MatchReviewOutcome, request.MatchReviewReason, request.MatchingAttestationBasis, Request.Headers["Idempotency-Key"].FirstOrDefault()), cancellationToken);
         return result.IsSuccess ? StatusCode(StatusCodes.Status201Created, result.Value) : result.Errors.ToActionProblem(cancellationToken);
     }
 
     [HttpGet("search")]
     [Permission(PermissionNames.PatientsSearchBasic)]
+    [ProducesResponseType<PagedResponse<PatientSearchResponse>>(200)]
     public async Task<IActionResult> Search([FromQuery] string? phoneNumber, [FromQuery] string? name,
         [FromQuery] DateOnly? dateOfBirth, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] Guid? doctorPracticeId = null,
+        [FromQuery] Guid? doctorPracticeId = null, [FromQuery] string? email = null,
         CancellationToken cancellationToken = default)
         => (await sender.Send(new SearchPatientsQuery(
-            phoneNumber, name, dateOfBirth, pageNumber, pageSize, doctorPracticeId), cancellationToken))
+            phoneNumber, name, dateOfBirth, pageNumber, pageSize, doctorPracticeId, email), cancellationToken))
             .ToIActionResult(cancellationToken);
 
     [HttpGet("me")]
     [Permission(PermissionNames.PatientProfileViewOwn)]
+    [ProducesResponseType<PatientProfileResponse>(200)]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)
         => (await sender.Send(new GetMyPatientProfileQuery(), cancellationToken)).ToIActionResult(cancellationToken);
 
@@ -62,9 +67,10 @@ public sealed class PatientsController(ISender sender) : ControllerBase
     [HttpPut("me")]
     [Consumes("multipart/form-data")]
     [Permission(PermissionNames.PatientProfileUpdateOwn)]
+    [ProducesResponseType<PatientProfileResponse>(200)]
     public async Task<IActionResult> UpdateMe([FromForm] UpdateMyPatientProfileRequest request, CancellationToken cancellationToken)
         => (await sender.Send(new UpdateMyPatientProfileCommand(
-            request.NameAr, request.NameEn, request.PhoneNumber, request.Email, ToUpload(request.ProfileImage), request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
+            request.NameAr, request.NameEn, request.PhoneNumber, request.Email, ToUpload(request.ProfileImage), request.RowVersion, request.EmailVerificationToken), cancellationToken)).ToIActionResult(cancellationToken);
 
     [HttpGet("me/contacts")]
     [Permission(PermissionNames.PatientContactsViewOwn)]
@@ -90,12 +96,12 @@ public sealed class PatientsController(ISender sender) : ControllerBase
         => (await sender.Send(new DeactivateMyPatientContactCommand(contactId), cancellationToken)).ToIActionResult(cancellationToken);
 
     private static PatientContactInput ToInput(PatientContactRequest request)
-        => new(request.NameAr, request.NameEn, request.PhoneNumber, request.RelationshipType, request.LinkedPatientId, request.IsPrimary);
+        => new(request.NameAr, request.NameEn, request.PhoneNumber, request.RelationshipType, request.LinkedPatientId, request.IsPrimary, request.ContactEmail);
     private static MediaUpload? ToUpload(IFormFile? file)
         => file is null ? null : new(file.OpenReadStream(), file.FileName, file.ContentType, file.Length);
 }
 
-public sealed class CreateReceptionPatientRequest
+public class CreateReceptionPatientRequest
 {
     public string NameAr { get; set; } = string.Empty;
     public string? NameEn { get; set; }
@@ -105,6 +111,10 @@ public sealed class CreateReceptionPatientRequest
     public string? Email { get; set; }
     public IFormFile? ProfileImage { get; set; }
     public Guid? DoctorPracticeId { get; set; }
+    public string? MatchReviewOutcome { get; set; }
+    public string? MatchReviewReason { get; set; }
+    public PatientIdentityVerificationBasis? MatchingAttestationBasis { get; set; }
+    public string? PrimaryContactEmail { get; set; }
     public string? PrimaryContactNameAr { get; set; }
     public string? PrimaryContactNameEn { get; set; }
     public string? PrimaryContactPhoneNumber { get; set; }
@@ -115,6 +125,7 @@ public sealed class CreateReceptionPatientRequest
 
 public sealed class UpdateMyPatientProfileRequest
 {
+    public string? EmailVerificationToken { get; set; }
     public string NameAr { get; set; } = string.Empty;
     public string? NameEn { get; set; }
     public string? PhoneNumber { get; set; }
@@ -124,4 +135,4 @@ public sealed class UpdateMyPatientProfileRequest
 }
 
 public sealed record PatientContactRequest(string NameAr, string? NameEn, string PhoneNumber,
-    PatientContactRelationshipType RelationshipType, Guid? LinkedPatientId, bool IsPrimary);
+    PatientContactRelationshipType RelationshipType, Guid? LinkedPatientId, bool IsPrimary, string? ContactEmail = null);

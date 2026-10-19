@@ -166,6 +166,15 @@ internal sealed class WaslaSecuritySeeder(
             [SystemRoleIds.MedicalCatalogManager] = PermissionNames.MedicalCatalogManagerDefaults,
             [SystemRoleIds.SuperAdmin] =
             [
+                PermissionNames.PatientClaimsViewAll,
+                PermissionNames.PatientClaimsViewDetails,
+                PermissionNames.PatientClaimsViewEvidence,
+                PermissionNames.PatientClaimsApprove,
+                PermissionNames.PatientClaimsReject,
+                PermissionNames.PatientClaimsRequestModification,
+                PermissionNames.PatientDuplicatesView,
+                PermissionNames.PatientDuplicatesResolve,
+
                 PermissionNames.DoctorsViewAll,
                 PermissionNames.DoctorsViewDetails,
                 PermissionNames.DoctorsApprove,
@@ -266,6 +275,8 @@ internal sealed class WaslaSecuritySeeder(
             ],
             [SystemRoleIds.Reception] =
             [
+                PermissionNames.PatientsRegisterFull,
+                PermissionNames.PatientsRegistrationMatch,
                 PermissionNames.PatientsSearchBasic,
                 PermissionNames.PatientsRegister,
                 PermissionNames.FamilyRelationshipRequestsCreateAssisted,

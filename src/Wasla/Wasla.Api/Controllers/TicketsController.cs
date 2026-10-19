@@ -81,7 +81,7 @@ public sealed class PracticeTicketsController(ISender sender) : ControllerBase
             request.VisitTypeId,
             request.PaidAmount,
             idempotencyKey ?? string.Empty, request.PaymentMethod,
-            request.ReferenceNumber, request.Notes, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion), cancellationToken);
+            request.ReferenceNumber, request.Notes, request.FollowUpEligibilityId, request.FollowUpEligibilityRowVersion, request.PatientIdentityAttestationId), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -243,7 +243,7 @@ public sealed record CreateWalkInTicketRequest(
     string? ReferenceNumber = null,
     string? Notes = null,
     Guid? FollowUpEligibilityId = null,
-    string? FollowUpEligibilityRowVersion = null);
+    string? FollowUpEligibilityRowVersion = null, Guid? PatientIdentityAttestationId = null);
 public sealed record TicketMutationRequest(string RowVersion);
 public sealed record ReasonedTicketMutationRequest(string Reason, string RowVersion);
 

@@ -73,7 +73,12 @@ public sealed class Phase16SharingActivationTests : IDisposable
         Assert.True(options.CrossDoctorSharingEnabled);
         Assert.True(options.GuardianSharingEnabled);
         Assert.True(options.OpaqueEntryKey == _key, "The API must bind the external opaque key.");
-        using var owner = await app.ClientAsync("doctor");
+        // Both doctors must use the explicitly configured node. The base fixture may
+        // have developer secrets locally, while CI correctly has no sharing key.
+        app.Services.GetRequiredService<IOptions<MedicalRecordOptions>>().Value.OpaqueEntryKey = null;
+        using var unconfiguredOwner = await app.ClientAsync("doctor");
+        using var owner = node.CreateClient();
+        owner.DefaultRequestHeaders.Authorization = unconfiguredOwner.DefaultRequestHeaders.Authorization;
         using var reception = await app.ClientAsync("reception");
         using var authenticated = await app.ClientAsync("other-doctor");
         using var doctor = node.CreateClient();
@@ -98,6 +103,9 @@ public sealed class Phase16SharingActivationTests : IDisposable
             hiddenEncounterToken = hidden.GetProperty("hiddenEncounterToken").GetString(), reason = "Review prior treatment"
         }));
         var requestId = requested.GetProperty("requestId").GetGuid();
+        using (var denied = await PostAsync(unconfiguredOwner, $"/api/v1/doctors/me/medical-record-access-requests/{requestId}/approve",
+            new { rowVersion = requested.GetProperty("rowVersion").GetString() }))
+            Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
         await OkAsync(await PostAsync(owner, $"/api/v1/doctors/me/medical-record-access-requests/{requestId}/approve",
             new { rowVersion = requested.GetProperty("rowVersion").GetString() }));
         await GetAsync(doctor, url + $"/encounters/{sourceId}");
