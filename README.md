@@ -364,9 +364,12 @@ media, encounter visibility and hidden-access request workflow. See
 [rollout and privacy gates](PHASE-16-ROLLOUT.md), and
 [final closure report](PHASE-16-CLOSURE-REPORT.md).
 Cross-doctor and Guardian sharing flags are enabled in base configuration;
-Production and Staging explicitly disable both. All six Guardian routes require
-approved policy configuration, current reviewed medical eligibility and per-read
-relationship, permission, restriction and under-16 checks. Base policy remains
+Production and Staging explicitly disable both. All six dependent routes require
+approved policy configuration and exact adult-child proof, with per-read
+permission, restriction and under-16 checks. Father/Mother require no separate
+medical eligibility; Guardian/LegalGuardian require current reviewed eligibility
+bound to exact authority proof. See the [2026-10-24 business addendum](SOURCE-OF-TRUTH-PHASE-16-FINAL-BUSINESS-ADDENDUM.md)
+and [final API diff](PHASE-16-FINAL-GAP-API-DIFF.md). Base policy remains
 unapproved and fails closed. The [proposed addendum](SOURCE-OF-TRUTH-PHASE-16-ADDENDUM-PROPOSED.md)
 does not formally amend the master or grant production release approval.
 

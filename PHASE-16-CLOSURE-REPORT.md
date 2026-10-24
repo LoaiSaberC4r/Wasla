@@ -1,5 +1,18 @@
 # Wasla — Phase 16 final closure report
 
+**2026-10-24 update:** the owner approved final parent/Guardian business rules.
+The old all-adult eligibility interpretation in the historical report below is
+superseded. Current implementation and verification are recorded in the
+[final gap closure report](PHASE-16-FINAL-GAP-IMPLEMENTATION-REPORT.md),
+[API diff](PHASE-16-FINAL-GAP-API-DIFF.md) and
+[business incorporation addendum](SOURCE-OF-TRUTH-PHASE-16-FINAL-BUSINESS-ADDENDUM.md).
+Business approval does not grant legal/clinical or Production authorization.
+
+---
+
+Historical 2026-10-15 engineering report follows; its test counts describe that
+earlier source revision, not the 2026-10-24 change.
+
 Date: 2026-10-15 (Africa/Cairo). Branch: `codex/phase16-final-closure`.
 Reviewed baseline: `564a1e2ed54cdd4a8826a1150c438d9f782ccdf3`.
 

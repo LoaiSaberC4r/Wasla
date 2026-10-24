@@ -25,7 +25,7 @@ public sealed class Phase16GuardianActivationTests
     [InlineData(FamilyMemberRole.Guardian, false)]
     [InlineData(FamilyMemberRole.LegalGuardian, false)]
     [InlineData(FamilyMemberRole.LegalGuardian, true)]
-    public async Task Configuration_activated_guardian_reads_all_six_routes_only_after_reviewed_eligibility(FamilyMemberRole role, bool sql)
+    public async Task Configuration_activated_reads_use_role_specific_exact_pair_authority(FamilyMemberRole role, bool sql)
     {
         await using var f = await Phase16FamilyFixture.CreateAsync(sql, approve: false, adultRole: role);
         var routes = await SeedRecordAsync(f);
@@ -37,12 +37,17 @@ public sealed class Phase16GuardianActivationTests
         Assert.True(node.Services.GetRequiredService<IOptions<FamilyMedicalPolicyOptions>>().Value.IsConfigured);
         using var adult = node.CreateClient(); adult.DefaultRequestHeaders.Authorization = f.Father.DefaultRequestHeaders.Authorization;
         using var admin = node.CreateClient(); admin.DefaultRequestHeaders.Authorization = f.Admin.DefaultRequestHeaders.Authorization;
-        await AssertUnavailableAsync(adult, f.ChildId, routes);
-        var review = await ReviewAsync(f, f.App.PatientId);
-        await OkAsync(await PostAsync(admin, Eligibility + $"/{review.GetProperty("reviewId").GetGuid()}/approve", new
+        var guardian = role is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian;
+        if (guardian)
         {
-            rowVersion = review.GetProperty("rowVersion").GetString(), policyVersion = "TEST-ONLY-v1", basisReference = "TEST-reviewed-proof"
-        }));
+            await AssertUnavailableAsync(adult, f.ChildId, routes);
+            var review = await ReviewAsync(f, f.App.PatientId);
+            await OkAsync(await PostAsync(admin, Eligibility + $"/{review.GetProperty("reviewId").GetGuid()}/approve", new
+            {
+                rowVersion = review.GetProperty("rowVersion").GetString(), policyVersion = "TEST-ONLY-v1", basisReference = "TEST-reviewed-proof",
+                authorityRelationshipRequestId = await f.AuthorityAsync(review.GetProperty("reviewId").GetGuid())
+            }));
+        }
         foreach (var route in routes)
         {
             using var read = await adult.GetAsync(route, TestContext.Current.CancellationToken);
@@ -60,14 +65,14 @@ public sealed class Phase16GuardianActivationTests
             }
         }
         var dependents = (await GetAsync(adult, Dependents)).GetProperty("items");
-        Assert.Single(dependents.EnumerateArray());
-        Assert.Equal(f.ChildId, dependents[0].GetProperty("patientId").GetGuid());
+        Assert.Equal(guardian ? 1 : 2, dependents.GetArrayLength());
+        Assert.Contains(dependents.EnumerateArray(), p => p.GetProperty("patientId").GetGuid() == f.ChildId);
         await f.App.WithDbAsync(async db =>
         {
             Assert.Equal(sql, db.Database.IsSqlServer());
             Assert.Equal(5, await db.Set<MedicalRecordAccessAudit>().CountAsync(a => a.PatientId == f.ChildId && a.ActorCategory == "Dependent"));
             Assert.Equal(4, await db.FamilyMembers.CountAsync());
-            Assert.Equal(1, await db.Set<FamilyMedicalEligibilityReview>().CountAsync(r => r.Status == FamilyMedicalEligibilityStatus.Approved));
+            Assert.Equal(guardian ? 1 : 0, await db.Set<FamilyMedicalEligibilityReview>().CountAsync(r => r.Status == FamilyMedicalEligibilityStatus.Approved));
         });
         foreach (var user in new[] { "reception", "admin", "root", "doctor" })
         {
@@ -96,7 +101,7 @@ public sealed class Phase16GuardianActivationTests
     [InlineData("age")]
     public async Task Every_route_and_attachment_revalidates_current_guardian_authority(string gate)
     {
-        await using var f = await Phase16FamilyFixture.CreateAsync();
+        await using var f = await Phase16FamilyFixture.CreateAsync(adultRole: FamilyMemberRole.Guardian);
         var routes = await SeedRecordAsync(f);
         foreach (var route in routes) { using var read = await f.Father.GetAsync(route, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.OK, read.StatusCode); }
         var policy = f.App.Services.GetRequiredService<IOptions<FamilyMedicalPolicyOptions>>().Value;
@@ -148,7 +153,7 @@ public sealed class Phase16GuardianActivationTests
     [Fact]
     public async Task Restoring_a_restriction_does_not_restore_revoked_medical_eligibility()
     {
-        await using var f = await Phase16FamilyFixture.CreateAsync();
+        await using var f = await Phase16FamilyFixture.CreateAsync(otherAdultRole: FamilyMemberRole.Guardian);
         var routes = await SeedRecordAsync(f);
         using var submitted = await SubmitAsync(f.Father, f.ChildId, f.App.OtherPatientId);
         var request = await JsonAsync(submitted);
@@ -191,7 +196,7 @@ public sealed class Phase16GuardianActivationTests
     [InlineData(true)]
     public async Task Eligibility_approval_requires_current_allowed_relationship_proof(bool missing)
     {
-        await using var f = await Phase16FamilyFixture.CreateAsync(approve: false);
+        await using var f = await Phase16FamilyFixture.CreateAsync(approve: false, adultRole: FamilyMemberRole.Guardian);
         var routes = await SeedRecordAsync(f);
         if (missing)
             await f.App.WithDbAsync(db => db.FamilyRelationshipDocuments.ExecuteDeleteAsync(TestContext.Current.CancellationToken));
@@ -199,7 +204,8 @@ public sealed class Phase16GuardianActivationTests
         var review = await ReviewAsync(f, f.App.PatientId);
         using var denied = await PostAsync(f.Admin, Eligibility + $"/{review.GetProperty("reviewId").GetGuid()}/approve", new
         {
-            rowVersion = review.GetProperty("rowVersion").GetString(), policyVersion = "TEST-ONLY-v1", basisReference = "TEST-reviewed-proof"
+            rowVersion = review.GetProperty("rowVersion").GetString(), policyVersion = "TEST-ONLY-v1", basisReference = "TEST-reviewed-proof",
+            authorityRelationshipRequestId = await f.AuthorityAsync(review.GetProperty("reviewId").GetGuid())
         });
         Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
         await AssertUnavailableAsync(f.Father, f.ChildId, routes);
@@ -223,7 +229,7 @@ public sealed class Phase16GuardianActivationTests
         else Assert.Equal(HttpStatusCode.NotFound, dependents.StatusCode);
     }
 
-    private static async Task<string[]> SeedRecordAsync(Phase16FamilyFixture f)
+    internal static async Task<string[]> SeedRecordAsync(Phase16FamilyFixture f)
     {
         using var doctor = await f.App.ClientAsync("doctor"); using var reception = await f.App.ClientAsync("reception");
         var ticket = await f.App.StartAsync(doctor, await f.App.WalkInAsync(reception, patientId: f.ChildId));

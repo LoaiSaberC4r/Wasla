@@ -29,7 +29,7 @@ public sealed class Phase16FamilyHardeningTests
         var submissions = await Task.WhenAll(SubmitAsync(f.Father, f.ChildId, f.App.OtherPatientId), SubmitAsync(fatherB, f.ChildId, f.App.OtherPatientId));
         Assert.Single(submissions, r => r.StatusCode == HttpStatusCode.Created); Assert.Single(submissions, r => r.StatusCode == HttpStatusCode.Conflict);
         var request = await JsonAsync(submissions.Single(r => r.StatusCode == HttpStatusCode.Created)); foreach (var response in submissions) response.Dispose();
-        var id = request.GetProperty("requestId").GetGuid(); var body = new { rowVersion = request.GetProperty("rowVersion").GetString(), reason = "Reject" };
+        var id = request.GetProperty("requestId").GetGuid(); var body = new { rowVersion = request.GetProperty("rowVersion").GetString(), basisReference = "TEST-ONLY-restriction-mandate", reason = "Reject" };
         var decisions = await Task.WhenAll(PostAsync(f.Admin, Inbox + $"/{id}/approve", body), PostAsync(adminB, Inbox + $"/{id}/reject", body));
         Assert.Single(decisions, r => r.StatusCode == HttpStatusCode.OK); Assert.Single(decisions, r => r.StatusCode == HttpStatusCode.Conflict);
         foreach (var r in decisions) r.Dispose();
@@ -39,12 +39,14 @@ public sealed class Phase16FamilyHardeningTests
         else await GetAsync(motherB, f.Record() + "/overview");
         using var next = await SubmitAsync(f.Father, f.SecondChildId, f.App.OtherPatientId); Assert.Equal(HttpStatusCode.Created, next.StatusCode);
         request = await JsonAsync(next); id = request.GetProperty("requestId").GetGuid();
-        var row = new { rowVersion = request.GetProperty("rowVersion").GetString() };
+        var row = new { rowVersion = request.GetProperty("rowVersion").GetString(), basisReference = "TEST-ONLY-restriction-mandate" };
         var race = await Task.WhenAll(PostAsync(f.Father, Own + $"/{id}/withdraw", row), PostAsync(adminB, Inbox + $"/{id}/approve", row));
         Assert.Single(race, r => r.StatusCode == HttpStatusCode.OK); Assert.Single(race, r => r.StatusCode == HttpStatusCode.Conflict); foreach (var r in race) r.Dispose();
         await f.App.WithDbAsync(async db => {
             Assert.Equal(2, await db.Set<FamilyMedicalAccessRequest>().CountAsync());
-            Assert.Equal(4, await db.Set<FamilyMedicalAccessRequestHistory>().CountAsync());
+            var approvedCount = await db.Set<FamilyMedicalAccessRequest>().CountAsync(r => r.Status == FamilyMedicalRequestStatus.Approved);
+            Assert.Equal(4 + approvedCount, await db.Set<FamilyMedicalAccessRequestHistory>().CountAsync());
+            Assert.Equal(approvedCount, await db.Set<FamilyMedicalAccessRequestHistory>().CountAsync(h => h.Action == "RestrictionGroundReviewed" && h.ReasonOrMessage == "TEST-ONLY-restriction-mandate"));
             var indexes = db.Model.FindEntityType(typeof(FamilyMedicalAccessRequest))!.GetIndexes();
             Assert.Contains(indexes, i => i.IsUnique && i.GetFilter() == "[Status] IN (1,2)");
         });
@@ -52,7 +54,7 @@ public sealed class Phase16FamilyHardeningTests
     [Fact]
     public async Task Sql_migration_rehearsal_backfills_only_pending_pairs_preserves_patients_and_seed_roles()
     {
-        await using var f = await Phase16FamilyFixture.CreateAsync(true, false);
+        await using var f = await Phase16FamilyFixture.CreateAsync(true, false, adultRole: FamilyMemberRole.Guardian);
         await f.App.WithDbAsync(async db => {
             var patients = await db.Patients.OrderBy(p => p.Id).Select(p => new { p.Id, p.NameAr, p.DateOfBirth }).ToArrayAsync();
             // Start from a fresh legacy schema rather than reversing the non-reversible archive cutover.
@@ -95,6 +97,12 @@ public sealed class Phase16FamilyHardeningTests
         { var responses = paths.GetProperty(route.Path).GetProperty(route.Method).GetProperty("responses"); foreach (var code in new[] { "401", "404", "422", "429" }) Assert.True(responses.TryGetProperty(code, out _), route.Path + " " + code); }
         var schemas = spec.GetProperty("components").GetProperty("schemas");
         Assert.True(schemas.GetProperty("FamilyMemberResponse").GetProperty("properties").TryGetProperty("medicalAccess", out _));
+        var decision = schemas.GetProperty("FamilyMedicalDecisionBody").GetProperty("properties");
+        foreach (var field in new[] { "rowVersion", "reason", "message", "decisionNote", "policyVersion", "basisReference", "authorityRelationshipRequestId" })
+            Assert.True(decision.TryGetProperty(field, out _), field);
+        Assert.True(schemas.GetProperty("FamilyMedicalEligibilityResponse").GetProperty("properties").TryGetProperty("authorityRelationshipRequestId", out _));
+        Assert.Equal(1, (int)FamilyRelationshipRequestType.CreateFamily); Assert.Equal(2, (int)FamilyRelationshipRequestType.AddFamilyMember);
+        Assert.Equal(3, (int)FamilyRelationshipRequestType.VerifyParentChild); Assert.Equal(4, (int)FamilyRelationshipRequestType.VerifyGuardianChild);
         Assert.DoesNotContain("mediaKey", schemas.GetProperty("FamilyMedicalDocumentResponse").GetRawText());
     }
 }

@@ -1,5 +1,9 @@
 # Proposed Phase 16 family addendum — formal adoption pending
 
+Historical proposal. The all-adult medical-eligibility interpretation below is
+superseded by the owner's [2026-10-24 approved business decisions](SOURCE-OF-TRUTH-PHASE-16-FINAL-BUSINESS-ADDENDUM.md).
+Full Master incorporation and independent legal/clinical/release approval remain pending.
+
 The [final closure report](PHASE-16-CLOSURE-REPORT.md) records verification and
 base Guardian flag enablement. Production/Staging remain disabled and base
 policy remains unapproved; the final sentence below describes original defaults.

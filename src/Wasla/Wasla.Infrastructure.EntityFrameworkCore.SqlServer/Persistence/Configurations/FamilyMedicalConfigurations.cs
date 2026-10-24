@@ -69,6 +69,7 @@ internal sealed class FamilyMedicalEligibilityReviewConfiguration : IWriteEntity
         b.ToTable("FamilyMedicalEligibilityReviews", t => t.HasCheckConstraint("CK_FamilyMedicalEligibility_Status", "[Status] IN (1,2,3,4)"));
         FamilyMedicalMapping.Scope(b, nameof(FamilyMedicalEligibilityReview.AdultPatientId));
         b.Property(r => r.PolicyVersion).HasMaxLength(100); b.Property(r => r.BasisReference).HasMaxLength(500); b.Property(r => r.ReviewReason).HasMaxLength(2000);
+        b.HasOne<FamilyRelationshipRequest>().WithMany().HasForeignKey(r => r.AuthorityRelationshipRequestId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<FamilyMember>().WithMany().HasForeignKey(r => r.AdultFamilyMemberId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<FamilyMember>().WithMany().HasForeignKey(r => r.ChildFamilyMemberId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ApplicationUser>().WithMany().HasForeignKey(r => r.ReviewedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);

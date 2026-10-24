@@ -1,5 +1,10 @@
 # Phase 16 proposed addendum — pending formal adoption
 
+Historical proposal. The owner's [2026-10-24 final business decisions](SOURCE-OF-TRUTH-PHASE-16-FINAL-BUSINESS-ADDENDUM.md)
+supersede earlier unresolved business interpretations, including the uniform
+parent/Guardian eligibility rule. Full Master incorporation and independent
+legal/clinical/deployment approval remain pending.
+
 Current implementation and base sharing flags are recorded in
 [final closure](PHASE-16-CLOSURE-REPORT.md). Default-off and inactive-family
 statements below describe the original proposal. Formal Master adoption remains

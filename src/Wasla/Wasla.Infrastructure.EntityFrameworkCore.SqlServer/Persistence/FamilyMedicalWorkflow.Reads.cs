@@ -91,6 +91,8 @@ internal sealed partial class FamilyMedicalWorkflow
         var query = db.Set<FamilyMedicalEligibilityReview>().AsNoTracking().AsQueryable();
         if (q.Operation == "eligibility-detail")
         { var r = await query.SingleOrDefaultAsync(r => r.Id == q.Id, ct); return r is null ? Result<object>.Fail(FamilyMedicalErrors.Unavailable) : Result<object>.Ok(await EligibilityResponseAsync(r, ct)); }
+        query = query.Where(r => db.FamilyMembers.Any(m => m.Id == r.AdultFamilyMemberId &&
+            (m.Role == FamilyMemberRole.Guardian || m.Role == FamilyMemberRole.LegalGuardian)));
         if (q.Status.HasValue) query = query.Where(r => (int)r.Status == q.Status);
         if (q.FamilyId.HasValue) query = query.Where(r => r.FamilyId == q.FamilyId);
         if (!string.IsNullOrWhiteSpace(q.Search))
@@ -109,8 +111,8 @@ internal sealed partial class FamilyMedicalWorkflow
         var history = await db.Set<FamilyMedicalEligibilityReviewHistory>().AsNoTracking().Where(h => h.ParentId == r.Id).OrderByDescending(h => h.OccurredAtUtc).ThenBy(h => h.Id).Take(100)
             .Select(h => new FamilyMedicalAdminHistoryResponse(h.Id, h.Action, h.OldStatus, h.NewStatus, h.Revision, h.ActorApplicationUserId, DateTime.SpecifyKind(h.OccurredAtUtc, DateTimeKind.Utc), h.ReasonOrMessage)).ToArrayAsync(ct);
         return new(r.Id, r.FamilyId, r.AdultPatientId, r.ChildPatientId, r.Status, r.PolicyVersion, r.BasisReference, Convert.ToBase64String(r.RowVersion),
-            Reference(r.AdultFamilyMemberId), Reference(r.ChildFamilyMemberId), r.Status == FamilyMedicalEligibilityStatus.PendingReview && access.Configured && Has(PermissionNames.FamilyMedicalAccessEligibilityDecide),
-            r.Status == FamilyMedicalEligibilityStatus.PendingReview && Has(PermissionNames.FamilyMedicalAccessEligibilityDecide), r.Status == FamilyMedicalEligibilityStatus.Approved && Has(PermissionNames.FamilyMedicalAccessEligibilityRevoke), r.ReviewReason, history);
+            Reference(r.AdultFamilyMemberId), Reference(r.ChildFamilyMemberId), members.Any(m => m.Id == r.AdultFamilyMemberId && m.Role is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian) && access.Configured && Has(PermissionNames.FamilyMedicalAccessEligibilityDecide),
+            r.Status == FamilyMedicalEligibilityStatus.PendingReview && Has(PermissionNames.FamilyMedicalAccessEligibilityDecide), r.Status == FamilyMedicalEligibilityStatus.Approved && Has(PermissionNames.FamilyMedicalAccessEligibilityRevoke), r.ReviewReason, history, r.AuthorityRelationshipRequestId);
     }
     public async Task<Result<PrivateMedia>> EvidenceAsync(FamilyMedicalEvidenceQuery q, CancellationToken ct)
     {

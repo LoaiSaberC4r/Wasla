@@ -1,10 +1,17 @@
 # Phase 16 frontend API contract and route status
 
+**2026-10-24 final business-policy update:** all 29 method/route signatures below
+are retained. P16-24–29 and the existing family roster/status now authorize
+Father/Mother through exact active parent-child verification without medical
+eligibility. Guardian/LegalGuardian still require current exact authority proof
+and Approved medical eligibility. See [the exact final diff and frontend handoff](PHASE-16-FINAL-GAP-API-DIFF.md)
+and [the approved business incorporation addendum](SOURCE-OF-TRUTH-PHASE-16-FINAL-BUSINESS-ADDENDUM.md).
+
 Local backend implementation; **production sharing is not approved**. The full
 master v1.2 is not checked in. Read the proposed addendum and rollout gates.
 All 29 routes have working handlers. Both sharing flags are true in base configuration;
 Production and Staging disable both. Guardian routes additionally require approved
-policy configuration and current reviewed eligibility; base policy fails closed.
+policy configuration and role-specific exact proof/eligibility; base policy fails closed.
 See [final closure](PHASE-16-CLOSURE-REPORT.md) for current verification.
 
 All routes use API version 1, authenticated actors, current DB permissions and
@@ -60,7 +67,7 @@ of resource existence. Gated does not mean approved for production.
 Permissions are appended to PermissionNames.All to preserve position-derived
 IDs. Doctor receives ViewTreatingPatient, both visibility permissions and all six
 request permissions. Patient receives ViewOwn, ViewOwnAccessLog and ViewDependent
-(ViewDependent additionally requires approved policy, relationship and eligibility).
+(ViewDependent additionally requires approved policy, exact relationship and role-specific eligibility).
 Reception/SuperAdmin/catalog roles receive none of these permissions by default.
 The existing seed is repeatable. Ownership/relationship checks still apply to
 explicit permission grants; permissions or GUIDs alone never grant clinical access.
@@ -178,9 +185,10 @@ Dependent reads use the same patient-safe completed outputs, including Hidden
 encounters; the separate Doctor-to-Doctor request workflow does not approve
 Guardian access. P16-24 returns `{items:[{patientId,nameAr,nameEn,medicalAccess}],
 nextCursor:null,hasMore:false}` for currently eligible children only. Permission,
-verified relationship in the same active Family, an Approved eligibility tied to
-the current memberships/policy/basis, no restriction, and age under 16 must all
-hold. No eligibility or an ineligible child is omitted from P16-24; direct reads
+verified exact relationship in the same active Family, no restriction and age
+under 16 must all hold. Guardian/LegalGuardian additionally require Approved
+eligibility tied to current memberships/policy/basis/authority proof; parents do
+not require medical eligibility. Ineligible children are omitted from P16-24; direct reads
 return `404 MedicalRecord.Unavailable`. An unavailable policy or permission denies
 P16-24 itself. All clinical reads and downloads revalidate these requirements.
 
@@ -299,7 +307,7 @@ payload. Retention and expanded patient disclosure policy remain governance gate
 | D hidden request | 08 date-only token → 14 required reason → poll 13 → Approved navigation ID → 09/10/11 | 422 blank reason; 409 duplicate; stale token/ended treatment 404; Rejected/Revoked/Expired terminal CTA disabled. |
 | E global owner inbox | 15 badge → 16 list → 17 detail → 18/19 → 20 → 21 | Backend capabilities; no practice switching; fresh version refetch after 409; late approval 409 Expired. |
 | F owner visibility | EXT-03 list → EXT-02 detail; EXT-01 chosen Hidden completion; 22 toggle → 23 history | Atomic completion; stale version 409; completed owner/practice only; subsequent shared reads reauthorize. |
-| G guardian | Existing families listing/capabilities → 24 → 25–29 | Current configured approved policy, reviewed eligibility, verified relationship and age under 16 required. Restriction/revocation/birthday immediately blocks new reads and downloads. Restoration only removes restriction. |
+| G dependent | Existing families listing/capabilities → 24 → 25–29 | Current approved policy, exact verified adult-child proof and age under 16 required. Father/Mother need no separate medical eligibility; Guardian/LegalGuardian require current eligibility and authority proof. Effective restriction, proof/Guardian eligibility revocation or birthday blocks new reads/downloads. Restoration only removes restriction. |
 
 No foreign drill-down uses an original owner-only Rx/Lab/Radiology API. After
 mutations, current status/capabilities/rowversion are returned without an extra

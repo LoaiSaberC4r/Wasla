@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
 using Wasla.Domain.Security;
@@ -878,6 +879,8 @@ public sealed class DoctorOnboardingApiTests
                 }));
             builder.ConfigureServices(services =>
             {
+                // API journeys drive transitions explicitly; workers cannot share this SQLite connection.
+                services.RemoveAll<IHostedService>();
                 services.RemoveAll<DbContextOptions<WaslaDbContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<WaslaDbContext>>();
                 services.RemoveAll<WaslaDbContext>();

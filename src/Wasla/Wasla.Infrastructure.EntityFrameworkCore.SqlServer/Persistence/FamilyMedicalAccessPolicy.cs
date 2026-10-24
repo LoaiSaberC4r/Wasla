@@ -57,6 +57,31 @@ internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataSto
         var birthday = await db.Patients.Where(p => p.Id == child).Select(p => (DateOnly?)p.DateOfBirth).SingleOrDefaultAsync(ct);
         return birthday is { } dob && dob <= today && dob.AddYears(16) > today;
     }
+    internal async Task<string?> AuthorityVersionAsync(Guid family, FamilyMember adult, FamilyMember child, Guid? proofId, CancellationToken ct)
+    {
+        if (!Configured || proofId is not { } id) return null;
+        var proof = await db.FamilyRelationshipRequests.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id, ct);
+        var docs = await db.FamilyRelationshipDocuments.AsNoTracking().Where(d => d.FamilyRelationshipRequestId == id &&
+            db.FamilyRelationshipRequests.Any(r => r.Id == id && r.CurrentRevisionNumber == d.RevisionNumber)).OrderBy(d => d.Id).ToArrayAsync(ct);
+        var reviewerVerified = proof?.ReviewedBySuperAdminApplicationUserId is { } reviewer && await db.SuperAdmins.AsNoTracking().AnyAsync(s =>
+            s.ApplicationUserId == reviewer && db.ApplicationUsers.Any(u => u.Id == s.ApplicationUserId && u.UserType == UserType.SuperAdmin), ct);
+        return AuthorityVersion(family, adult, child, proof, docs, reviewerVerified);
+    }
+    private string? AuthorityVersion(Guid family, FamilyMember adult, FamilyMember child, FamilyRelationshipRequest? proof, FamilyRelationshipDocument[] docs, bool reviewerVerified)
+    {
+        if (!Configured || !reviewerVerified || !adult.CanManageFamily || !child.IsActive || adult.FamilyId != family || child.FamilyId != family ||
+            child.Role != FamilyMemberRole.Child || adult.PatientId == child.PatientId || proof is null || proof.FamilyId != family || proof.Status != FamilyRelationshipRequestStatus.Approved ||
+            proof.RequesterPatientId != adult.PatientId || proof.TargetPatientId != child.PatientId || proof.RequesterClaimedRole != adult.Role ||
+            proof.TargetClaimedRole != FamilyMemberRole.Child || proof.ReviewedBySuperAdminApplicationUserId is null || proof.ReviewedOnUtc is null ||
+            proof.RequestType is not (FamilyRelationshipRequestType.CreateFamily or FamilyRelationshipRequestType.AddFamilyMember or
+                FamilyRelationshipRequestType.VerifyParentChild or FamilyRelationshipRequestType.VerifyGuardianChild)) return null;
+        if (proof.RequestType == FamilyRelationshipRequestType.VerifyParentChild && adult.Role is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) ||
+            proof.RequestType == FamilyRelationshipRequestType.VerifyGuardianChild && adult.Role is not (FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian)) return null;
+        if (docs.Length == 0 || docs.Length > Policy.MaximumFiles || docs.Any(d => !Policy.AllowedDocumentTypes.Contains(d.DocumentType) ||
+            d.FileSize <= 0 || d.FileSize > Policy.MaximumFileBytes || string.IsNullOrWhiteSpace(d.MediaKey))) return null;
+        return string.Join(':', proof.Id, proof.CurrentRevisionNumber, Convert.ToBase64String(proof.RowVersion),
+            string.Join(',', docs.Select(d => d.Id)));
+    }
     public async Task<Result<MedicalRecordScope>> ScopeAsync(Guid? child, CancellationToken ct)
     {
         if (!SharingEnabled || child is not { } id || current.UserId is not { } user) return Result<MedicalRecordScope>.Fail(Wasla.Domain.Clinical.MedicalRecordErrors.Denied);
@@ -100,6 +125,17 @@ internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataSto
             where m.FamilyId == family.Id && m.IsActive && m.Role == FamilyMemberRole.Child
             select new { Member = m, p.DateOfBirth }).ToArrayAsync(ct);
         var reviews = await db.Set<FamilyMedicalEligibilityReview>().AsNoTracking().Where(r => r.FamilyId == family.Id && r.AdultPatientId == actorPatient).ToArrayAsync(ct);
+        var parentProofs = await db.Set<VerifiedParentChildRelationship>().AsNoTracking().Where(r => r.FamilyId == family.Id && r.ParentPatientId == actorPatient &&
+            r.Status == ParentChildVerificationStatus.Active).ToArrayAsync(ct);
+        var proofIds = parentProofs.Select(p => p.ApprovedRelationshipRequestId).Concat(reviews.Where(r => r.AuthorityRelationshipRequestId.HasValue)
+            .Select(r => r.AuthorityRelationshipRequestId!.Value)).Distinct().ToArray();
+        var proofs = await db.FamilyRelationshipRequests.AsNoTracking().Where(r => proofIds.Contains(r.Id)).ToDictionaryAsync(r => r.Id, ct);
+        var reviewerIds = proofs.Values.Where(p => p.ReviewedBySuperAdminApplicationUserId.HasValue).Select(p => p.ReviewedBySuperAdminApplicationUserId!.Value).Distinct().ToArray();
+        var verifiedReviewers = (await db.SuperAdmins.AsNoTracking().Where(s => reviewerIds.Contains(s.ApplicationUserId) &&
+            db.ApplicationUsers.Any(u => u.Id == s.ApplicationUserId && u.UserType == UserType.SuperAdmin)).Select(s => s.ApplicationUserId).ToArrayAsync(ct)).ToHashSet();
+        var proofDocuments = (await db.FamilyRelationshipDocuments.AsNoTracking().Where(d => proofIds.Contains(d.FamilyRelationshipRequestId) &&
+            db.FamilyRelationshipRequests.Any(r => r.Id == d.FamilyRelationshipRequestId && r.CurrentRevisionNumber == d.RevisionNumber))
+            .OrderBy(d => d.Id).ToArrayAsync(ct)).ToLookup(d => d.FamilyRelationshipRequestId);
         var restrictions = await db.Set<FamilyMedicalAccessRestriction>().AsNoTracking().Where(r => r.FamilyId == family.Id && r.AffectedAdultPatientId == actorPatient).ToArrayAsync(ct);
         var own = await db.Set<FamilyMedicalAccessRequest>().AsNoTracking().Where(r => r.FamilyId == family.Id && r.SubmittedByPatientId == actorPatient &&
             (r.Status == FamilyMedicalRequestStatus.Pending || r.Status == FamilyMedicalRequestStatus.ModificationRequested)).ToArrayAsync(ct);
@@ -117,18 +153,33 @@ internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataSto
             var ageEligible = today is { } date && c.DateOfBirth <= date && c.DateOfBirth.AddYears(16) > date;
             var review = reviews.SingleOrDefault(r => r.ChildPatientId == c.Member.PatientId && r.AdultFamilyMemberId == actor.Id && r.ChildFamilyMemberId == c.Member.Id);
             var restriction = restrictions.SingleOrDefault(r => r.ChildPatientId == c.Member.PatientId && r.Status == FamilyMedicalRestrictionStatus.Active);
-            var entitlement = review is { Status: FamilyMedicalEligibilityStatus.Approved } && review.PolicyVersion == Policy.PolicyVersion &&
-                review.BasisReference is not null && Policy.BasisReferences.Contains(review.BasisReference, StringComparer.Ordinal);
+            var parent = actor.Role is FamilyMemberRole.Father or FamilyMemberRole.Mother;
+            var parentProof = parentProofs.SingleOrDefault(r => r.ChildPatientId == c.Member.PatientId && r.ParentFamilyMemberId == actor.Id &&
+                r.ChildFamilyMemberId == c.Member.Id && r.ParentRole == actor.Role);
+            // The recorded policy version is provenance, not a separate per-parent medical approval veto.
+            // Reevaluate current policy and allowed proof below; only Guardians need per-pair medical policy approval.
+            var proofId = parent ? parentProof?.ApprovedRelationshipRequestId : review?.AuthorityRelationshipRequestId;
+            var proof = proofId is { } source && proofs.TryGetValue(source, out var found) ? found : null;
+            var proofVersion = baseEligible && proof is not null ? AuthorityVersion(family.Id, actor, c.Member, proof, proofDocuments[proof.Id].ToArray(),
+                proof.ReviewedBySuperAdminApplicationUserId is { } reviewer && verifiedReviewers.Contains(reviewer)) : null;
+            if (parentProof is not null && (proof is null || proof.CurrentRevisionNumber != parentProof.ApprovedRevisionNumber ||
+                proof.ReviewedBySuperAdminApplicationUserId != parentProof.VerifiedBySuperAdminApplicationUserId || proof.ReviewedOnUtc != parentProof.VerifiedAtUtc)) proofVersion = null;
+            var entitlement = proofVersion is not null && (parent || actor.Role is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian &&
+                review is { Status: FamilyMedicalEligibilityStatus.Approved } && review.PolicyVersion == Policy.PolicyVersion &&
+                review.BasisReference is not null && Policy.BasisReferences.Contains(review.BasisReference, StringComparer.Ordinal));
             var open = own.FirstOrDefault(r => r.ChildPatientId == c.Member.PatientId);
             var status = !SharingEnabled ? "Unavailable" : !baseEligible ? "RelationshipNotEligible" : !ageEligible ? "AgeNotEligible" :
                 restriction is not null ? "Restricted" : !entitlement ? "RelationshipNotEligible" : !Has(PermissionNames.MedicalRecordsViewDependent) ? "Unavailable" : "Allowed";
             var reason = status switch { "Unavailable" => SharingEnabled ? "PermissionUnavailable" : "PolicyUnavailable", "Restricted" => "RestrictionActive",
-                "AgeNotEligible" => "AgeNotEligible", "RelationshipNotEligible" => !baseEligible ? "RelationshipNotEligible" : review is null or { Status: FamilyMedicalEligibilityStatus.PendingReview } ? "EligibilityReviewPending" : "EligibilityUnavailable", _ => null };
+                "AgeNotEligible" => "AgeNotEligible", "RelationshipNotEligible" => !baseEligible ? "RelationshipNotEligible" : parent ? "ParentChildVerificationRequired" : review is null or { Status: FamilyMedicalEligibilityStatus.PendingReview } ? "EligibilityReviewPending" : "EligibilityUnavailable", _ => null };
             statuses[c.Member.PatientId] = new(status, status == "Allowed", Configured && baseEligible && ageEligible && Has(PermissionNames.FamilyMedicalAccessRequestsCreateOwn),
                 Configured && baseEligible && ageEligible && restriction is not null && Has(PermissionNames.FamilyMedicalAccessRequestsCreateOwn), open?.Id, open?.RequestType, reason);
-            versions[c.Member.PatientId] = string.Join(':', family.Id, actor.Id, c.Member.Id, review?.Id, Convert.ToBase64String(review?.RowVersion ?? []),
+            versions[c.Member.PatientId] = string.Join(':', family.Id, Convert.ToBase64String(family.RowVersion), actor.Id, actor.Role, actor.VerifiedOnUtc.Ticks,
+                c.Member.Id, c.Member.VerifiedOnUtc.Ticks, parentProof?.Id, Convert.ToBase64String(parentProof?.RowVersion ?? []), proofVersion,
+                parent ? null : review?.Id, parent ? null : Convert.ToBase64String(review?.RowVersion ?? []),
                 restrictions.Where(r => r.ChildPatientId == c.Member.PatientId).OrderBy(r => r.Id).Aggregate("", (a, r) => a + Convert.ToBase64String(r.RowVersion)),
-                Policy.PolicyVersion, today?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+                Policy.PolicyVersion, Policy.ApprovalReference, Policy.TimeZoneId, string.Join(',', Policy.BasisReferences), string.Join(',', Policy.AllowedDocumentTypes),
+                today?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         }
         return (family.Id, statuses, versions);
     }

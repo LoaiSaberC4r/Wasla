@@ -91,7 +91,13 @@ internal sealed partial class FamilyMedicalWorkflow(WaslaDbContext db, FamilyMed
                         if (request.Status != FamilyMedicalRequestStatus.Pending) return Result<object>.Fail(FamilyMedicalErrors.Conflict);
                         if (request.RequestType == FamilyMedicalRequestType.Restriction)
                         {
+                            if (string.IsNullOrWhiteSpace(c.BasisReference) || c.BasisReference.Length > 500 ||
+                                !access.Policy.RestrictionGroundsReferences.Contains(c.BasisReference, StringComparer.Ordinal) ||
+                                !await RestrictionEvidenceCurrentAsync(request, ct))
+                                return Result<object>.Fail(FamilyMedicalErrors.PolicyUnavailable);
                             if (active is not null) return Result<object>.Fail(FamilyMedicalErrors.Conflict);
+                            db.Add(FamilyMedicalAccessRequestHistory.Create(request.Id, "RestrictionGroundReviewed", (int)old, (int)old,
+                                request.CurrentRevisionNumber, user, clock.UtcNow, c.BasisReference));
                             var restriction = FamilyMedicalAccessRestriction.Activate(request, user, clock.UtcNow); db.Add(restriction); restrictionId = restriction.Id;
                             db.Add(FamilyMedicalAccessRestrictionHistory.Create(restriction.Id, "Restricted", null, (int)restriction.Status, user, clock.UtcNow));
                         }
@@ -132,17 +138,21 @@ internal sealed partial class FamilyMedicalWorkflow(WaslaDbContext db, FamilyMed
                 if (!await access.PairAsync(r.FamilyId, r.AdultPatientId, r.ChildPatientId, ct)) return Result<object>.Fail(FamilyMedicalErrors.Unavailable);
                 var members = await db.FamilyMembers.AsNoTracking().Where(m => m.Id == r.AdultFamilyMemberId || m.Id == r.ChildFamilyMemberId).ToArrayAsync(ct);
                 if (members.Length != 2 || members.Any(m => !m.IsActive)) return Result<object>.Fail(FamilyMedicalErrors.Unavailable);
-                var proofIds = members.Select(m => m.AddedThroughRequestId).Distinct().ToArray();
-                // Each verified member's approved relationship must retain actual private evidence provenance.
-                var allowedTypes = access.Policy.AllowedDocumentTypes;
-                var evidenced = await db.FamilyRelationshipDocuments.Where(d => proofIds.Contains(d.FamilyRelationshipRequestId) && allowedTypes.Contains(d.DocumentType) &&
-                    db.FamilyRelationshipRequests.Any(p => p.Id == d.FamilyRelationshipRequestId && p.CurrentRevisionNumber == d.RevisionNumber && p.Status == FamilyRelationshipRequestStatus.Approved))
-                    .Select(d => d.FamilyRelationshipRequestId).Distinct().CountAsync(ct);
-                if (evidenced != proofIds.Length) return Result<object>.Fail(FamilyMedicalErrors.PolicyUnavailable);
+                var adult = members.Single(m => m.Id == r.AdultFamilyMemberId);
+                var child = members.Single(m => m.Id == r.ChildFamilyMemberId);
+                if (adult.PatientId != r.AdultPatientId || child.PatientId != r.ChildPatientId ||
+                    adult.Role is not (FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian) ||
+                    await access.AuthorityVersionAsync(r.FamilyId, adult, child, c.AuthorityRelationshipRequestId, ct) is null ||
+                    !await AuthorityMediaCurrentAsync(c.AuthorityRelationshipRequestId!.Value, ct))
+                    return Result<object>.Fail(FamilyMedicalErrors.PolicyUnavailable);
             }
-            var old = r.Status; var decided = r.Decide(operation, user, clock.UtcNow, c.PolicyVersion, c.BasisReference, c.Reason);
+            var old = r.Status; var decided = r.Decide(operation, user, clock.UtcNow, c.PolicyVersion, c.BasisReference, c.Reason, c.AuthorityRelationshipRequestId);
             if (decided.IsFailure) return Result<object>.Fail(decided.Errors);
-            db.Add(FamilyMedicalEligibilityReviewHistory.Create(r.Id, c.Operation, (int)old, (int)r.Status, user, clock.UtcNow));
+            // Keep each approval's provenance after later re-verification replaces the current reference.
+            var decisionMetadata = operation == "approve"
+                ? $"PolicyVersion={r.PolicyVersion}; BasisReference={r.BasisReference}; AuthorityRelationshipRequestId={r.AuthorityRelationshipRequestId:D}"
+                : c.Reason;
+            db.Add(FamilyMedicalEligibilityReviewHistory.Create(r.Id, c.Operation, (int)old, (int)r.Status, user, clock.UtcNow, decisionMetadata));
             if (await access.ActorAsync(CommandPermission(c.Operation), true, ct) is null) return Result<object>.Fail(FamilyMedicalErrors.Unavailable);
             await db.SaveChangesAsync(ct); return Result<object>.Ok(await EligibilityResponseAsync(r, ct));
         }
@@ -150,6 +160,41 @@ internal sealed partial class FamilyMedicalWorkflow(WaslaDbContext db, FamilyMed
     }
     private static bool Matches(byte[] actual, string? supplied)
     { try { return supplied is not null && actual.AsSpan().SequenceEqual(Convert.FromBase64String(supplied)); } catch (FormatException) { return false; } }
+    private async Task<bool> RestrictionEvidenceCurrentAsync(FamilyMedicalAccessRequest request, CancellationToken ct)
+    {
+        var docs = await db.Set<FamilyMedicalAccessRequestDocument>().AsNoTracking().Where(d => d.RequestId == request.Id &&
+            d.RevisionNumber == request.CurrentRevisionNumber).ToArrayAsync(ct);
+        if (docs.Length == 0 || docs.Length > access.Policy.MaximumFiles || docs.Any(d => !access.Policy.AllowedDocumentTypes.Contains(d.DocumentType) ||
+            d.SizeBytes <= 0 || d.SizeBytes > access.Policy.MaximumFileBytes)) return false;
+        foreach (var doc in docs)
+        {
+            PrivateMedia? opened;
+            try { opened = await privateMedia.OpenAsync(doc.MediaKey, ct); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
+            if (opened is null) return false;
+            await using var stream = opened.Content;
+            if (!stream.CanSeek || stream.Length != doc.SizeBytes) return false;
+            var hash = Convert.ToHexString(await SHA256.HashDataAsync(stream, ct));
+            if (!string.Equals(hash, doc.Sha256, StringComparison.Ordinal)) return false;
+        }
+        return true;
+    }
+    private async Task<bool> AuthorityMediaCurrentAsync(Guid requestId, CancellationToken ct)
+    {
+        var docs = await db.FamilyRelationshipDocuments.AsNoTracking().Where(d => d.FamilyRelationshipRequestId == requestId &&
+            db.FamilyRelationshipRequests.Any(r => r.Id == requestId && r.CurrentRevisionNumber == d.RevisionNumber)).ToArrayAsync(ct);
+        if (docs.Length == 0) return false;
+        foreach (var doc in docs)
+        {
+            PrivateMedia? opened;
+            try { opened = await privateMedia.OpenAsync(doc.MediaKey, ct); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
+            if (opened is null) return false;
+            await using var stream = opened.Content;
+            if (!stream.CanSeek || stream.Length != doc.FileSize) return false;
+        }
+        return true;
+    }
     private sealed record PreparedEvidence(FamilyRelationshipDocumentType Type, ValidatedMediaUpload Upload, string Hash);
     private async Task<Result<IReadOnlyList<PreparedEvidence>>> PrepareEvidenceAsync(FamilyMedicalCommand c, CancellationToken ct)
     {
@@ -196,7 +241,7 @@ internal sealed partial class FamilyMedicalWorkflow(WaslaDbContext db, FamilyMed
         if (string.IsNullOrWhiteSpace(c.IdempotencyKey)) return await change();
         var operation = "Phase16Family:" + c.Operation; var key = c.IdempotencyKey.Trim();
         var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { actor, family, adult, child,
-            c.RequestId, c.RequestType, Reason = c.Reason?.Trim(), c.RowVersion, c.PolicyVersion, c.BasisReference,
+            c.RequestId, c.RequestType, Reason = c.Reason?.Trim(), c.RowVersion, c.PolicyVersion, c.BasisReference, c.AuthorityRelationshipRequestId,
             Evidence = files.Select(f => new { f.Type, Name = f.Upload.SafeFileName, f.Upload.ContentType, f.Upload.Length, f.Hash }).ToArray() }))));
         await locks.AcquireIdempotencyAsync(actor, operation, key, ct);
         var existing = await db.MedicationIdempotencyRecords.AsNoTracking().SingleOrDefaultAsync(r => r.ActorApplicationUserId == actor && r.Operation == operation && r.IdempotencyKey == key, ct);

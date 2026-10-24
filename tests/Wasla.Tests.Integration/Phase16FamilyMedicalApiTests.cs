@@ -85,14 +85,14 @@ public sealed class Phase16FamilyMedicalApiTests
     [Fact]
     public async Task Legal_gate_eligibility_revocation_age_boundary_and_staff_scopes_fail_closed()
     {
-        await using var f = await Phase16FamilyFixture.CreateAsync(approve: false);
+        await using var f = await Phase16FamilyFixture.CreateAsync(approve: false, adultRole: FamilyMemberRole.Guardian);
         Assert.Equal("RelationshipNotEligible", (await GetAsync(f.Father, f.Status())).GetProperty("status").GetString());
         Assert.Equal(0, (await GetAsync(f.Father, "/api/v1/families/mine/medical-record-dependents")).GetProperty("items").GetArrayLength());
         using (var denied = await f.Father.GetAsync(f.Record() + "/overview", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
         var review = (await GetAsync(f.Admin, Eligibility + "/reviews")).GetProperty("items").EnumerateArray().Single(r => r.GetProperty("adultPatientId").GetGuid() == f.App.PatientId && r.GetProperty("childPatientId").GetGuid() == f.ChildId);
         var id = review.GetProperty("reviewId").GetGuid(); var detail = await GetAsync(f.Admin, Eligibility + $"/{id}"); Assert.True(detail.TryGetProperty("adultVerification", out _));
         var options = f.App.Services.GetRequiredService<IOptions<FamilyMedicalPolicyOptions>>().Value; options.MasterSourceOfTruthAdopted = false;
-        using (var denied = await PostAsync(f.Admin, Eligibility + $"/{id}/approve", new { rowVersion = detail.GetProperty("rowVersion").GetString(), policyVersion = "TEST-ONLY-v1", basisReference = "TEST-reviewed-proof" })) Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
+        using (var denied = await PostAsync(f.Admin, Eligibility + $"/{id}/approve", new { rowVersion = detail.GetProperty("rowVersion").GetString(), policyVersion = "TEST-ONLY-v1", basisReference = "TEST-reviewed-proof", authorityRelationshipRequestId = await f.AuthorityAsync(id) })) Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
         options.MasterSourceOfTruthAdopted = true;
         var approved = await f.DecideEligibilityAsync(id, "approve", detail.GetProperty("rowVersion").GetString()!); await GetAsync(f.Father, f.Record() + "/overview");
         foreach (var user in new[] { "admin", "doctor", "reception" })

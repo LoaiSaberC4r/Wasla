@@ -97,7 +97,7 @@ public sealed class AdminFamilyMedicalAccessRequestsController(ISender sender) :
     }
     [HttpPost("{requestId:guid}/approve"), ProducesResponseType<FamilyMedicalCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsDecide)]
     public async Task<IActionResult> Approve(Guid requestId, FamilyMedicalDecisionBody body, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
-        => (await sender.Send(new FamilyMedicalCommand("approve", requestId, Reason: body.DecisionNote, RowVersion: body.RowVersion, IdempotencyKey: key), ct)).ToIActionResult(ct);
+        => (await sender.Send(new FamilyMedicalCommand("approve", requestId, Reason: body.DecisionNote, RowVersion: body.RowVersion, IdempotencyKey: key, BasisReference: body.BasisReference), ct)).ToIActionResult(ct);
     [HttpPost("{requestId:guid}/reject"), ProducesResponseType<FamilyMedicalCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsDecide)]
     public async Task<IActionResult> Reject(Guid requestId, FamilyMedicalDecisionBody body, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
         => (await sender.Send(new FamilyMedicalCommand("reject", requestId, Reason: body.Reason, RowVersion: body.RowVersion, IdempotencyKey: key), ct)).ToIActionResult(ct);
@@ -121,7 +121,7 @@ public sealed class AdminFamilyMedicalEligibilitiesController(ISender sender) : 
     public async Task<IActionResult> Detail(Guid reviewId, CancellationToken ct) => (await sender.Send(new FamilyMedicalQuery("eligibility-detail", reviewId), ct)).ToIActionResult(ct);
     [HttpPost("{reviewId:guid}/approve"), ProducesResponseType<FamilyMedicalEligibilityResponse>(200), Permission(PermissionNames.FamilyMedicalAccessEligibilityDecide)]
     public async Task<IActionResult> Approve(Guid reviewId, FamilyMedicalDecisionBody body, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
-        => (await sender.Send(new FamilyMedicalCommand("eligibility-approve", reviewId, RowVersion: body.RowVersion, IdempotencyKey: key, PolicyVersion: body.PolicyVersion, BasisReference: body.BasisReference), ct)).ToIActionResult(ct);
+        => (await sender.Send(new FamilyMedicalCommand("eligibility-approve", reviewId, RowVersion: body.RowVersion, IdempotencyKey: key, PolicyVersion: body.PolicyVersion, BasisReference: body.BasisReference, AuthorityRelationshipRequestId: body.AuthorityRelationshipRequestId), ct)).ToIActionResult(ct);
     [HttpPost("{reviewId:guid}/reject"), ProducesResponseType<FamilyMedicalEligibilityResponse>(200), Permission(PermissionNames.FamilyMedicalAccessEligibilityDecide)]
     public async Task<IActionResult> Reject(Guid reviewId, FamilyMedicalDecisionBody body, [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct)
         => (await sender.Send(new FamilyMedicalCommand("eligibility-reject", reviewId, Reason: body.Reason, RowVersion: body.RowVersion, IdempotencyKey: key), ct)).ToIActionResult(ct);
@@ -131,7 +131,7 @@ public sealed class AdminFamilyMedicalEligibilitiesController(ISender sender) : 
 }
 
 public sealed record FamilyMedicalDecisionBody(string RowVersion, string? Reason = null, string? Message = null,
-    string? DecisionNote = null, string? PolicyVersion = null, string? BasisReference = null);
+    string? DecisionNote = null, string? PolicyVersion = null, string? BasisReference = null, Guid? AuthorityRelationshipRequestId = null);
 public sealed class FamilyMedicalCreateBody
 {
     public FamilyMedicalRequestType RequestType { get; set; }

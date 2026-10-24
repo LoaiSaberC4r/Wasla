@@ -9,6 +9,9 @@ public sealed partial class WaslaDbContext
     {
         foreach (var e in ChangeTracker.Entries().Where(e => e.State is EntityState.Modified or EntityState.Deleted))
         {
+            if (e.Entity is VerifiedParentChildRelationship && (e.State == EntityState.Deleted ||
+                e.Properties.Any(p => p.IsModified && p.Metadata.Name is not ("Status" or "RevokedAtUtc"))))
+                throw new InvalidOperationException("Verified relationship provenance is immutable; revoke and review a new proof.");
             if (e.Entity is FamilyMedicalHistory or FamilyMedicalAccessRequestDocument)
                 throw new InvalidOperationException("Family medical history and evidence are immutable.");
             if (e.Entity is FamilyMedicalAccessRequest or FamilyMedicalAccessRestriction or FamilyMedicalEligibilityReview)
@@ -27,7 +30,7 @@ public sealed partial class WaslaDbContext
         var existing = await Set<FamilyMedicalEligibilityReview>().AsNoTracking().Where(r => ids.Contains(r.FamilyId)).Select(r => new { r.FamilyId, r.AdultPatientId, r.ChildPatientId }).ToArrayAsync(ct);
         var known = existing.Select(r => (r.FamilyId, r.AdultPatientId, r.ChildPatientId)).ToHashSet();
         foreach (var r in ChangeTracker.Entries<FamilyMedicalEligibilityReview>().Select(e => e.Entity)) known.Add((r.FamilyId, r.AdultPatientId, r.ChildPatientId));
-        foreach (var adult in members.Where(m => m.CanManageFamily))
+        foreach (var adult in members.Where(m => m.IsActive && m.Role is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian))
         foreach (var child in members.Where(m => m.FamilyId == adult.FamilyId && m.Role == FamilyMemberRole.Child))
         {
             if (!known.Add((adult.FamilyId, adult.PatientId, child.PatientId))) continue;

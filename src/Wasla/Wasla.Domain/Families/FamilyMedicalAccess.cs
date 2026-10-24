@@ -116,6 +116,7 @@ public sealed class FamilyMedicalEligibilityReview : AggregateRoot<Guid>
     public FamilyMedicalEligibilityStatus Status { get; private set; }
     public string? PolicyVersion { get; private set; }
     public string? BasisReference { get; private set; }
+    public Guid? AuthorityRelationshipRequestId { get; private set; }
     public string? ReviewReason { get; private set; }
     public Guid? ReviewedByApplicationUserId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
@@ -124,9 +125,11 @@ public sealed class FamilyMedicalEligibilityReview : AggregateRoot<Guid>
     public static FamilyMedicalEligibilityReview Pending(FamilyMember adult, FamilyMember child, DateTime now)
         => new() { Id = Guid.NewGuid(), FamilyId = adult.FamilyId, AdultPatientId = adult.PatientId, ChildPatientId = child.PatientId,
             AdultFamilyMemberId = adult.Id, ChildFamilyMemberId = child.Id, Status = FamilyMedicalEligibilityStatus.PendingReview, CreatedAtUtc = now };
-    public Result<FamilyMedicalEligibilityReview> Decide(string operation, Guid actor, DateTime now, string? version, string? basis, string? reason)
+    public Result<FamilyMedicalEligibilityReview> Decide(string operation, Guid actor, DateTime now, string? version, string? basis, string? reason,
+        Guid? authorityRelationshipRequestId = null)
     {
-        if (operation == "revoke" ? Status != FamilyMedicalEligibilityStatus.Approved : Status != FamilyMedicalEligibilityStatus.PendingReview)
+        // Reapproval is an explicit, concurrency-protected administrative review, including policy/provenance renewal.
+        if (operation == "revoke" ? Status != FamilyMedicalEligibilityStatus.Approved : operation != "approve" && Status != FamilyMedicalEligibilityStatus.PendingReview)
             return Result<FamilyMedicalEligibilityReview>.Fail(FamilyMedicalErrors.Conflict);
         if (operation == "approve" && (string.IsNullOrWhiteSpace(version) || version.Length > 100 || string.IsNullOrWhiteSpace(basis) || basis.Length > 500) ||
             operation != "approve" && (string.IsNullOrWhiteSpace(reason) || reason.Length > 2000))
@@ -134,6 +137,7 @@ public sealed class FamilyMedicalEligibilityReview : AggregateRoot<Guid>
         if (operation is not ("approve" or "reject" or "revoke")) return Result<FamilyMedicalEligibilityReview>.Fail(FamilyMedicalErrors.Invalid);
         Status = operation switch { "approve" => FamilyMedicalEligibilityStatus.Approved, "reject" => FamilyMedicalEligibilityStatus.Rejected, _ => FamilyMedicalEligibilityStatus.Revoked };
         PolicyVersion = version ?? PolicyVersion; BasisReference = basis ?? BasisReference; ReviewReason = reason;
+        if (operation == "approve") AuthorityRelationshipRequestId = authorityRelationshipRequestId;
         ReviewedByApplicationUserId = actor; ReviewedAtUtc = now;
         return Result<FamilyMedicalEligibilityReview>.Ok(this);
     }
@@ -187,6 +191,6 @@ public sealed class FamilyMedicalAccessRestrictionHistory : FamilyMedicalHistory
 public sealed class FamilyMedicalEligibilityReviewHistory : FamilyMedicalHistory
 {
     private FamilyMedicalEligibilityReviewHistory() { }
-    public static FamilyMedicalEligibilityReviewHistory Create(Guid parent, string action, int? old, int next, Guid? actor, DateTime now)
-    { var h = new FamilyMedicalEligibilityReviewHistory { Id = Guid.NewGuid() }; h.Initialize(parent, action, old, next, 1, actor, now, null); return h; }
+    public static FamilyMedicalEligibilityReviewHistory Create(Guid parent, string action, int? old, int next, Guid? actor, DateTime now, string? decisionMetadata = null)
+    { var h = new FamilyMedicalEligibilityReviewHistory { Id = Guid.NewGuid() }; h.Initialize(parent, action, old, next, 1, actor, now, decisionMetadata); return h; }
 }

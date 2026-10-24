@@ -2368,6 +2368,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Property<Guid>("AdultPatientId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AuthorityRelationshipRequestId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("BasisReference")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -2412,6 +2415,8 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasIndex("AdultFamilyMemberId");
 
                     b.HasIndex("AdultPatientId");
+
+                    b.HasIndex("AuthorityRelationshipRequestId");
 
                     b.HasIndex("ChildFamilyMemberId");
 
@@ -2704,6 +2709,88 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .HasDatabaseName("IX_FamilyRelationshipRequestHistories_RequestId_PerformedOnUtc");
 
                     b.ToTable("FamilyRelationshipRequestHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.VerifiedParentChildRelationship", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApprovedRelationshipRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ApprovedRevisionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ChildFamilyMemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChildPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ParentFamilyMemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ParentPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ParentRole")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PolicyVersion")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("VerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("VerifiedBySuperAdminApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedRelationshipRequestId");
+
+                    b.HasIndex("ChildFamilyMemberId");
+
+                    b.HasIndex("ParentFamilyMemberId");
+
+                    b.HasIndex("VerifiedBySuperAdminApplicationUserId");
+
+                    b.HasIndex("ChildPatientId", "FamilyId", "Status");
+
+                    b.HasIndex("FamilyId", "ParentPatientId", "ChildPatientId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 1");
+
+                    b.HasIndex("ParentPatientId", "FamilyId", "Status");
+
+                    b.ToTable("VerifiedParentChildRelationships", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VerifiedParentChild_Distinct", "[ParentPatientId] <> [ChildPatientId]");
+
+                            t.HasCheckConstraint("CK_VerifiedParentChild_Revision", "[ApprovedRevisionNumber] >= 1");
+
+                            t.HasCheckConstraint("CK_VerifiedParentChild_Role", "[ParentRole] IN (1,2)");
+
+                            t.HasCheckConstraint("CK_VerifiedParentChild_Status", "[Status] IN (1,2)");
+                        });
                 });
 
             modelBuilder.Entity("Wasla.Domain.Labs.LabCatalogImportBatch", b =>
@@ -10538,6 +10625,11 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Wasla.Domain.Families.FamilyRelationshipRequest", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorityRelationshipRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Wasla.Domain.Families.FamilyMember", null)
                         .WithMany()
                         .HasForeignKey("ChildFamilyMemberId")
@@ -10660,6 +10752,51 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasOne("Wasla.Domain.Families.FamilyRelationshipRequest", null)
                         .WithMany()
                         .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Families.VerifiedParentChildRelationship", b =>
+                {
+                    b.HasOne("Wasla.Domain.Families.FamilyRelationshipRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedRelationshipRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMember", null)
+                        .WithMany()
+                        .HasForeignKey("ChildFamilyMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("ChildPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Families.FamilyMember", null)
+                        .WithMany()
+                        .HasForeignKey("ParentFamilyMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("ParentPatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("VerifiedBySuperAdminApplicationUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
