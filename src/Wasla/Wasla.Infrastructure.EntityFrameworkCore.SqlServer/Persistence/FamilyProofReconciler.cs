@@ -23,6 +23,8 @@ internal sealed class FamilyProofReconciler(WaslaDbContext db, IFamilyRelationsh
             { already++; continue; } // Revoked proofs must never be resurrected by maintenance.
             if (pair.Count() != 1) { ambiguous++; continue; }
             var proof = pair.Single();
+            if (proof.RequestType is not (FamilyRelationshipRequestType.CreateFamily or FamilyRelationshipRequestType.AddFamilyMember or FamilyRelationshipRequestType.VerifyParentChild))
+            { conflicting++; continue; }
             var family = await db.Families.Include(f => f.Members).SingleOrDefaultAsync(f => f.Id == proof.FamilyId, ct);
             var adult = family?.Members.SingleOrDefault(m => m.PatientId == proof.RequesterPatientId && m.IsActive);
             var child = family?.Members.SingleOrDefault(m => m.PatientId == proof.TargetPatientId && m.IsActive);

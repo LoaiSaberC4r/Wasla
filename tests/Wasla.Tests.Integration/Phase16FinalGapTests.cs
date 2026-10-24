@@ -25,6 +25,35 @@ public sealed class Phase16FinalGapTests
     private const string ReviewRelationships = "/api/v1/admin/family-relationship-requests";
 
     [Fact]
+    public async Task Reconciliation_reports_unknown_ambiguous_and_missing_sources_without_fabricating_verification()
+    {
+        await using var f = await CreateAsync(verifyParents: false);
+        await f.App.WithDbAsync(async db => {
+            var invalid = await db.FamilyRelationshipRequests.SingleAsync(r => r.RequesterPatientId == f.App.PatientId && r.TargetPatientId == f.ChildId);
+            db.Entry(invalid).Property(r => r.RequestType).CurrentValue = (FamilyRelationshipRequestType)999;
+            var missing = await db.FamilyRelationshipRequests.SingleAsync(r => r.RequesterPatientId == f.App.PatientId && r.TargetPatientId == f.SecondChildId);
+            await db.FamilyRelationshipDocuments.Where(d => d.FamilyRelationshipRequestId == missing.Id).ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+            var admin = await db.ApplicationUsers.SingleAsync(u => u.UserName == "admin");
+            var extra = FamilyRelationshipRequest.Create(Guid.NewGuid(), FamilyRelationshipRequestType.VerifyParentChild, f.FamilyId,
+                f.App.OtherPatientId, f.ChildId, FamilyMemberRole.Mother, FamilyMemberRole.Child, admin.Id, f.App.Clock.UtcNow).Value;
+            extra.Approve(admin.Id, f.App.Clock.UtcNow); db.Add(extra); await db.SaveChangesAsync();
+        });
+        await using var scope = f.App.Services.CreateAsyncScope();
+        var result = await scope.ServiceProvider.GetRequiredService<ISender>().Send(new ReconcileFamilyRelationshipProofsCommand("admin", "Phase13TestPass123!", true), TestContext.Current.CancellationToken);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(4, result.Value.TotalCandidatePairs); Assert.Equal(1, result.Value.SafelyVerifiedPairs);
+        Assert.Equal(1, result.Value.AmbiguousPairs); Assert.Equal(1, result.Value.ConflictingPairs); Assert.Equal(1, result.Value.MissingProofPairs);
+        Assert.Equal(0, result.Value.FailedRecords);
+        await f.App.WithDbAsync(async db => {
+            var proof = Assert.Single(await db.Set<VerifiedParentChildRelationship>().ToArrayAsync());
+            Assert.Equal(f.App.OtherPatientId, proof.ParentPatientId); Assert.Equal(f.SecondChildId, proof.ChildPatientId);
+            Assert.Equal(4, await db.FamilyMembers.CountAsync()); Assert.Equal(6, await db.FamilyRelationshipRequests.CountAsync());
+        });
+        using var denied = await f.Father.GetAsync(f.Record() + "/overview", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
+    }
+
+    [Fact]
     [Trait("Category", "SQLServerConcurrency")]
     public async Task Sql_relationship_approval_rolls_back_proof_when_reviewer_permission_is_removed_during_evidence_open()
     {

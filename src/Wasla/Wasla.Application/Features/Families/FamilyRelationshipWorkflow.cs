@@ -476,6 +476,7 @@ internal sealed class FamilyRelationshipWorkflowService(
         var (record, actorId, supplied) = context.Value;
         var request = record.Request;
         var now = clock.UtcNow;
+        if (!Enum.IsDefined(request.RequestType)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.RequestInvalid);
         var targetMembership = await dataStore.FindActiveFamilyMemberByPatientIdAsync(request.TargetPatientId, cancellationToken);
         var verification = IsVerification(request.RequestType);
         if (!verification && targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
