@@ -1,0 +1,240 @@
+{
+  "date": "2026-10-24",
+  "timezone": "Africa/Cairo",
+  "branch": "codex/phase16-final-gap-closure",
+  "baselineSha": "898526bd9de4bf28bea9fa47d26b9ff7374d49e0",
+  "sourceSha": "aa5a8e0dbdedac4a992496003ce57de9d9e56023",
+  "businessApproval": "APPROVED",
+  "engineering": "PASS",
+  "legalClinicalSignoff": "PENDING",
+  "productionRelease": "BLOCKED",
+  "pullRequest": "https://github.com/LoaiSaberC4r/Wasla/pull/30",
+  "ci": {
+    "counts": [
+      {
+        "category": "architecture",
+        "total": 23,
+        "passed": 23,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "category": "buildingblock",
+        "total": 323,
+        "passed": 323,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "category": "integration",
+        "total": 261,
+        "passed": 261,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "category": "sql-concurrency",
+        "total": 44,
+        "passed": 44,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "category": "unit",
+        "total": 291,
+        "passed": 291,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "status": "completed",
+    "runId": 40129895771,
+    "url": "https://github.com/LoaiSaberC4r/Wasla/actions/runs/40129895771",
+    "conclusion": "success",
+    "artifactId": 12574344590,
+    "artifactSha256": "6c1a30e16af919a3d45a43dfe9b5332a3e93baa149a0d0012456d17d51cf1df1",
+    "total": 942,
+    "passed": 942,
+    "failed": 0,
+    "skipped": 0,
+    "sourceSha": "aa5a8e0dbdedac4a992496003ce57de9d9e56023"
+  },
+  "checks": {
+    "productionStagingFlagsChanged": false,
+    "newHttpRoutes": 0,
+    "newPermissions": 0,
+    "migrationMode": "additive only; Down preserves proof by throwing",
+    "benchmark": {
+      "pageSize": 100,
+      "pages": 10,
+      "firstPageMilliseconds": 1496.5,
+      "syntheticVisits": 1000,
+      "redactedPlaceholders": 500
+    },
+    "migration": "20261024174818_Phase16ExactFamilyRelationshipProof",
+    "efPendingModelChanges": false
+  },
+  "localRuns": [
+    {
+      "name": "Baseline unit",
+      "phase": "baseline",
+      "path": "TestResults/phase16/baseline/baseline_net10.0_20261024203611.trx",
+      "total": 290,
+      "passed": 290,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    },
+    {
+      "name": "Baseline architecture",
+      "phase": "baseline",
+      "path": "TestResults/phase16/baseline/baseline_net10.0_20261024203742.trx",
+      "total": 23,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    },
+    {
+      "name": "Interrupted baseline integration",
+      "phase": "interrupted",
+      "path": "TestResults/phase16/baseline/baseline_net10.0_20261024205530.trx",
+      "total": 282,
+      "passed": 178,
+      "failed": 0,
+      "skipped": 104,
+      "outcome": "Failed",
+      "failures": []
+    },
+    {
+      "name": "Initial gap tests",
+      "phase": "iteration",
+      "path": "TestResults/phase16/focused/final-gap.trx",
+      "total": 9,
+      "passed": 8,
+      "failed": 1,
+      "skipped": 0,
+      "outcome": "Failed",
+      "failures": [
+        "Wasla.Tests.Integration.Phase16FinalGapTests.Sql_two_hosts_serialize_verification_approval_and_invalidate_old_cursors"
+      ]
+    },
+    {
+      "name": "Family iteration",
+      "phase": "iteration",
+      "path": "TestResults/phase16/focused/family-iteration2.trx",
+      "total": 42,
+      "passed": 40,
+      "failed": 2,
+      "skipped": 0,
+      "outcome": "Failed",
+      "failures": [
+        "Wasla.Tests.Integration.Phase16FinalGapTests.Initial_family_and_direct_member_addition_atomically_record_exact_parent_proof(role: Mother)",
+        "Wasla.Tests.Integration.Phase16FinalGapTests.Initial_family_and_direct_member_addition_atomically_record_exact_parent_proof(role: Father)"
+      ]
+    },
+    {
+      "name": "Corrected boundary cases",
+      "phase": "targeted",
+      "path": "TestResults/phase16/focused/boundary-iteration3.trx",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    },
+    {
+      "name": "Unit with shutdown regression",
+      "phase": "targeted",
+      "path": "TestResults/phase16/final/unit/unit-audit-final.trx",
+      "total": 291,
+      "passed": 291,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    },
+    {
+      "name": "Architecture",
+      "phase": "targeted",
+      "path": "TestResults/phase16/final/architecture/architecture.trx",
+      "total": 23,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    },
+    {
+      "name": "BuildingBlock",
+      "phase": "foundation",
+      "path": "TestResults/phase16/buildingblock/buildingblock.trx",
+      "total": 323,
+      "passed": 323,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    },
+    {
+      "name": "Audit and parent-policy cases",
+      "phase": "targeted",
+      "path": "TestResults/phase16/final/audit/audit-final.trx",
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    },
+    {
+      "name": "Pre-final broad integration",
+      "phase": "pre-final",
+      "path": "TestResults/phase16/final/integration/integration.trx",
+      "total": 260,
+      "passed": 257,
+      "failed": 3,
+      "skipped": 0,
+      "outcome": "Failed",
+      "failures": [
+        "Wasla.Tests.Integration.Phase16PerformanceTests.Sql_thousand_visit_history_has_bounded_stable_mixed_pages_and_an_inspectable_query_plan",
+        "Wasla.Tests.Integration.PublicDiscoveryApiTests.Search_with_one_thousand_candidates_has_constant_queries_and_page_scoped_hydration",
+        "Wasla.Tests.Integration.DoctorOnboardingApiTests.OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope"
+      ]
+    },
+    {
+      "name": "Pre-final native concurrency",
+      "phase": "pre-final",
+      "path": "TestResults/phase16/final/sql-concurrency/sql-concurrency.trx",
+      "total": 43,
+      "passed": 42,
+      "failed": 1,
+      "skipped": 0,
+      "outcome": "Failed",
+      "failures": [
+        "Wasla.Tests.Integration.Phase5FinalIdentitySqlServerTests.Native_migration_normalized_unique_email_shared_contacts_and_concurrent_registration"
+      ]
+    },
+    {
+      "name": "Isolated thousand-visit benchmark",
+      "phase": "isolated",
+      "path": "TestResults/phase16/final/performance/performance-isolated.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "outcome": "Completed",
+      "failures": []
+    }
+  ],
+  "notes": [
+    "Repeated runs overlap and must not be summed as unique cases.",
+    "Interrupted baseline is not a complete pass.",
+    "Pre-final broad failures: SQL benchmark timeout, repeated worker shutdown, competing transactions in old shared-SQLite fixtures.",
+    "Pre-final concurrency failure: obsolete assertion that Phase5 must be the last migration.",
+    "The full Master remains absent; incorporation, legal/clinical and operational release gates are independent."
+  ]
+}

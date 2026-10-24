@@ -4,9 +4,12 @@ Date: 2026-10-24 (Africa/Cairo). Branch: `codex/phase16-final-gap-closure`.
 Baseline main: `898526bd9de4bf28bea9fa47d26b9ff7374d49e0`, fetched and matched.
 Business scope: the owner's two supplied final Phase 16 closure briefs.
 
-**BUSINESS APPROVED. Engineering verification is in progress. Legal/clinical
-sign-off is PENDING. Production release is BLOCKED.** Test results below must be
-read with the final machine-readable evidence, not historical closure claims.
+**BUSINESS APPROVED. ENGINEERING PASS. Legal/clinical sign-off is PENDING.
+Production release is BLOCKED.** Final runtime/test source:
+`aa5a8e0dbdedac4a992496003ce57de9d9e56023`.
+Read the [machine-readable evidence](PHASE-16-FINAL-GAP-TEST-EVIDENCE.json)
+alongside the exact results below. Documentation-only follow-ups retain this
+tested runtime source identity.
 
 ## Implementation
 
@@ -129,22 +132,61 @@ for approved rules, supersession and the complete deferred release register.
 
 ## Verification evidence
 
+**Final CI PASS: [run 40129895771](https://github.com/LoaiSaberC4r/Wasla/actions/runs/40129895771),
+source `aa5a8e0dbdedac4a992496003ce57de9d9e56023`.** The complete solution Release
+build succeeded with analyzers and warnings treated as errors. Raw TRX evidence
+was downloaded from the run's `test-results` artifact (ID `12574344590`), verified
+against SHA-256 `6c1a30e16af919a3d45a43dfe9b5332a3e93baa149a0d0012456d17d51cf1df1`
+and parsed by individual result outcome, including skipped cases.
+
+| Final CI group | Passed | Failed | Skipped |
+|---|---:|---:|---:|
+| Unit | 291 | 0 | 0 |
+| Integration (`Category!=SQLServerConcurrency`) | 261 | 0 | 0 |
+| Native SQL concurrency (`Category=SQLServerConcurrency`) | 44 | 0 | 0 |
+| Architecture | 23 | 0 | 0 |
+| BuildingBlock/frozen main API compatibility | 323 | 0 | 0 |
+| **Total distinct final cases** | **942** | **0** | **0** |
+
+The two complementary integration filters cover the entire integration assembly,
+including real SQL Server cases, Phase5 identity/claim, Phase18 archive, all 29 P16
+routes, the 21 Family medical/status routes, affected request/response schemas,
+patient-safe privacy, IDOR, exact proof, current permission, cursor and concurrent
+attachment/approval boundaries. No assertion or performance threshold was relaxed.
+
+Additional local evidence: the isolated native 1,000-visit benchmark passed with
+**1,496.5 ms** first-page latency, 10 stable pages of 100 and 500 strictly redacted
+Hidden placeholders. Its SQL plan and timing are under `_local-data/phase16-validation`.
+EF reports **no pending model changes** on the final source. The additive forward
+script is [PHASE-16-FINAL-GAP-MIGRATION.sql](PHASE-16-FINAL-GAP-MIGRATION.sql);
+native migration rehearsals and database constraints passed. `git diff --check`
+is clean. Repeated local cases are not added to the distinct CI total.
+
 Initial baseline: unit **290 passed**, architecture **23 passed**. The broad
 integration baseline was intentionally interrupted after about 20 minutes; its
 TRX contains **178 passed / 104 skipped / 0 reported failed**, plus an aborted
 test process. It is **not** a complete baseline pass. SQL cases were skipped
 because that baseline invocation did not configure a SQL test connection.
 
-The host inherited Platform=MCD; all subsequent commands explicitly select
-AnyCPU/Any CPU. An early simultaneous test/rebuild attempt encountered Windows
-assembly locks; final validation runs sequentially. Early compile errors were
-fixed before final verification. No partial or aborted run is counted as a final
-engineering pass. Full Release build has passed with analyzers, zero warnings and
-zero errors; post-change test/migration evidence is recorded after execution.
+Pre-final full local results were **257 passed / 3 failed / 0 skipped** in the main
+integration group and **42 passed / 1 failed / 0 skipped** in native concurrency.
+The failures were a loaded-host timeline timeout, repeated worker shutdown, a
+shared-SQLite nested transaction and the obsolete Phase5-last-migration assertion.
+The worker/test/migration assertions were corrected as described above; the SQL
+benchmark passed in isolation, and all affected cases passed in final CI. Earlier
+focused iterations caught missing fixture transactions and the member-insert
+tracking issue. Their exact counts and paths remain in the evidence manifest.
 
-Raw results live under ignored TestResults/phase16. No remote CI execution or
-deployment is claimed without a recorded URL/SHA. Production and Staging remain
-disabled; no real credentials, jurisdiction, accepted proof taxonomy or policy
-approval/adoption values are supplied by this change. The full Master remains
-absent. Previously exposed credentials still require authorized external
-rotation/revocation and history review; no secret is reproduced here.
+The host inherited Platform=MCD; local commands explicitly select AnyCPU/Any CPU.
+An early simultaneous test/rebuild attempt encountered Windows assembly locks;
+later compilation and active test output directories were kept separate. Early
+compile issues were corrected before final CI. No partial, aborted or failed
+iteration is counted as a final engineering pass. Local raw results live under
+ignored `TestResults/phase16`, including the verified CI artifact extraction.
+
+[Draft PR #30](https://github.com/LoaiSaberC4r/Wasla/pull/30) contains the change.
+Production and Staging remain disabled. No real credentials, jurisdiction, accepted
+proof taxonomy or policy approval/adoption values were supplied. The full Master
+remains absent. Previously exposed credentials require authorized external
+rotation/revocation and history review; no secret is reproduced here. No Production
+migration, seed, flag activation, deployment or application email/SMS dispatch was performed.
