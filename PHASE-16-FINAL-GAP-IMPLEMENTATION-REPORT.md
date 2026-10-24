@@ -51,6 +51,9 @@ The older public-discovery and onboarding API fixtures also now follow the
 existing Phase13 fixture by removing hosted workers: those fixtures share one
 SQLite connection and drive transitions/projection refreshes explicitly. This
 prevents unrelated workers from opening competing transactions during setup.
+The Phase5 native identity regression now checks that its required migration is
+present in the applied chain, rather than assuming no later phase can add a
+migration. Its native identity constraints and concurrency assertions remain.
 
 The centralized policy serves P16-24–29 and family status/roster. It batches
 members, parent proofs, source requests/current documents, eligibility and
