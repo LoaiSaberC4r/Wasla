@@ -2,13 +2,15 @@
 
 ## 25.1 Implementation summary
 
-Phase 17 Engineering Status: **IN PROGRESS — final verification running**.
+Phase 17 Engineering Status: **COMPLETED**.
 
 Branch: `codex/phase-17-notifications-reminders`.
 Baseline: `68902c076c4b46415ed90e406212ea6e9ee7c0a6`.
-Commit SHA: the final response records the commit containing this report.
+Implementation commit SHA: `07cb6dafdeaea8e1efe072063a7cf15aefc32038` (preserved).
+Final evidence/report commit SHA: recorded in the final handoff message.
 Migrations: `20261025114416_Phase17NotificationsAndReminders`, `20261025120012_Phase17VerifiedNotificationContacts`.
-CI: **NOT RUN**; this is a local branch, with no remote run or deployment created.
+Tests Result: **85/85 acceptance PASS; 1,025 distinct local tests PASS on their latest executions; 0 unresolved failures/skips**. The original local full run had one timeout, retained and explained below.
+CI Result: **PASS — 1,027 passed, 0 failed, 0 skipped** on the implementation commit: [CI run 58](https://github.com/LoaiSaberC4r/Wasla/actions/runs/40205020244). The final follow-up changes contain documentation and evidence-generation updates only; they have not been pushed or run separately in CI.
 
 Implemented durable notification capture, revision-bound appointment reminders, guarded reuse of the existing email outbox, user-owned inbox/preferences, current recipient/source policies, generic clinical notifications, platform settings, safe delivery monitoring and audited controlled retry. Existing source lifecycle and queue rules remain authoritative. Clinical release gates remain closed by default; legacy booking emails retain their existing owner until controlled cutover.
 
@@ -48,22 +50,36 @@ All 25 approved matrix rows, actual source hooks, channels, exclusions, eligibil
 
 The complete 85-ID mapping is [ACCEPTANCE.md](docs/phase17/ACCEPTANCE.md). [TEST-EVIDENCE.json](docs/phase17/TEST-EVIDENCE.json) contains actual executable data-row names, outcomes, durations and originating TRX files. Missing or skipped evidence is reported as NOT RUN. `scripts/phase17/generate-evidence.ps1` regenerates this evidence without inferring PASS from test existence.
 
-Evidence is still being finalized. The complete native SQL regression suite passed 54/54, final unit passed 320/320, final architecture passed 24/24, BuildingBlock passed 323/323, and the final focused Phase 17 integration run passed 55/55. All have zero failures/skips. The full application integration run must finish before this report can declare engineering completion.
+All **85 acceptance IDs PASS**, with no failed or missing cases. Across local regression/focused reruns, **1,025 distinct test names have a final Passed outcome**, with zero unresolved failures/skips. Repeated tests are counted once, using the latest invocation by start time; this is not a claim of a single 1,025-test local invocation.
+
+| Local result file | Passed | Failed | Skipped | TRX run elapsed |
+|---|---:|---:|---:|---|
+| `unit.trx` | 320 | 0 | 0 | 1m50s |
+| `architecture.trx` | 24 | 0 | 0 | 31s |
+| `buildingblock.trx` | 323 | 0 | 0 | 46s |
+| `sql.trx` | 54 | 0 | 0 | 27m37s |
+| `integration.trx` | 300 | 1 | 0 | 1h53m32s |
+| `phase17-supplement.trx` | 55 | 0 | 0 | 16m43s |
+| `performance-rerun.trx` | 1 | 0 | 0 | 2m30s |
+
+The sole initial full-run failure was the existing `Phase16PerformanceTests.Sql_thousand_visit_history_has_bounded_stable_mixed_pages_and_an_inspectable_query_plan`: its first timeline query returned the existing 503 `Persistence.Timeout`. The unchanged test passed in isolation with all 1,000 visits, 500 redacted placeholders, ten stable pages, an inspectable SQL plan, and a **1,955.8 ms** first page against its unchanged 30,000 ms limit. Its initial failure remains in the run counters; no assertion/timeout was relaxed. The independent clean CI run also passed its complete integration suite.
+
+The final focused run was rebuilt after the legacy-null-revision, safe permanent-failure and additional policy tests. It includes the Phase 17 native SQL cases, source/SMTP serialization and populated migration upgrade tests. Older unrelated regression cases were retained from the full suite, and the runtime implementation commit received a clean complete CI run.
 
 ## 25.8 Security review
 
-| Boundary | Implementation/evidence |
-|---|---|
-| Cross-user isolation | CurrentUser ownership predicates, cross-user 404, scoped bulk read/count and pagination tests. |
-| Cross-Practice isolation | Current owner/practice checks for doctor operational delivery, current Reception assignment and unchanged source access policies. |
-| Family authority | Independent exact current proof, booking-age policy and revocation checks; historical actor/membership alone is insufficient. |
-| Clinical patient-self | Current patient link, account type, source permission and patient-safe completed source; no family/Reception/admin clinical bypass. |
-| Clinical email opt-in | Explicit category/channel opt-in plus independent false-by-default release gate. |
-| Hidden encounter safety | Generic preview and MedicalRecord navigation without provider/encounter/source/media keys; current visibility rechecked on inbox reads. |
-| Outbox final guard | Source/revision/appointment/contact/recipient/preference/privacy/grace revalidation for correlated emails, with session-lock SMTP admission. Uncorrelated legacy emails retain existing behavior. |
-| Admin monitoring | Metadata-only DTOs, with no recipient address, body, private source identifiers or clinical provenance. |
-| Retry | Dedicated permission, required reason/version, original destination only, supported failed state only, source revalidation, audit and concurrent retry protection. |
-| Logging/metrics | Code-controlled low-cardinality operation/event/channel/status/reason dimensions; no clinical payload or recipient address labels. |
+| Boundary | Result | Implementation/evidence |
+|---|---|---|
+| Cross-user isolation | PASS | CurrentUser ownership predicates, cross-user 404, scoped bulk read/count and pagination tests. |
+| Cross-Practice isolation | PASS | Current owner/practice checks for doctor operational delivery, current Reception assignment and unchanged source access policies. |
+| Family authority | PASS | Independent exact current proof, booking-age policy and revocation checks; historical actor/membership alone is insufficient. |
+| Clinical patient-self | PASS | Current patient link, account type, source permission and patient-safe completed source; no family/Reception/admin clinical bypass. |
+| Clinical email opt-in | PASS | Explicit category/channel opt-in plus independent false-by-default release gate. |
+| Hidden encounter safety | PASS | Generic preview and MedicalRecord navigation without provider/encounter/source/media keys; current visibility rechecked on inbox reads. |
+| Outbox final guard | PASS | Source/revision/appointment/contact/recipient/preference/privacy/grace revalidation for correlated emails, with session-lock SMTP admission. Uncorrelated legacy emails retain existing behavior. |
+| Admin monitoring | PASS | Metadata-only DTOs, with no recipient address, body, private source identifiers or clinical provenance. |
+| Retry | PASS | Dedicated permission, required reason/version, original destination only, supported failed state only, source revalidation, audit and concurrent retry protection. |
+| Logging/metrics | PASS | Code-controlled low-cardinality operation/event/channel/status/reason dimensions; no clinical payload or recipient address labels. |
 
 The native SMTP-boundary test verifies that no SQL transaction spans network delivery while source mutations serialize with admission. The fault-provider test explicitly demonstrates possible physical duplicate acceptance after an unobserved acknowledgment, while logical delivery identity remains unique. Exactly-once physical SMTP delivery is not claimed.
 
@@ -99,7 +115,7 @@ $phase17Cs = @(git diff --name-only -- '*.cs'; git ls-files --others --exclude-s
 dotnet format whitespace --folder . --include $phase17Cs --verbosity quiet
 dotnet format whitespace --folder . --include $phase17Cs --verify-no-changes --verbosity quiet
 git diff --check
-scripts/phase17/generate-evidence.ps1
+scripts/phase17/generate-evidence.ps1 -CiResult PASS -CiRunUrl 'https://github.com/LoaiSaberC4r/Wasla/actions/runs/40205020244' -CiCommitSha '07cb6dafdeaea8e1efe072063a7cf15aefc32038'
 ```
 
 The final Release solution build completed with **zero warnings and zero errors** after compatibility hardening. It used `-p:OutDir=<absolute workspace>/artifacts/phase17-final-checks/solution/` in addition to the build command above to avoid replacing assemblies in the active regression host. Final unit and architecture builds/tests likewise used separate `--output artifacts/phase17-final-checks/unit` and `--output artifacts/phase17-final-checks/architecture` folders. Whitespace verification also passed with `--verify-no-changes`, and `git diff --check` passed.
@@ -115,13 +131,30 @@ dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --con
 
 Initial failures and their resolutions were the old permission final-count assertion, unconfigured BuildingBlock Docker fallback, an In-App skip rollback for accountless recipients, source request rowversion in test setup, and an EF metadata projection translation. Actual rerun outcomes are authoritative. No previous test was removed or weakened.
 
-CI URL: unavailable; no remote CI run was started. Existing CI automatically discovers the new tests and SQL category.
+Exact isolated performance rerun:
+
+```powershell
+dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --configuration Release -p:Platform=AnyCPU --no-build --no-restore --output artifacts/phase17-supplement --filter 'FullyQualifiedName~Phase16PerformanceTests' --logger 'trx;LogFileName=performance-rerun.trx' --results-directory TestResults/phase17/regression -v quiet -- xUnit.MaxParallelThreads=1
+```
+
+The user's already-pushed implementation commit was preserved. Its **CI run 58**, job `build-and-test` (`121204001167`), completed successfully. GitHub connector workflow/job metadata and decoded job-log summaries verified restore, zero-warning/error Release build and every suite:
+
+| CI suite | Passed | Failed | Skipped |
+|---|---:|---:|---:|
+| Unit | 320 | 0 | 0 |
+| Integration | 306 | 0 | 0 |
+| SQL Server concurrency | 54 | 0 | 0 |
+| Architecture | 24 | 0 | 0 |
+| BuildingBlock | 323 | 0 | 0 |
+| **Total** | **1,027** | **0** | **0** |
+
+CI URL: [https://github.com/LoaiSaberC4r/Wasla/actions/runs/40205020244](https://github.com/LoaiSaberC4r/Wasla/actions/runs/40205020244). CI counts are reported separately from local distinct-case counts. No deployment or new workflow run was triggered by the agent; the follow-up report/evidence commit is local.
 
 ## 25.10 Remaining independent gates
 
 | Gate | Status |
 |---|---|
-| Engineering | Final integration/acceptance evidence pending; do not treat this draft as completion. |
+| Engineering | Complete: all 85 acceptance cases pass, latest local outcomes are green, and implementation CI is green. No unresolved Phase 17 engineering blocker. |
 | Clinical/legal approval | Clinical email and In-App release flags remain false. No legal/clinical release is asserted. |
 | Production configuration | Controlled recipient-compatibility review and email ownership cutover, worker tuning, permissions reconciliation and SMTP configuration required before deployment. |
 | Notification retention/disposal | Independent policy required; no automatic notification/contact-evidence purge was added. |

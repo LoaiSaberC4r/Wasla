@@ -1,6 +1,9 @@
 param(
     [string]$ResultsDirectory = (Join-Path $PSScriptRoot '../../TestResults/phase17/regression'),
-    [string]$OutputDirectory = (Join-Path $PSScriptRoot '../../docs/phase17')
+    [string]$OutputDirectory = (Join-Path $PSScriptRoot '../../docs/phase17'),
+    [ValidateSet('NOT RUN', 'PASS', 'FAIL', 'IN PROGRESS')][string]$CiResult = 'NOT RUN',
+    [string]$CiRunUrl = '',
+    [string]$CiCommitSha = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -126,7 +129,8 @@ $documents = foreach ($file in @(Get-ChildItem -LiteralPath $resultsRoot -Filter
 foreach ($entry in @($documents | Sort-Object StartedAt)) {
     $file = $entry.File; $document = $entry.Document
     $counters = $document.TestRun.ResultSummary.Counters
-    $runs += [ordered]@{ File = $file.Name; Total = [int]$counters.total; Passed = [int]$counters.passed; Failed = [int]$counters.failed; NotExecuted = [int]$counters.notExecuted }
+    $finishedAt = [DateTimeOffset]::Parse([string]$document.TestRun.Times.finish, [Globalization.CultureInfo]::InvariantCulture)
+    $runs += [ordered]@{ File = $file.Name; StartedAtUtc = $entry.StartedAt.ToUniversalTime().ToString('o'); FinishedAtUtc = $finishedAt.ToUniversalTime().ToString('o'); Duration = ($finishedAt - $entry.StartedAt).ToString('c'); Total = [int]$counters.total; Passed = [int]$counters.passed; Failed = [int]$counters.failed; NotExecuted = [int]$counters.notExecuted }
     foreach ($result in @($document.TestRun.Results.UnitTestResult)) {
         $latestTests[[string]$result.testName] = [ordered]@{ TestName = [string]$result.testName; Outcome = [string]$result.outcome; Duration = [string]$result.duration; RunFile = $file.Name }
     }
@@ -149,9 +153,14 @@ $report = [ordered]@{
     GeneratedAtUtc = [DateTime]::UtcNow.ToString('o')
     Branch = (git -C $repositoryRoot branch --show-current)
     Baseline = '68902c076c4b46415ed90e406212ea6e9ee7c0a6'
-    CiResult = 'NOT RUN: local branch, no remote CI run requested or created'
+    CiResult = $CiResult
+    CiRunUrl = $CiRunUrl
+    CiCommitSha = $CiCommitSha
     Runs = $runs
     UniqueExecutedTests = $latestTests.Count
+    UniquePassedTests = @($latestTests.Values | Where-Object Outcome -eq 'Passed').Count
+    UniqueFailedTests = @($latestTests.Values | Where-Object Outcome -eq 'Failed').Count
+    UniqueNotExecutedTests = @($latestTests.Values | Where-Object Outcome -eq 'NotExecuted').Count
     AcceptancePassed = @($cases | Where-Object Result -eq 'PASS').Count
     AcceptanceFailed = @($cases | Where-Object Result -eq 'FAIL').Count
     AcceptanceNotRun = @($cases | Where-Object Result -eq 'NOT RUN').Count
