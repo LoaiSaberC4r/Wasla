@@ -1,0 +1,1451 @@
+{
+  "GeneratedAtUtc": "2026-10-25T14:10:15.3465992Z",
+  "Branch": "codex/phase-17-notifications-reminders",
+  "Baseline": "68902c076c4b46415ed90e406212ea6e9ee7c0a6",
+  "CiResult": "NOT RUN: local branch, no remote CI run requested or created",
+  "Runs": [
+    {
+      "File": "sql.trx",
+      "Total": 54,
+      "Passed": 54,
+      "Failed": 0,
+      "NotExecuted": 0
+    },
+    {
+      "File": "buildingblock.trx",
+      "Total": 323,
+      "Passed": 323,
+      "Failed": 0,
+      "NotExecuted": 0
+    },
+    {
+      "File": "phase17-supplement.trx",
+      "Total": 55,
+      "Passed": 55,
+      "Failed": 0,
+      "NotExecuted": 0
+    },
+    {
+      "File": "unit.trx",
+      "Total": 320,
+      "Passed": 320,
+      "Failed": 0,
+      "NotExecuted": 0
+    },
+    {
+      "File": "architecture.trx",
+      "Total": 24,
+      "Passed": 24,
+      "Failed": 0,
+      "NotExecuted": 0
+    }
+  ],
+  "UniqueExecutedTests": 764,
+  "AcceptancePassed": 78,
+  "AcceptanceFailed": 0,
+  "AcceptanceNotRun": 7,
+  "Cases": [
+    {
+      "CaseId": "A01",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Capture_schedules_only_strictly_future_due_times"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Capture_schedules_only_strictly_future_due_times(caseId: \"A02\", secondsBeforeDue: 0, expected: 0)",
+          "Outcome": "Passed",
+          "Duration": "00:00:08.3391711",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A02",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Capture_schedules_only_strictly_future_due_times"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Capture_schedules_only_strictly_future_due_times(caseId: \"A02\", secondsBeforeDue: 0, expected: 0)",
+          "Outcome": "Passed",
+          "Duration": "00:00:08.3391711",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A03",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Capture_schedules_only_strictly_future_due_times"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Capture_schedules_only_strictly_future_due_times(caseId: \"A02\", secondsBeforeDue: 0, expected: 0)",
+          "Outcome": "Passed",
+          "Duration": "00:00:08.3391711",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A04",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries(caseId: \"A06\", secondsAfterDue: 901, delivered: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:09.3963175",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A05",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries(caseId: \"A06\", secondsAfterDue: 901, delivered: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:09.3963175",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A06",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries(caseId: \"A06\", secondsAfterDue: 901, delivered: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:09.3963175",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A07",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Dispatcher_obeys_due_grace_and_appointment_boundaries(caseId: \"A06\", secondsAfterDue: 901, delivered: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:09.3963175",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A08",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.6439564",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A09",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions",
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O03_source_commit_serializes_with_dispatch_and_invalidates_old_revision"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.6439564",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A10",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A10_new_reschedule_can_have_its_own_reminder_without_retracting_prior_delivery"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A10_new_reschedule_can_have_its_own_reminder_without_retracting_prior_delivery",
+          "Outcome": "Passed",
+          "Duration": "00:00:05.2255713",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A11",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.6439564",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A12",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.6439564",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A13",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Restore_keeps_revision_and_never_creates_a_second_reminder"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Restore_keeps_revision_and_never_creates_a_second_reminder(caseId: \"A13\", alreadyDispatched: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:05.5883372",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A14",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Restore_keeps_revision_and_never_creates_a_second_reminder",
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A14_O15_legacy_nullable_revision_can_restore_without_backfill_or_invented_revision"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Restore_keeps_revision_and_never_creates_a_second_reminder(caseId: \"A13\", alreadyDispatched: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:05.5883372",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A15",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.Send_time_guard_suppresses_expired_or_cancelled_reminders_before_smtp",
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.E02_NoShow_and_expiration_capture_only_inapp_and_do_not_change_source_lifecycle",
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A16_E03_successful_normal_and_force_checkin_capture_one_attendance_update"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.Send_time_guard_suppresses_expired_or_cancelled_reminders_before_smtp(caseId: \"O03\", expired: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:04.4515612",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A16",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A16_E03_successful_normal_and_force_checkin_capture_one_attendance_update"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A16_E03_successful_normal_and_force_checkin_capture_one_attendance_update(force: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.4424251",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A17",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A17_O18_walkin_and_feature_disable_never_create_historical_reminders"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A17_O18_walkin_and_feature_disable_never_create_historical_reminders",
+          "Outcome": "Passed",
+          "Duration": "00:00:15.2624988",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A18",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A18_platform_setting_audit_keeps_existing_due_snapshot",
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.A18_concurrent_settings_and_preference_updates_return_one_conflict"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A18_platform_setting_audit_keeps_existing_due_snapshot",
+          "Outcome": "Passed",
+          "Duration": "00:00:06.1575840",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A19",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.A19_O09_C12_api_permissions_admin_metadata_and_denial_audit_are_enforced"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.A19_O09_C12_api_permissions_admin_metadata_and_denial_audit_are_enforced",
+          "Outcome": "Passed",
+          "Duration": "00:00:07.6988118",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A20",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A20_A21_timezone_configuration_changes_do_not_recompute_committed_utc_or_reminder_snapshots"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A20_A21_timezone_configuration_changes_do_not_recompute_committed_utc_or_reminder_snapshots",
+          "Outcome": "Passed",
+          "Duration": "00:00:13.1599661",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A21",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A20_A21_timezone_configuration_changes_do_not_recompute_committed_utc_or_reminder_snapshots"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A20_A21_timezone_configuration_changes_do_not_recompute_committed_utc_or_reminder_snapshots",
+          "Outcome": "Passed",
+          "Duration": "00:00:13.1599661",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "A22",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A22_closed_day_suppresses_reminder_without_mutating_no_show_or_expiration_lifecycle"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A22_closed_day_suppresses_reminder_without_mutating_no_show_or_expiration_lifecycle",
+          "Outcome": "Passed",
+          "Duration": "00:00:14.4527155",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R01",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R01_R04_R12_trust_survives_otp_cleanup_but_does_not_follow_email_reassignment_or_account_closure",
+        "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R01_R04_R12_trust_survives_otp_cleanup_but_does_not_follow_email_reassignment_or_account_closure",
+          "Outcome": "Passed",
+          "Duration": "00:00:03.5232584",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R02",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R02_verified_reviewed_global_contact_gets_email_without_an_invented_inbox"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R02_verified_reviewed_global_contact_gets_email_without_an_invented_inbox",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.0746126",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R03",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.0727070",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R04",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R01_R04_R12_trust_survives_otp_cleanup_but_does_not_follow_email_reassignment_or_account_closure",
+        "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R01_R04_R12_trust_survives_otp_cleanup_but_does_not_follow_email_reassignment_or_account_closure",
+          "Outcome": "Passed",
+          "Duration": "00:00:03.5232584",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R05",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.R05_E01_O01_controlled_email_cutover_has_one_owner_and_replay_does_not_recapture",
+        "Wasla.Tests.Integration.Phase17GovernanceNotificationTests.E06_governance_keeps_existing_email_and_adds_only_eligible_own_inbox"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.R05_E01_O01_controlled_email_cutover_has_one_owner_and_replay_does_not_recapture",
+          "Outcome": "Passed",
+          "Duration": "00:00:38.1396735",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R06",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct(verified: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:14.2340963",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R07",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct(verified: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:14.2340963",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R08",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R08_revoked_guardian_authority_prevents_dependent_reminder_delivery"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R08_revoked_guardian_authority_prevents_dependent_reminder_delivery",
+          "Outcome": "Passed",
+          "Duration": "00:00:06.7855259",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R09",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct(verified: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:14.2340963",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R10",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.R10_R11_logical_audiences_keep_distinct_inboxes_and_missing_owner_can_only_be_suppressed",
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.R10_R11_logical_audiences_keep_distinct_inboxes_and_missing_owner_can_only_be_suppressed",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0021344",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R11",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.R10_R11_logical_audiences_keep_distinct_inboxes_and_missing_owner_can_only_be_suppressed",
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.R10_R11_logical_audiences_keep_distinct_inboxes_and_missing_owner_can_only_be_suppressed",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0021344",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R12",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R01_R04_R12_trust_survives_otp_cleanup_but_does_not_follow_email_reassignment_or_account_closure"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R01_R04_R12_trust_survives_otp_cleanup_but_does_not_follow_email_reassignment_or_account_closure",
+          "Outcome": "Passed",
+          "Duration": "00:00:03.5232584",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R13",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.0727070",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R14",
+      "Result": "NOT RUN",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R14_deactivated_reception_assignment_denies_operational_inbox_access",
+        "Wasla.Tests.Integration.DoctorOnboardingApiTests.OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope"
+      ],
+      "MissingTests": [
+        "Wasla.Tests.Integration.DoctorOnboardingApiTests.OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope"
+      ],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R14_deactivated_reception_assignment_denies_operational_inbox_access",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.2171199",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R15",
+      "Result": "NOT RUN",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes",
+        "Wasla.Tests.Integration.DoctorOnboardingApiTests.OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope"
+      ],
+      "MissingTests": [
+        "Wasla.Tests.Integration.DoctorOnboardingApiTests.OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope"
+      ],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.0727070",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "R16",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C09_R16_current_family_booking_authority_and_parent_optin_do_not_create_dependent_clinical_delivery"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C09_R16_current_family_booking_authority_and_parent_optin_do_not_create_dependent_clinical_delivery",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.3343049",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E01",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.R05_E01_O01_controlled_email_cutover_has_one_owner_and_replay_does_not_recapture",
+        "Wasla.Tests.Integration.Phase17NotificationTests.A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.R05_E01_O01_controlled_email_cutover_has_one_owner_and_replay_does_not_recapture",
+          "Outcome": "Passed",
+          "Duration": "00:00:38.1396735",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E02",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.E02_NoShow_and_expiration_capture_only_inapp_and_do_not_change_source_lifecycle"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.E02_NoShow_and_expiration_capture_only_inapp_and_do_not_change_source_lifecycle(expire: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:17.5476326",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E03",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A16_E03_successful_normal_and_force_checkin_capture_one_attendance_update"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A16_E03_successful_normal_and_force_checkin_capture_one_attendance_update(force: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.4424251",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E04",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured",
+        "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"Doctor.NoShowDigest\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002049",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E05",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.R03_R04_R13_E01_E05_no_trusted_email_still_commits_and_delivers_only_own_inboxes",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.0727070",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E06",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17GovernanceNotificationTests.E06_governance_keeps_existing_email_and_adds_only_eligible_own_inbox"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17GovernanceNotificationTests.E06_governance_keeps_existing_email_and_adds_only_eligible_own_inbox",
+          "Outcome": "Passed",
+          "Duration": "00:00:38.1276093",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E07",
+      "Result": "NOT RUN",
+      "TestMethods": [
+        "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+        "Wasla.Tests.Integration.DoctorOnboardingApiTests.OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope"
+      ],
+      "MissingTests": [
+        "Wasla.Tests.Integration.DoctorOnboardingApiTests.OperationalPracticeApi_EnforcesOwnershipLifecycleSchedulingPricingAndReceptionScope"
+      ],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.2408391",
+          "RunFile": "architecture.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E08",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"Doctor.NoShowDigest\")",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0002049",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E09",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.E09_E10_preferences_are_concurrent_independent_and_checked_at_dispatch"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.E09_E10_preferences_are_concurrent_independent_and_checked_at_dispatch(emailEnabled: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:04.6985808",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E10",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.E09_E10_preferences_are_concurrent_independent_and_checked_at_dispatch"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.E09_E10_preferences_are_concurrent_independent_and_checked_at_dispatch(emailEnabled: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:04.6985808",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E11",
+      "Result": "NOT RUN",
+      "TestMethods": [
+        "Wasla.Tests.Integration.TrustAccessApiTests.PasswordRecovery_HashesProofsAndConsumesChallengeOnce",
+        "Wasla.Tests.Unit.Phase17NotificationTests.E09_E10_E11_E12_preferences_are_independent_and_essential_categories_are_not_editable"
+      ],
+      "MissingTests": [
+        "Wasla.Tests.Integration.TrustAccessApiTests.PasswordRecovery_HashesProofsAndConsumesChallengeOnce"
+      ],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.E09_E10_E11_E12_preferences_are_independent_and_essential_categories_are_not_editable",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0464864",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E12",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only(kind: \"lab\", submission: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.7281694",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E13",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only(kind: \"lab\", submission: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.7281694",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E14",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0088278",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E15",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0088278",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E16",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0088278",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "E17",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Unit.Phase17NotificationTests.Grace_window_is_inclusive_and_has_no_quiet_hours"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Unit.Phase17NotificationTests.Grace_window_is_inclusive_and_has_no_quiet_hours(caseId: \"A04\", secondsAfterDue: 0, expected: True)",
+          "Outcome": "Passed",
+          "Duration": "00:00:00.0000697",
+          "RunFile": "unit.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C01",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.1300614",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C02",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.1300614",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C03",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only(kind: \"lab\", submission: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.7281694",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C04",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only(kind: \"lab\", submission: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.7281694",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C05",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only(kind: \"lab\", submission: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.7281694",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C06",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only(kind: \"lab\", submission: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.7281694",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C07",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only(kind: \"lab\", submission: False)",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.7281694",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C08",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization",
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.1300614",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C09",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C09_R16_current_family_booking_authority_and_parent_optin_do_not_create_dependent_clinical_delivery"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C09_R16_current_family_booking_authority_and_parent_optin_do_not_create_dependent_clinical_delivery",
+          "Outcome": "Passed",
+          "Duration": "00:00:10.3343049",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C10",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C01_C02_C10_prescription_draft_finalize_hidden_navigation_and_source_reauthorization",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.1300614",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C11",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+        "Wasla.Tests.Integration.Phase17ClinicalNotificationTests.C03_C04_C05_C06_C07_C08_C09_C11_E12_E13_diagnostic_transitions_are_durable_generic_and_self_only"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.2408391",
+          "RunFile": "architecture.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "C12",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.A19_O09_C12_api_permissions_admin_metadata_and_denial_audit_are_enforced",
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O10_admin_retry_is_atomic_audited_and_rejects_already_claimed_work",
+        "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.A19_O09_C12_api_permissions_admin_metadata_and_denial_audit_are_enforced",
+          "Outcome": "Passed",
+          "Duration": "00:00:07.6988118",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O01",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.R05_E01_O01_controlled_email_cutover_has_one_owner_and_replay_does_not_recapture",
+        "Wasla.Tests.Unit.Phase17NotificationTests.O01_O11_terminal_intents_and_idempotent_reads_preserve_logical_identity"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.R05_E01_O01_controlled_email_cutover_has_one_owner_and_replay_does_not_recapture",
+          "Outcome": "Passed",
+          "Duration": "00:00:38.1396735",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O02",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O02_two_real_sql_workers_create_one_logical_delivery_per_channel"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O02_two_real_sql_workers_create_one_logical_delivery_per_channel",
+          "Outcome": "Passed",
+          "Duration": "00:00:42.6885965",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O03",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O03_source_commit_serializes_with_dispatch_and_invalidates_old_revision",
+        "Wasla.Tests.Integration.Phase17SmtpBoundaryTests.O03_O04_smtp_admission_serializes_source_commit_without_holding_sql_transaction",
+        "Wasla.Tests.Integration.Phase17NotificationTests.Send_time_guard_suppresses_expired_or_cancelled_reminders_before_smtp"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O03_source_commit_serializes_with_dispatch_and_invalidates_old_revision(reschedule: True)",
+          "Outcome": "Passed",
+          "Duration": "00:04:54.1502682",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O04",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O04_provider_acceptance_before_an_unobserved_ack_can_duplicate_physical_delivery_but_not_logical_identity",
+        "Wasla.Tests.Integration.Phase17SmtpBoundaryTests.O03_O04_smtp_admission_serializes_source_commit_without_holding_sql_transaction"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O04_provider_acceptance_before_an_unobserved_ack_can_duplicate_physical_delivery_but_not_logical_identity",
+          "Outcome": "Passed",
+          "Duration": "00:00:12.0639448",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O05",
+      "Result": "NOT RUN",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O05_O08_smtp_failure_retries_independently_and_expired_reminder_is_suppressed",
+        "Wasla.Tests.Integration.EmailOutboxTests.TransientFailure_SchedulesRetry_WithoutDeletingMessage"
+      ],
+      "MissingTests": [
+        "Wasla.Tests.Integration.EmailOutboxTests.TransientFailure_SchedulesRetry_WithoutDeletingMessage"
+      ],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O05_O08_smtp_failure_retries_independently_and_expired_reminder_is_suppressed",
+          "Outcome": "Passed",
+          "Duration": "00:01:43.9806439",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O06",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O06_O08_permanent_authentication_failure_is_safe_and_stale_admin_retry_is_denied"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O06_O08_permanent_authentication_failure_is_safe_and_stale_admin_retry_is_denied",
+          "Outcome": "Passed",
+          "Duration": "00:00:19.6613145",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O07",
+      "Result": "NOT RUN",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O07_expired_claim_is_recovered_once_and_unique_delivery_is_enforced_by_sql",
+        "Wasla.Tests.Integration.EmailOutboxTests.ProcessingLease_PreventsEarlyClaimAndAllowsRecoveryAfterExpiry"
+      ],
+      "MissingTests": [
+        "Wasla.Tests.Integration.EmailOutboxTests.ProcessingLease_PreventsEarlyClaimAndAllowsRecoveryAfterExpiry"
+      ],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O07_expired_claim_is_recovered_once_and_unique_delivery_is_enforced_by_sql",
+          "Outcome": "Passed",
+          "Duration": "00:02:14.6536342",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O08",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O06_O08_permanent_authentication_failure_is_safe_and_stale_admin_retry_is_denied",
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O05_O08_smtp_failure_retries_independently_and_expired_reminder_is_suppressed",
+        "Wasla.Tests.Integration.Phase17NotificationTests.Send_time_guard_suppresses_expired_or_cancelled_reminders_before_smtp",
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O10_admin_retry_is_atomic_audited_and_rejects_already_claimed_work"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O06_O08_permanent_authentication_failure_is_safe_and_stale_admin_retry_is_denied",
+          "Outcome": "Passed",
+          "Duration": "00:00:19.6613145",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O09",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.A19_O09_C12_api_permissions_admin_metadata_and_denial_audit_are_enforced",
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O10_admin_retry_is_atomic_audited_and_rejects_already_claimed_work"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.A19_O09_C12_api_permissions_admin_metadata_and_denial_audit_are_enforced",
+          "Outcome": "Passed",
+          "Duration": "00:00:07.6988118",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O10",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O10_admin_retry_is_atomic_audited_and_rejects_already_claimed_work"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O10_admin_retry_is_atomic_audited_and_rejects_already_claimed_work",
+          "Outcome": "Passed",
+          "Duration": "00:00:55.9043373",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O11",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationTests.O11_O12_inbox_pagination_counts_and_idempotent_read_are_owner_scoped"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationTests.O11_O12_inbox_pagination_counts_and_idempotent_read_are_owner_scoped",
+          "Outcome": "Passed",
+          "Duration": "00:00:11.7039256",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O12",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O12_large_inbox_has_bounded_stable_pages_counts_and_own_bulk_marking"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17ReliabilityNotificationTests.O12_large_inbox_has_bounded_stable_pages_counts_and_own_bulk_marking",
+          "Outcome": "Passed",
+          "Duration": "00:00:21.1999412",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O13",
+      "Result": "NOT RUN",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase18PartTwoSqlTests.Linked_group_rolls_back_each_database_step_then_replays_and_refunds_without_unarchiving",
+        "Wasla.Tests.Integration.Phase18PartTwoSqlTests.Closed_noshow_keeps_status_releases_patient_lease_and_missing_payment_is_quarantined"
+      ],
+      "MissingTests": [
+        "Wasla.Tests.Integration.Phase18PartTwoSqlTests.Linked_group_rolls_back_each_database_step_then_replays_and_refunds_without_unarchiving",
+        "Wasla.Tests.Integration.Phase18PartTwoSqlTests.Closed_noshow_keeps_status_releases_patient_lease_and_missing_payment_is_quarantined"
+      ],
+      "Evidence": []
+    },
+    {
+      "CaseId": "O14",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+        "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.2408391",
+          "RunFile": "architecture.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O15",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17NotificationMigrationTests.O15_model_snapshot_matches_and_migrations_are_additive_without_backfill",
+        "Wasla.Tests.Integration.Phase17NotificationMigrationTests.O15_populated_legacy_outbox_survives_native_sql_upgrade_without_resend_or_backfill"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17NotificationMigrationTests.O15_model_snapshot_matches_and_migrations_are_additive_without_backfill",
+          "Outcome": "Passed",
+          "Duration": "00:00:03.0582548",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O16",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.2408391",
+          "RunFile": "architecture.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O17",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
+          "Outcome": "Passed",
+          "Duration": "00:00:02.2408391",
+          "RunFile": "architecture.trx"
+        }
+      ]
+    },
+    {
+      "CaseId": "O18",
+      "Result": "PASS",
+      "TestMethods": [
+        "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A17_O18_walkin_and_feature_disable_never_create_historical_reminders",
+        "Wasla.Tests.Integration.Phase17NotificationSqlServerTests.O07_expired_claim_is_recovered_once_and_unique_delivery_is_enforced_by_sql"
+      ],
+      "MissingTests": [],
+      "Evidence": [
+        {
+          "TestName": "Wasla.Tests.Integration.Phase17LifecycleNotificationTests.A17_O18_walkin_and_feature_disable_never_create_historical_reminders",
+          "Outcome": "Passed",
+          "Duration": "00:00:15.2624988",
+          "RunFile": "phase17-supplement.trx"
+        }
+      ]
+    }
+  ]
+}

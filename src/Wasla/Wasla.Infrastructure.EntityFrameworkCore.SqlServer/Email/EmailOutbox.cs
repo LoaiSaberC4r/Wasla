@@ -38,7 +38,7 @@ public sealed class EmailOutbox(
             message.Subject.Trim(),
             message.HtmlBody,
             message.TextBody,
-            RequireUtc(clock.UtcNow)));
+            RequireUtc(clock.UtcNow), message.NotificationDeliveryId));
     }
 
     private static void Validate(QueueEmailMessage message)

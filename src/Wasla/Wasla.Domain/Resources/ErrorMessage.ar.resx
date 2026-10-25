@@ -505,4 +505,7 @@
   <data name="PatientIdentityRateLimited" xml:space="preserve"><value>محاولات كثيرة. يرجى المحاولة بعد فترة الانتظار.</value></data>
   <data name="PatientIdentityStartAccepted" xml:space="preserve"><value>إذا كان الطلب مؤهلاً، فستُرسل رسالة تحقق.</value></data>
   <data name="PatientIdentityResendAccepted" xml:space="preserve"><value>إذا كان التفعيل متاحًا، فستُرسل دعوة جديدة.</value></data>
+  <data name="NotificationAccessDenied" xml:space="preserve"><value>غير مصرح بالوصول إلى الإشعارات.</value></data>
+  <data name="NotificationNotFound" xml:space="preserve"><value>الإشعار غير متاح.</value></data>
+  <data name="NotificationConflict" xml:space="preserve"><value>تم تغيير البيانات. يرجى إعادة تحميلها.</value></data>
 </root>

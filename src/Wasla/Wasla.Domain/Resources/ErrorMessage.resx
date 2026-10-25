@@ -505,4 +505,7 @@
   <data name="PatientIdentityRateLimited" xml:space="preserve"><value>Too many attempts. Please retry after the cooldown.</value></data>
   <data name="PatientIdentityStartAccepted" xml:space="preserve"><value>If the request is eligible, a verification message will be sent.</value></data>
   <data name="PatientIdentityResendAccepted" xml:space="preserve"><value>If activation is available, a new invitation will be sent.</value></data>
+  <data name="NotificationAccessDenied" xml:space="preserve"><value>Notification access is denied.</value></data>
+  <data name="NotificationNotFound" xml:space="preserve"><value>The notification is unavailable.</value></data>
+  <data name="NotificationConflict" xml:space="preserve"><value>The record changed. Refresh it and retry.</value></data>
 </root>

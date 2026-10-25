@@ -282,6 +282,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AppointmentRevisionHistoryId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("BookedOnBehalfRelationshipSnapshot")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -4513,6 +4516,500 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         });
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DeliveryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OutcomeCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccurredAtUtc");
+
+                    b.ToTable("NotificationAudits", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DispatchedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LogicalDeliveryKey")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("NotificationEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("NotificationIntentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RecipientApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RecipientLogicalKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("RecipientPatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SafeFailureCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TemplateCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("TemplateVersion")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LogicalDeliveryKey")
+                        .IsUnique();
+
+                    b.HasIndex("NotificationEventId");
+
+                    b.HasIndex("NotificationIntentId");
+
+                    b.HasIndex("Status", "CreatedAtUtc");
+
+                    b.ToTable("NotificationDeliveries", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DataClassification")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("LegacyEmailOwned")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SourceEventKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SourceRevisionKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid?>("SourceVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TargetApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("SourceType", "SourceId", "SourceRevisionKey");
+
+                    b.ToTable("NotificationEvents", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationIntent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AppointmentStartUtcSnapshot")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DueAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LeaseUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("NextAttemptOnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("NotificationEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ProcessedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ProcessingToken")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ReminderLeadMinutesSnapshot")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<long?>("SettingsVersionSnapshot")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SkipReasonCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("SourceRevisionKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationEventId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "DueAtUtc");
+
+                    b.HasIndex("Status", "NextAttemptOnUtc");
+
+                    b.ToTable("NotificationIntents", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PreferredLanguage")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId", "Category", "Channel")
+                        .IsUnique();
+
+                    b.ToTable("NotificationPreferences", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationVerifiedContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AddressFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("ApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EvidenceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("VerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("ApplicationUserId", "PatientId", "AddressFingerprint")
+                        .IsUnique();
+
+                    b.ToTable("NotificationVerifiedContacts", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.PlatformNotificationSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AppointmentReminderEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ReminderLeadMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PlatformNotificationSettings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_NotificationSettings_Lead", "[ReminderLeadMinutes] BETWEEN 1 AND 43200");
+
+                            t.HasCheckConstraint("CK_NotificationSettings_Singleton", "[Id] = '17000000-0000-0000-0000-000000000001'");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("17000000-0000-0000-0000-000000000001"),
+                            AppointmentReminderEnabled = true,
+                            ReminderLeadMinutes = 120,
+                            RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 },
+                            UpdatedAtUtc = new DateTime(2026, 10, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.PlatformNotificationSettingsAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("NewEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("NewReminderLeadMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<long>("NewVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("PreviousEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PreviousReminderLeadMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<long>("PreviousVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NewVersion")
+                        .IsUnique();
+
+                    b.ToTable("PlatformNotificationSettingsAudits", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.UserNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("NotificationDeliveryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SafePreviewCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("TargetResourceKey")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TargetResourceType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("TemplateCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("TemplateVersion")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationDeliveryId", "ApplicationUserId")
+                        .IsUnique();
+
+                    b.HasIndex("ApplicationUserId", "CreatedAtUtc", "Id")
+                        .IsDescending(false, true, true);
+
+                    b.HasIndex("ApplicationUserId", "ReadAtUtc", "CreatedAtUtc");
+
+                    b.ToTable("UserNotifications", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8678,6 +9175,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AppointmentRevisionHistoryId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("BookedOnBehalfRelationshipSnapshot")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -8819,6 +9319,10 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppointmentRevisionHistoryId")
+                        .IsUnique()
+                        .HasFilter("[AppointmentRevisionHistoryId] IS NOT NULL");
 
                     b.HasIndex("CancelledByApplicationUserId");
 
@@ -9686,12 +10190,18 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("LastAttemptOnUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("LastError")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("NextAttemptOnUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("NotificationDeliveryId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ProcessedOnUtc")
                         .HasColumnType("datetime2");
@@ -9729,6 +10239,10 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasIndex("IdempotencyKey")
                         .IsUnique()
                         .HasDatabaseName("UX_EmailOutboxMessages_IdempotencyKey");
+
+                    b.HasIndex("NotificationDeliveryId")
+                        .IsUnique()
+                        .HasFilter("[NotificationDeliveryId] IS NOT NULL");
 
                     b.HasIndex("Status", "NextAttemptOnUtc")
                         .HasDatabaseName("IX_EmailOutboxMessages_Status_NextAttemptOnUtc");
@@ -11189,6 +11703,69 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationDelivery", b =>
+                {
+                    b.HasOne("Wasla.Domain.Notifications.NotificationEvent", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationEventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Notifications.NotificationIntent", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationIntentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationIntent", b =>
+                {
+                    b.HasOne("Wasla.Domain.Notifications.NotificationEvent", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationEventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationPreference", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.NotificationVerifiedContact", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Patients.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Notifications.UserNotification", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Notifications.NotificationDelivery", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationDeliveryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.OperatingFinance.OperatingCostAllocationSnapshot", b =>
                 {
                     b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
@@ -12581,6 +13158,14 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasOne("Wasla.Domain.Archives.TicketRegistry", null)
                         .WithMany()
                         .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Email.EmailOutboxMessage", b =>
+                {
+                    b.HasOne("Wasla.Domain.Notifications.NotificationDelivery", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationDeliveryId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 

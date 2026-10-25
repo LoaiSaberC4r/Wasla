@@ -684,7 +684,8 @@ internal sealed partial class ReservationApplicationService(
     IReservationProjectionInvalidationOutbox projectionOutbox,
     IReservationNotificationRecipientResolver recipientResolver,
     IReservationReferenceGenerator referenceGenerator,
-    IArchiveLocationResolver archive, IReportingAccessGuard archiveGuard, PatientIdentityReuseGuard identityReuse)
+    IArchiveLocationResolver archive, IReportingAccessGuard archiveGuard, PatientIdentityReuseGuard identityReuse,
+    Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions> notificationOptions)
 {
     public async Task<Result<IReadOnlyList<BookablePatientResponse>>> ListBookablePatientsAsync(
         CancellationToken cancellationToken)
@@ -2638,6 +2639,7 @@ internal sealed partial class ReservationApplicationService(
         string eventName,
         CancellationToken cancellationToken)
     {
+        if (notificationOptions.Value.Enabled && notificationOptions.Value.OwnReservationEmails) return;
         var localTime = TimeOnly.FromDateTime(reservation.ScheduledLocalDateTime);
         var subject = eventName switch
         {

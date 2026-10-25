@@ -41,7 +41,8 @@ internal sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> op
 
 internal sealed class PermissionAuthorizationHandler(
     ICurrentUser currentUser,
-    IWaslaDataStore dataStore)
+    IWaslaDataStore dataStore,
+    Wasla.Application.Features.Notifications.INotificationAuthorizationAudit notificationAudit)
     : AuthorizationHandler<PermissionRequirement>
 {
     protected override async Task HandleRequirementAsync(
@@ -56,10 +57,17 @@ internal sealed class PermissionAuthorizationHandler(
         var snapshot = await dataStore.GetAccessSnapshotAsync(userId, CancellationToken.None);
         if (snapshot is null || !snapshot.User.IsActive || snapshot.User.IsFirstLogin)
         {
+            if (requirement.Permission == PermissionNames.NotificationsDeliveriesRetry) await notificationAudit.RetryDeniedAsync(userId, CancellationToken.None);
             return;
         }
 
         IEnumerable<string> effective = snapshot.Permissions;
+        if (requirement.Permission == PermissionNames.NotificationsDeliveriesRetry &&
+            (snapshot.User.UserType != UserType.SuperAdmin || snapshot.SuperAdminId is null))
+        {
+            await notificationAudit.RetryDeniedAsync(userId, CancellationToken.None);
+            return;
+        }
         if (snapshot.User.UserType == UserType.Doctor &&
             snapshot.DoctorStatus == DoctorApprovalStatus.Pending)
         {
@@ -83,6 +91,8 @@ internal sealed class PermissionAuthorizationHandler(
         {
             context.Succeed(requirement);
         }
+        else if (requirement.Permission == PermissionNames.NotificationsDeliveriesRetry)
+            await notificationAudit.RetryDeniedAsync(userId, CancellationToken.None);
     }
 }
 

@@ -152,6 +152,8 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
     }
 
     public string ReservationReference { get; private set; } = string.Empty;
+    // Exact immutable Created/Rescheduled history identity; nullable for untouched pre-Phase-17 rows.
+    public Guid? AppointmentRevisionHistoryId { get; private set; }
     public Guid DoctorId { get; private set; }
     public Guid DoctorPracticeId { get; private set; }
     public Guid PatientId { get; private set; }
@@ -469,8 +471,10 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
         DateTime? newScheduledStartUtc = null,
         int? newSlotDurationMinutes = null,
         bool? patientConsentConfirmed = null)
-        => _history.Add(ReservationHistory.Create(
-            Guid.NewGuid(),
+    {
+        var historyId = Guid.NewGuid();
+        _history.Add(ReservationHistory.Create(
+            historyId,
             Id,
             eventType,
             fromStatus,
@@ -489,6 +493,9 @@ public sealed class Reservation : AggregateRoot<Guid>, IAuditableEntity
             newScheduledStartUtc,
             newSlotDurationMinutes,
             patientConsentConfirmed));
+        if (eventType is ReservationHistoryEventType.Created or ReservationHistoryEventType.Rescheduled)
+            AppointmentRevisionHistoryId = historyId;
+    }
 
     private static ReservationActionInitiator ToInitiator(ReservationBookingSource source)
         => source switch

@@ -16,3 +16,7 @@ logs/
 
 # Local reference datasets / external licensed terminology
 _local-data/
+# Local Phase 17 build/test console logs; curated evidence is committed under docs/phase17.
+artifacts/phase17-*.log
+artifacts/phase17-supplement/
+artifacts/phase17-final-checks/
