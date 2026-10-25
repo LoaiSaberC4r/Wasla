@@ -411,7 +411,8 @@ internal sealed class DoctorLifecycleService(
     ICurrentUser currentUser,
     IDateTimeProvider clock,
     IReservationNotificationRecipientResolver recipientResolver,
-    IReservationProjectionInvalidationOutbox projectionOutbox)
+    IReservationProjectionInvalidationOutbox projectionOutbox,
+    Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions> notificationOptions)
 {
     public async Task<Result<DoctorLifecycleResponse>> ExecuteAsync(
         Guid doctorId,
@@ -517,7 +518,7 @@ internal sealed class DoctorLifecycleService(
                 cancelledReservationCount++;
                 var recipients = reservationRecipients.GetValueOrDefault(reservation.Id) ?? [];
 
-                foreach (var recipient in recipients)
+                foreach (var recipient in notificationOptions.Value.Enabled && notificationOptions.Value.OwnReservationEmails ? [] : recipients)
                 {
                     var reservationHistoryId = reservation.History.Last().Id;
                     var reference = System.Net.WebUtility.HtmlEncode(reservation.ReservationReference);

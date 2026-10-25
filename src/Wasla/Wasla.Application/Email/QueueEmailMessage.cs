@@ -5,4 +5,5 @@ public sealed record QueueEmailMessage(
     string RecipientEmail,
     string Subject,
     string HtmlBody,
-    string? TextBody = null);
+    string? TextBody = null,
+    Guid? NotificationDeliveryId = null);

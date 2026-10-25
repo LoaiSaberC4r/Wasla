@@ -13,7 +13,8 @@ public sealed class EmailOutboxMessage
         string subject,
         string htmlBody,
         string? textBody,
-        DateTime createdOnUtc)
+        DateTime createdOnUtc,
+        Guid? notificationDeliveryId = null)
     {
         Id = id;
         IdempotencyKey = idempotencyKey;
@@ -23,9 +24,11 @@ public sealed class EmailOutboxMessage
         TextBody = textBody;
         CreatedOnUtc = createdOnUtc;
         Status = EmailOutboxStatus.Pending;
+        NotificationDeliveryId = notificationDeliveryId;
     }
 
     public Guid Id { get; private set; }
+    public Guid? NotificationDeliveryId { get; private set; }
     public string IdempotencyKey { get; private set; } = string.Empty;
     public string RecipientEmail { get; private set; } = string.Empty;
     public string Subject { get; private set; } = string.Empty;
@@ -34,6 +37,7 @@ public sealed class EmailOutboxMessage
     public DateTime CreatedOnUtc { get; private set; }
     public DateTime? ProcessedOnUtc { get; private set; }
     public int AttemptCount { get; private set; }
+    public DateTime? LastAttemptOnUtc { get; private set; }
     public DateTime? NextAttemptOnUtc { get; private set; }
     public string? LastError { get; private set; }
     public EmailOutboxStatus Status { get; private set; }

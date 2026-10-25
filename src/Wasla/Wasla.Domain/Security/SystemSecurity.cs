@@ -22,6 +22,18 @@ public static class SystemRoleIds
 
 public static class PermissionNames
 {
+    public const string NotificationsViewOwn = "Notifications.ViewOwn";
+    public const string NotificationsMarkReadOwn = "Notifications.MarkReadOwn";
+    public const string NotificationsPreferencesViewOwn = "Notifications.PreferencesViewOwn";
+    public const string NotificationsPreferencesManageOwn = "Notifications.PreferencesManageOwn";
+    public const string NotificationsSettingsView = "Notifications.SettingsView";
+    public const string NotificationsSettingsManage = "Notifications.SettingsManage";
+    public const string NotificationsDeliveriesView = "Notifications.DeliveriesView";
+    public const string NotificationsDeliveriesRetry = "Notifications.DeliveriesRetry";
+    public static readonly IReadOnlyList<string> NotificationOwnDefaults = [NotificationsViewOwn, NotificationsMarkReadOwn,
+        NotificationsPreferencesViewOwn, NotificationsPreferencesManageOwn];
+    public static readonly IReadOnlyList<string> NotificationAdminDefaults = [NotificationsSettingsView, NotificationsSettingsManage,
+        NotificationsDeliveriesView, NotificationsDeliveriesRetry];
     public const string PatientsRegisterFull = "Patients.RegisterFull";
     public const string PatientsRegistrationMatch = "Patients.RegistrationMatch";
     public const string PatientClaimsViewAll = "PatientClaims.ViewAll";
@@ -576,7 +588,8 @@ public static class PermissionNames
         PatientClaimsRequestModification,
         PatientDuplicatesView,
         PatientDuplicatesResolve,
-
+        .. NotificationOwnDefaults,
+        .. NotificationAdminDefaults,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

@@ -74,6 +74,16 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddScoped<IEmailOutbox, EmailOutbox>();
+        services.AddOptions<Wasla.Application.Features.Notifications.NotificationOptions>().Bind(configuration.GetSection("Notifications"))
+            .Validate(o => o.PollingIntervalSeconds is >= 1 and <= 3600 && o.BatchSize is >= 1 and <= 100 &&
+                o.ClaimLeaseSeconds is >= 120 and <= 3600 && o.MaxAttempts is >= 1 and <= 20, "Invalid notification worker limits.").ValidateOnStart();
+        services.AddOptions<Wasla.Application.Features.Notifications.NotificationPrivacyOptions>().Bind(configuration.GetSection("NotificationPrivacy"));
+        services.AddScoped<Notifications.NotificationEligibility>();
+        services.AddScoped<Notifications.NotificationEmailGuard>();
+        services.AddScoped<Notifications.NotificationDispatchProcessor>();
+        services.AddScoped<Wasla.Application.Features.Notifications.INotificationService, Notifications.NotificationService>();
+        services.AddScoped<Wasla.Application.Features.Notifications.INotificationAuthorizationAudit, Notifications.NotificationAuthorizationAudit>();
+        services.Insert(0, ServiceDescriptor.Singleton<IExceptionToErrorMapper, Notifications.NotificationPersistenceErrorMapper>());
         services.AddScoped<IWaslaDataStore, WaslaDataStore>();
         services.AddScoped<IPatientIdentityStore, PatientIdentityStore>();
         services.AddScoped<PatientIdentityRetention>();
@@ -171,6 +181,7 @@ public static class DependencyInjection
         services.AddHostedService<DatabaseInitializationHostedService>();
         services.AddHostedService<PublicDiscoveryProjectionMaintenanceHostedService>();
         services.AddHostedService<EmailOutboxBackgroundService>();
+        services.AddHostedService<Notifications.NotificationDispatchBackgroundService>();
         services.AddHostedService<ReservationExpirationBackgroundService>();
         services.AddHostedService<ReservationProjectionInvalidationBackgroundService>();
         services.AddHostedService<TicketOperationalDayBackgroundService>();

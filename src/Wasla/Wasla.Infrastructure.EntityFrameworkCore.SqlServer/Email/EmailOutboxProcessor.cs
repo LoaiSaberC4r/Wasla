@@ -14,7 +14,8 @@ public sealed partial class EmailOutboxProcessor(
     IEmailSender emailSender,
     IDateTimeProvider clock,
     IOptions<EmailOutboxOptions> options,
-    ILogger<EmailOutboxProcessor> logger)
+    ILogger<EmailOutboxProcessor> logger,
+    Notifications.NotificationEmailGuard? notificationGuard = null)
 {
     private readonly EmailOutboxOptions _options = options.Value;
 
@@ -56,6 +57,7 @@ public sealed partial class EmailOutboxProcessor(
                 setters => setters
                     .SetProperty(message => message.Status, EmailOutboxStatus.Processing)
                     .SetProperty(message => message.AttemptCount, message => message.AttemptCount + 1)
+                    .SetProperty(message => message.LastAttemptOnUtc, claimedOnUtc)
                     .SetProperty(message => message.NextAttemptOnUtc, leaseUntilUtc)
                     .SetProperty(message => message.LastError, (string?)null)
                     .SetProperty(message => message.ProcessingToken, processingToken),
@@ -85,6 +87,27 @@ public sealed partial class EmailOutboxProcessor(
     {
         try
         {
+            await using var admission = message.NotificationDeliveryId is { } deliveryId && notificationGuard is not null
+                ? await notificationGuard.AcquireAsync(deliveryId, cancellationToken) : null;
+            if (message.NotificationDeliveryId is { } correlated)
+            {
+                // A session application lock serializes SMTP admission with Reservation commits;
+                // no SQL transaction is held across network transport.
+                var denial = notificationGuard is null ? "Delivery.GuardUnavailable" :
+                    await notificationGuard.DenialAsync(correlated, message.RecipientEmail, cancellationToken);
+                var ownsClaim = await dbContext.EmailOutboxMessages.AsNoTracking().AnyAsync(m => m.Id == message.Id &&
+                    m.Status == EmailOutboxStatus.Processing && m.ProcessingToken == processingToken && m.NextAttemptOnUtc > clock.UtcNow, cancellationToken);
+                if (!ownsClaim) return;
+                if (denial is not null)
+                {
+                    await dbContext.EmailOutboxMessages.Where(m => m.Id == message.Id && m.Status == EmailOutboxStatus.Processing && m.ProcessingToken == processingToken)
+                        .ExecuteUpdateAsync(s => s.SetProperty(m => m.Status, EmailOutboxStatus.Suppressed)
+                            .SetProperty(m => m.ProcessedOnUtc, clock.UtcNow).SetProperty(m => m.ProcessingToken, (Guid?)null)
+                            .SetProperty(m => m.NextAttemptOnUtc, (DateTime?)null).SetProperty(m => m.LastError, denial), cancellationToken);
+                    if (notificationGuard is not null) await notificationGuard.SuppressAsync(correlated, cancellationToken);
+                    return;
+                }
+            }
             await emailSender.SendAsync(
                 new EmailMessage
                 {
@@ -96,6 +119,8 @@ public sealed partial class EmailOutboxProcessor(
                 cancellationToken);
 
             var sentOnUtc = RequireUtc(clock.UtcNow);
+            await using var completionTransaction = message.NotificationDeliveryId.HasValue
+                ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
             await dbContext.EmailOutboxMessages
                 .Where(item =>
                     item.Id == message.Id &&
@@ -110,6 +135,11 @@ public sealed partial class EmailOutboxProcessor(
                         .SetProperty(item => item.ProcessingToken, (Guid?)null),
                     cancellationToken);
 
+            if (message.NotificationDeliveryId is { } sentDelivery && notificationGuard is not null)
+                await notificationGuard.RecordRetryOutcomeAsync(sentDelivery, true, sentOnUtc, cancellationToken);
+            if (completionTransaction is not null) await completionTransaction.CommitAsync(cancellationToken);
+            if (message.NotificationDeliveryId is { } delivered && notificationGuard is not null)
+                await notificationGuard.RecordTransportAsync(delivered, true, cancellationToken);
             MessageSent(logger, message.Id);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -137,6 +167,9 @@ public sealed partial class EmailOutboxProcessor(
             ? RequireUtc(clock.UtcNow).Add(CalculateRetryDelay(message.AttemptCount))
             : (DateTime?)null;
 
+        await using var failureTransaction = message.NotificationDeliveryId.HasValue
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+
         await dbContext.EmailOutboxMessages
             .Where(item =>
                 item.Id == message.Id &&
@@ -150,6 +183,9 @@ public sealed partial class EmailOutboxProcessor(
                     .SetProperty(item => item.ProcessingToken, (Guid?)null),
                 cancellationToken);
 
+        if (status == EmailOutboxStatus.Failed && message.NotificationDeliveryId is { } failedDelivery && notificationGuard is not null)
+            await notificationGuard.RecordRetryOutcomeAsync(failedDelivery, false, RequireUtc(clock.UtcNow), cancellationToken);
+        if (failureTransaction is not null) await failureTransaction.CommitAsync(cancellationToken);
         MessageFailed(logger, message.Id, message.AttemptCount, status);
     }
 

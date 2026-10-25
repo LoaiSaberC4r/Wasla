@@ -22,7 +22,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> options,
     BuildingBlock.Application.Time.IDateTimeProvider? reportingClock = null,
-    BuildingBlock.Application.Abstraction.Security.ICurrentUser? governanceActor = null)
+    BuildingBlock.Application.Abstraction.Security.ICurrentUser? governanceActor = null,
+    Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions>? notificationOptions = null,
+    Microsoft.Extensions.Logging.ILogger<WaslaDbContext>? notificationLogger = null)
     : DbContext(options)
 {
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
@@ -68,7 +70,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     public DbSet<ReservationIdempotencyRecord> ReservationIdempotencyRecords => Set<ReservationIdempotencyRecord>();
     public DbSet<ReservationProjectionInvalidation> ReservationProjectionInvalidations
         => Set<ReservationProjectionInvalidation>();
-        public DbSet<LabTestCatalog> LabTestCatalogs => Set<LabTestCatalog>();
+    public DbSet<LabTestCatalog> LabTestCatalogs => Set<LabTestCatalog>();
     public DbSet<LabTestCatalogHistory> LabTestCatalogHistories => Set<LabTestCatalogHistory>();
     public DbSet<LabCatalogRequest> LabCatalogRequests => Set<LabCatalogRequest>();
     public DbSet<LabCatalogRequestHistory> LabCatalogRequestHistories => Set<LabCatalogRequestHistory>();
@@ -158,6 +160,10 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        await using var notificationTransaction = HasNotificationSourceChanges && Database.CurrentTransaction is null
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        await CaptureNotificationsAsync(cancellationToken);
+        await CaptureVerifiedNotificationContactsAsync(cancellationToken);
         var hasNewArchiveIdentities = HasNewArchiveIdentities;
         await using var identityTransaction = hasNewArchiveIdentities && Database.CurrentTransaction is null
             ? await Database.BeginTransactionAsync(cancellationToken) : null;
@@ -225,6 +231,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         if (diagnosticTransaction is not null) await diagnosticTransaction.CommitAsync(cancellationToken);
         if (reportingTransaction is not null) await reportingTransaction.CommitAsync(cancellationToken);
         if (identityTransaction is not null) await identityTransaction.CommitAsync(cancellationToken);
+        if (notificationTransaction is not null) await notificationTransaction.CommitAsync(cancellationToken);
         return result;
     }
 
@@ -392,11 +399,12 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyWriteConfigurations(typeof(WaslaDbContext).Assembly);
+        ConfigureNotifications(modelBuilder);
         ConfigureArchives(modelBuilder);
         var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
             value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
         foreach (var entity in modelBuilder.Model.GetEntityTypes().Where(e => e.ClrType.Namespace is
-            "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations" or "Wasla.Domain.Patients"))
+            "Wasla.Domain.Notifications" or "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations" or "Wasla.Domain.Patients"))
             foreach (var property in entity.GetProperties().Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?)))
                 if (!property.Name.Contains("Local", StringComparison.Ordinal)) property.SetValueConverter(utcConverter);
         modelBuilder.ApplySoftDeleteQueryFilter();

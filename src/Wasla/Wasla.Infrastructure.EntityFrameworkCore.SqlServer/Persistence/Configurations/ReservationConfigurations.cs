@@ -57,6 +57,7 @@ internal sealed class ReservationConfiguration : IWriteEntityConfiguration<Reser
 
         builder.HasIndex(item => item.ReservationReference).IsUnique()
             .HasDatabaseName("UX_Reservations_Reference");
+        builder.HasIndex(item => item.AppointmentRevisionHistoryId).IsUnique().HasFilter("[AppointmentRevisionHistoryId] IS NOT NULL");
         builder.HasIndex(item => new { item.DoctorPracticeId, item.ScheduledStartUtc }).IsUnique()
             .HasFilter("[Status] IN (1,5)")
             .HasDatabaseName("UX_Reservations_ConsumingPracticeSlot");

@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<FamilyRelationshipWorkflowService>();
         services.AddScoped<IReceptionPracticeAuthorizationService, ReceptionPracticeAuthorizationService>();
         services.AddScoped<ReservationApplicationService>();
+        services.AddOptions<Wasla.Application.Features.Notifications.NotificationOptions>();
         services.AddScoped<ReservationScheduleGuard>();
         services.AddScoped<TicketAccessService>();
         services.AddScoped<FollowUpWorkflow>();
