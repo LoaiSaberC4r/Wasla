@@ -22,12 +22,22 @@ public sealed class FamilyMedicalPolicyOptions
     public FamilyRelationshipDocumentType[] AllowedDocumentTypes { get; set; } = [];
     public bool RestrictionEvidenceRequired { get; set; }
     public bool RestorationEvidenceRequired { get; set; }
+    // Signed-policy references; an empty list prevents new restriction approvals.
+    public string[] RestrictionGroundsReferences { get; set; } = [];
     public int MaximumFiles { get; set; } = 5;
     public long MaximumFileBytes { get; set; } = 10 * 1024 * 1024;
     public bool IsConfigured => Approved && MasterSourceOfTruthAdopted && !string.IsNullOrWhiteSpace(PolicyVersion) &&
         !string.IsNullOrWhiteSpace(ApprovalReference) && !string.IsNullOrWhiteSpace(Jurisdiction) && !string.IsNullOrWhiteSpace(TimeZoneId) &&
-        BasisReferences.Length > 0 && AllowedDocumentTypes.Length > 0 && AllowedDocumentTypes.All(Enum.IsDefined) &&
-        MaximumFiles is > 0 and <= 20 && MaximumFileBytes is > 0 and <= 25 * 1024 * 1024;
+        PolicyVersion.Length <= 100 && BasisReferences.Length > 0 && BasisReferences.All(b => !string.IsNullOrWhiteSpace(b) && b.Length <= 500) &&
+        AllowedDocumentTypes.Length > 0 && AllowedDocumentTypes.All(Enum.IsDefined) &&
+        MaximumFiles is > 0 and <= 20 && MaximumFileBytes is > 0 and <= 25 * 1024 * 1024 && ValidTimeZone();
+    private bool ValidTimeZone()
+    {
+        if (string.IsNullOrWhiteSpace(TimeZoneId)) return false;
+        try { _ = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId); return true; }
+        catch (TimeZoneNotFoundException) { return false; }
+        catch (InvalidTimeZoneException) { return false; }
+    }
 }
 public sealed record FamilyMedicalAccessStatusResponse(string Status, bool CanView, bool CanRequestRestriction,
     bool CanRequestRestoration, Guid? ActiveOwnRequestId, FamilyMedicalRequestType? ActiveOwnRequestType, string? UnavailableReasonCode);
@@ -57,7 +67,8 @@ public sealed record FamilyMedicalVerificationReference(Guid FamilyMemberId, Gui
 public sealed record FamilyMedicalEligibilityResponse(Guid ReviewId, Guid FamilyId, Guid AdultPatientId, Guid ChildPatientId,
     FamilyMedicalEligibilityStatus Status, string? PolicyVersion, string? BasisReference, string RowVersion,
     FamilyMedicalVerificationReference AdultVerification, FamilyMedicalVerificationReference ChildVerification,
-    bool CanApprove, bool CanReject, bool CanRevoke, string? ReviewReason, IReadOnlyList<FamilyMedicalAdminHistoryResponse> History);
+    bool CanApprove, bool CanReject, bool CanRevoke, string? ReviewReason, IReadOnlyList<FamilyMedicalAdminHistoryResponse> History,
+    Guid? AuthorityRelationshipRequestId = null);
 public sealed record FamilyMedicalPage<T>(IReadOnlyList<T> Items, int PageNumber, int PageSize, int TotalCount);
 
 public interface IFamilyMedicalAccessPolicy
@@ -70,7 +81,7 @@ public interface IFamilyMedicalAccessPolicy
 public sealed record FamilyMedicalCommand(string Operation, Guid? RequestId = null, FamilyMedicalRequestType? RequestType = null,
     Guid? ChildPatientId = null, Guid? AffectedAdultPatientId = null, string? Reason = null, string? RowVersion = null,
     IReadOnlyList<FamilyEvidenceUpload>? Evidence = null, string? IdempotencyKey = null, string? PolicyVersion = null,
-    string? BasisReference = null) : ICommand<object>, ITransactionalCommand<WaslaWritePersistence>;
+    string? BasisReference = null, Guid? AuthorityRelationshipRequestId = null) : ICommand<object>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record FamilyMedicalQuery(string Operation, Guid? Id = null, FamilyMedicalRequestType? RequestType = null,
     int? Status = null, Guid? FamilyId = null, string? Search = null, int PageNumber = 1, int PageSize = 20) : IQuery<object>;
 public sealed record FamilyMedicalEvidenceQuery(Guid RequestId, Guid DocumentId, bool Admin) : IQuery<PrivateMedia>;
@@ -100,6 +111,7 @@ internal sealed class FamilyMedicalCommandValidator : AbstractValidator<FamilyMe
         RuleFor(x => x.Reason).MaximumLength(2000);
         RuleFor(x => x.PolicyVersion).NotEmpty().MaximumLength(100).When(x => x.Operation == "eligibility-approve");
         RuleFor(x => x.BasisReference).NotEmpty().MaximumLength(500).When(x => x.Operation == "eligibility-approve");
+        RuleFor(x => x.AuthorityRelationshipRequestId).NotEmpty().When(x => x.Operation == "eligibility-approve");
         RuleFor(x => x.IdempotencyKey).NotEmpty().MaximumLength(200).When(x => x.Operation is "create" or "approve");
         RuleFor(x => x.IdempotencyKey).MaximumLength(200);
     }

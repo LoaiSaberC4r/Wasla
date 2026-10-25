@@ -7,7 +7,9 @@ namespace Wasla.Domain.Families;
 public enum FamilyRelationshipRequestType
 {
     CreateFamily = 1,
-    AddFamilyMember = 2
+    AddFamilyMember = 2,
+    VerifyParentChild = 3,
+    VerifyGuardianChild = 4
 }
 
 public enum FamilyRelationshipRequestStatus
@@ -101,6 +103,10 @@ public sealed class FamilyRelationshipRequest : AggregateRoot<Guid>, IAuditableE
         {
             FamilyRelationshipRequestType.CreateFamily => familyId is null,
             FamilyRelationshipRequestType.AddFamilyMember => familyId is not null && familyId != Guid.Empty,
+            FamilyRelationshipRequestType.VerifyParentChild => familyId is not null && familyId != Guid.Empty &&
+                requesterClaimedRole is FamilyMemberRole.Father or FamilyMemberRole.Mother && targetClaimedRole == FamilyMemberRole.Child,
+            FamilyRelationshipRequestType.VerifyGuardianChild => familyId is not null && familyId != Guid.Empty &&
+                requesterClaimedRole is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian && targetClaimedRole == FamilyMemberRole.Child,
             _ => false
         };
         if (id == Guid.Empty || requesterPatientId == Guid.Empty || targetPatientId == Guid.Empty ||

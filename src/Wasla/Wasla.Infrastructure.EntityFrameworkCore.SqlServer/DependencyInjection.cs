@@ -144,6 +144,8 @@ public static class DependencyInjection
         services.AddScoped<FamilyMedicalAccessPolicy>();
         services.AddScoped<IFamilyMedicalAccessPolicy>(p => p.GetRequiredService<FamilyMedicalAccessPolicy>());
         services.AddScoped<IFamilyMedicalWorkflow, FamilyMedicalWorkflow>();
+        services.AddScoped<IFamilyRelationshipMedicalVerification, FamilyRelationshipMedicalVerification>();
+        services.AddScoped<IFamilyProofReconciler, FamilyProofReconciler>();
         services.AddScoped<IFamilyMedicalMediaCompensation, FamilyMedicalMediaCompensation>();
         services.AddOptions<MedicalRecordOptions>().Bind(configuration.GetSection("MedicalRecord"));
         services.AddScoped<ICurrentTreatmentReader, CurrentTreatmentReader>();

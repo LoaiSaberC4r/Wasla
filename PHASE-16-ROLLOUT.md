@@ -1,5 +1,10 @@
 # Phase 16 rollout and release gates
 
+Updated 2026-10-24 for the [final approved business addendum](SOURCE-OF-TRUTH-PHASE-16-FINAL-BUSINESS-ADDENDUM.md).
+The former all-adult eligibility interpretation is superseded. Business approval
+does not supply signed legal policy, Master adoption or deployment authorization.
+See [the final gap API/migration handoff](PHASE-16-FINAL-GAP-API-DIFF.md).
+
 Production release is **not approved**. The proposed addendum does not amend the
 master. Cross-doctor consent, clinical safety alerts, patient identity claim and
 deduplication closure, audit retention/disclosure, and guardian privacy require
@@ -49,12 +54,15 @@ be valid. Test-only policy values in integration fixtures are not release approv
 Every record read and clinical attachment download rechecks the active account,
 current database permission and verified patient link; verified Father, Mother,
 Guardian or LegalGuardian and Child memberships in the same active Family;
-under-16 age in the configured policy timezone; an Approved eligibility tied to
-those member IDs, current policy version and permitted basis; and absence of an
-active restriction. Eligibility approval requires current approved relationship
-proof of allowed types. Membership alone never authorizes records. At local
+under-16 age in the configured policy timezone; exact approved adult-child proof;
+and absence of an active restriction. Father/Mother use active persisted parent
+verification and require no separate medical eligibility. Guardian/LegalGuardian
+additionally require Approved eligibility tied to those member IDs, current
+policy version, permitted basis and exact authorityRelationshipRequestId.
+Approval requires actual current private proof of allowed types. Membership
+alone never authorizes records. At local
 midnight on the sixteenth birthday all new reads/downloads stop. Restoring a
-restriction does not approve or restore eligibility. Existing under-18 booking
+restriction does not create proof or approve/restore Guardian eligibility. Existing under-18 booking
 behavior remains independent. No Patient identity merge is performed.
 
 Production and Staging require their own signed policy configuration, deployment
@@ -78,8 +86,23 @@ Apply in order through a reviewed migration artifact:
    cases, private evidence references and immutable histories; legacy verified
    pairs receive PendingReview candidates only. No Approved backfill or merge.
 
-This closure introduces no new migration. Rehearsal uses the existing isolated
-test databases; later schema migrations in the repository retain their own rollout.
+5. `20261024174818_Phase16ExactFamilyRelationshipProof`: additive exact parent
+   verification, seven restrictive FKs, defined-role/status/distinct-patient checks,
+   rowversion and filtered active-pair uniqueness; nullable indexed Guardian
+   authority request FK. Existing requests, reviews, restrictions, evidence and
+   immutable histories are unchanged. No guessed verification backfill is run
+   by the migration. Run the authenticated maintenance `report` and reviewed
+   `apply` only against an explicitly authorized database with signed policy.
+
+Legacy parent pairs without reconstructible exact proof remain unavailable.
+Legacy Guardian approvals lacking explicit provenance require authorized review
+through the existing approval route; no automatic upgrade is applied.
+New eligibility candidates are only Guardian/LegalGuardian; old parent records
+remain historical. Reconciliation never reactivates revoked proof and reports
+unresolved candidates. Existing active restrictions stay effective regardless of
+the new restriction-ground configuration. New restriction approvals require
+`FamilyMedicalPolicy:RestrictionGroundsReferences` and current private evidence;
+the shipped list is empty. Ordinary disagreement alone cannot be approved.
 
 Back up first; rehearse against representative data; keep sharing disabled;
 deploy schema before new application instances; do not enable sharing while
@@ -89,9 +112,10 @@ availability; require clients to refresh concurrency versions after deployment.
 No production migrations or seeds were executed by this task. Startup migration
 settings were not enabled. Existing migration/seed controls remain in force.
 
-For rollback, disable sharing and revert application code while retaining the
-additive schema. Down migrations discard visibility choices, requests and read
-audits; they are destructive and are only used in disposable migration tests.
+For rollback, disable sharing and retain the additive schema/history. Do not
+return to old parental semantics while sharing is enabled. The new migration's
+Down throws rather than deleting proof. Older Down migrations discard visibility
+choices, requests and read audits; they are destructive and are only used in disposable migration tests.
 They preserve the preexisting clinical tables but are not a production recovery
 procedure. Preserve the audit/history backup before any schema removal.
 

@@ -46,7 +46,8 @@ public sealed class Phase5FinalIdentitySqlServerTests
         var first = Guid.NewGuid(); var second = Guid.NewGuid();
         await app.WithDbAsync(async db =>
         {
-            Assert.True(db.Database.IsSqlServer()); Assert.Contains("Phase5FinalPatientIdentityClosure", (await db.Database.GetAppliedMigrationsAsync()).Last());
+            Assert.True(db.Database.IsSqlServer());
+            Assert.Contains("20261018140120_Phase5FinalPatientIdentityClosure", await db.Database.GetAppliedMigrationsAsync());
             db.Patients.AddRange(Patient.Create(first, "مريض تجريبي أول", null, new(1990, 1, 1), Gender.Male, "01000000000", "native@example.test", null, null, null, app.Today).Value,
                 Patient.Create(second, "مريض تجريبي ثان", null, new(1990, 1, 1), Gender.Male, "01000000000", null, null, null, null, app.Today).Value);
             await db.SaveChangesAsync();

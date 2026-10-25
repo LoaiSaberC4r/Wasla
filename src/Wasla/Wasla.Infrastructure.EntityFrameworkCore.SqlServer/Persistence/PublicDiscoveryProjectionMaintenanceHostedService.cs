@@ -31,15 +31,16 @@ internal sealed partial class PublicDiscoveryProjectionMaintenanceHostedService(
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (maintenanceLoop is null || stoppingSource is null)
+        var source = Interlocked.Exchange(ref stoppingSource, null);
+        if (source is null)
         {
             return;
         }
 
-        await stoppingSource.CancelAsync();
         try
         {
-            await maintenanceLoop.WaitAsync(cancellationToken);
+            await source.CancelAsync();
+            if (maintenanceLoop is { } loop) await loop.WaitAsync(cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -47,7 +48,7 @@ internal sealed partial class PublicDiscoveryProjectionMaintenanceHostedService(
         }
         finally
         {
-            stoppingSource.Dispose();
+            source.Dispose();
         }
     }
 

@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Wasla.Application.Features.PublicDiscovery;
 using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
@@ -299,6 +300,8 @@ public sealed class PublicDiscoveryApiTests
                 }));
             builder.ConfigureServices(services =>
             {
+                // This fixture owns one SQLite connection and refreshes projections explicitly.
+                services.RemoveAll<IHostedService>();
                 services.RemoveAll<DbContextOptions<WaslaDbContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<WaslaDbContext>>();
                 services.RemoveAll<WaslaDbContext>();

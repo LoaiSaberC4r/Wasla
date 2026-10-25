@@ -121,7 +121,7 @@ internal sealed class SubmitFamilyRelationshipRequestCommandValidator : Abstract
         RuleFor(x => x.TargetPatientId).NotEmpty();
         RuleFor(x => x.RequesterClaimedRole).IsInEnum().NotEqual(FamilyMemberRole.Child);
         RuleFor(x => x.TargetClaimedRole).IsInEnum();
-        RuleFor(x => x.FamilyId).NotEmpty().When(x => x.RequestType == FamilyRelationshipRequestType.AddFamilyMember);
+        RuleFor(x => x.FamilyId).NotEmpty().When(x => x.RequestType != FamilyRelationshipRequestType.CreateFamily);
         RuleFor(x => x.FamilyId).Null().When(x => x.RequestType == FamilyRelationshipRequestType.CreateFamily);
         RuleFor(x => x.Evidence).NotNull().Must(files => files.Count > 0).WithMessage(ErrorMessage.FamilyRelationshipRequestEvidenceRequired);
         RuleForEach(x => x.Evidence).ChildRules(item => item.RuleFor(file => file.DocumentType).IsInEnum());
@@ -137,7 +137,7 @@ internal sealed class SubmitAssistedFamilyRelationshipRequestCommandValidator : 
         RuleFor(x => x.TargetPatientId).NotEmpty();
         RuleFor(x => x.RequesterClaimedRole).IsInEnum().NotEqual(FamilyMemberRole.Child);
         RuleFor(x => x.TargetClaimedRole).IsInEnum();
-        RuleFor(x => x.FamilyId).NotEmpty().When(x => x.RequestType == FamilyRelationshipRequestType.AddFamilyMember);
+        RuleFor(x => x.FamilyId).NotEmpty().When(x => x.RequestType != FamilyRelationshipRequestType.CreateFamily);
         RuleFor(x => x.FamilyId).Null().When(x => x.RequestType == FamilyRelationshipRequestType.CreateFamily);
         RuleFor(x => x.Evidence).NotNull().Must(files => files.Count > 0).WithMessage(ErrorMessage.FamilyRelationshipRequestEvidenceRequired);
         RuleForEach(x => x.Evidence).ChildRules(item => item.RuleFor(file => file.DocumentType).IsInEnum());
@@ -364,7 +364,8 @@ internal sealed class FamilyRelationshipWorkflowService(
     IMediaService mediaService,
     IDateTimeProvider clock,
     IEmailNotificationFactory emailFactory,
-    IEmailOutbox emailOutbox)
+    IEmailOutbox emailOutbox,
+    IFamilyRelationshipMedicalVerification medicalVerification)
 {
     public async Task<Result<FamilyRelationshipRequestResponse>> SubmitAsync(
         FamilyRelationshipRequestType type, Guid? familyId, Guid requesterPatientId, Guid targetPatientId,
@@ -379,7 +380,15 @@ internal sealed class FamilyRelationshipWorkflowService(
 
         var requesterMembership = await dataStore.FindActiveFamilyMemberByPatientIdAsync(requesterPatientId, cancellationToken);
         var targetMembership = await dataStore.FindActiveFamilyMemberByPatientIdAsync(targetPatientId, cancellationToken);
-        if (targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
+        var verification = IsVerification(type);
+        if (verification)
+        {
+            if (!ValidVerification(type, familyId, requesterRole, targetRole, requesterMembership, targetMembership) ||
+                (await dataStore.FindFamilyByIdAsync(familyId!.Value, cancellationToken))?.Status != FamilyStatus.Active)
+                return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.ManagementForbidden);
+            if (!medicalVerification.AcceptsEvidence(evidence)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyMedicalErrors.PolicyUnavailable);
+        }
+        else if (targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
         if (type == FamilyRelationshipRequestType.CreateFamily && requesterMembership is not null)
             return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
         if (type == FamilyRelationshipRequestType.AddFamilyMember)
@@ -430,6 +439,14 @@ internal sealed class FamilyRelationshipWorkflowService(
             return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.AccessForbidden);
         var supplied = VerifyRowVersion(record.Request, encodedRowVersion);
         if (supplied.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(supplied.Errors);
+        if (IsVerification(record.Request.RequestType))
+        {
+            var a = await dataStore.FindActiveFamilyMemberByPatientIdAsync(record.Request.RequesterPatientId, cancellationToken);
+            var c = await dataStore.FindActiveFamilyMemberByPatientIdAsync(record.Request.TargetPatientId, cancellationToken);
+            var activeFamily = record.Request.FamilyId is { } verificationFamily ? await dataStore.FindFamilyByIdAsync(verificationFamily, cancellationToken) : null;
+            if (!ValidVerification(record.Request.RequestType, record.Request.FamilyId, record.Request.RequesterClaimedRole, record.Request.TargetClaimedRole, a, c) ||
+                activeFamily is not { Status: FamilyStatus.Active } || !medicalVerification.AcceptsEvidence(evidence)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyMedicalErrors.Unavailable);
+        }
         var now = clock.UtcNow;
         var transitioned = record.Request.Resubmit(actorId, now);
         if (transitioned.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(transitioned.Errors);
@@ -454,13 +471,16 @@ internal sealed class FamilyRelationshipWorkflowService(
 
     public async Task<Result<FamilyRelationshipRequestResponse>> ApproveAsync(Guid requestId, string encodedRowVersion, CancellationToken cancellationToken)
     {
-        var context = await LoadReviewAsync(requestId, encodedRowVersion, cancellationToken);
+        var context = await LoadReviewAsync(requestId, encodedRowVersion, PermissionNames.FamilyRelationshipRequestsApprove, cancellationToken);
         if (context.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(context.Errors);
         var (record, actorId, supplied) = context.Value;
         var request = record.Request;
         var now = clock.UtcNow;
+        if (!Enum.IsDefined(request.RequestType)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.RequestInvalid);
         var targetMembership = await dataStore.FindActiveFamilyMemberByPatientIdAsync(request.TargetPatientId, cancellationToken);
-        if (targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
+        var verification = IsVerification(request.RequestType);
+        if (!verification && targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
+        Family approvedFamily;
 
         if (request.RequestType == FamilyRelationshipRequestType.CreateFamily)
         {
@@ -476,6 +496,7 @@ internal sealed class FamilyRelationshipWorkflowService(
             var assigned = request.AssignCreatedFamily(family.Id);
             if (assigned.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(assigned.Errors);
             dataStore.Add(family);
+            approvedFamily = family;
         }
         else
         {
@@ -485,26 +506,41 @@ internal sealed class FamilyRelationshipWorkflowService(
                 requesterMembership.Role != request.RequesterClaimedRole)
                 return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.ManagementForbidden);
             var family = await dataStore.FindFamilyByIdAsync(familyId, cancellationToken);
-            if (family is null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.NotFound);
-            var added = family.AddMember(Guid.NewGuid(), request.TargetPatientId, request.TargetClaimedRole, now, actorId, request.Id);
-            if (added.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(added.Errors);
-            dataStore.MarkFamilyMembershipChanged(family);
+            if (family is null || family.Status != FamilyStatus.Active) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.NotFound);
+            if (verification)
+            {
+                if (!ValidVerification(request.RequestType, familyId, request.RequesterClaimedRole, request.TargetClaimedRole, requesterMembership, targetMembership))
+                    return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.ManagementForbidden);
+            }
+            else
+            {
+                var added = family.AddMember(Guid.NewGuid(), request.TargetPatientId, request.TargetClaimedRole, now, actorId, request.Id);
+                if (added.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(added.Errors);
+                dataStore.Add(added.Value); // The domain supplies its GUID; explicitly track this new member as an insert.
+                dataStore.MarkFamilyMembershipChanged(family);
+            }
+            approvedFamily = family;
         }
 
         var transition = request.Approve(actorId, now);
         if (transition.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(transition.Errors);
+        var verified = await medicalVerification.RecordAsync(request, approvedFamily, cancellationToken);
+        if (verified.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(verified.Errors);
         dataStore.SetOriginalRowVersion(request, supplied);
         dataStore.Add(new FamilyRelationshipRequestHistory(Guid.NewGuid(), request.Id, request.CurrentRevisionNumber,
             FamilyRelationshipRequestStatus.Pending, FamilyRelationshipRequestStatus.Approved,
             FamilyRelationshipRequestAction.Approved, null, actorId, now));
         await QueueNotificationAsync(record, FamilyRelationshipRequestAction.Approved, null, cancellationToken);
+        if (!await ReviewActorAllowedAsync(actorId, PermissionNames.FamilyRelationshipRequestsApprove, cancellationToken))
+            return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.AccessForbidden);
         await dataStore.SaveChangesAsync(cancellationToken);
         return Result<FamilyRelationshipRequestResponse>.Ok(FamilyWorkflowMapper.Request(request));
     }
 
     public async Task<Result<FamilyRelationshipRequestResponse>> ReviewAsync(Guid requestId, string encodedRowVersion, string message, bool modification, CancellationToken cancellationToken)
     {
-        var context = await LoadReviewAsync(requestId, encodedRowVersion, cancellationToken);
+        var permission = modification ? PermissionNames.FamilyRelationshipRequestsRequestModification : PermissionNames.FamilyRelationshipRequestsReject;
+        var context = await LoadReviewAsync(requestId, encodedRowVersion, permission, cancellationToken);
         if (context.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(context.Errors);
         var (record, actorId, supplied) = context.Value;
         var request = record.Request;
@@ -517,14 +553,18 @@ internal sealed class FamilyRelationshipWorkflowService(
         dataStore.Add(new FamilyRelationshipRequestHistory(Guid.NewGuid(), request.Id, request.CurrentRevisionNumber, oldStatus,
             request.Status, action, message.Trim(), actorId, now));
         await QueueNotificationAsync(record, action, message.Trim(), cancellationToken);
+        if (!await ReviewActorAllowedAsync(actorId, permission, cancellationToken))
+            return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.AccessForbidden);
         await dataStore.SaveChangesAsync(cancellationToken);
         return Result<FamilyRelationshipRequestResponse>.Ok(FamilyWorkflowMapper.Request(request));
     }
 
-    private async Task<Result<(FamilyRelationshipRequestRecord Record, Guid ActorId, byte[] Supplied)>> LoadReviewAsync(Guid requestId, string encodedRowVersion, CancellationToken cancellationToken)
+    private async Task<Result<(FamilyRelationshipRequestRecord Record, Guid ActorId, byte[] Supplied)>> LoadReviewAsync(Guid requestId, string encodedRowVersion, string permission, CancellationToken cancellationToken)
     {
         if (!currentUser.IsAuthenticated || currentUser.UserId is not { } actorId)
             return Result<(FamilyRelationshipRequestRecord, Guid, byte[])>.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
+        if (!await ReviewActorAllowedAsync(actorId, permission, cancellationToken))
+            return Result<(FamilyRelationshipRequestRecord, Guid, byte[])>.Fail(FamilyErrors.AccessForbidden);
         var record = await dataStore.FindFamilyRelationshipRequestAsync(requestId, cancellationToken);
         if (record is null) return Result<(FamilyRelationshipRequestRecord, Guid, byte[])>.Fail(FamilyErrors.RequestNotFound);
         var supplied = VerifyRowVersion(record.Request, encodedRowVersion);
@@ -532,6 +572,21 @@ internal sealed class FamilyRelationshipWorkflowService(
             ? Result<(FamilyRelationshipRequestRecord, Guid, byte[])>.Fail(supplied.Errors)
             : Result<(FamilyRelationshipRequestRecord, Guid, byte[])>.Ok((record, actorId, supplied.Value));
     }
+
+    private async Task<bool> ReviewActorAllowedAsync(Guid actorId, string permission, CancellationToken ct)
+    {
+        if (!currentUser.IsAuthenticated || currentUser.UserId != actorId || !currentUser.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase)) return false;
+        var access = await dataStore.GetAccessSnapshotAsync(actorId, ct);
+        return access is { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.SuperAdmin, SuperAdminId: not null } &&
+            access.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsVerification(FamilyRelationshipRequestType type) => type is FamilyRelationshipRequestType.VerifyParentChild or FamilyRelationshipRequestType.VerifyGuardianChild;
+    private static bool ValidVerification(FamilyRelationshipRequestType type, Guid? family, FamilyMemberRole adultRole,
+        FamilyMemberRole childRole, FamilyMember? adult, FamilyMember? child)
+        => family.HasValue && adult is { IsActive: true } && child is { IsActive: true } && adult.PatientId != child.PatientId &&
+            adult.FamilyId == family && child.FamilyId == family && adult.Role == adultRole && child.Role == childRole && childRole == FamilyMemberRole.Child &&
+            (type == FamilyRelationshipRequestType.VerifyParentChild ? adultRole is FamilyMemberRole.Father or FamilyMemberRole.Mother : adultRole is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian);
 
     private static Result<byte[]> VerifyRowVersion(FamilyRelationshipRequest request, string encoded)
     {
