@@ -685,7 +685,9 @@ internal sealed partial class ReservationApplicationService(
     IReservationNotificationRecipientResolver recipientResolver,
     IReservationReferenceGenerator referenceGenerator,
     IArchiveLocationResolver archive, IReportingAccessGuard archiveGuard, PatientIdentityReuseGuard identityReuse,
-    Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions> notificationOptions)
+    Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions> notificationOptions,
+    Wasla.Application.Features.DoctorPatients.DoctorOwnHistoricalReadPolicy historicalReads,
+    Wasla.Application.Features.DoctorPatients.IDoctorPatientReadService patientReads)
 {
     public async Task<Result<IReadOnlyList<BookablePatientResponse>>> ListBookablePatientsAsync(
         CancellationToken cancellationToken)
@@ -2282,6 +2284,35 @@ internal sealed partial class ReservationApplicationService(
 
         var location = await archive.ReservationAsync(reservationId, cancellationToken);
         var archived = location?.IsArchived == true;
+        if (scope == ReservationOperationScope.Doctor && !record.Practice.IsActive)
+        {
+            var historical = await historicalReads.AuthorizeOwnReadAsync(record.Practice.Id,
+                PermissionNames.DoctorPracticeReservationsViewOwn, null, cancellationToken);
+            if (historical.IsFailure) return Result<ReservationDetailsResponse>.Fail(historical.Errors);
+            // Phase 18 already permits the owner to read an archived standalone booking.
+            // This source endpoint proves its own Reservation ownership; admission remains
+            // mandatory on the new My Patients routes, never inferred from this booking.
+            if (record.Reservation.DoctorId != historical.Value.Actor.DoctorId)
+                return Result<ReservationDetailsResponse>.Fail(ReservationErrors.NotFound);
+            if (archived && !historical.Value.Actor.Has(Phase18PartTwoPermissionNames.ReservationsPractice))
+                return Result<ReservationDetailsResponse>.Fail(ReservationErrors.AccessDenied);
+            var ownDetails = await MapDetailsAsync(record, scope, includeBookingNote, cancellationToken);
+            historical = await historicalReads.AuthorizeOwnReadAsync(record.Practice.Id,
+                PermissionNames.DoctorPracticeReservationsViewOwn, null, cancellationToken);
+            if (historical.IsFailure) return Result<ReservationDetailsResponse>.Fail(historical.Errors);
+            var finalLocation = await archive.ReservationAsync(reservationId, cancellationToken);
+            if ((ownDetails.IsArchived || finalLocation?.IsArchived == true) && !historical.Value.Actor.Has(Phase18PartTwoPermissionNames.ReservationsPractice))
+                return Result<ReservationDetailsResponse>.Fail(ReservationErrors.AccessDenied);
+            if (finalLocation?.IsArchived == true) ownDetails = ownDetails with { IsArchived = true, ArchivedAtUtc = finalLocation.ArchivedAtUtc };
+            await patientReads.AuditAsync(historical.Value.Actor, "HistoricalOwnReservationRead", reservationId, cancellationToken);
+            var linkedTicket = ownDetails.LinkedTicketId is { } linked ? await archive.TicketAsync(linked, cancellationToken) : null;
+            return Result<ReservationDetailsResponse>.Ok(ownDetails with { Capabilities = ownDetails.Capabilities with {
+                CanCancel = false, CanReschedule = false, CanRestoreFromNoShow = false,
+                CancelBlockedReason = "Reservation.PracticeUnavailable", RescheduleBlockedReason = "Reservation.PracticeUnavailable",
+                RestoreBlockedReason = "Reservation.PracticeUnavailable" },
+                CanViewLinkedTicket = ownDetails.CanViewLinkedTicket && historical.Value.Actor.Has(PermissionNames.DoctorPracticeTicketsViewOwn) &&
+                    (linkedTicket?.IsArchived != true || historical.Value.Actor.Has(Phase18PartTwoPermissionNames.TicketsPractice)) });
+        }
         if (archived && scope == ReservationOperationScope.Patient && (await RequirePermissionAsync(Phase18PartTwoPermissionNames.ReservationsOwn, cancellationToken)).IsFailure)
             return Result<ReservationDetailsResponse>.Fail(ReservationErrors.AccessDenied);
         var access = await AuthorizeExistingAsync(

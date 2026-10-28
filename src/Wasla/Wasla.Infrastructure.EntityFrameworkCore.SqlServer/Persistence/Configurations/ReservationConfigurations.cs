@@ -69,6 +69,7 @@ internal sealed class ReservationConfiguration : IWriteEntityConfiguration<Reser
         builder.HasIndex(item => new { item.PatientId, item.Status, item.ScheduledStartUtc });
         builder.HasIndex(item => new { item.DoctorId, item.Status, item.ScheduledStartUtc });
         builder.HasIndex(item => new { item.DoctorId, item.ConvertedToTicketOnUtc });
+        builder.HasIndex(item => new { item.DoctorId, item.PatientId, item.ScheduledStartUtc });
         builder.HasIndex(item => new { item.Status, item.BusinessDate });
     }
 }

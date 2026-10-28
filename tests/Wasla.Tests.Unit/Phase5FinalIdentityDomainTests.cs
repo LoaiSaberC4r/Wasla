@@ -102,10 +102,11 @@ public sealed class Phase5FinalIdentityDomainTests
         var folder = new DirectoryInfo(AppContext.BaseDirectory); while (folder is not null && !File.Exists(Path.Combine(folder.FullName, "Wasla.sln"))) folder = folder.Parent;
         var old = File.ReadAllLines(Path.Combine(folder!.FullName, "tests", "Wasla.Tests.Unit", "Phase5ExistingPermissionIds.txt"));
         Assert.Equal(303, old.Length); Assert.Equal(old, PermissionNames.All.Take(old.Length));
-        // Preserve the original ten additions and their identities, then require exactly the eight Phase 17 additions.
+        // Preserve the prior additions and their identities, followed by this task's three approved permissions.
         Assert.Equal(Phase5Permissions, PermissionNames.All.Skip(old.Length).Take(10));
-        Assert.Equal(NotificationPermissions, PermissionNames.All.Skip(old.Length + 10));
-        Assert.Equal(old.Length + 10 + 8, PermissionNames.All.Count);
+        Assert.Equal(NotificationPermissions, PermissionNames.All.Skip(old.Length + 10).Take(8));
+        Assert.Equal(PermissionNames.DoctorPatientDefaults, PermissionNames.All.Skip(old.Length + 10 + 8));
+        Assert.Equal(old.Length + 10 + 8 + 3, PermissionNames.All.Count);
         var expected = old.Concat(Phase5Permissions).Concat(NotificationPermissions).ToArray();
         for (var i = 0; i < expected.Length; i++) Assert.Equal(Guid.Parse($"20000000-0000-0000-0000-{i + 1:D12}"), SystemPermissionIds.For(expected[i]));
         Assert.Equal(1, (int)PatientAccountLinkSource.SelfRegistration); Assert.Equal(2, (int)PatientAccountLinkSource.PatientClaim); Assert.Equal(3, (int)PatientAccountLinkSource.ReceptionFullRegistration);

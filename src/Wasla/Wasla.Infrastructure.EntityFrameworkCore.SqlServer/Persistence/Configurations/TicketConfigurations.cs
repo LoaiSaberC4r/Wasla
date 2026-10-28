@@ -89,6 +89,7 @@ internal sealed class TicketConfiguration : IWriteEntityConfiguration<Ticket>
             item.TicketNumber
         }).HasDatabaseName("IX_Tickets_AuthoritativeQueueOrder");
         builder.HasIndex(item => new { item.PatientId, item.Status, item.LastUpdatedOnUtc });
+        builder.HasIndex(item => new { item.DoctorId, item.PatientId, item.CheckInTimeUtc, item.Id });
     }
 }
 internal sealed class TicketHistoryConfiguration : IWriteEntityConfiguration<TicketHistory>

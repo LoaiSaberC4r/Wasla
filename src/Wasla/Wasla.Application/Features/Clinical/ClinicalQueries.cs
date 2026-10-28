@@ -5,6 +5,7 @@ using FluentValidation;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Security;
+using Wasla.Application.Features.DoctorPatients;
 
 namespace Wasla.Application.Features.Clinical;
 
@@ -34,11 +35,11 @@ internal sealed class ListMyFollowUpEligibilitiesValidator : AbstractValidator<L
 }
 
 internal sealed class ListDoctorEncountersHandler(ClinicalAccessService access, IClinicalReadService reader,
-    IWaslaDataStore store) : IQueryHandler<ListDoctorEncountersQuery, ClinicalPage<EncounterSummaryResponse>>
+    IWaslaDataStore store, IDoctorPatientReadService audit) : IQueryHandler<ListDoctorEncountersQuery, ClinicalPage<EncounterSummaryResponse>>
 {
     public async Task<Result<ClinicalPage<EncounterSummaryResponse>>> Handle(ListDoctorEncountersQuery r, CancellationToken ct)
     {
-        var actor = await access.DoctorAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
+        var actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
         if (actor.IsFailure) return Result<ClinicalPage<EncounterSummaryResponse>>.Fail(actor.Errors);
         var config = await store.FindDoctorPracticeConfigurationAsync(r.PracticeId, ct);
         var zone = TimeZoneInfo.FindSystemTimeZoneById(config!.TimeZoneId);
@@ -52,8 +53,12 @@ internal sealed class ListDoctorEncountersHandler(ClinicalAccessService access, 
                 ? new DateTimeOffset(local, zone.GetAmbiguousTimeOffsets(local).Max()).UtcDateTime
                 : TimeZoneInfo.ConvertTimeToUtc(local, zone);
         }
-        return Result<ClinicalPage<EncounterSummaryResponse>>.Ok(await reader.ListEncountersAsync(actor.Value.DoctorId,
-            r.PracticeId, r.PatientId, r.Status, Boundary(r.FromDate), Boundary(r.ToDate?.AddDays(1)), r.Search, r.PageNumber, r.PageSize, ct));
+        var page = await reader.ListEncountersAsync(actor.Value.DoctorId,
+            r.PracticeId, r.PatientId, r.Status, Boundary(r.FromDate), Boundary(r.ToDate?.AddDays(1)), r.Search, r.PageNumber, r.PageSize, ct);
+        actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
+        if (actor.IsFailure) return Result<ClinicalPage<EncounterSummaryResponse>>.Fail(actor.Errors);
+        await audit.AuditAsync(new(actor.Value.UserId, actor.Value.DoctorId, actor.Value.Permissions.ToArray()), "OwnEncounterListRead", r.PracticeId, ct);
+        return Result<ClinicalPage<EncounterSummaryResponse>>.Ok(page);
     }
 }
 internal sealed class GetDoctorEncounterHandler(ClinicalAccessService access, IClinicalReadService reader, IDateTimeProvider clock)
@@ -61,11 +66,13 @@ internal sealed class GetDoctorEncounterHandler(ClinicalAccessService access, IC
 {
     public async Task<Result<EncounterDetailsResponse>> Handle(GetDoctorEncounterQuery r, CancellationToken ct)
     {
-        var actor = await access.DoctorAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
+        var actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
         if (actor.IsFailure) return Result<EncounterDetailsResponse>.Fail(actor.Errors);
         if (!access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<EncounterDetailsResponse>.Fail(ClinicalErrors.AccessDenied);
         var details = await reader.DoctorDetailsAsync(actor.Value.DoctorId, r.PracticeId, r.Id, r.ByTicket, ct);
         if (details is null) return Result<EncounterDetailsResponse>.Fail(ClinicalErrors.NotFound);
+        var current = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, details.Patient.Id);
+        if (current.IsFailure || !access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<EncounterDetailsResponse>.Fail(ClinicalErrors.AccessDenied);
         await reader.AuditReadAsync(details.EncounterId, actor.Value.UserId, clock.UtcNow, ct);
         return Result<EncounterDetailsResponse>.Ok(ClinicalCapabilities.Apply(details, access));
     }
@@ -99,11 +106,13 @@ internal sealed class ListEncounterAmendmentsHandler(ClinicalAccessService acces
 {
     public async Task<Result<IReadOnlyList<EncounterAmendmentResponse>>> Handle(ListEncounterAmendmentsQuery r, CancellationToken ct)
     {
-        var actor = await access.DoctorAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
+        var actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
         if (actor.IsFailure) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(actor.Errors);
         if (!access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(ClinicalErrors.AccessDenied);
         var details = await reader.DoctorDetailsAsync(actor.Value.DoctorId, r.PracticeId, r.EncounterId, false, ct);
         if (details is null) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(ClinicalErrors.NotFound);
+        var current = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, details.Patient.Id);
+        if (current.IsFailure || !access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(ClinicalErrors.AccessDenied);
         await reader.AuditReadAsync(details.EncounterId, actor.Value.UserId, clock.UtcNow, ct);
         return Result<IReadOnlyList<EncounterAmendmentResponse>>.Ok(await reader.AmendmentsAsync(r.EncounterId, ct));
     }

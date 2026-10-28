@@ -91,6 +91,15 @@ internal static class ClinicalCapabilities
         var permissions = PermissionNames.All.Where(access.HasPermission).ToArray();
         var prescription = access.HasPermission(PermissionNames.PrescriptionsViewOwn) && d.Prescription is { } state
             ? PrescriptionCapabilities.For(state, new MedicationActor(access.ActorId, d.Doctor.Id, permissions), d.Status == EncounterStatus.InProgress) : null;
+        if (access.IsReadOnly)
+        {
+            prescription = prescription is null ? null : prescription with { Draft = null, CompletionBlockers = [], Capabilities = new(false, false, false, false, false, false) };
+            return d with { Prescription = prescription, Capabilities = new(false, false, false, false, false), CanChangeVisibility = false,
+                LabRequestDraft = null, RadiologyRequestDraft = null,
+                FollowUpEligibility = d.FollowUpEligibility is null ? null : d.FollowUpEligibility with { CanBook = false },
+                LabRequestsSummary = access.HasPermission(PermissionNames.LabRequestsViewOwn) ? d.LabRequestsSummary?.Where(r => r.Status != Wasla.Domain.Diagnostics.DiagnosticRequestStatus.Draft).ToArray() : null,
+                RadiologyRequestsSummary = access.HasPermission(PermissionNames.RadiologyRequestsViewOwn) ? d.RadiologyRequestsSummary?.Where(r => r.Status != Wasla.Domain.Diagnostics.DiagnosticRequestStatus.Draft).ToArray() : null };
+        }
         return d with { Prescription = prescription, Capabilities = For(d, access),
             CanChangeVisibility = d.Status == EncounterStatus.Completed && access.HasPermission(PermissionNames.MedicalEncounterVisibilityUpdateOwn),
             LabRequestDraft = access.HasPermission(PermissionNames.LabRequestsViewOwn) ? DiagnosticCapabilities.Request(d.LabRequestDraft, permissions, "Lab") : null,

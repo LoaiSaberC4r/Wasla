@@ -44,7 +44,7 @@ internal sealed class AuditExplorer(WaslaDbContext db,IReportingAccessGuard guar
     {
         var actor = scope.Actor;
         var list=new List<Source>();
-        list.Add(new("Archive",db.ArchiveAuditEvents.AsNoTracking().Where(x=>!sensitive||x.Action=="ArchivedTicketOpened"||x.Action=="RestrictedAuditSearched")
+        list.Add(new("Archive",db.ArchiveAuditEvents.AsNoTracking().Where(x=>sensitive ? x.Action=="ArchivedTicketOpened"||x.Action=="RestrictedAuditSearched"||x.EntityType=="DoctorPatients" : x.EntityType!="DoctorPatients")
             .Select(x=>new Row { Id = x.Id, Time = x.OccurredAtUtc, Practice = x.DoctorPracticeId, Actor = x.ActorId, Entity = x.EntityId, Action = x.Action, Type = x.EntityType, Outcome = x.Outcome, FailureCode = x.FailureCode, CorrelationId = x.CorrelationId, RunId = x.RunId })));
         if(!sensitive)
         {

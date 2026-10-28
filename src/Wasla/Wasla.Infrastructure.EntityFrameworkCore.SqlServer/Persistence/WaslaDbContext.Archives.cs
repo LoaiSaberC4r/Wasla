@@ -54,6 +54,7 @@ public sealed partial class WaslaDbContext
         ticket.HasKey(x => x.Id); ticket.Property(x => x.Id).ValueGeneratedNever();
         ticket.HasAlternateKey(x => new { x.DoctorPracticeId, x.Id });
         ticket.HasIndex(x => new { x.DoctorPracticeId, x.BusinessDate, x.TicketNumber }).IsUnique();
+        ticket.HasIndex(x => new { x.DoctorId, x.PatientId, x.BusinessDate });
         ticket.HasIndex(x => x.ReservationId).IsUnique().HasFilter("[ReservationId] IS NOT NULL");
         ticket.Property(x => x.RowVersion).IsRowVersion(); ticket.Property(x => x.Provenance).HasMaxLength(40);
         ticket.HasOne<ReservationRegistry>().WithMany().HasForeignKey(x => x.ReservationId).OnDelete(DeleteBehavior.Restrict);

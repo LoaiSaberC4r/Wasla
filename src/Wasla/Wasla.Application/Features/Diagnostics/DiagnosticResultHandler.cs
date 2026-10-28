@@ -53,6 +53,8 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
         return sensitive ? await idem.ExecuteAsync(actor.Value.UserId, "Phase15:" + r.Kind + "Result:" + r.Mutation, r.IdempotencyKey, payload, Run, ct,
             async original =>
             {
+                if (!patient && !await access.OwnPracticeAsync(actor.Value.DoctorId!.Value, original.Request.Practice.Id, ct))
+                    return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied());
                 var state = await reader.RequestAsync(r.Kind, original.Request.RequestId!.Value, actor.Value.OwnerId, patient, actor.Value.Permissions, ct);
                 if (state is null) return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.NotFound(r.Kind + "Request.NotFound"));
                 return Result<DiagnosticResultMutationResponse>.Ok(new(

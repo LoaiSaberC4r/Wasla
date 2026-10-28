@@ -6,10 +6,13 @@ using Wasla.Application.Features.Medications;
 using Wasla.Application.Features.Diagnostics;
 using Wasla.Domain.Diagnostics;
 using Wasla.Domain.Medications;
+using Wasla.Application.Features.DoctorPatients;
+using Wasla.Domain.Security;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
-internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider clock, IMedicationReadService medications, IDiagnosticReadService diagnostics) : IClinicalReadService
+internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider clock, IMedicationReadService medications, IDiagnosticReadService diagnostics,
+    DoctorPatientRelationshipPolicy relationships) : IClinicalReadService
 {
     public async Task<ClinicalPage<EncounterSummaryResponse>> ListEncountersAsync(Guid? doctorId, Guid? practiceId,
         Guid? patientId, EncounterStatus? status, DateTime? fromUtc, DateTime? throughUtc, string? search,
@@ -58,12 +61,14 @@ internal sealed class ClinicalReadService(WaslaDbContext db, IDateTimeProvider c
                 Practice = new ClinicalPartyResponse(practice.Id, practice.NameAr, practice.NameEn),
                 Patient = new ClinicalPartyResponse(patient.Id, patient.NameAr, patient.NameEn) }).SingleOrDefaultAsync(ct);
         if (row is null) return null;
+        var sourceActor = await relationships.ActorAsync(PermissionNames.MedicalEncountersViewOwn, ct);
+        IReadOnlyList<string> sourcePermissions = sourceActor.IsSuccess && sourceActor.Value.DoctorId == doctorId ? sourceActor.Value.Permissions : [];
         var prescription = await medications.PrescriptionAsync(null, row.Id, doctorId, ct);
         var blockers = (prescription?.CompletionBlockers ?? []).ToList();
         if (row.Status == EncounterStatus.InProgress && string.IsNullOrWhiteSpace(row.ClinicalNotes))
             blockers.Add(new("MedicalEncounter.ClinicalNotesRequired", null, "clinicalNotes"));
-        var labPage = (ClinicalPage<DiagnosticRequestSummary>)(await diagnostics.ReadAsync(new(DiagnosticKind.Lab, DiagnosticReadResource.Requests, Filter: new(EncounterId: row.Id, PageSize: 100)), doctorId, [], ct))!;
-        var radioPage = (ClinicalPage<DiagnosticRequestSummary>)(await diagnostics.ReadAsync(new(DiagnosticKind.Radiology, DiagnosticReadResource.Requests, Filter: new(EncounterId: row.Id, PageSize: 100)), doctorId, [], ct))!;
+        var labPage = (ClinicalPage<DiagnosticRequestSummary>)(await diagnostics.ReadAsync(new(DiagnosticKind.Lab, DiagnosticReadResource.Requests, Filter: new(EncounterId: row.Id, PageSize: 100)), doctorId, sourcePermissions, ct))!;
+        var radioPage = (ClinicalPage<DiagnosticRequestSummary>)(await diagnostics.ReadAsync(new(DiagnosticKind.Radiology, DiagnosticReadResource.Requests, Filter: new(EncounterId: row.Id, PageSize: 100)), doctorId, sourcePermissions, ct))!;
         var labId = labPage.Items.FirstOrDefault(x => x.Status == DiagnosticRequestStatus.Draft)?.RequestId;
         var radioId = radioPage.Items.FirstOrDefault(x => x.Status == DiagnosticRequestStatus.Draft)?.RequestId;
         var lab = labId is { } l ? await diagnostics.RequestAsync(DiagnosticKind.Lab, l, doctorId, false, [], ct) : null;

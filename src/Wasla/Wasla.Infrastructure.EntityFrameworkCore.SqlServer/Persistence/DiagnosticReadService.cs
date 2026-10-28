@@ -4,6 +4,7 @@ using Wasla.Application.Features.Diagnostics;
 using Wasla.Application.Features.Clinical;
 using Wasla.Application.Features.Governance;
 using Wasla.Domain.Diagnostics;
+using Wasla.Domain.Security;
 using Wasla.Domain.Labs;
 using Wasla.Domain.Radiology;
 
@@ -11,7 +12,37 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticReadService, IDiagnosticCoverageReader, IDiagnosticMediaReferenceReader, IMedicalCatalogManagerReader
 {
+    private IQueryable<Guid> ReadableDiagnosticPractices(Guid owner, IReadOnlyList<string> permissions)
+    {
+        var historical = Has(permissions, PermissionNames.DoctorPatientsViewOwn) && Has(permissions, PermissionNames.DoctorPatientsViewHistoricalOwn);
+        return db.DoctorPractices.AsNoTracking().Where(practice => practice.DoctorId == owner && (practice.IsActive || historical)).Select(practice => practice.Id);
+    }
+    private static string[] ReadOnlyPermissions(IReadOnlyList<string> permissions)
+        => permissions.Where(permission => permission.Contains(".View", StringComparison.Ordinal)).ToArray();
+    private async Task<IReadOnlyList<string>> PermissionsForPracticeAsync(IReadOnlyList<string> permissions, Guid practice, bool patient, CancellationToken ct)
+        => patient || await db.DoctorPractices.AnyAsync(p => p.Id == practice && p.IsActive, ct) ? permissions : ReadOnlyPermissions(permissions);
     private static int Page(int value) => Math.Clamp(value, 1, 1000000);
+    public async Task<DiagnosticOwnReadSource?> OwnReadSourceAsync(DiagnosticKind kind, DiagnosticReadResource resource, Guid id, Guid doctorId, CancellationToken ct)
+    {
+        if (kind == DiagnosticKind.Lab)
+        {
+            Guid? request = resource is DiagnosticReadResource.Results or DiagnosticReadResource.Versions
+                ? await db.LabResults.Where(r => r.Id == id && r.DoctorId == doctorId).Select(r => (Guid?)r.RequestId).SingleOrDefaultAsync(ct)
+                : resource == DiagnosticReadResource.Submissions
+                    ? await db.PatientLabResultSubmissions.Where(r => r.Id == id && r.DoctorId == doctorId).Select(r => (Guid?)r.RequestId).SingleOrDefaultAsync(ct) : id;
+            return await db.LabRequests.AsNoTracking().Where(r => r.Id == request && r.DoctorId == doctorId)
+                .Select(r => new DiagnosticOwnReadSource(r.DoctorPracticeId, r.PatientId)).SingleOrDefaultAsync(ct);
+        }
+        else
+        {
+            Guid? request = resource is DiagnosticReadResource.Results or DiagnosticReadResource.Versions
+                ? await db.RadiologyResults.Where(r => r.Id == id && r.DoctorId == doctorId).Select(r => (Guid?)r.RequestId).SingleOrDefaultAsync(ct)
+                : resource == DiagnosticReadResource.Submissions
+                    ? await db.PatientRadiologyResultSubmissions.Where(r => r.Id == id && r.DoctorId == doctorId).Select(r => (Guid?)r.RequestId).SingleOrDefaultAsync(ct) : id;
+            return await db.RadiologyRequests.AsNoTracking().Where(r => r.Id == request && r.DoctorId == doctorId)
+                .Select(r => new DiagnosticOwnReadSource(r.DoctorPracticeId, r.PatientId)).SingleOrDefaultAsync(ct);
+        }
+    }
     private static int Size(int value) => Math.Clamp(value, 1, 100);
     private static bool Has(IReadOnlyList<string> permissions, string name) => permissions.Contains(name, StringComparer.OrdinalIgnoreCase);
     public async Task<IReadOnlySet<string>> RetainedKeysAsync(IReadOnlyList<string> keys, CancellationToken ct)
@@ -59,8 +90,8 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
     public Task<DiagnosticSubmissionResponse?> SubmissionAsync(DiagnosticKind k, Guid id, Guid owner, bool patient, IReadOnlyList<string> p, CancellationToken ct)
         => !Has(p, k + "ResultSubmissions.ViewOwn") ? Task.FromResult<DiagnosticSubmissionResponse?>(null) :
             k == DiagnosticKind.Lab ? LabSubmissionAsync(id, owner, patient, p, ct) : RadiologySubmissionAsync(id, owner, patient, p, ct);
-    public Task<string?> MediaKeyAsync(DiagnosticMediaQuery q, Guid owner, CancellationToken ct)
-        => q.Kind == DiagnosticKind.Lab ? LabMediaAsync(q, owner, ct) : RadiologyMediaAsync(q, owner, ct);
+    public Task<string?> MediaKeyAsync(DiagnosticMediaQuery q, Guid owner, CancellationToken ct, IReadOnlyList<string>? permissions = null)
+        => q.Kind == DiagnosticKind.Lab ? LabMediaAsync(q, owner, permissions ?? [], ct) : RadiologyMediaAsync(q, owner, permissions ?? [], ct);
     public Task<object?> ImportAsync(ReadDiagnosticImportQuery q, IReadOnlyList<string> p, CancellationToken ct)
         => q.Kind == DiagnosticKind.Lab ? LabImportsAsync(q, p, ct) : RadiologyImportsAsync(q, p, ct);
     public Task<IReadOnlySet<Guid>> CurrentCoverageAsync(DiagnosticKind k, Guid id, CancellationToken ct)
@@ -116,21 +147,22 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
                 !r.Own && x.Status == MedicalCatalogRequestStatus.Pending && Has(p, "LabCatalogRequests.Review"), !r.Own && x.Status == MedicalCatalogRequestStatus.Pending && Has(p, "LabCatalogRequests.Review"), !r.Own && x.Status == MedicalCatalogRequestStatus.Pending && Has(p, "LabCatalogRequests.Review")), history,
                 x.CanonicalCatalogId is { } c && catalogs.TryGetValue(c, out var catalog) ? MapLabCatalog(catalog, p, r.Own) : null)).ToArray(), count, page, size);
     }
-    private IQueryable<LabRequest> LabRequests(Guid owner, bool patient)
-        => db.Set<LabRequest>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && x.Status != DiagnosticRequestStatus.Draft : x.DoctorId == owner && db.DoctorPractices.Any(p => p.Id == x.DoctorPracticeId && p.IsActive));
-    private IQueryable<LabResult> LabResults(Guid owner, bool patient)
-        => db.Set<LabResult>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && db.Set<LabResultVersion>().Any(v => v.ResultId == x.Id && v.Status == DiagnosticVersionStatus.Finalized) : x.DoctorId == owner && db.DoctorPractices.Any(p => p.Id == x.DoctorPracticeId && p.IsActive));
-    private IQueryable<PatientLabResultSubmission> LabSubmissions(Guid owner, bool patient)
-        => db.Set<PatientLabResultSubmission>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner : x.DoctorId == owner && db.DoctorPractices.Any(p => p.Id == x.DoctorPracticeId && p.IsActive));
+    private IQueryable<LabRequest> LabRequests(Guid owner, bool patient, IReadOnlyList<string> p)
+        => db.Set<LabRequest>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && x.Status != DiagnosticRequestStatus.Draft : x.DoctorId == owner && ReadableDiagnosticPractices(owner, p).Contains(x.DoctorPracticeId) && (db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive) || DoctorPatientReadService.QualifyingAttendances(db, owner).Any(t => t.PatientId == x.PatientId)) && (x.Status != DiagnosticRequestStatus.Draft || db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive)));
+    private IQueryable<LabResult> LabResults(Guid owner, bool patient, IReadOnlyList<string> p)
+        => db.Set<LabResult>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && db.Set<LabResultVersion>().Any(v => v.ResultId == x.Id && v.Status == DiagnosticVersionStatus.Finalized) : x.DoctorId == owner && ReadableDiagnosticPractices(owner, p).Contains(x.DoctorPracticeId) && (db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive) || DoctorPatientReadService.QualifyingAttendances(db, owner).Any(t => t.PatientId == x.PatientId)));
+    private IQueryable<PatientLabResultSubmission> LabSubmissions(Guid owner, bool patient, IReadOnlyList<string> p)
+        => db.Set<PatientLabResultSubmission>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner : x.DoctorId == owner && ReadableDiagnosticPractices(owner, p).Contains(x.DoctorPracticeId) && (db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive) || DoctorPatientReadService.QualifyingAttendances(db, owner).Any(t => t.PatientId == x.PatientId)));
     private async Task<DiagnosticRequestStateResponse?> LabRequestAsync(Guid id, Guid owner, bool patient, IReadOnlyList<string> p, CancellationToken ct)
     {
-        var r = await LabRequests(owner, patient).SingleOrDefaultAsync(x => x.Id == id, ct); if (r is null) return null;
+        var r = await LabRequests(owner, patient, p).SingleOrDefaultAsync(x => x.Id == id, ct); if (r is null) return null;
+        p = await PermissionsForPracticeAsync(p, r.DoctorPracticeId, patient, ct);
         var d = await db.Doctors.AsNoTracking().Where(x => x.Id == r.DoctorId).Select(x => new ClinicalPartyResponse(x.Id, x.NameAr, x.NameEn)).SingleAsync(ct);
         var practice = await db.DoctorPractices.AsNoTracking().Where(x => x.Id == r.DoctorPracticeId).Select(x => new ClinicalPartyResponse(x.Id, x.NameAr, x.NameEn)).SingleAsync(ct);
         var items = await db.Set<LabRequestItem>().AsNoTracking().Where(x => x.RequestId == id).OrderBy(x => x.Id).ToArrayAsync(ct);
-        var results = await LabResults(owner, patient).Where(x => x.RequestId == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
+        var results = await LabResults(owner, patient, p).Where(x => x.RequestId == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
             .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Coverage).AsSplitQuery().ToArrayAsync(ct);
-        var submissions = await LabSubmissions(owner, patient).Where(x => x.RequestId == id).OrderBy(x => x.SubmittedAtUtc)
+        var submissions = await LabSubmissions(owner, patient, p).Where(x => x.RequestId == id).OrderBy(x => x.SubmittedAtUtc)
             .Select(x => new DiagnosticSubmissionSummary(x.Id, x.RequestId, x.Status, x.SubmittedAtUtc)).ToArrayAsync(ct);
         var draft = r.Status == DiagnosticRequestStatus.Draft;
         var manage = !patient && draft && Has(p, "LabRequests.ManageOwnDraft"); var cancel = !patient && !draft && Has(p, "LabRequests.CancelOwn");
@@ -149,13 +181,16 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
             new(!patient && x.Current is not null && Has(p, "LabResults.CorrectOwn"), !patient && x.Current is not null && Has(p, "LabResults.VoidOwn")));
     private async Task<DiagnosticResultResponse?> LabResultAsync(Guid id, Guid owner, bool patient, IReadOnlyList<string> p, CancellationToken ct)
     {
-        var x = await LabResults(owner, patient).Where(x => x.Id == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
+        var x = await LabResults(owner, patient, p).Where(x => x.Id == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
             .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Coverage).AsSplitQuery().SingleOrDefaultAsync(ct);
-        return x is null ? null : MapLabResult(x, p, patient);
+        if (x is null) return null;
+        p = await PermissionsForPracticeAsync(p, x.DoctorPracticeId, patient, ct);
+        return MapLabResult(x, p, patient);
     }
     private async Task<DiagnosticSubmissionResponse?> LabSubmissionAsync(Guid id, Guid owner, bool patient, IReadOnlyList<string> p, CancellationToken ct)
     {
-        var x = await LabSubmissions(owner, patient).Include(x => x.Attachments).SingleOrDefaultAsync(x => x.Id == id, ct); if (x is null) return null;
+        var x = await LabSubmissions(owner, patient, p).Include(x => x.Attachments).SingleOrDefaultAsync(x => x.Id == id, ct); if (x is null) return null;
+        p = await PermissionsForPracticeAsync(p, x.DoctorPracticeId, patient, ct);
         var requested = await db.Set<LabRequestItem>().AnyAsync(i => i.RequestId == x.RequestId && i.Status == DiagnosticItemStatus.Requested, ct);
         var pending = x.Status == PatientSubmissionStatus.PendingReview;
         return new(x.Id, x.RequestId, x.Status, x.ExternalProviderName, x.ExternalReportDate, x.PatientNote, x.PatientVisibleReason, x.AcceptedResultId, x.SubmittedAtUtc, Convert.ToBase64String(x.RowVersion),
@@ -167,13 +202,13 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
         var f = r.Filter ?? new(); var page = Page(f.PageNumber); var size = Size(f.PageSize);
         if (r.Resource == DiagnosticReadResource.Draft)
         {
-            var id = await LabRequests(owner, false).Where(x => x.MedicalEncounterId == r.EncounterId && x.DoctorPracticeId == r.PracticeId && x.Status == DiagnosticRequestStatus.Draft).Select(x => (Guid?)x.Id).SingleOrDefaultAsync(ct);
+            var id = await LabRequests(owner, false, p).Where(x => x.MedicalEncounterId == r.EncounterId && x.DoctorPracticeId == r.PracticeId && x.Status == DiagnosticRequestStatus.Draft).Select(x => (Guid?)x.Id).SingleOrDefaultAsync(ct);
             return id is { } draft ? await LabRequestAsync(draft, owner, false, p, ct) : await EmptyAsync(owner, r.EncounterId.GetValueOrDefault(), r.PracticeId, DiagnosticKind.Lab, p, ct);
         }
         if (r.Resource == DiagnosticReadResource.Requests)
         {
             if (r.Id is { } id) return await LabRequestAsync(id, owner, r.Patient, p, ct);
-            var q = LabRequests(owner, r.Patient).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
+            var q = LabRequests(owner, r.Patient, p).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
                 (f.EncounterId == null || x.MedicalEncounterId == f.EncounterId) && (f.Origin == null || x.Origin == f.Origin) && (f.Status == null || x.Status == f.Status) &&
                 (f.FromUtc == null || x.RequestedAtUtc >= f.FromUtc) && (f.ToUtc == null || x.RequestedAtUtc <= f.ToUtc));
             return new ClinicalPage<DiagnosticRequestSummary>(await q.OrderByDescending(x => x.RequestedAtUtc).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size)
@@ -182,18 +217,20 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
         if (r.Resource == DiagnosticReadResource.Results)
         {
             if (r.Id is { } id) return await LabResultAsync(id, owner, r.Patient, p, ct);
-            var q = LabResults(owner, r.Patient).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
+            var q = LabResults(owner, r.Patient, p).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
                 (f.RequestId == null || x.RequestId == f.RequestId) && (f.FromUtc == null || x.CreatedAtUtc >= f.FromUtc) && (f.ToUtc == null || x.CreatedAtUtc <= f.ToUtc));
             var rows = await q.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size)
                 .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Coverage)
                 .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments).AsSplitQuery().ToArrayAsync(ct);
-            return new ClinicalPage<DiagnosticResultResponse>(rows.Select(x => MapLabResult(x, p, r.Patient)).ToArray(), await q.LongCountAsync(ct), page, size);
+            var ids = rows.Select(x => x.DoctorPracticeId).Distinct().ToArray();
+            var active = await db.DoctorPractices.Where(practice => ids.Contains(practice.Id) && practice.IsActive).Select(practice => practice.Id).ToArrayAsync(ct);
+            return new ClinicalPage<DiagnosticResultResponse>(rows.Select(x => MapLabResult(x, active.Contains(x.DoctorPracticeId) ? p : ReadOnlyPermissions(p), r.Patient)).ToArray(), await q.LongCountAsync(ct), page, size);
         }
         if (r.Resource == DiagnosticReadResource.Submissions)
         {
             if (r.Id is { } id) return await LabSubmissionAsync(id, owner, r.Patient, p, ct);
-            if (f.RequestId is { } request && !await LabRequests(owner, r.Patient).AnyAsync(x => x.Id == request, ct)) return null;
-            var q = LabSubmissions(owner, r.Patient).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
+            if (f.RequestId is { } request && !await LabRequests(owner, r.Patient, p).AnyAsync(x => x.Id == request, ct)) return null;
+            var q = LabSubmissions(owner, r.Patient, p).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
                 (f.RequestId == null || x.RequestId == f.RequestId) && (f.FromUtc == null || x.SubmittedAtUtc >= f.FromUtc) && (f.ToUtc == null || x.SubmittedAtUtc <= f.ToUtc));
             var status = f.SubmissionStatus ?? (r.Patient ? (PatientSubmissionStatus?)null : PatientSubmissionStatus.PendingReview);
             if (status is not null) q = q.Where(x => x.Status == status);
@@ -202,26 +239,26 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
         }
         if (r.Resource == DiagnosticReadResource.RequestHistory)
         {
-            if (!await LabRequests(owner, false).AnyAsync(x => x.Id == r.Id, ct)) return null;
+            if (!await LabRequests(owner, false, p).AnyAsync(x => x.Id == r.Id, ct)) return null;
             return await db.Set<LabRequestHistory>().AsNoTracking().Where(h => h.ResourceId == r.Id).OrderBy(h => h.OccurredAtUtc).ThenBy(h => h.Id)
                 .Select(h => new DiagnosticHistoryResponse(h.Id, h.Action, h.Reason, h.BeforeSnapshot, h.AfterSnapshot, h.ActorUserId, h.ActorType, h.OccurredAtUtc)).ToArrayAsync(ct);
         }
-        if (!await LabResults(owner, false).AnyAsync(x => x.Id == r.Id, ct)) return null;
+        if (!await LabResults(owner, false, p).AnyAsync(x => x.Id == r.Id, ct)) return null;
         var versions = await db.Set<LabResultVersion>().AsNoTracking().Where(v => v.ResultId == r.Id && (r.VersionNumber == null || v.VersionNumber == r.VersionNumber))
             .Include(v => v.Coverage).Include(v => v.Attachments).AsSplitQuery().OrderBy(v => v.VersionNumber).ToArrayAsync(ct);
         if (r.VersionNumber is not null) return versions.Length == 0 ? null : MapLabVersion(versions.Single(), false);
         return versions.Select(v => MapLabVersion(v, false)).ToArray();
     }
-    private async Task<string?> LabMediaAsync(DiagnosticMediaQuery q, Guid owner, CancellationToken ct)
+    private async Task<string?> LabMediaAsync(DiagnosticMediaQuery q, Guid owner, IReadOnlyList<string> p, CancellationToken ct)
     {
         if (q.Submission)
             return await (from a in db.Set<PatientLabResultSubmissionAttachment>().AsNoTracking()
-                          join s in LabSubmissions(owner, q.Patient) on a.SubmissionId equals s.Id
+                          join s in LabSubmissions(owner, q.Patient, p) on a.SubmissionId equals s.Id
                           where s.Id == q.Id && a.Id == q.AttachmentId
                           select a.PrivateMediaKey).SingleOrDefaultAsync(ct);
         return await (from a in db.Set<LabResultAttachment>().AsNoTracking()
                       join v in db.Set<LabResultVersion>().AsNoTracking() on a.ResultVersionId equals v.Id
-                      join result in LabResults(owner, q.Patient) on v.ResultId equals result.Id
+                      join result in LabResults(owner, q.Patient, p) on v.ResultId equals result.Id
                       where result.Id == q.Id && a.Id == q.AttachmentId && (q.Patient ? v.Status == DiagnosticVersionStatus.Finalized && v.VersionNumber == result.CurrentVersionNumber : v.VersionNumber == q.VersionNumber)
                       select a.PrivateMediaKey).SingleOrDefaultAsync(ct);
     }
@@ -294,21 +331,22 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
                 !r.Own && x.Status == MedicalCatalogRequestStatus.Pending && Has(p, "RadiologyCatalogRequests.Review"), !r.Own && x.Status == MedicalCatalogRequestStatus.Pending && Has(p, "RadiologyCatalogRequests.Review"), !r.Own && x.Status == MedicalCatalogRequestStatus.Pending && Has(p, "RadiologyCatalogRequests.Review")), history,
                 x.CanonicalCatalogId is { } c && catalogs.TryGetValue(c, out var catalog) ? MapRadiologyCatalog(catalog, p, r.Own) : null)).ToArray(), count, page, size);
     }
-    private IQueryable<RadiologyRequest> RadiologyRequests(Guid owner, bool patient)
-        => db.Set<RadiologyRequest>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && x.Status != DiagnosticRequestStatus.Draft : x.DoctorId == owner && db.DoctorPractices.Any(p => p.Id == x.DoctorPracticeId && p.IsActive));
-    private IQueryable<RadiologyResult> RadiologyResults(Guid owner, bool patient)
-        => db.Set<RadiologyResult>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && db.Set<RadiologyResultVersion>().Any(v => v.ResultId == x.Id && v.Status == DiagnosticVersionStatus.Finalized) : x.DoctorId == owner && db.DoctorPractices.Any(p => p.Id == x.DoctorPracticeId && p.IsActive));
-    private IQueryable<PatientRadiologyResultSubmission> RadiologySubmissions(Guid owner, bool patient)
-        => db.Set<PatientRadiologyResultSubmission>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner : x.DoctorId == owner && db.DoctorPractices.Any(p => p.Id == x.DoctorPracticeId && p.IsActive));
+    private IQueryable<RadiologyRequest> RadiologyRequests(Guid owner, bool patient, IReadOnlyList<string> p)
+        => db.Set<RadiologyRequest>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && x.Status != DiagnosticRequestStatus.Draft : x.DoctorId == owner && ReadableDiagnosticPractices(owner, p).Contains(x.DoctorPracticeId) && (db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive) || DoctorPatientReadService.QualifyingAttendances(db, owner).Any(t => t.PatientId == x.PatientId)) && (x.Status != DiagnosticRequestStatus.Draft || db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive)));
+    private IQueryable<RadiologyResult> RadiologyResults(Guid owner, bool patient, IReadOnlyList<string> p)
+        => db.Set<RadiologyResult>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner && db.Set<RadiologyResultVersion>().Any(v => v.ResultId == x.Id && v.Status == DiagnosticVersionStatus.Finalized) : x.DoctorId == owner && ReadableDiagnosticPractices(owner, p).Contains(x.DoctorPracticeId) && (db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive) || DoctorPatientReadService.QualifyingAttendances(db, owner).Any(t => t.PatientId == x.PatientId)));
+    private IQueryable<PatientRadiologyResultSubmission> RadiologySubmissions(Guid owner, bool patient, IReadOnlyList<string> p)
+        => db.Set<PatientRadiologyResultSubmission>().IgnoreAutoIncludes().AsNoTracking().Where(x => patient ? x.PatientId == owner : x.DoctorId == owner && ReadableDiagnosticPractices(owner, p).Contains(x.DoctorPracticeId) && (db.DoctorPractices.Any(practice => practice.Id == x.DoctorPracticeId && practice.IsActive) || DoctorPatientReadService.QualifyingAttendances(db, owner).Any(t => t.PatientId == x.PatientId)));
     private async Task<DiagnosticRequestStateResponse?> RadiologyRequestAsync(Guid id, Guid owner, bool patient, IReadOnlyList<string> p, CancellationToken ct)
     {
-        var r = await RadiologyRequests(owner, patient).SingleOrDefaultAsync(x => x.Id == id, ct); if (r is null) return null;
+        var r = await RadiologyRequests(owner, patient, p).SingleOrDefaultAsync(x => x.Id == id, ct); if (r is null) return null;
+        p = await PermissionsForPracticeAsync(p, r.DoctorPracticeId, patient, ct);
         var d = await db.Doctors.AsNoTracking().Where(x => x.Id == r.DoctorId).Select(x => new ClinicalPartyResponse(x.Id, x.NameAr, x.NameEn)).SingleAsync(ct);
         var practice = await db.DoctorPractices.AsNoTracking().Where(x => x.Id == r.DoctorPracticeId).Select(x => new ClinicalPartyResponse(x.Id, x.NameAr, x.NameEn)).SingleAsync(ct);
         var items = await db.Set<RadiologyRequestItem>().AsNoTracking().Where(x => x.RequestId == id).OrderBy(x => x.Id).ToArrayAsync(ct);
-        var results = await RadiologyResults(owner, patient).Where(x => x.RequestId == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
+        var results = await RadiologyResults(owner, patient, p).Where(x => x.RequestId == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
             .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Coverage).AsSplitQuery().ToArrayAsync(ct);
-        var submissions = await RadiologySubmissions(owner, patient).Where(x => x.RequestId == id).OrderBy(x => x.SubmittedAtUtc)
+        var submissions = await RadiologySubmissions(owner, patient, p).Where(x => x.RequestId == id).OrderBy(x => x.SubmittedAtUtc)
             .Select(x => new DiagnosticSubmissionSummary(x.Id, x.RequestId, x.Status, x.SubmittedAtUtc)).ToArrayAsync(ct);
         var draft = r.Status == DiagnosticRequestStatus.Draft;
         var manage = !patient && draft && Has(p, "RadiologyRequests.ManageOwnDraft"); var cancel = !patient && !draft && Has(p, "RadiologyRequests.CancelOwn");
@@ -327,13 +365,16 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
             new(!patient && x.Current is not null && Has(p, "RadiologyResults.CorrectOwn"), !patient && x.Current is not null && Has(p, "RadiologyResults.VoidOwn")));
     private async Task<DiagnosticResultResponse?> RadiologyResultAsync(Guid id, Guid owner, bool patient, IReadOnlyList<string> p, CancellationToken ct)
     {
-        var x = await RadiologyResults(owner, patient).Where(x => x.Id == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
+        var x = await RadiologyResults(owner, patient, p).Where(x => x.Id == id).Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments)
             .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Coverage).AsSplitQuery().SingleOrDefaultAsync(ct);
-        return x is null ? null : MapRadiologyResult(x, p, patient);
+        if (x is null) return null;
+        p = await PermissionsForPracticeAsync(p, x.DoctorPracticeId, patient, ct);
+        return MapRadiologyResult(x, p, patient);
     }
     private async Task<DiagnosticSubmissionResponse?> RadiologySubmissionAsync(Guid id, Guid owner, bool patient, IReadOnlyList<string> p, CancellationToken ct)
     {
-        var x = await RadiologySubmissions(owner, patient).Include(x => x.Attachments).SingleOrDefaultAsync(x => x.Id == id, ct); if (x is null) return null;
+        var x = await RadiologySubmissions(owner, patient, p).Include(x => x.Attachments).SingleOrDefaultAsync(x => x.Id == id, ct); if (x is null) return null;
+        p = await PermissionsForPracticeAsync(p, x.DoctorPracticeId, patient, ct);
         var requested = await db.Set<RadiologyRequestItem>().AnyAsync(i => i.RequestId == x.RequestId && i.Status == DiagnosticItemStatus.Requested, ct);
         var pending = x.Status == PatientSubmissionStatus.PendingReview;
         return new(x.Id, x.RequestId, x.Status, x.ExternalProviderName, x.ExternalReportDate, x.PatientNote, x.PatientVisibleReason, x.AcceptedResultId, x.SubmittedAtUtc, Convert.ToBase64String(x.RowVersion),
@@ -345,13 +386,13 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
         var f = r.Filter ?? new(); var page = Page(f.PageNumber); var size = Size(f.PageSize);
         if (r.Resource == DiagnosticReadResource.Draft)
         {
-            var id = await RadiologyRequests(owner, false).Where(x => x.MedicalEncounterId == r.EncounterId && x.DoctorPracticeId == r.PracticeId && x.Status == DiagnosticRequestStatus.Draft).Select(x => (Guid?)x.Id).SingleOrDefaultAsync(ct);
+            var id = await RadiologyRequests(owner, false, p).Where(x => x.MedicalEncounterId == r.EncounterId && x.DoctorPracticeId == r.PracticeId && x.Status == DiagnosticRequestStatus.Draft).Select(x => (Guid?)x.Id).SingleOrDefaultAsync(ct);
             return id is { } draft ? await RadiologyRequestAsync(draft, owner, false, p, ct) : await EmptyAsync(owner, r.EncounterId.GetValueOrDefault(), r.PracticeId, DiagnosticKind.Radiology, p, ct);
         }
         if (r.Resource == DiagnosticReadResource.Requests)
         {
             if (r.Id is { } id) return await RadiologyRequestAsync(id, owner, r.Patient, p, ct);
-            var q = RadiologyRequests(owner, r.Patient).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
+            var q = RadiologyRequests(owner, r.Patient, p).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
                 (f.EncounterId == null || x.MedicalEncounterId == f.EncounterId) && (f.Origin == null || x.Origin == f.Origin) && (f.Status == null || x.Status == f.Status) &&
                 (f.FromUtc == null || x.RequestedAtUtc >= f.FromUtc) && (f.ToUtc == null || x.RequestedAtUtc <= f.ToUtc));
             return new ClinicalPage<DiagnosticRequestSummary>(await q.OrderByDescending(x => x.RequestedAtUtc).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size)
@@ -360,18 +401,20 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
         if (r.Resource == DiagnosticReadResource.Results)
         {
             if (r.Id is { } id) return await RadiologyResultAsync(id, owner, r.Patient, p, ct);
-            var q = RadiologyResults(owner, r.Patient).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
+            var q = RadiologyResults(owner, r.Patient, p).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
                 (f.RequestId == null || x.RequestId == f.RequestId) && (f.FromUtc == null || x.CreatedAtUtc >= f.FromUtc) && (f.ToUtc == null || x.CreatedAtUtc <= f.ToUtc));
             var rows = await q.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id).Skip((page - 1) * size).Take(size)
                 .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Coverage)
                 .Include(x => x.Versions.Where(v => v.Status == DiagnosticVersionStatus.Finalized)).ThenInclude(v => v.Attachments).AsSplitQuery().ToArrayAsync(ct);
-            return new ClinicalPage<DiagnosticResultResponse>(rows.Select(x => MapRadiologyResult(x, p, r.Patient)).ToArray(), await q.LongCountAsync(ct), page, size);
+            var ids = rows.Select(x => x.DoctorPracticeId).Distinct().ToArray();
+            var active = await db.DoctorPractices.Where(practice => ids.Contains(practice.Id) && practice.IsActive).Select(practice => practice.Id).ToArrayAsync(ct);
+            return new ClinicalPage<DiagnosticResultResponse>(rows.Select(x => MapRadiologyResult(x, active.Contains(x.DoctorPracticeId) ? p : ReadOnlyPermissions(p), r.Patient)).ToArray(), await q.LongCountAsync(ct), page, size);
         }
         if (r.Resource == DiagnosticReadResource.Submissions)
         {
             if (r.Id is { } id) return await RadiologySubmissionAsync(id, owner, r.Patient, p, ct);
-            if (f.RequestId is { } request && !await RadiologyRequests(owner, r.Patient).AnyAsync(x => x.Id == request, ct)) return null;
-            var q = RadiologySubmissions(owner, r.Patient).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
+            if (f.RequestId is { } request && !await RadiologyRequests(owner, r.Patient, p).AnyAsync(x => x.Id == request, ct)) return null;
+            var q = RadiologySubmissions(owner, r.Patient, p).Where(x => (f.PracticeId == null || x.DoctorPracticeId == f.PracticeId) && (f.PatientId == null || x.PatientId == f.PatientId) &&
                 (f.RequestId == null || x.RequestId == f.RequestId) && (f.FromUtc == null || x.SubmittedAtUtc >= f.FromUtc) && (f.ToUtc == null || x.SubmittedAtUtc <= f.ToUtc));
             var status = f.SubmissionStatus ?? (r.Patient ? (PatientSubmissionStatus?)null : PatientSubmissionStatus.PendingReview);
             if (status is not null) q = q.Where(x => x.Status == status);
@@ -380,26 +423,26 @@ internal sealed class DiagnosticReadService(WaslaDbContext db) : IDiagnosticRead
         }
         if (r.Resource == DiagnosticReadResource.RequestHistory)
         {
-            if (!await RadiologyRequests(owner, false).AnyAsync(x => x.Id == r.Id, ct)) return null;
+            if (!await RadiologyRequests(owner, false, p).AnyAsync(x => x.Id == r.Id, ct)) return null;
             return await db.Set<RadiologyRequestHistory>().AsNoTracking().Where(h => h.ResourceId == r.Id).OrderBy(h => h.OccurredAtUtc).ThenBy(h => h.Id)
                 .Select(h => new DiagnosticHistoryResponse(h.Id, h.Action, h.Reason, h.BeforeSnapshot, h.AfterSnapshot, h.ActorUserId, h.ActorType, h.OccurredAtUtc)).ToArrayAsync(ct);
         }
-        if (!await RadiologyResults(owner, false).AnyAsync(x => x.Id == r.Id, ct)) return null;
+        if (!await RadiologyResults(owner, false, p).AnyAsync(x => x.Id == r.Id, ct)) return null;
         var versions = await db.Set<RadiologyResultVersion>().AsNoTracking().Where(v => v.ResultId == r.Id && (r.VersionNumber == null || v.VersionNumber == r.VersionNumber))
             .Include(v => v.Coverage).Include(v => v.Attachments).AsSplitQuery().OrderBy(v => v.VersionNumber).ToArrayAsync(ct);
         if (r.VersionNumber is not null) return versions.Length == 0 ? null : MapRadiologyVersion(versions.Single(), false);
         return versions.Select(v => MapRadiologyVersion(v, false)).ToArray();
     }
-    private async Task<string?> RadiologyMediaAsync(DiagnosticMediaQuery q, Guid owner, CancellationToken ct)
+    private async Task<string?> RadiologyMediaAsync(DiagnosticMediaQuery q, Guid owner, IReadOnlyList<string> p, CancellationToken ct)
     {
         if (q.Submission)
             return await (from a in db.Set<PatientRadiologyResultSubmissionAttachment>().AsNoTracking()
-                          join s in RadiologySubmissions(owner, q.Patient) on a.SubmissionId equals s.Id
+                          join s in RadiologySubmissions(owner, q.Patient, p) on a.SubmissionId equals s.Id
                           where s.Id == q.Id && a.Id == q.AttachmentId
                           select a.PrivateMediaKey).SingleOrDefaultAsync(ct);
         return await (from a in db.Set<RadiologyResultAttachment>().AsNoTracking()
                       join v in db.Set<RadiologyResultVersion>().AsNoTracking() on a.ResultVersionId equals v.Id
-                      join result in RadiologyResults(owner, q.Patient) on v.ResultId equals result.Id
+                      join result in RadiologyResults(owner, q.Patient, p) on v.ResultId equals result.Id
                       where result.Id == q.Id && a.Id == q.AttachmentId && (q.Patient ? v.Status == DiagnosticVersionStatus.Finalized && v.VersionNumber == result.CurrentVersionNumber : v.VersionNumber == q.VersionNumber)
                       select a.PrivateMediaKey).SingleOrDefaultAsync(ct);
     }

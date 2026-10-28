@@ -508,4 +508,5 @@
   <data name="NotificationAccessDenied" xml:space="preserve"><value>غير مصرح بالوصول إلى الإشعارات.</value></data>
   <data name="NotificationNotFound" xml:space="preserve"><value>الإشعار غير متاح.</value></data>
   <data name="NotificationConflict" xml:space="preserve"><value>تم تغيير البيانات. يرجى إعادة تحميلها.</value></data>
+  <data name="PrescriptionPdfUnavailable" xml:space="preserve"><value>إنشاء ملف الوصفة الطبية غير متاح مؤقتاً. يرجى المحاولة لاحقاً.</value></data>
 </root>

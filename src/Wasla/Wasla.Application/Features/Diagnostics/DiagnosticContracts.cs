@@ -106,16 +106,18 @@ public sealed record ReadDiagnosticImportQuery(DiagnosticKind Kind, Guid? BatchI
 
 public interface IDiagnosticReadService
 {
+    Task<DiagnosticOwnReadSource?> OwnReadSourceAsync(DiagnosticKind kind, DiagnosticReadResource resource, Guid id, Guid doctorId, CancellationToken ct);
     Task<ClinicalPage<MedicalCatalogResponse>> CatalogAsync(SearchMedicalCatalogQuery query, IReadOnlyList<string> permissions, CancellationToken ct);
     Task<ClinicalPage<MedicalCatalogRequestResponse>> CatalogRequestsAsync(ListMedicalCatalogRequestsQuery query, Guid? doctorId, IReadOnlyList<string> permissions, CancellationToken ct);
     Task<object?> ReadAsync(ReadDiagnosticQuery query, Guid ownerId, IReadOnlyList<string> permissions, CancellationToken ct);
     Task<DiagnosticRequestStateResponse?> RequestAsync(DiagnosticKind kind, Guid id, Guid ownerId, bool patient, IReadOnlyList<string> permissions, CancellationToken ct);
     Task<DiagnosticResultResponse?> ResultAsync(DiagnosticKind kind, Guid id, Guid ownerId, bool patient, IReadOnlyList<string> permissions, CancellationToken ct);
     Task<DiagnosticSubmissionResponse?> SubmissionAsync(DiagnosticKind kind, Guid id, Guid ownerId, bool patient, IReadOnlyList<string> permissions, CancellationToken ct);
-    Task<string?> MediaKeyAsync(DiagnosticMediaQuery query, Guid ownerId, CancellationToken ct);
+    Task<string?> MediaKeyAsync(DiagnosticMediaQuery query, Guid ownerId, CancellationToken ct, IReadOnlyList<string>? permissions = null);
     Task AuditReadAsync(DiagnosticKind kind, DiagnosticReadResource resource, Guid id, Guid? attachmentId, Guid actor, DateTime nowUtc, CancellationToken ct);
     Task<object?> ImportAsync(ReadDiagnosticImportQuery query, IReadOnlyList<string> permissions, CancellationToken ct);
 }
+public sealed record DiagnosticOwnReadSource(Guid PracticeId, Guid PatientId);
 public interface IDiagnosticImportService
 {
     Task<Result<DiagnosticImportBatchResponse>> StageAsync(PreviewDiagnosticImportCommand query, Guid actor, DateTime now, CancellationToken ct);

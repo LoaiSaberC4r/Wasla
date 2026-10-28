@@ -22,6 +22,11 @@ public static class SystemRoleIds
 
 public static class PermissionNames
 {
+    public const string DoctorPatientsViewOwn = "DoctorPatients.ViewOwn";
+    public const string DoctorPatientsViewHistoricalOwn = "DoctorPatients.ViewHistoricalOwn";
+    public const string PrescriptionsExportOwn = "Prescriptions.ExportOwn";
+    public static readonly IReadOnlyList<string> DoctorPatientDefaults =
+        [DoctorPatientsViewOwn, DoctorPatientsViewHistoricalOwn, PrescriptionsExportOwn];
     public const string NotificationsViewOwn = "Notifications.ViewOwn";
     public const string NotificationsMarkReadOwn = "Notifications.MarkReadOwn";
     public const string NotificationsPreferencesViewOwn = "Notifications.PreferencesViewOwn";
@@ -590,6 +595,7 @@ public static class PermissionNames
         PatientDuplicatesResolve,
         .. NotificationOwnDefaults,
         .. NotificationAdminDefaults,
+        .. DoctorPatientDefaults,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

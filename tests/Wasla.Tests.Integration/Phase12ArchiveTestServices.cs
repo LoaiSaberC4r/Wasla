@@ -22,6 +22,8 @@ internal static class Phase12ArchiveTestServices
         services.AddScoped(typeof(IArchiveLocationResolver), typeof(WaslaDbContext).Assembly.GetType(
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.ArchiveLocationResolver")!);
         services.AddScoped<IReportingAccessGuard, ComponentGuard>();
+        services.AddScoped(typeof(Wasla.Application.Features.DoctorPatients.IDoctorPatientReadService), typeof(WaslaDbContext).Assembly.GetType(
+            "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.DoctorPatientReadService")!);
     }
 
     private sealed class ComponentGuard(ICurrentUser user) : IReportingAccessGuard

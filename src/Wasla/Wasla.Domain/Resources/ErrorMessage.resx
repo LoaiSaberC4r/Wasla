@@ -508,4 +508,5 @@
   <data name="NotificationAccessDenied" xml:space="preserve"><value>Notification access is denied.</value></data>
   <data name="NotificationNotFound" xml:space="preserve"><value>The notification is unavailable.</value></data>
   <data name="NotificationConflict" xml:space="preserve"><value>The record changed. Refresh it and retry.</value></data>
+  <data name="PrescriptionPdfUnavailable" xml:space="preserve"><value>Prescription PDF generation is temporarily unavailable. Please try again later.</value></data>
 </root>

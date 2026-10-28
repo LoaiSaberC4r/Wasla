@@ -10,7 +10,18 @@ The long-term goal is to support the complete outpatient healthcare journey:
 
 ## Project Status
 
-**Current task:** Phase 5 Final Patient Identity Closure — **COMPLETED**.
+**Doctor My Patients V1 backend:** implemented on `codex/doctor-my-patients-v1`.
+Eight private GET endpoints add the Doctor-wide attendance relationship directory,
+patient history and issued prescription PDF export. Closed-Practice own reads use
+explicit historical/source permissions; existing writes and Phase 16 sharing gates
+remain guarded. See the [implementation report](DOCTOR-MY-PATIENTS-V1-IMPLEMENTATION-REPORT.md),
+[approved task addendum](SOURCE-OF-TRUTH-DOCTOR-MY-PATIENTS-V1-ADDENDUM.md),
+[API contracts](DOCTOR-MY-PATIENTS-V1-API-CHANGES.md),
+[frontend handoff](DOCTOR-MY-PATIENTS-V1-FRONTEND-HANDOFF.md) and
+[verification evidence](docs/doctor-patients/verification.json) for exact results
+and deployment requirements. No production migration or deployment was performed.
+
+**Prior documented task:** Phase 5 Final Patient Identity Closure — **COMPLETED**.
 The implementation branch adds verified onboarding/Claim/activation, scoped
 patient reuse, normalized unique identity email and retention controls. Final CI verified 922 passed tests with no failures/skips; see the
 [final closure report](PHASE-5-FINAL-CLOSURE-REPORT.md).
