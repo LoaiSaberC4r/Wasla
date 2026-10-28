@@ -9,6 +9,7 @@ using Wasla.Domain.Clinical;
 using Wasla.Domain.Common;
 using Wasla.Domain.Medications;
 using Wasla.Domain.Security;
+using Wasla.Application.Features.DoctorPatients;
 
 namespace Wasla.Application.Features.Medications;
 
@@ -106,7 +107,8 @@ internal sealed class MutatePrescriptionHandler(MedicationAccess access, IUnitOf
     }
 }
 internal sealed class GetDoctorPrescriptionHandler(MedicationAccess access, IMedicationReadService reader,
-    IUnitOfWork<WaslaWritePersistence> work) : IQueryHandler<GetDoctorPrescriptionQuery, PrescriptionStateResponse>
+    IUnitOfWork<WaslaWritePersistence> work, DoctorOwnHistoricalReadPolicy historicalReads,
+    IDoctorPatientReadService patientReads) : IQueryHandler<GetDoctorPrescriptionQuery, PrescriptionStateResponse>
 {
     public async Task<Result<PrescriptionStateResponse>> Handle(GetDoctorPrescriptionQuery r, CancellationToken ct)
     {
@@ -114,12 +116,19 @@ internal sealed class GetDoctorPrescriptionHandler(MedicationAccess access, IMed
         if (actor.IsFailure) return Result<PrescriptionStateResponse>.Fail(actor.Errors);
         var state = await reader.PrescriptionAsync(r.PrescriptionId, null, actor.Value.DoctorId!.Value, ct);
         if (state is null || r.CorrectionOnly && state.Draft?.PreviousVersionId is null) return Result<PrescriptionStateResponse>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
-        if (!await access.OwnPracticeAsync(actor.Value.DoctorId.Value, state.PracticeId, ct)) return Result<PrescriptionStateResponse>.Fail(MedicationErrors.AccessDenied("Prescription.AccessDenied"));
         var encounter = await work.WriteRepository<MedicalEncounter>().GetByIdAsync(state.MedicalEncounterId, ct);
-        return Result<PrescriptionStateResponse>.Ok(PrescriptionCapabilities.For(state, actor.Value, encounter!.Status == EncounterStatus.InProgress));
+        if (encounter is null || encounter.DoctorId != actor.Value.DoctorId) return Result<PrescriptionStateResponse>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
+        var scope = await historicalReads.AuthorizeOwnReadAsync(state.PracticeId, PermissionNames.PrescriptionsViewOwn, encounter.PatientId, ct);
+        if (scope.IsFailure) return Result<PrescriptionStateResponse>.Fail(scope.Errors);
+        if (scope.Value.ReadOnly && (r.CorrectionOnly || state.Current is null)) return Result<PrescriptionStateResponse>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
+        await patientReads.AuditAsync(scope.Value.Actor, "OwnPrescriptionRead", r.PrescriptionId, ct);
+        return Result<PrescriptionStateResponse>.Ok(scope.Value.ReadOnly
+            ? state with { Draft = null, CompletionBlockers = [], Capabilities = new(false, false, false, false, false, false) }
+            : PrescriptionCapabilities.For(state, new MedicationActor(scope.Value.Actor.UserId, scope.Value.Actor.DoctorId, scope.Value.Actor.Permissions), encounter.Status == EncounterStatus.InProgress));
     }
 }
-internal sealed class ListPrescriptionVersionsHandler(MedicationAccess access, IMedicationReadService reader)
+internal sealed class ListPrescriptionVersionsHandler(MedicationAccess access, IMedicationReadService reader,
+    DoctorOwnHistoricalReadPolicy historicalReads, IDoctorPatientReadService patientReads, IUnitOfWork<WaslaWritePersistence> work)
     : IQueryHandler<ListPrescriptionVersionsQuery, IReadOnlyList<PrescriptionVersionResponse>>
 {
     public async Task<Result<IReadOnlyList<PrescriptionVersionResponse>>> Handle(ListPrescriptionVersionsQuery r, CancellationToken ct)
@@ -128,8 +137,13 @@ internal sealed class ListPrescriptionVersionsHandler(MedicationAccess access, I
         if (actor.IsFailure) return Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(actor.Errors);
         var state = await reader.PrescriptionAsync(r.PrescriptionId, null, actor.Value.DoctorId!.Value, ct);
         if (state is null) return Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
-        if (!await access.OwnPracticeAsync(actor.Value.DoctorId.Value, state.PracticeId, ct)) return Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(MedicationErrors.AccessDenied("Prescription.AccessDenied"));
+        var encounter = await work.WriteRepository<MedicalEncounter>().GetByIdAsync(state.MedicalEncounterId, ct);
+        if (encounter is null || encounter.DoctorId != actor.Value.DoctorId) return Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
         var versions = await reader.VersionsAsync(r.PrescriptionId, actor.Value.DoctorId.Value, r.VersionNumber, ct);
+        var scope = await historicalReads.AuthorizeOwnReadAsync(state.PracticeId, PermissionNames.PrescriptionsViewOwn, encounter.PatientId, ct);
+        if (scope.IsFailure) return Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(scope.Errors);
+        if (scope.Value.ReadOnly) versions = versions.Where(v => v.Status != PrescriptionVersionStatus.Draft).ToArray();
+        if (versions.Count > 0) await patientReads.AuditAsync(scope.Value.Actor, "OwnPrescriptionVersionsRead", r.PrescriptionId, ct);
         return versions.Count == 0 ? Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(MedicationErrors.NotFound("Prescription.NotFound")) : Result<IReadOnlyList<PrescriptionVersionResponse>>.Ok(versions);
     }
 }

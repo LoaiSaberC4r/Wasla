@@ -31,6 +31,8 @@ internal sealed class DiagnosticOrderHandler(DiagnosticAccess access, IUnitOfWor
         return r.Mutation is DiagnosticOrderMutation.Add or DiagnosticOrderMutation.PostVisit ?
             await idem.ExecuteAsync(actor.Value.UserId, "Phase15:" + r.Kind + ":" + r.Mutation, r.IdempotencyKey, r, Run, ct, async original =>
             {
+                if (!await access.OwnPracticeAsync(actor.Value.DoctorId!.Value, original.Practice.Id, ct))
+                    return Result<DiagnosticRequestStateResponse>.Fail(DiagnosticErrors.Denied());
                 if (original.RequestId is not { } id) return Result<DiagnosticRequestStateResponse>.Ok(original);
                 var latest = await reader.RequestAsync(r.Kind, id, actor.Value.OwnerId, false, actor.Value.Permissions, ct);
                 if (latest is not null) return Result<DiagnosticRequestStateResponse>.Ok(latest);

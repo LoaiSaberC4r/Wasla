@@ -59,6 +59,8 @@ public static class DependencyInjection
         services.AddScoped<MedicationIdempotency>();
         services.AddScoped<IMedicalRecordAccessPolicy, MedicalRecordAccessPolicy>();
         services.AddScoped<ClinicalAccessService>();
+        services.AddScoped<Wasla.Application.Features.DoctorPatients.DoctorPatientRelationshipPolicy>();
+        services.AddScoped<Wasla.Application.Features.DoctorPatients.DoctorOwnHistoricalReadPolicy>();
         services.AddScoped<ClinicalMutationService>();
         services.AddScoped<ReservationCheckInWorkflow>();
         services.AddScoped<Wasla.Application.Features.Archives.ArchiveTicketReplay>();

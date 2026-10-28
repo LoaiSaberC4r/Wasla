@@ -453,6 +453,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasIndex("Status", "BusinessDate")
                         .HasDatabaseName("IX_ArchivedReservations_Status_BusinessDate");
 
+                    b.HasIndex("DoctorId", "PatientId", "ScheduledStartUtc")
+                        .HasDatabaseName("IX_ArchivedReservations_DoctorId_PatientId_ScheduledStartUtc");
+
                     b.HasIndex("DoctorId", "Status", "ScheduledStartUtc")
                         .HasDatabaseName("IX_ArchivedReservations_DoctorId_Status_ScheduledStartUtc");
 
@@ -697,9 +700,6 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasIndex("CreatedByApplicationUserId")
                         .HasDatabaseName("IX_ArchivedTickets_CreatedByApplicationUserId");
 
-                    b.HasIndex("DoctorId")
-                        .HasDatabaseName("IX_ArchivedTickets_DoctorId");
-
                     b.HasIndex("FollowUpEligibilityId")
                         .HasDatabaseName("IX_ArchivedTickets_FollowUpEligibilityId");
 
@@ -727,6 +727,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasIndex("PatientId", "Status", "LastUpdatedOnUtc")
                         .HasDatabaseName("IX_ArchivedTickets_PatientId_Status_LastUpdatedOnUtc");
+
+                    b.HasIndex("DoctorId", "PatientId", "CheckInTimeUtc", "Id")
+                        .HasDatabaseName("IX_ArchivedTickets_DoctorId_PatientId_CheckInTimeUtc_Id");
 
                     b.HasIndex("DoctorPracticeId", "BusinessDate", "Status", "IsFastTrack", "SegmentPrioritySnapshot", "QueueOrderTimeUtc", "TicketNumber")
                         .HasDatabaseName("IX_ArchivedTickets_DoctorPracticeId_BusinessDate_Status_IsFastTrack_SegmentPrioritySnapshot_QueueOrderTimeUtc_TicketNumber");
@@ -979,13 +982,13 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DoctorId");
-
                     b.HasIndex("PatientId");
 
                     b.HasIndex("ReservationId")
                         .IsUnique()
                         .HasFilter("[ReservationId] IS NOT NULL");
+
+                    b.HasIndex("DoctorId", "PatientId", "BusinessDate");
 
                     b.HasIndex("DoctorPracticeId", "BusinessDate", "TicketNumber")
                         .IsUnique();
@@ -1513,6 +1516,8 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasIndex("TicketId")
                         .IsUnique()
                         .HasDatabaseName("UX_MedicalEncounters_TicketId");
+
+                    b.HasIndex("DoctorId", "PatientId", "StartedAtUtc");
 
                     b.HasIndex("PatientId", "Status", "CompletedAtUtc");
 
@@ -9349,6 +9354,8 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasIndex("Status", "BusinessDate");
 
+                    b.HasIndex("DoctorId", "PatientId", "ScheduledStartUtc");
+
                     b.HasIndex("DoctorId", "Status", "ScheduledStartUtc");
 
                     b.HasIndex("DoctorPracticeId", "BusinessDate", "Status");
@@ -9961,8 +9968,6 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasIndex("CreatedByApplicationUserId");
 
-                    b.HasIndex("DoctorId");
-
                     b.HasIndex("DoctorPracticeId")
                         .IsUnique()
                         .HasDatabaseName("UX_Tickets_OneCalledOrInProgressPerPractice")
@@ -9993,6 +9998,8 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .HasDatabaseName("UX_Tickets_PracticeDateNumber");
 
                     b.HasIndex("PatientId", "Status", "LastUpdatedOnUtc");
+
+                    b.HasIndex("DoctorId", "PatientId", "CheckInTimeUtc", "Id");
 
                     b.HasIndex("DoctorPracticeId", "BusinessDate", "Status", "IsFastTrack", "SegmentPrioritySnapshot", "QueueOrderTimeUtc", "TicketNumber")
                         .HasDatabaseName("IX_Tickets_AuthoritativeQueueOrder");

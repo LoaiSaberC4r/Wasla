@@ -171,6 +171,8 @@ public static class DependencyInjection
         services.AddSingleton<IMedicalRecordTokens, MedicalRecordTokens>();
         services.AddScoped<IEncounterVisibilityReader, EncounterVisibilityReader>();
         services.AddScoped<IClinicalReadService, ClinicalReadService>();
+        services.AddScoped<Wasla.Application.Features.DoctorPatients.IDoctorPatientReadService, DoctorPatientReadService>();
+        services.AddSingleton<Wasla.Application.Features.DoctorPatients.IPrescriptionPdfRenderer, Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports.PrescriptionPdfRenderer>();
         services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();
         services.AddScoped<MedicalSpecializationSeeder>();

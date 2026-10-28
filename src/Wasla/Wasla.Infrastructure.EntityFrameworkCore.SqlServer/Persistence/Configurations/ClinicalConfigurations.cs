@@ -39,6 +39,7 @@ internal sealed class MedicalEncounterConfiguration : IWriteEntityConfiguration<
         builder.HasIndex(e => e.TicketId).IsUnique().HasDatabaseName("UX_MedicalEncounters_TicketId");
         builder.HasIndex(e => new { e.DoctorId, e.DoctorPracticeId, e.Status, e.StartedAtUtc });
         builder.HasIndex(e => new { e.PatientId, e.Status, e.CompletedAtUtc });
+        builder.HasIndex(e => new { e.DoctorId, e.PatientId, e.StartedAtUtc });
         builder.HasMany(e => e.Diagnoses).WithOne().HasForeignKey(d => d.MedicalEncounterId).OnDelete(DeleteBehavior.ClientCascade);
         builder.HasMany(e => e.Amendments).WithOne().HasForeignKey(a => a.MedicalEncounterId).OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(e => e.AuditEvents).WithOne().HasForeignKey(a => a.MedicalEncounterId).OnDelete(DeleteBehavior.Restrict);

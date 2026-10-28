@@ -127,6 +127,17 @@ public sealed class Phase12TicketRefundProjectionTests
         context.Patients.Add(patient);
         context.Tickets.Add(ticket);
         context.Payments.Add(payment);
+        // Ticket details now independently check current DB source grants. This component
+        // scenario inspects financial projections, so seed its real Doctor role and explicit
+        // financial read grant rather than bypassing the production read policy.
+        context.Roles.Add(Role.Create(SystemRoleIds.Doctor, SystemRoleNames.Doctor, true).Value);
+        context.UserRoles.Add(new UserRole(Guid.NewGuid(), actorId, SystemRoleIds.Doctor));
+        foreach (var permission in new DoctorCurrentUser(actorId).Permissions)
+        {
+            var id = SystemPermissionIds.For(permission);
+            context.Permissions.Add(Permission.Create(id, permission, true).Value);
+            context.RolePermissions.Add(new RolePermission(Guid.NewGuid(), SystemRoleIds.Doctor, id));
+        }
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var readerType = typeof(WaslaDbContext).Assembly.GetType(
@@ -334,6 +345,7 @@ public sealed class Phase12TicketRefundProjectionTests
             [PermissionNames.DoctorPracticeTicketsViewOwn,
                 PermissionNames.DoctorPracticeTicketsRestoreNoShowOwn,
                 PermissionNames.DoctorPracticePaymentsRefundOwn,
+                PermissionNames.DoctorPracticePaymentsViewOwn,
                 PermissionNames.DoctorPracticePaymentsCorrectOwn];
         public string? GetClaimValue(string claimType) => null;
         public IReadOnlyCollection<string> GetClaimValues(string claimType) => [];

@@ -1,0 +1,986 @@
+{
+  "generatedAtUtc": "2026-10-28T13:20:46.079042+00:00",
+  "branch": "codex/doctor-my-patients-v1",
+  "baseCommit": "a019a0cf9be548cb8918e5513b5b67b062e23826",
+  "workingTreeSourceFingerprint": {
+    "scope": "All changed/added production and test files, excluding documentation and ignored local artifacts",
+    "fileCount": 51,
+    "sha256OfSortedPathAndFileHashes": "c39b5d1571c05cdb468477736d20fe2f978c4eea802a133d250e6cf2faab99fe"
+  },
+  "environment": {
+    "os": "Windows",
+    "dotnetSdk": "10.0.401",
+    "dotnetRuntime": "10.0.12",
+    "efCore": "10.0.10",
+    "sql": "Local SQL Server Express; disposable fixture databases; Windows authentication",
+    "pdf": "Installed Chrome via WASLA_CHROMIUM_PATH, configured into test renderer options",
+    "testLogOverride": "Serilog__WriteTo__1__Args__configure__0__Args__shared=true (process-local, no application configuration edits)"
+  },
+  "reproduce": "docs/doctor-patients/verify.ps1 (syntax checked; equivalent individual commands were executed)",
+  "build": {
+    "command": "dotnet build Wasla.sln --no-restore -v quiet",
+    "artifact": "_local-data/doctor-patients-validation/logs/doctor-patients-build-delivery.log",
+    "warnings": 0,
+    "errors": 0,
+    "exitCode": 0
+  },
+  "modelCheck": {
+    "command": "dotnet ef migrations has-pending-model-changes --no-build --project src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer --startup-project src/Wasla/Wasla.Api --context WaslaDbContext",
+    "output": "No changes have been made to the model since the last migration."
+  },
+  "migration": {
+    "name": "20261028111250_DoctorMyPatientsReadIndexes",
+    "forwardCommand": "dotnet ef migrations script 20261025120012_Phase17VerifiedNotificationContacts 20261028111250_DoctorMyPatientsReadIndexes --idempotent --no-build --project src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer --startup-project src/Wasla/Wasla.Api --context WaslaDbContext --output docs/doctor-patients/migration.sql",
+    "rollbackCommand": "dotnet ef migrations script 20261028111250_DoctorMyPatientsReadIndexes 20261025120012_Phase17VerifiedNotificationContacts --no-build --project src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer --startup-project src/Wasla/Wasla.Api --context WaslaDbContext --output docs/doctor-patients/rollback.sql",
+    "newIndexes": 6,
+    "replacedDoctorOnlyIndexes": 3,
+    "newBusinessTables": 0,
+    "productionOrStagingApplied": false,
+    "deployedDatabaseRoundTripExecuted": false,
+    "localNonemptyForwardMigrationRehearsalPassed": true,
+    "newRollbackSqlExecuted": false
+  },
+  "runs": [
+    {
+      "label": "Initial complete unit run",
+      "artifact": "_local-data/doctor-patients-validation/test-results/unit.trx",
+      "sha256": "07c1cb2e30a37d05489e95379c681ef06ecf4efe5244c8887509d4bb5a08cfe1",
+      "command": "dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --no-build --no-restore --logger 'trx;LogFileName=unit.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 335,
+        "executed": 335,
+        "passed": 335,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T14:36:22.4119106+03:00",
+        "queuing": "2026-10-28T14:36:22.4119109+03:00",
+        "start": "2026-10-28T14:36:19.3873617+03:00",
+        "finish": "2026-10-28T14:36:45.2390354+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Complete unit run before final anchor bound",
+      "artifact": "_local-data/doctor-patients-validation/test-results/unit-verified.trx",
+      "sha256": "84fcd35e86c8785fcd31a4bb81f592af6284d478d7e50b5aebea60111e9f792c",
+      "command": "dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --no-build --no-restore --logger 'trx;LogFileName=unit-verified.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 335,
+        "executed": 335,
+        "passed": 335,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T15:40:45.4127425+03:00",
+        "queuing": "2026-10-28T15:40:45.4127430+03:00",
+        "start": "2026-10-28T15:40:42.5126910+03:00",
+        "finish": "2026-10-28T15:41:05.5729516+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Final complete unit run including anchor regression",
+      "artifact": "_local-data/doctor-patients-validation/test-results/unit-anchor-final.trx",
+      "sha256": "6f4224a1b199f47039bec382a6b9f6e9fcbc9ab9115dd40d419750d9d7c6c61f",
+      "command": "dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --no-build --no-restore --logger 'trx;LogFileName=unit-anchor-final.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 336,
+        "executed": 336,
+        "passed": 336,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T15:58:40.0632531+03:00",
+        "queuing": "2026-10-28T15:58:40.0632535+03:00",
+        "start": "2026-10-28T15:58:37.5679488+03:00",
+        "finish": "2026-10-28T15:59:00.6829473+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Initial architecture run",
+      "artifact": "_local-data/doctor-patients-validation/test-results/architecture.trx",
+      "sha256": "75cbecc5d5d0b9c8f8f2c50cfcc748243c5606f7afc513fe8f636f797166590c",
+      "command": "dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --no-build --no-restore --logger 'trx;LogFileName=architecture.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Failed",
+      "counters": {
+        "total": 26,
+        "executed": 26,
+        "passed": 25,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T14:36:22.2590852+03:00",
+        "queuing": "2026-10-28T14:36:22.2590859+03:00",
+        "start": "2026-10-28T14:36:19.3721991+03:00",
+        "finish": "2026-10-28T14:36:29.9643247+03:00"
+      },
+      "failedCases": [
+        "Wasla.Tests.Architecture.Phase11TicketArchitectureTests.Phase11_ticket_application_does_not_depend_on_frozen_data_store"
+      ]
+    },
+    {
+      "label": "Complete architecture run",
+      "artifact": "_local-data/doctor-patients-validation/test-results/architecture-verified.trx",
+      "sha256": "f30e09c5e142bbd2f1bd3fb61a3c1ce2e53429b8edb2956519665a651df81977",
+      "command": "dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --no-build --no-restore --logger 'trx;LogFileName=architecture-verified.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T15:40:45.0264215+03:00",
+        "queuing": "2026-10-28T15:40:45.0264219+03:00",
+        "start": "2026-10-28T15:40:42.5126944+03:00",
+        "finish": "2026-10-28T15:40:49.5899871+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Final complete architecture run",
+      "artifact": "_local-data/doctor-patients-validation/test-results/architecture-delivery.trx",
+      "sha256": "bc98652efcad92cbee159274c56e96a8f5ff930590d19b907e7b07a585117b28",
+      "command": "dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --no-build --no-restore --logger 'trx;LogFileName=architecture-delivery.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T16:18:32.5614031+03:00",
+        "queuing": "2026-10-28T16:18:32.5614035+03:00",
+        "start": "2026-10-28T16:18:30.3565240+03:00",
+        "finish": "2026-10-28T16:18:36.3434134+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Initial complete BuildingBlock run",
+      "artifact": "_local-data/doctor-patients-validation/test-results/buildingblock.trx",
+      "sha256": "f1a443729229d778f97c85f7267609f1c12d294256262f177d3c24cdd03cd571",
+      "command": "dotnet test src/BuildingBlock/BuildingBlock.Tests/BuildingBlock.Tests.csproj --no-build --no-restore --logger 'trx;LogFileName=buildingblock.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Failed",
+      "counters": {
+        "total": 323,
+        "executed": 323,
+        "passed": 322,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T14:36:23.8118378+03:00",
+        "queuing": "2026-10-28T14:36:23.8118392+03:00",
+        "start": "2026-10-28T14:36:19.4153697+03:00",
+        "finish": "2026-10-28T14:36:32.2161048+03:00"
+      },
+      "failedCases": [
+        "BuildingBlock.Tests.CacheTests.Tag_invalidation_expiration_and_keyed_lock_work"
+      ]
+    },
+    {
+      "label": "Complete BuildingBlock rerun without concurrent load",
+      "artifact": "_local-data/doctor-patients-validation/test-results/buildingblock-rerun.trx",
+      "sha256": "ed96eef1bbe58c5c4c92fac600e4f46916ca8bd6feafce3d6e2d17aeaaf147fb",
+      "command": "dotnet test src/BuildingBlock/BuildingBlock.Tests/BuildingBlock.Tests.csproj --no-build --no-restore --logger 'trx;LogFileName=buildingblock-rerun.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 323,
+        "executed": 323,
+        "passed": 323,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T14:40:04.9974642+03:00",
+        "queuing": "2026-10-28T14:40:04.9974645+03:00",
+        "start": "2026-10-28T14:40:02.2339822+03:00",
+        "finish": "2026-10-28T14:40:11.7166852+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Initial complete integration run",
+      "artifact": "_local-data/doctor-patients-validation/test-results/integration.trx",
+      "sha256": "e1fe02df2b9f8592315c10216c69938476cb38f2f775e4b088e434f9ec1566fb",
+      "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --no-build --no-restore --logger 'trx;LogFileName=integration.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Failed",
+      "counters": {
+        "total": 383,
+        "executed": 383,
+        "passed": 379,
+        "failed": 4,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T14:36:31.4597389+03:00",
+        "queuing": "2026-10-28T14:36:31.4597391+03:00",
+        "start": "2026-10-28T14:36:19.5063481+03:00",
+        "finish": "2026-10-28T15:13:16.2217317+03:00"
+      },
+      "failedCases": [
+        "Wasla.Tests.Integration.Phase18PartTwoSqlTests.Reservation_only_day_tracks_effective_schedule_invalidates_evidence_and_moves_independent_history",
+        "Wasla.Tests.Integration.Phase16PerformanceTests.Sql_thousand_visit_history_has_bounded_stable_mixed_pages_and_an_inspectable_query_plan",
+        "Wasla.Tests.Integration.Phase13ClinicalApiTests.Ticket_no_show_releases_claim_and_restore_reacquires_without_consuming(sqlServer: True)",
+        "Wasla.Tests.Integration.Phase12TicketRefundProjectionTests.Cancelled_ticket_refund_is_idempotent_and_details_reflect_financial_state"
+      ]
+    },
+    {
+      "label": "All four failed integration cases and related cases rerun",
+      "artifact": "_local-data/doctor-patients-validation/test-results/integration-failed-rerun.trx",
+      "sha256": "d01d781fca5325fbbd107f6531b88ce88430db4932061c34b114a321a5b3652f",
+      "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --no-build --no-restore --filter 'FullyQualifiedName~Reservation_only_day_tracks_effective_schedule_invalidates_evidence_and_moves_independent_history|FullyQualifiedName~Phase12TicketRefundProjectionTests|FullyQualifiedName~Sql_thousand_visit_history_has_bounded_stable_mixed_pages_and_an_inspectable_query_plan|FullyQualifiedName~Ticket_no_show_releases_claim_and_restore_reacquires_without_consuming' --logger 'trx;LogFileName=integration-failed-rerun.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 6,
+        "executed": 6,
+        "passed": 6,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T15:22:23.7530381+03:00",
+        "queuing": "2026-10-28T15:22:23.7530386+03:00",
+        "start": "2026-10-28T15:22:00.0643879+03:00",
+        "finish": "2026-10-28T15:23:39.8741527+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Feature filter: 25 feature cases plus existing governance case",
+      "artifact": "_local-data/doctor-patients-validation/test-results/doctor-patients-acceptance-final.trx",
+      "sha256": "02bfa616fba0fc2feec7d3ab0583268e9886d982749355b5361ec69945ee3786",
+      "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --no-build --no-restore --filter 'FullyQualifiedName~DoctorPatient' --logger 'trx;LogFileName=doctor-patients-acceptance-final.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T15:25:35.1057731+03:00",
+        "queuing": "2026-10-28T15:25:35.1057735+03:00",
+        "start": "2026-10-28T15:25:11.8252922+03:00",
+        "finish": "2026-10-28T15:33:05.5400737+03:00"
+      },
+      "failedCases": [],
+      "newFeatureCases": [
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Current_database_permission_revocation_hides_counts_and_denies_patient_reads",
+          "outcome": "Passed",
+          "duration": "00:00:02.0190626"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientPrescriptionTests.Issued_history_versions_pdf_and_closed_practice_export_preserve_write_guards(sql: False)",
+          "outcome": "Passed",
+          "duration": "00:00:11.7607576"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?lastAttendanceFrom=2026-10-20&lastAttendanceTo=20\"···)",
+          "outcome": "Passed",
+          "duration": "00:00:01.5812720"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"radiology\", sql: False)",
+          "outcome": "Passed",
+          "duration": "00:00:06.1627398"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Other_actors_cannot_enumerate_patient_relationships(actor: \"patient\")",
+          "outcome": "Passed",
+          "duration": "00:00:02.1848461"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientMembershipTests.Doctor_wide_identity_search_and_statistics_deduplicate_practices_and_retain_terminal_admissions(sql: True)",
+          "outcome": "Passed",
+          "duration": "00:00:14.4211912"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Other_actors_cannot_enumerate_patient_relationships(actor: \"reception\")",
+          "outcome": "Passed",
+          "duration": "00:00:02.8356578"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"radiology\", sql: True)",
+          "outcome": "Passed",
+          "duration": "00:00:14.6230182"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientMembershipTests.Doctor_wide_identity_search_and_statistics_deduplicate_practices_and_retain_terminal_admissions(sql: False)",
+          "outcome": "Passed",
+          "duration": "00:00:02.6953689"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientExportSecurityTests.Revocation_during_render_and_required_audit_failure_never_release_pdf_bytes",
+          "outcome": "Passed",
+          "duration": "00:00:20.6420271"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?practiceScope=unknown\")",
+          "outcome": "Passed",
+          "duration": "00:00:02.1509806"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Existing_ticket_detail_keeps_clinical_and_financial_source_permissions_separate",
+          "outcome": "Passed",
+          "duration": "00:00:02.1407241"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Other_actors_cannot_enumerate_patient_relationships(actor: \"other-doctor\")",
+          "outcome": "Passed",
+          "duration": "00:00:02.6501839"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientPrescriptionTests.Issued_history_versions_pdf_and_closed_practice_export_preserve_write_guards(sql: True)",
+          "outcome": "Passed",
+          "duration": "00:00:19.7916590"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?pageSize=101\")",
+          "outcome": "Passed",
+          "duration": "00:00:01.5509366"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientMembershipTests.Reservation_without_check_in_is_not_membership_but_successful_check_in_is",
+          "outcome": "Passed",
+          "duration": "00:00:02.4674715"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientExportSecurityTests.Practice_closure_during_render_rechecks_untracked_scope_before_release",
+          "outcome": "Passed",
+          "duration": "00:00:07.1941468"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsContractTests.Eight_get_contracts_have_typed_private_openapi_and_seed_only_doctor_defaults_idempotently",
+          "outcome": "Passed",
+          "duration": "00:00:05.4842500"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsHistoricalTests.Closed_practice_own_reads_require_history_grant_and_existing_writers_remain_denied(sql: False)",
+          "outcome": "Passed",
+          "duration": "00:00:06.2013171"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"lab\", sql: True)",
+          "outcome": "Passed",
+          "duration": "00:00:15.0772515"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsSqlTests.Archive_move_preserves_membership_and_large_directory_uses_bounded_sql_pages",
+          "outcome": "Passed",
+          "duration": "00:06:31.8017002"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsHistoricalTests.Closed_practice_own_reads_require_history_grant_and_existing_writers_remain_denied(sql: True)",
+          "outcome": "Passed",
+          "duration": "00:00:43.7596604"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?pageNumber=0\")",
+          "outcome": "Passed",
+          "duration": "00:00:01.7080761"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"lab\", sql: False)",
+          "outcome": "Passed",
+          "duration": "00:00:04.4656574"
+        },
+        {
+          "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Membership_begins_at_real_admission_and_all_seven_patient_reads_are_scoped",
+          "outcome": "Passed",
+          "duration": "00:00:02.3979356"
+        }
+      ]
+    },
+    {
+      "label": "Final changed-source/feature regression run",
+      "artifact": "_local-data/doctor-patients-validation/test-results/integration-final-read-rechecks.trx",
+      "sha256": "d092c2011d69629c215760c5638778f15ab24f239fff850ded5a09c1f87959fe",
+      "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --no-build --no-restore --filter '(FullyQualifiedName~DoctorPatient&FullyQualifiedName!~DoctorPatientsSqlTests)|FullyQualifiedName~Reservation_only_day_tracks_effective_schedule_invalidates_evidence_and_moves_independent_history|FullyQualifiedName~Phase12TicketRefundProjectionTests|FullyQualifiedName~Ticket_no_show_releases_claim_and_restore_reacquires_without_consuming' --logger 'trx;LogFileName=integration-final-read-rechecks.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 30,
+        "executed": 30,
+        "passed": 30,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T15:40:31.6573035+03:00",
+        "queuing": "2026-10-28T15:40:31.6573038+03:00",
+        "start": "2026-10-28T15:40:12.2721906+03:00",
+        "finish": "2026-10-28T15:42:25.1430841+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Fresh complete integration run before final validation-only bound",
+      "artifact": "_local-data/doctor-patients-validation/test-results/integration-verified.trx",
+      "sha256": "9b7f661dfa84223564dae83e52bc411a2869a67020a6622024e2eab7050493bd",
+      "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --no-build --no-restore --logger 'trx;LogFileName=integration-verified.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 385,
+        "executed": 385,
+        "passed": 385,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T15:43:53.2244308+03:00",
+        "queuing": "2026-10-28T15:43:53.2244311+03:00",
+        "start": "2026-10-28T15:43:35.2151626+03:00",
+        "finish": "2026-10-28T16:17:19.9958219+03:00"
+      },
+      "failedCases": []
+    },
+    {
+      "label": "Final directory API rerun including additional early-anchor HTTP case",
+      "artifact": "_local-data/doctor-patients-validation/test-results/integration-anchor-final.trx",
+      "sha256": "0c7fd4e26dc2f13a51729a23e41da488c56799163ec0e40603b82b123564bbe6",
+      "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --no-build --no-restore --filter 'FullyQualifiedName~DoctorPatientsApiTests' --logger 'trx;LogFileName=integration-anchor-final.trx' --results-directory _local-data/doctor-patients-validation/test-results -v normal",
+      "outcome": "Completed",
+      "counters": {
+        "total": 11,
+        "executed": 11,
+        "passed": 11,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T16:18:47.5034290+03:00",
+        "queuing": "2026-10-28T16:18:47.5034294+03:00",
+        "start": "2026-10-28T16:18:30.4744068+03:00",
+        "finish": "2026-10-28T16:19:12.1783802+03:00"
+      },
+      "failedCases": []
+    }
+  ],
+  "buildScopeNote": "The complete integration run used the last read-authorization build. The only subsequent production change was an early UTC-anchor validation bound; final solution build, complete unit/architecture suites and 11 directory API cases passed after it. No source reader/writer/SQL projection changed. One additional boundary HTTP test was added after the broad run.",
+  "performance": {
+    "observedSummary": "SQL Server: 2,001 patients; 20,002 tickets after concurrent admission; 2 owned Practices; live/archive mix; page size 100; 21 distinct pages; first page 3232.1 ms; exactly 5 reader queries; seed 313.2 s.",
+    "firstPageReaderMilliseconds": 3232.1,
+    "readerQueryCount": 5,
+    "queryCountExcludes": "actor authorization and audit queries",
+    "sqlArtifact": "docs/doctor-patients/directory-query.sql",
+    "directoryExecutionPlanPublished": false,
+    "productionLoadAcceptance": false
+  },
+  "pdfVerification": {
+    "actualPdfByteStates": [
+      "Finalized",
+      "Superseded",
+      "Voided"
+    ],
+    "draftAndUnknownStatesRejected": true,
+    "visualQa": "Poppler rendering inspected for Arabic/RTL, status/version marks, watermark, page footer and clipping",
+    "publicExportStorageAdded": false,
+    "certifiedSignatureClaim": false
+  },
+  "configurationChecks": {
+    "productionCrossDoctorSharingEnabled": false,
+    "stagingCrossDoctorSharingEnabled": false,
+    "configurationFilesModified": false
+  },
+  "failedAttemptResolution": [
+    {
+      "case": "Phase18PartTwoSqlTests.Reservation_only_day_tracks_effective_schedule_invalidates_evidence_and_moves_independent_history",
+      "resolution": "Preserved original standalone owned booking detail without creating patient-directory membership. Passed focused rerun."
+    },
+    {
+      "case": "Phase12TicketRefundProjectionTests.Cancelled_ticket_refund_is_idempotent_and_details_reflect_financial_state",
+      "resolution": "Completed minimal fixture DI and DB Doctor/source-finance grants; assertions retained. Passed focused rerun."
+    },
+    {
+      "case": "Phase16PerformanceTests.Sql_thousand_visit_history_has_bounded_stable_mixed_pages_and_an_inspectable_query_plan",
+      "resolution": "Initial SQL timeout under broad concurrent run; unchanged test passed focused SQL rerun with real query-plan inspection."
+    },
+    {
+      "case": "Phase13ClinicalApiTests.Ticket_no_show_releases_claim_and_restore_reacquires_without_consuming(sqlServer: True)",
+      "resolution": "Initial SQL timeout; both providers passed focused reruns."
+    },
+    {
+      "case": "Architecture frozen data-store constructor rule",
+      "resolution": "Used existing IReadRepository<DoctorPractice, WaslaReadPersistence>; complete architecture rerun passed."
+    },
+    {
+      "case": "BuildingBlock short-expiry cache assertion",
+      "resolution": "Unchanged complete suite passed separately after an initial timing assertion under concurrent load."
+    }
+  ],
+  "externalGates": [
+    "Master v1.2 absent; no formal incorporation/signoff claimed",
+    "No production migration/deployment or push/PR performed",
+    "Deployment-specific index locking/load and Chromium/font acceptance",
+    "Inherited repository credential remediation gate remains external",
+    "Certified e-prescribing/signatures and new mutation/booking/notification policies deferred"
+  ],
+  "latestIntegrationCoverage": {
+    "uniqueCases": 386,
+    "passed": 386,
+    "failed": 0,
+    "scope": "Union of complete 385-case integration run and final 11-case directory API rerun; no single post-edit 386-case full run is claimed."
+  },
+  "newFeatureIntegrationCases": [
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"lab\", sql: False)",
+      "outcome": "Passed",
+      "duration": "00:00:03.8874526",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"lab\", sql: True)",
+      "outcome": "Passed",
+      "duration": "00:00:15.2258304",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"radiology\", sql: False)",
+      "outcome": "Passed",
+      "duration": "00:00:03.6892763",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientDiagnosticHistoryTests.Own_historical_results_versions_pending_submissions_and_media_are_read_only(kind: \"radiology\", sql: True)",
+      "outcome": "Passed",
+      "duration": "00:00:16.4543104",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientExportSecurityTests.Practice_closure_during_render_rechecks_untracked_scope_before_release",
+      "outcome": "Passed",
+      "duration": "00:00:03.0460898",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientExportSecurityTests.Revocation_during_render_and_required_audit_failure_never_release_pdf_bytes",
+      "outcome": "Passed",
+      "duration": "00:00:03.5571617",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientMembershipTests.Doctor_wide_identity_search_and_statistics_deduplicate_practices_and_retain_terminal_admissions(sql: False)",
+      "outcome": "Passed",
+      "duration": "00:00:02.3606424",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientMembershipTests.Doctor_wide_identity_search_and_statistics_deduplicate_practices_and_retain_terminal_admissions(sql: True)",
+      "outcome": "Passed",
+      "duration": "00:00:15.5148248",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientMembershipTests.Reservation_without_check_in_is_not_membership_but_successful_check_in_is",
+      "outcome": "Passed",
+      "duration": "00:00:02.7801921",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientPrescriptionTests.Issued_history_versions_pdf_and_closed_practice_export_preserve_write_guards(sql: False)",
+      "outcome": "Passed",
+      "duration": "00:00:09.1905909",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientPrescriptionTests.Issued_history_versions_pdf_and_closed_practice_export_preserve_write_guards(sql: True)",
+      "outcome": "Passed",
+      "duration": "00:00:19.8332464",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Current_database_permission_revocation_hides_counts_and_denies_patient_reads",
+      "outcome": "Passed",
+      "duration": "00:00:01.8610937",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Existing_ticket_detail_keeps_clinical_and_financial_source_permissions_separate",
+      "outcome": "Passed",
+      "duration": "00:00:02.5926476",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?asOfUtc=0001-01-02T00:00:00Z\")",
+      "outcome": "Passed",
+      "duration": "00:00:01.8565481",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?lastAttendanceFrom=2026-10-20&lastAttendanceTo=20\"···)",
+      "outcome": "Passed",
+      "duration": "00:00:01.6427570",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?pageNumber=0\")",
+      "outcome": "Passed",
+      "duration": "00:00:01.7212595",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?pageSize=101\")",
+      "outcome": "Passed",
+      "duration": "00:00:01.6577745",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Invalid_directory_filters_use_validation_problem_details(query: \"?practiceScope=unknown\")",
+      "outcome": "Passed",
+      "duration": "00:00:01.6288128",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Membership_begins_at_real_admission_and_all_seven_patient_reads_are_scoped",
+      "outcome": "Passed",
+      "duration": "00:00:02.6486997",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Other_actors_cannot_enumerate_patient_relationships(actor: \"other-doctor\")",
+      "outcome": "Passed",
+      "duration": "00:00:03.9921234",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Other_actors_cannot_enumerate_patient_relationships(actor: \"patient\")",
+      "outcome": "Passed",
+      "duration": "00:00:14.3619522",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsApiTests.Other_actors_cannot_enumerate_patient_relationships(actor: \"reception\")",
+      "outcome": "Passed",
+      "duration": "00:00:04.8720348",
+      "artifact": "integration-anchor-final.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsContractTests.Eight_get_contracts_have_typed_private_openapi_and_seed_only_doctor_defaults_idempotently",
+      "outcome": "Passed",
+      "duration": "00:00:03.7069005",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsHistoricalTests.Closed_practice_own_reads_require_history_grant_and_existing_writers_remain_denied(sql: False)",
+      "outcome": "Passed",
+      "duration": "00:00:03.9423453",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsHistoricalTests.Closed_practice_own_reads_require_history_grant_and_existing_writers_remain_denied(sql: True)",
+      "outcome": "Passed",
+      "duration": "00:00:18.6207318",
+      "artifact": "integration-verified.trx"
+    },
+    {
+      "name": "Wasla.Tests.Integration.DoctorPatientsSqlTests.Archive_move_preserves_membership_and_large_directory_uses_bounded_sql_pages",
+      "outcome": "Passed",
+      "duration": "00:06:03.1935484",
+      "artifact": "integration-verified.trx"
+    }
+  ],
+  "consoleArtifacts": [
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-acceptance-final.log",
+      "sha256": "6bd11d2daf57765d5ef2f447a46747a5aae1db54525b5b8f8880f7dd04819819"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-anchor-build.log",
+      "sha256": "af740e8806b8645e4f7d7be8422522f7d22cf2f0d5f781586b7112e2e8574dd6"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-api-anchor-final.log",
+      "sha256": "b8e4f8c34dc0a0d6893c3ad7335c3b6d3a54663b2355216661b0574932bfd334"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-architecture-delivery.log",
+      "sha256": "06f0a1f4d7c6c7f7115b201ee4472bfa22ae25515493550b46a7ff53e7430686"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-architecture-final.log",
+      "sha256": "ac6fff2544c53e42480b90e96a0180de26031119f5a39974101787e1ce69863d"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-architecture-verified.log",
+      "sha256": "8a4c34db5fe66a7b2da7bd21d3ed9d969c211d215d1585e87258dc8a7461335b"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-build-delivery.log",
+      "sha256": "bfcbf1d0f2dfe07a9d5296ceb9b5ed287b59df93a1dda3e4ec5c7b7b83f10f8f"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-build-final.log",
+      "sha256": "6c0ddeb5fb76a12426b530dc2237572d946a680ffcd3a7304b01130c75441d16"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-build-verified.log",
+      "sha256": "3766ce9c31cc59b2a2955eaab864af5e05ce333fc995e6a4a735f38135027cea"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-build.log",
+      "sha256": "976e6c5fde8583d028c6cd02d21be0efbd1104cb57830762a123656c450d9753"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-buildingblock-build.log",
+      "sha256": "2e94e3b53c920980b7261114b074129dec42951ea79485d39320a3df9f57cc0e"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-contract.log",
+      "sha256": "d5835ff14655c08a791bcd9f5841664280397180ab881401bd27fcdcc918b0a5"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-failed-rerun.log",
+      "sha256": "4ab3d8c2e5bfb39877f331136b887c31dee060caab84cf6de17149500489ae56"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-final-read-rechecks.log",
+      "sha256": "a1a6e3ee52fb35b64bbaa66151ef96757c1c97db4edeb74d91a6b1159bb3f3e0"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-full-architecture.log",
+      "sha256": "bbdce84e92287dd4c882f75c2a6858e273c0b827ca5df3d8f6f7b3db26f702c4"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-full-buildingblock-rerun.log",
+      "sha256": "33ac0aac329fe595fe0a53629d6f1b8f96bf1c59f1469d5b17e0f6a76545670f"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-full-buildingblock.log",
+      "sha256": "eabb37e31190430cde6528f395ad05120a91a785a787219a6522d25a02a6fbcc"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-full-integration.log",
+      "sha256": "83615b76a03bf62ea5dcab20bd0de0f11b363a92883592a77dd6e4d0c4af4a9c"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-full-unit.log",
+      "sha256": "4e891dec9a2b8f2c68e400ee264880ab2e6f1381f9ae3496558b7f8ab4c55cdb"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-historical.log",
+      "sha256": "6393751d1e4f5a2573f5dc3b5e96315348c658f6f6bcfea48b4cbf159c9ee9d6"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-integration-verified.log",
+      "sha256": "912a1d446f5f9b81e620630166ebe89fcc74126bbdde5998cd8c960016d13dda"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-migration-script.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-migration.log",
+      "sha256": "b74af21e5d043ab82589a1812652a383b57ca549614073097ed722405fb2a36b"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-model-check.log",
+      "sha256": "c924da1693ad60eb6a78717ddd333946a8a61a056c2ce2868ae514384f01c866"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-model-delivery.log",
+      "sha256": "c924da1693ad60eb6a78717ddd333946a8a61a056c2ce2868ae514384f01c866"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-performance.log",
+      "sha256": "051286b50c5dff502c790db4330cffbc9187dc3b73afbe8a52a56a295db021f5"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-rollback-script.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-sources.log",
+      "sha256": "a576041ac5a8cd97c287996bed3b9515018c9c7873a1a4bf282219dec0deb290"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-test.log",
+      "sha256": "ba5429a84f0fe30310f9fd99059854ef098892f4869d19b8eae33b2a80e05851"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-unit-anchor-final.log",
+      "sha256": "8ba9eb8efb01a0dae128ce8a0c669eb03b49095b6016215191af423454200b7b"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-unit-final.log",
+      "sha256": "a3a18bdaf05cac5a189acc6a7e0580a110e0a4d1acfd0f6a270b0694d1e51fc9"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-unit-verified.log",
+      "sha256": "66e5aa9c956cef1f10c8788f4aeacbe7cdbfd280a019a6bfb454162a48dc03f3"
+    },
+    {
+      "path": "_local-data/doctor-patients-validation/logs/doctor-patients-unit.log",
+      "sha256": "bed18f39cca72ed42fc6122f842f8eddcea47c9c83e642b9f662c217db5ae4f5"
+    }
+  ]
+}

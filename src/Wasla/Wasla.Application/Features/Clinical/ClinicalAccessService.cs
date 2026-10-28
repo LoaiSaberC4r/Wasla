@@ -6,15 +6,28 @@ using Wasla.Application.Persistence;
 using Wasla.Domain.Clinical;
 using Wasla.Domain.Common;
 using Wasla.Domain.Security;
+using Wasla.Application.Features.DoctorPatients;
 
 namespace Wasla.Application.Features.Clinical;
 
 internal sealed record ClinicalActor(Guid UserId, Guid DoctorId, IReadOnlyCollection<string> Permissions);
 
 internal sealed class ClinicalAccessService(IWaslaDataStore dataStore, ICurrentUser currentUser,
-    IReceptionPracticeAuthorizationService receptionAuthorization, ReservationApplicationService reservations)
+    IReceptionPracticeAuthorizationService receptionAuthorization, ReservationApplicationService reservations,
+    DoctorOwnHistoricalReadPolicy historicalReads)
 {
     private UserAccessSnapshot? _snapshot;
+    public bool IsReadOnly { get; private set; }
+    public async Task<Result<ClinicalActor>> AuthorizeOwnReadAsync(Guid practiceId, string permission, CancellationToken ct, Guid? patientId = null)
+    {
+        await SnapshotAsync(ct);
+        var scope = await historicalReads.AuthorizeOwnReadAsync(practiceId, permission, patientId, ct);
+        // Preserve the established practice-scoped API's opaque 403 contract. New patient
+        // resource routes use the relationship policy's safe 404 contract directly.
+        if (scope.IsFailure) return Result<ClinicalActor>.Fail(ClinicalErrors.AccessDenied);
+        IsReadOnly = scope.Value.ReadOnly;
+        return Result<ClinicalActor>.Ok(new(scope.Value.Actor.UserId, scope.Value.Actor.DoctorId, scope.Value.Actor.Permissions));
+    }
 
     public async Task<Result<ClinicalActor>> DoctorAsync(Guid practiceId, string permission, CancellationToken ct)
     {

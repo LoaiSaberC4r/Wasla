@@ -1,0 +1,393 @@
+{
+  "notice": "Illustrative synthetic data checked against generated DTO property shapes; not captured patient records or medical guidance. All eight GETs require current server authorization. An unavailable protected count/section is null, and closed-Practice capabilities depend on historical permission.",
+  "examples": [
+    {
+      "id": "MP-01",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/patients",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/json"
+      },
+      "response": {
+        "items": [
+          {
+            "patientId": "00000001-1111-4111-8111-000000000001",
+            "nameAr": "مريض تجريبي",
+            "nameEn": "Synthetic Patient",
+            "phoneNumber": null,
+            "email": null,
+            "dateOfBirth": "2000-01-01",
+            "age": 26,
+            "gender": "Male",
+            "firstAttendanceAtUtc": "2026-10-01T08:00:00Z",
+            "lastAttendanceAtUtc": "2026-10-28T08:00:00Z",
+            "lastAttendanceBusinessDate": "2026-10-28",
+            "attendanceCount": 2,
+            "completedEncounterCount": 1,
+            "practiceCount": 1,
+            "lastPractice": {
+              "id": "00000002-1111-4111-8111-000000000002",
+              "nameAr": "عيادة مثال",
+              "nameEn": "Example practice",
+              "isActive": true
+            },
+            "hasUpcomingAppointment": true,
+            "historicalOnly": false,
+            "capabilities": {
+              "canViewAttendances": true,
+              "canViewEncounters": true,
+              "canViewDiagnoses": true,
+              "canViewPrescriptions": true,
+              "canExportPrescriptions": true,
+              "canViewAppointments": true,
+              "canViewFollowUps": true,
+              "canViewLabRequests": true,
+              "canViewLabResults": true,
+              "canViewLabSubmissions": true,
+              "canViewRadiologyRequests": true,
+              "canViewRadiologyResults": true,
+              "canViewRadiologySubmissions": true
+            }
+          }
+        ],
+        "totalCount": 1,
+        "pageNumber": 1,
+        "pageSize": 20,
+        "summary": {
+          "allTimeUniquePatients": 1,
+          "attendedLast30Days": 1,
+          "returningPatients": 1
+        },
+        "asOfUtc": "2026-10-28T09:00:00Z"
+      },
+      "schema": "DoctorPatientsPageResponse"
+    },
+    {
+      "id": "MP-02",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/patients/00000001-1111-4111-8111-000000000001",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/json"
+      },
+      "response": {
+        "patient": {
+          "patientId": "00000001-1111-4111-8111-000000000001",
+          "nameAr": "مريض تجريبي",
+          "nameEn": "Synthetic Patient",
+          "phoneNumber": null,
+          "email": null,
+          "dateOfBirth": "2000-01-01",
+          "age": 26,
+          "gender": "Male",
+          "firstAttendanceAtUtc": "2026-10-01T08:00:00Z",
+          "lastAttendanceAtUtc": "2026-10-28T08:00:00Z",
+          "lastAttendanceBusinessDate": "2026-10-28",
+          "attendanceCount": 2,
+          "completedEncounterCount": 1,
+          "practiceCount": 1,
+          "lastPractice": {
+            "id": "00000002-1111-4111-8111-000000000002",
+            "nameAr": "عيادة مثال",
+            "nameEn": "Example practice",
+            "isActive": true
+          },
+          "hasUpcomingAppointment": true,
+          "historicalOnly": false,
+          "capabilities": {
+            "canViewAttendances": true,
+            "canViewEncounters": true,
+            "canViewDiagnoses": true,
+            "canViewPrescriptions": true,
+            "canExportPrescriptions": true,
+            "canViewAppointments": true,
+            "canViewFollowUps": true,
+            "canViewLabRequests": true,
+            "canViewLabResults": true,
+            "canViewLabSubmissions": true,
+            "canViewRadiologyRequests": true,
+            "canViewRadiologyResults": true,
+            "canViewRadiologySubmissions": true
+          }
+        },
+        "practices": [
+          {
+            "id": "00000002-1111-4111-8111-000000000002",
+            "nameAr": "عيادة مثال",
+            "nameEn": "Example practice",
+            "isActive": true
+          }
+        ],
+        "lastAttendance": {
+          "ticketId": "00000003-1111-4111-8111-000000000003",
+          "practiceId": "00000002-1111-4111-8111-000000000002",
+          "practiceName": "عيادة مثال",
+          "businessDate": "2026-10-28",
+          "checkInAtUtc": "2026-10-28T08:00:00Z",
+          "source": "WalkIn",
+          "checkInMode": "WalkIn",
+          "ticketStatus": "Completed",
+          "ticketNumber": 1,
+          "isArchived": false,
+          "linkedReservationId": null,
+          "encounterId": "00000004-1111-4111-8111-000000000004",
+          "encounterStatus": "Completed",
+          "canViewTicket": true,
+          "canViewEncounter": true
+        },
+        "lastDiagnosis": {
+          "diagnosisId": "00000005-1111-4111-8111-000000000005",
+          "encounterId": "00000004-1111-4111-8111-000000000004",
+          "practiceId": "00000002-1111-4111-8111-000000000002",
+          "businessDate": "2026-10-28",
+          "encounterDate": "2026-10-28T08:05:00Z",
+          "diagnosisType": "Primary",
+          "displayText": "تشخيص تجريبي للمثال فقط",
+          "encounterStatus": "Completed",
+          "isActive": true,
+          "isHistoricalPractice": false
+        },
+        "lastPrescription": {
+          "prescriptionId": "00000006-1111-4111-8111-000000000006",
+          "encounterId": "00000004-1111-4111-8111-000000000004",
+          "practiceId": "00000002-1111-4111-8111-000000000002",
+          "visitDateUtc": "2026-10-28T08:05:00Z",
+          "currentVersionNumber": 1,
+          "currentStatus": "Finalized",
+          "medicationCount": 1,
+          "hasVersions": false,
+          "canView": true,
+          "canExport": true,
+          "isHistoricalPractice": false
+        },
+        "labRequestCount": 0,
+        "radiologyRequestCount": 0,
+        "nextAppointment": {
+          "reservationId": "00000007-1111-4111-8111-000000000007",
+          "practiceId": "00000002-1111-4111-8111-000000000002",
+          "businessDate": "2026-10-30",
+          "scheduledStart": "2026-10-30T09:00:00Z",
+          "visitType": "FollowUp",
+          "segment": "العام",
+          "status": "Active",
+          "linkedTicketId": null,
+          "followUpEligibilityId": "00000008-1111-4111-8111-000000000008",
+          "isArchived": false,
+          "source": "Patient"
+        },
+        "currentFollowUp": {
+          "eligibilityId": "00000008-1111-4111-8111-000000000008",
+          "sourceEncounterId": "00000004-1111-4111-8111-000000000004",
+          "practiceId": "00000002-1111-4111-8111-000000000002",
+          "status": "Reserved",
+          "validUntil": "2026-11-11",
+          "reservedReservationId": "00000007-1111-4111-8111-000000000007",
+          "reservedTicketId": null,
+          "consumedEncounterId": null,
+          "canBook": false,
+          "canCreateFollowUpFromSource": false,
+          "isHistoricalPractice": false
+        }
+      },
+      "schema": "DoctorMyPatientOverviewResponse"
+    },
+    {
+      "id": "MP-03",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/patients/00000001-1111-4111-8111-000000000001/attendances",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/json"
+      },
+      "response": {
+        "items": [
+          {
+            "ticketId": "00000003-1111-4111-8111-000000000003",
+            "practiceId": "00000002-1111-4111-8111-000000000002",
+            "practiceName": "عيادة مثال",
+            "businessDate": "2026-10-28",
+            "checkInAtUtc": "2026-10-28T08:00:00Z",
+            "source": "WalkIn",
+            "checkInMode": "WalkIn",
+            "ticketStatus": "Completed",
+            "ticketNumber": 1,
+            "isArchived": false,
+            "linkedReservationId": null,
+            "encounterId": "00000004-1111-4111-8111-000000000004",
+            "encounterStatus": "Completed",
+            "canViewTicket": true,
+            "canViewEncounter": true
+          },
+          {
+            "ticketId": "00000009-1111-4111-8111-000000000009",
+            "practiceId": "00000002-1111-4111-8111-000000000002",
+            "practiceName": "عيادة مثال",
+            "businessDate": "2026-10-01",
+            "checkInAtUtc": "2026-10-01T08:00:00Z",
+            "source": "WalkIn",
+            "checkInMode": "WalkIn",
+            "ticketStatus": "Cancelled",
+            "ticketNumber": 1,
+            "isArchived": true,
+            "linkedReservationId": null,
+            "encounterId": null,
+            "encounterStatus": null,
+            "canViewTicket": true,
+            "canViewEncounter": false
+          }
+        ],
+        "totalCount": 2,
+        "pageNumber": 1,
+        "pageSize": 20
+      },
+      "schema": "DoctorPatientAttendanceClinicalPage"
+    },
+    {
+      "id": "MP-04",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/patients/00000001-1111-4111-8111-000000000001/diagnoses",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/json"
+      },
+      "response": {
+        "items": [
+          {
+            "diagnosisId": "00000005-1111-4111-8111-000000000005",
+            "encounterId": "00000004-1111-4111-8111-000000000004",
+            "practiceId": "00000002-1111-4111-8111-000000000002",
+            "businessDate": "2026-10-28",
+            "encounterDate": "2026-10-28T08:05:00Z",
+            "diagnosisType": "Primary",
+            "displayText": "تشخيص تجريبي للمثال فقط",
+            "encounterStatus": "Completed",
+            "isActive": true,
+            "isHistoricalPractice": false
+          }
+        ],
+        "totalCount": 1,
+        "pageNumber": 1,
+        "pageSize": 20
+      },
+      "schema": "DoctorPatientDiagnosisClinicalPage"
+    },
+    {
+      "id": "MP-05",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/patients/00000001-1111-4111-8111-000000000001/prescriptions",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/json"
+      },
+      "response": {
+        "items": [
+          {
+            "prescriptionId": "00000006-1111-4111-8111-000000000006",
+            "encounterId": "00000004-1111-4111-8111-000000000004",
+            "practiceId": "00000002-1111-4111-8111-000000000002",
+            "visitDateUtc": "2026-10-28T08:05:00Z",
+            "currentVersionNumber": 1,
+            "currentStatus": "Finalized",
+            "medicationCount": 1,
+            "hasVersions": false,
+            "canView": true,
+            "canExport": true,
+            "isHistoricalPractice": false
+          }
+        ],
+        "totalCount": 1,
+        "pageNumber": 1,
+        "pageSize": 20
+      },
+      "schema": "DoctorPatientPrescriptionClinicalPage"
+    },
+    {
+      "id": "MP-06",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/patients/00000001-1111-4111-8111-000000000001/appointments",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/json"
+      },
+      "response": {
+        "items": [
+          {
+            "reservationId": "00000007-1111-4111-8111-000000000007",
+            "practiceId": "00000002-1111-4111-8111-000000000002",
+            "businessDate": "2026-10-30",
+            "scheduledStart": "2026-10-30T09:00:00Z",
+            "visitType": "FollowUp",
+            "segment": "العام",
+            "status": "Active",
+            "linkedTicketId": null,
+            "followUpEligibilityId": "00000008-1111-4111-8111-000000000008",
+            "isArchived": false,
+            "source": "Patient"
+          }
+        ],
+        "totalCount": 1,
+        "pageNumber": 1,
+        "pageSize": 20
+      },
+      "schema": "DoctorPatientAppointmentClinicalPage"
+    },
+    {
+      "id": "MP-07",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/patients/00000001-1111-4111-8111-000000000001/follow-ups",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/json"
+      },
+      "response": {
+        "items": [
+          {
+            "eligibilityId": "00000008-1111-4111-8111-000000000008",
+            "sourceEncounterId": "00000004-1111-4111-8111-000000000004",
+            "practiceId": "00000002-1111-4111-8111-000000000002",
+            "status": "Reserved",
+            "validUntil": "2026-11-11",
+            "reservedReservationId": "00000007-1111-4111-8111-000000000007",
+            "reservedTicketId": null,
+            "consumedEncounterId": null,
+            "canBook": false,
+            "canCreateFollowUpFromSource": false,
+            "isHistoricalPractice": false
+          }
+        ],
+        "totalCount": 1,
+        "pageNumber": 1,
+        "pageSize": 20
+      },
+      "schema": "DoctorPatientFollowUpClinicalPage"
+    },
+    {
+      "id": "MP-08",
+      "method": "GET",
+      "path": "/api/v1/doctors/me/prescriptions/00000006-1111-4111-8111-000000000006/versions/1/pdf?disposition=inline",
+      "status": 200,
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline; filename=\"wasla-prescription-00000006111141118111000000000006-v1.pdf\""
+      },
+      "bodyDescription": "Binary PDF begins %PDF. Generated only for an issued own version; no JSON/base64 body or public URL. Use disposition=attachment to download."
+    }
+  ]
+}

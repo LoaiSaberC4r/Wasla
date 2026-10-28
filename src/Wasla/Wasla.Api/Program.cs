@@ -51,6 +51,7 @@ builder.Services.AddBuildingBlockSwagger(options =>
     options.ApiTitle = "Wasla API";
 });
 builder.Services.Configure<Swashbuckle.AspNetCore.SwaggerGen.SwaggerGenOptions>(options => options.OperationFilter<ReportExportsOperationFilter>());
+builder.Services.PostConfigure<Swashbuckle.AspNetCore.SwaggerGen.SwaggerGenOptions>(options => options.OperationFilter<Wasla.Api.OpenApi.DoctorPatientsOperationFilter>());
 builder.Services.AddBuildingBlockLocalization(builder.Configuration);
 builder.Services.AddBuildingBlockProblemDetails();
 builder.Services.PostConfigure<LogRedactionOptions>(options =>
@@ -129,6 +130,16 @@ if (Directory.Exists(emailAssetsPath))
     });
 }
 app.UseRouting();
+// Medical workspace responses, including denials/downloads, must never enter shared caches.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/v1/doctors/me"))
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    }
+    await next(context);
+});
 app.UseCors(CorsPolicyNames.Default);
 app.UseAuthentication();
 app.UseRateLimiter();
