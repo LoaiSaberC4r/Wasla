@@ -18,7 +18,7 @@ The owner supplied and approved `WASLA-CODEX-DOCTOR-MY-PATIENTS-V1.md`, retained
 | MP-BR-11 | APPROVED IN THIS TASK | All-time, descending last check-in/PatientId, scoped search and bounded pagination, permission-filtered optional counts, returning >=2. |
 | MP-BR-12 | CONFIRMED | Current DB actor/grants, opaque unrelated IDs, source authorization, private responses, required metadata-only audit, no PHI caching. |
 
-PROPOSED TECHNICAL DESIGN: Application relationship/read policies and CQRS contracts; infrastructure SQL grouping over existing `AllTickets` plus permanent registry identity; existing immutable audit store; existing installed Chromium/Puppeteer renderer pattern; versioned GET controllers; additive lookup indexes only where absent. No new business tables.
+PROPOSED TECHNICAL DESIGN: Application relationship/read policies and CQRS contracts; infrastructure SQL grouping over existing `AllTickets` plus permanent registry identity; existing immutable audit store; shared automatically provisioned Chromium/Puppeteer renderer pattern; versioned GET controllers; additive lookup indexes only where absent. No new business tables.
 
 Directory metadata is relationship data authorized by `DoctorPatients.ViewOwn`, including inactive-Practice membership. Source details and optional clinical/reservation counts additionally require their original permission and active/historical read scope. Without historical permission an inactive-Practice member remains listed, but protected historical details are unavailable. Archive Ticket/Reservation details retain their archive permission as well as the original source permission.
 

@@ -1,6 +1,5 @@
 param(
-    [string]$TestSqlConnectionString = 'Server=.\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=True',
-    [string]$ChromiumExecutablePath = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+    [string]$TestSqlConnectionString = 'Server=.\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=True'
 )
 
 # The SQL fixtures create and remove isolated disposable databases. Use a test server.
@@ -8,15 +7,13 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoPath = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Set-Location -LiteralPath $repoPath
-if (-not (Test-Path -LiteralPath $ChromiumExecutablePath -PathType Leaf)) {
-    throw 'An installed Chromium executable is required to verify actual PDF rendering.'
-}
 $resultsPath = Join-Path $repoPath '_local-data/doctor-patients-validation/reproduced-results'
 New-Item -ItemType Directory -Path $resultsPath -Force | Out-Null
 $env:WASLA_SQLSERVER_CONNECTION_STRING = $TestSqlConnectionString
 $env:BUILDINGBLOCK_SQLSERVER_CONNECTION_STRING = $TestSqlConnectionString
 $env:BUILDINGBLOCK_SQLSERVER_ALLOW_DATABASE_CREATE = 'true'
-$env:WASLA_CHROMIUM_PATH = $ChromiumExecutablePath
+$env:WASLA_RUN_BROWSER_TESTS = '1'
+Remove-Item Env:WASLA_CHROMIUM_PATH, Env:Phase18__ChromiumExecutablePath, Env:PUPPETEER_EXECUTABLE_PATH -ErrorAction SilentlyContinue
 $env:WASLA_EXPORT_QA_DIRECTORY = Split-Path $resultsPath -Parent
 $env:WASLA_CONTRACT_OUTPUT_DIRECTORY = $env:WASLA_EXPORT_QA_DIRECTORY
 # Process-local test logging only; avoids contention across WebApplicationFactories.

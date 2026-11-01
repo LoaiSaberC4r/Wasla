@@ -22,7 +22,7 @@ Focused iterations additionally caught an incorrect assignment-response test ass
 | Phase18PartTwoMigrationTests | Nonempty old-schema copy; expansion; premature cutover rejected with SQL 51000; 10 bounded registry batches; repeated application; 1,000 relocations in 20 fresh-context batches of 50; original IDs/history/payment totals; indexed paging query plan; synthetic CHECKSUM backup/VERIFYONLY/restore |
 | Existing Phase11–18 tests | Full regression covers admission/payment, queue, bookings, clinical/visibility/official outputs, family entitlement, operating finance, audit, reporting/exports, security and architecture |
 
-The fixed synthetic relocation dataset compares every role-supported report definition for Doctor, Reception and platform at a common historical AsOfUtc: metrics, series, breakdowns, data status and sample/detail counts. Queue XLSX cells in ar/en are compared before/after, excluding only generated-time metadata. Real ar/en PDF exports are requested before/after when WASLA_CHROMIUM_PATH is configured; these verify generation and PDF signatures, while source-value parity is asserted through the report model/XLSX. Byte-for-byte PDF equality is not claimed. Existing HTML/XLSX/PDF renderer tests also run with real Chrome.
+The fixed synthetic relocation dataset compares every role-supported report definition for Doctor, Reception and platform at a common historical AsOfUtc: metrics, series, breakdowns, data status and sample/detail counts. Queue XLSX cells in ar/en are compared before/after, excluding only generated-time metadata. Real ar/en PDF exports are requested before/after when WASLA_RUN_BROWSER_TESTS=1; these verify generation and PDF signatures, while source-value parity is asserted through the report model/XLSX. Byte-for-byte PDF equality is not claimed. Existing HTML/XLSX/PDF renderer tests also run with real Chrome.
 
 ## Commands and final results
 
@@ -48,7 +48,7 @@ dotnet restore Wasla.sln
 dotnet build Wasla.sln --no-restore
 '{"parallelizeAssembly":false,"parallelizeTestCollections":true,"maxParallelThreads":2}' | Set-Content -Encoding utf8NoBOM tests/Wasla.Tests.Integration/bin/Debug/net10.0/xunit.runner.json
 $env:WASLA_SQLSERVER_CONNECTION_STRING='Server=.\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True'
-$env:WASLA_CHROMIUM_PATH='C:\Program Files\Google\Chrome\Application\chrome.exe'
+$env:WASLA_RUN_BROWSER_TESTS='1' # Automatic download; no executable override
 $env:WASLA_CONTRACT_OUTPUT_DIRECTORY='E:\Wasla\_local-data\phase18-part2\contracts'
 $env:WASLA_PART2_EVIDENCE_DIRECTORY='E:\Wasla\_local-data\phase18-part2\evidence'
 dotnet test Wasla.sln --no-build --no-restore --logger 'trx;LogFilePrefix=part2-regression-verified' --results-directory _local-data/phase18-part2/final-results

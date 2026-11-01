@@ -3,7 +3,16 @@
     <UserSecretsId>Wasla.Api</UserSecretsId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Remove="Views\Templates\**\*.cshtml" />
+    <None Include="Views\Templates\**\*.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../BuildingBlock/BuildingBlock.Api/BuildingBlock.Api.csproj" />
     <ProjectReference Include="../Wasla.Application/Wasla.Application.csproj" />

@@ -13,7 +13,7 @@
 <title>@(p.IsArabic ? r.TitleAr : r.TitleEn)</title>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'" />
 <style>
-@@page { size:A4; }
+@@page { size:A4 @(p.Landscape ? "landscape" : "portrait"); }
 * { box-sizing:border-box; }
 body { font-family:Tahoma,"Segoe UI",Arial,sans-serif; color:#143c50; font-size:10px; line-height:1.5; margin:0; }
 header { border-bottom:3px solid #14838c; padding-bottom:10px; margin-bottom:14px; }

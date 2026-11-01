@@ -138,6 +138,10 @@ Allowed values: `Rent | Utilities | Supplies | Maintenance | Transport | Other`.
 | failureCode | string | False | True | — |
 | maximumConcurrentRenders | integer / int32 | False | False | — |
 | timeoutSeconds | integer / int32 | False | False | — |
+| browserProvisioning | string | False | True | AutomaticDownload (runtime value) |
+| browserDownloaded | boolean | False | False | Actual provisioning completion; rendering readiness remains measured separately |
+
+`executableConfigured` is retained as a legacy false field. Reading health performs no browser provisioning; `NotMeasured`/null probe values precede a report-PDF attempt.
 
 ## FamilyMedicalAccessStatusResponse
 

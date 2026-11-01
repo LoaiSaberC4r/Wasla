@@ -5,6 +5,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../src/Wasla/Wasla.Api/Views/Templates/**/*.cshtml" Link="Views/Templates/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../../src/BuildingBlock/BuildingBlock.Application/BuildingBlock.Application.csproj" />
     <ProjectReference Include="../../src/Wasla/Wasla.Application/Wasla.Application.csproj" />
     <ProjectReference Include="../../src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer/Wasla.Infrastructure.EntityFrameworkCore.SqlServer.csproj" />

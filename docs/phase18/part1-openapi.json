@@ -63586,6 +63586,13 @@
           "timeoutSeconds": {
             "type": "integer",
             "format": "int32"
+          },
+          "browserProvisioning": {
+            "type": "string",
+            "nullable": true
+          },
+          "browserDownloaded": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

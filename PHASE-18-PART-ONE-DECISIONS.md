@@ -14,7 +14,7 @@ The owner-approved task is the Phase 18 Part One addendum. The locally available
 - Full settlements and compensating reversals are atomic, permissioned, versioned, and idempotent. No banking side effects.
 - Generation creates an eligible current calendar occurrence at the start of its eligible cycle, with its configured due date retained. This supports Upcoming/Due/Overdue and projected liabilities. Future calendar cycles are not generated. System generation is identified separately from the Doctor who authorized the plan; no salary is automatically paid.
 - Reuse existing booking, queue, collections, clinical, family, and governance commands.
-- One report calculation model supplies preview, PDF, and XLSX. Adapt the CustomerSurvey RazorLight/PuppeteerSharp/ClosedXML pattern while preserving browser sandboxing and blocking remote resources.
+- One report calculation model supplies preview, PDF, and XLSX. Follow CustomerSurvey automatic browser provisioning, launch options and physical Razor templates; retain encoded trusted content and block page resource requests. See the approved 2026-10-29 runtime update below.
 - No configuration values, production databases, deployments, Jira records, or earlier privacy gates are changed.
 
 ## Package sequence
@@ -35,9 +35,9 @@ Baseline build: `dotnet build Wasla.sln --no-restore`, succeeded with 0 warnings
 
 Master source: `C:\Users\p\Downloads\Healthcare-Platform-Master-Source-of-Truth-v1.2-Updated.txt`, SHA256 `C7DDC4C68130EA8056F81A172E570AE4F1364C3154D28F2E4DC6263411CFF553`. The source's embedded blueprint and the repository's approved Phase10–16 reports were reviewed. No source was silently replaced. The baseline was also restored from the exact commit in an ignored isolated directory and its SQL Server regression suite was executed against temporary test databases.
 
-CustomerSurvey reporting reference reviewed locally in `E:\Customer Servey` and from `NileTronixRepositories/CustomerSurvey`: report controllers/contracts, data assembly, Razor views, PDF service, Excel service, charts, dependency configuration and relevant tests/styles. Adapted the trusted embedded RazorLight template → installed Chromium/PuppeteerSharp and ClosedXML workbook pattern. Rejected reference browser flags that disable the sandbox/web security, first-request browser downloads, remote resource loading and unsafe unbounded exports. Wasla's authorization, source model, immutable financial data and bilingual presentation remain Wasla-specific.
+The 2026-10-29 owner-approved runtime task supersedes the original installed-browser/embedded-template decisions. CustomerSurvey `PdfService.cs`, `RazorViewRenderer.cs`, API project and report template were inspected directly. Wasla now shares lazy `BrowserFetcher.DownloadAsync()` provisioning and the exact requested headless launch flags/navigation/font lifecycle across prescription/report PDFs. The flags disable sandbox/web security; server-owned allow-listed templates, encoded dynamic data, CSP, disabled page scripts, offline mode and interception restrict rendered content. Authorization, data scope, audit, output limits and ClosedXML remain unchanged.
 
-Packages pinned centrally: ClosedXML0.105.1, PuppeteerSharp25.10.0, RazorLight2.3.1. Chromium is provisioned separately and its absolute executable path is an environment/secret-provider override. No appsettings value was edited. Razor compile references are preserved; templates are embedded resources.
+Packages remain pinned centrally: ClosedXML 0.105.1, PuppeteerSharp 25.10.0, RazorLight 2.3.1, targeting .NET 10. The obsolete executable option was removed. API compilation context/assembly copying and physical `Views/Templates/Report.cshtml` publishing replace the embedded report. No appsettings value was edited. See [runtime architecture](docs/phase18/part1-export-architecture.md), [IIS smoke procedure](docs/phase18/export-runtime-iis-smoke.md) and [current verification](docs/phase18/customer-survey-export-runtime-report.md).
 
 ## Additional implementation closure
 

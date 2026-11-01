@@ -150,11 +150,10 @@ public sealed class Phase18PartTwoSqlTests
             return book.Worksheets.SelectMany(sheet=>sheet.CellsUsed().Where(cell=>sheet.Name!="01 Summary"||cell.Address.RowNumber!=9)
                 .Select(cell=>sheet.Name+":"+cell.Address+":"+cell.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToArray();
         }
-        var chromium=Environment.GetEnvironmentVariable("WASLA_CHROMIUM_PATH");
-        if(!string.IsNullOrWhiteSpace(chromium))app.Services.GetRequiredService<IOptions<Phase18Options>>().Value.ChromiumExecutablePath=chromium;
+        var runBrowser=Environment.GetEnvironmentVariable("WASLA_RUN_BROWSER_TESTS")=="1";
         async Task Pdf(string language)
         {
-            if(string.IsNullOrWhiteSpace(chromium))return; // Dedicated renderer tests report the missing browser gate separately.
+            if(!runBrowser)return; // Actual automatic provisioning has a separate browser smoke test.
             using var response=await doctor.GetAsync("/api/v1/doctors/me/reports/queue/export"+query+"&format=pdf&language="+language,TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.OK,response.StatusCode);Assert.Equal("application/pdf",response.Content.Headers.ContentType?.MediaType);
             Assert.True((await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken)).AsSpan().StartsWith("%PDF"u8));

@@ -6,7 +6,8 @@ public sealed record ReportExportFile(string FileName, string ContentType, byte[
 public sealed record ReportPresentation(ReportModel Report, bool IsArabic, bool Landscape, string GeneratedBy,
     string ScopeLabel, string? LogoDataUrl = null);
 public sealed record ExportRuntimeHealth(string Status, bool ExecutableConfigured, DateTime? LastProbeAtUtc, bool? LastProbeSucceeded,
-    string? FailureCode, int MaximumConcurrentRenders, int TimeoutSeconds);
+    string? FailureCode, int MaximumConcurrentRenders, int TimeoutSeconds,
+    string BrowserProvisioning = "AutomaticDownload", bool BrowserDownloaded = false);
 public interface IReportDocumentRenderer
 {
     Task<string> RenderHtmlAsync(ReportPresentation p, CancellationToken ct);

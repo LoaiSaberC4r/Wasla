@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using BuildingBlock.Domain.Results;
-using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 using PuppeteerSharp.Media;
 using Wasla.Application.Features.DoctorPatients;
@@ -10,9 +9,8 @@ using Wasla.Domain.Medications;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports;
 
-public sealed class PrescriptionPdfRenderer(IOptions<Phase18Options> options) : IPrescriptionPdfRenderer, IDisposable
+public sealed class PrescriptionPdfRenderer(IChromiumPdfRenderer pdf) : IPrescriptionPdfRenderer
 {
-    private readonly SemaphoreSlim _renders = new(options.Value.MaximumConcurrentPdfRenders, options.Value.MaximumConcurrentPdfRenders);
     public static string Html(PrescriptionPdfDocument d)
     {
         static string E(object? value) => WebUtility.HtmlEncode(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "");
@@ -47,39 +45,19 @@ public sealed class PrescriptionPdfRenderer(IOptions<Phase18Options> options) : 
     {
         if (document.Version.Status is not (PrescriptionVersionStatus.Finalized or PrescriptionVersionStatus.Superseded or PrescriptionVersionStatus.Voided) || document.Version.FinalizedAtUtc is null)
             return Result<byte[]>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
-        var o = options.Value;
-        if (string.IsNullOrWhiteSpace(o.ChromiumExecutablePath) || !Path.IsPathFullyQualified(o.ChromiumExecutablePath) || !File.Exists(o.ChromiumExecutablePath))
-            return Result<byte[]>.Fail(DoctorPatientErrors.PdfUnavailable("PrescriptionPdf.ChromiumNotConfigured"));
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(o.PdfTimeoutSeconds));
-        var entered = false;
-        try
+        var status = document.Version.Status == PrescriptionVersionStatus.Finalized ? "FINALIZED" : document.Version.Status == PrescriptionVersionStatus.Voided ? "VOIDED - NOT VALID" : "SUPERSEDED - NOT CURRENT";
+        var result = await pdf.RenderAsync(_ => Task.FromResult(Html(document)), new PdfOptions
         {
-            await _renders.WaitAsync(timeout.Token); entered = true;
-            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { ExecutablePath = o.ChromiumExecutablePath,
-                Headless = true, Timeout = o.PdfTimeoutSeconds * 1000,
-                Args = ["--disable-background-networking", "--disable-extensions", "--disable-sync", "--no-first-run"] });
-            await using var page = await browser.NewPageAsync();
-            await page.SetJavaScriptEnabledAsync(false); await page.SetOfflineModeAsync(true);
-            await page.SetRequestInterceptionAsync(true);
-            page.Request += async (_, e) =>
-            {
-                try { await e.Request.AbortAsync(); }
-                catch (PuppeteerException) { /* Page already closed. */ }
-            };
-            await page.SetContentAsync(Html(document), new SetContentOptions { WaitUntil = [WaitUntilNavigation.Load], Timeout = o.PdfTimeoutSeconds * 1000 }).WaitAsync(timeout.Token);
-            var status = document.Version.Status == PrescriptionVersionStatus.Finalized ? "FINALIZED" : document.Version.Status == PrescriptionVersionStatus.Voided ? "VOIDED - NOT VALID" : "SUPERSEDED - NOT CURRENT";
-            var bytes = await page.PdfDataAsync(new PdfOptions { Format = PaperFormat.A4, PrintBackground = true, DisplayHeaderFooter = true,
-                HeaderTemplate = "<span></span>",
-                FooterTemplate = FormattableString.Invariant($"<div style='width:100%;text-align:center;direction:ltr;font:8px Tahoma,Arial;color:#64748b'>WASLA · Version {document.Version.VersionNumber} · {status} · <span class='pageNumber'></span> / <span class='totalPages'></span></div>"),
-                MarginOptions = new MarginOptions { Top = "12mm", Bottom = "12mm", Left = "12mm", Right = "12mm" } }).WaitAsync(timeout.Token);
-            if (bytes.Length > new ExportLimits().PdfMaximumBytes) return Result<byte[]>.Fail(DoctorPatientErrors.PdfUnavailable("PrescriptionPdf.DocumentTooLarge"));
-            return bytes.AsSpan().StartsWith("%PDF"u8) ? Result<byte[]>.Ok(bytes) : Result<byte[]>.Fail(DoctorPatientErrors.PdfUnavailable("PrescriptionPdf.InvalidPdf"));
-        }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return Result<byte[]>.Fail(DoctorPatientErrors.PdfUnavailable("PrescriptionPdf.RenderTimeout")); }
-        catch (OperationCanceledException) { throw; }
-        catch (Exception) { return Result<byte[]>.Fail(DoctorPatientErrors.PdfUnavailable("PrescriptionPdf.RenderUnavailable")); }
-        finally { if (entered) _renders.Release(); }
+            Format = PaperFormat.A4, PrintBackground = true, DisplayHeaderFooter = true,
+            HeaderTemplate = "<span></span>",
+            FooterTemplate = FormattableString.Invariant($"<div style='width:100%;text-align:center;direction:ltr;font:8px Tahoma,Arial;color:#64748b'>WASLA · Version {document.Version.VersionNumber} · {status} · <span class='pageNumber'></span> / <span class='totalPages'></span></div>"),
+            MarginOptions = new MarginOptions { Top = "12mm", Bottom = "12mm", Left = "12mm", Right = "12mm" }
+        }, ct);
+        if (result.Content is { } bytes && bytes.Length > new ExportLimits().PdfMaximumBytes)
+            return Result<byte[]>.Fail(DoctorPatientErrors.PdfUnavailable("PrescriptionPdf.DocumentTooLarge"));
+        return result.FailureCode is { } failure
+            ? Result<byte[]>.Fail(DoctorPatientErrors.PdfUnavailable("PrescriptionPdf." + failure))
+            : Result<byte[]>.Ok(result.Content!);
     }
     private static string Frequency(PrescriptionItemData item)
     {
@@ -94,5 +72,4 @@ public sealed class PrescriptionPdfRenderer(IOptions<Phase18Options> options) : 
         };
         return string.IsNullOrWhiteSpace(item.FrequencyText) ? label : label.Length == 0 ? item.FrequencyText : label + " · " + item.FrequencyText;
     }
-    public void Dispose() => _renders.Dispose();
 }
