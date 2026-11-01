@@ -47,7 +47,7 @@ public sealed class ReportDocumentRenderer : IReportDocumentRenderer
         {
             Format = PaperFormat.A4, Landscape = p.Landscape, PrintBackground = true, DisplayHeaderFooter = true,
             HeaderTemplate = "<span></span>",
-            FooterTemplate = "<div style='width:100%;text-align:center;font:9px sans-serif;color:#64748b'>WASLA · <span class='pageNumber'></span> / <span class='totalPages'></span></div>",
+            FooterTemplate = PrintFooter(p),
             MarginOptions = new MarginOptions { Top = "12mm", Bottom = "16mm", Left = "12mm", Right = "12mm" }
         }, ct);
         var oversized = result.Content is { } bytes && bytes.Length > new ExportLimits().PdfMaximumBytes;
@@ -155,6 +155,11 @@ public sealed class ReportDocumentRenderer : IReportDocumentRenderer
     public static ReportMetric[] ChartMetrics(ReportModel report) => report.Metrics.Where(m => m.Unit == "percent" && m.Value != null).Take(6).ToArray();
     public static string ChartDataUrl(ReportModel report) => "data:image/png;base64," + Convert.ToBase64String(ReportChartPngRenderer.Render(ChartMetrics(report).Select(m => m.Value!.Value).ToArray()));
     public static string DecimalText(decimal? value) => value?.ToString("#,##0.##", CultureInfo.InvariantCulture) ?? "-";
+    private static string PrintFooter(ReportPresentation p)
+        => $"<div dir='{(p.IsArabic ? "rtl" : "ltr")}' style='width:100%;text-align:center;font:10px Tahoma,Arial,sans-serif;color:#526976'>" +
+           $"WASLA · {WebUtility.HtmlEncode(p.Report.ReportCode)} · {WebUtility.HtmlEncode(PdfPrintPresentation.Confidentiality(p.Report.Scope.Actor, p.IsArabic))}<br/>" +
+           $"<span dir='ltr'>{p.Report.Window.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)}</span> · " +
+           $"{(p.IsArabic ? "صفحة" : "Page")} <span class='pageNumber'></span> / <span class='totalPages'></span></div>";
     private static string T(ReportPresentation p, string en, string ar) => p.IsArabic ? ar : en;
     private static IXLWorksheet Sheet(XLWorkbook b, string name, bool rtl)
     {

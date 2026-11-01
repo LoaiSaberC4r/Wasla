@@ -1,101 +1,120 @@
 @model Wasla.Application.Features.Reporting.ReportPresentation
 @using System.Globalization
+@using Wasla.Application.Features.Reporting
 @using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports
 @{
-    var p = Model;
-    var r = p.Report;
+    var p = Model; var r = p.Report; var print = PdfPrintPresentation.Build(p);
+    var series = PdfPrintPresentation.VisibleGroups(r, r.Series);
+    var breakdowns = PdfPrintPresentation.VisibleGroups(r, r.Breakdowns);
+    var hasAmounts = r.Records.Any(x => x.Amount.HasValue);
     string T(string en, string ar) => p.IsArabic ? ar : en;
+    string N(decimal? n) => PdfPrintPresentation.Number(n);
 }
 <!doctype html>
 <html lang="@(p.IsArabic ? "ar" : "en")" dir="@(p.IsArabic ? "rtl" : "ltr")">
-<head>
-<meta charset="utf-8" />
-<title>@(p.IsArabic ? r.TitleAr : r.TitleEn)</title>
+<head><meta charset="utf-8" /><title>@(p.IsArabic ? r.TitleAr : r.TitleEn)</title>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'" />
 <style>
 @@page { size:A4 @(p.Landscape ? "landscape" : "portrait"); }
+:root { --navy:#143c50; --teal:#087d82; --muted:#526976; --surface:#f2f6f7; --warning:#fff3da; }
 * { box-sizing:border-box; }
-body { font-family:Tahoma,"Segoe UI",Arial,sans-serif; color:#143c50; font-size:10px; line-height:1.5; margin:0; }
-header { border-bottom:3px solid #14838c; padding-bottom:10px; margin-bottom:14px; }
-.brand { color:#14838c; font-weight:bold; font-size:15px; letter-spacing:2px; }
-h1 { font-size:23px; margin:5px 0; }
-h2 { font-size:16px; margin:18px 0 8px; break-after:avoid; }
-p { margin:4px 0; overflow-wrap:anywhere; }
-.meta { display:grid; grid-template-columns:1fr 1fr; gap:6px; color:#456271; }
-table { border-collapse:collapse; width:100%; table-layout:fixed; margin-top:8px; }
-thead { display:table-header-group; } tr { break-inside:avoid; }
-th { color:white; background:#143c50; padding:7px 5px; text-align:start; font-weight:normal; }
-td { border-bottom:1px solid #deeaed; padding:6px 5px; vertical-align:top; overflow-wrap:anywhere; }
-tbody tr:nth-child(even) { background:#f4f8f9; }
-.num { direction:ltr; unicode-bidi:isolate; text-align:end; font-variant-numeric:tabular-nums; }
-.note { color:#536f7c; font-size:9px; } .warning { background:#fff3d8; padding:7px; }
-.chart { display:grid; grid-template-columns:1fr 1.4fr; gap:14px; break-inside:avoid; }
-.chart img { width:100%; height:auto; } .logo { max-width:64px; max-height:48px; float:inline-end; }
-.section { break-before:page; } .empty { padding:14px; background:#f4f8f9; }
-</style>
-</head>
-<body>
+body { font-family:Tahoma,"Segoe UI",Arial,sans-serif; color:var(--navy); font-size:10.5pt; line-height:1.45; margin:0; }
+header { border-bottom:2pt solid var(--teal); padding-bottom:4mm; margin-bottom:4mm; }
+.brand { color:var(--teal); font-weight:bold; font-size:11pt; letter-spacing:2px; }
+h1 { font-size:21pt; line-height:1.2; margin:2mm 0; } h2 { font-size:13pt; margin:5mm 0 2mm; break-after:avoid; }
+h3 { font-size:11pt; margin:4mm 0 2mm; break-after:avoid; }
+p { margin:1mm 0; overflow-wrap:anywhere; } .question { font-size:11pt; }
+.meta { display:grid; grid-template-columns:1fr 1fr; gap:1mm 4mm; font-size:9pt; color:var(--muted); margin-top:3mm; }
+.logo { max-width:22mm; max-height:16mm; float:inline-end; }
+.cards { display:grid; grid-template-columns:repeat(@(Math.Max(1, print.Cards.Count)),minmax(0,1fr)); gap:2mm; margin:4mm 0; }
+.card { background:var(--surface); border-top:2pt solid var(--teal); padding:3mm 2mm; break-inside:avoid; overflow-wrap:anywhere; }
+.card-label { font-size:9pt; min-height:10mm; } .value { font-size:18pt; line-height:1.3; font-weight:bold; }
+.unit { font-size:9pt; } .note { color:var(--muted); font-size:9pt; } .warning { background:var(--warning); border-inline-start:2pt solid #946b19; padding:2mm 3mm; font-size:9pt; }
+.empty { background:var(--surface); border:1px solid #dae3e8; padding:4mm; }
+.visual { margin:4mm 0; } .visual-heading { break-inside:avoid; break-after:avoid; }
+figure { margin:2mm 0; break-inside:avoid; } figure img { display:block; width:100%; height:auto; } figcaption { font-size:9pt; color:var(--muted); }
+table { border-collapse:collapse; width:100%; table-layout:fixed; margin:2mm 0 4mm; font-size:9pt; }
+thead { display:table-header-group; } tr { break-inside:avoid; } th { color:white; background:var(--navy); padding:2mm; text-align:start; font-weight:normal; }
+td { border-bottom:1px solid #dae3e8; padding:2mm; vertical-align:top; overflow-wrap:anywhere; } tbody tr:nth-child(even) { background:var(--surface); }
+.num { direction:ltr; unicode-bidi:isolate; text-align:end; font-variant-numeric:tabular-nums; } bdi { unicode-bidi:isolate; }
+.appendix { break-before:page; font-size:9.5pt; } .appendix h2 { border-bottom:1pt solid var(--teal); padding-bottom:2mm; }
+.metric-name { width:35%; } .provenance { font-size:8.5pt; color:var(--muted); }
+</style></head><body>
 <header>
-@if (p.LogoDataUrl != null) { <img class="logo" src="@p.LogoDataUrl" alt="Logo" /> }
-<div class="brand">WASLA</div><h1>@(p.IsArabic ? r.TitleAr : r.TitleEn)</h1>
+@if (p.LogoDataUrl != null) { <img class="logo" src="@p.LogoDataUrl" alt="@T("Authorized practice logo", "شعار العيادة المصرح به")" /> }
+<div class="brand">WASLA</div><h1>@(p.IsArabic ? r.TitleAr : r.TitleEn)</h1><p class="question">@print.Question</p>
 <div class="meta">
 <p>@T("Scope", "النطاق"): @p.ScopeLabel</p><p>@T("Generated by", "أنشأه"): @p.GeneratedBy</p>
-<p>@T("Period", "الفترة"): <span dir="ltr">@r.Window.FromDate.ToString("yyyy-MM-dd") - @r.Window.ToDate.ToString("yyyy-MM-dd")</span></p>
-<p>@T("Time zone", "المنطقة الزمنية"): @r.Window.ReportTimeZoneId</p>
-<p>@T("As of UTC", "كما في UTC"): <span dir="ltr">@r.Window.AsOfUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</span></p>
-<p>@T("Generated UTC", "وقت الإنشاء UTC"): <span dir="ltr">@r.Window.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</span></p>
+<p>@T("Report period", "فترة التقرير"): <bdi dir="ltr">@r.Window.FromDate.ToString("yyyy-MM-dd") – @r.Window.ToDate.ToString("yyyy-MM-dd")</bdi></p>
+<p>@T("Report zone", "منطقة التقرير"): <bdi>@r.Window.ReportTimeZoneId</bdi></p>
+<p>@T("As-of snapshot", "لقطة البيانات"): <bdi dir="ltr">@r.Window.AsOfUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</bdi></p>
+<p>@T("Generated on", "وقت الإنشاء"): <bdi dir="ltr">@r.Window.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</bdi></p>
+</div></header>
+@if (print.QualityNotes.Count > 0) { <aside class="warning">@foreach (var note in print.QualityNotes) { <p>@note</p> }</aside> }
+@if (print.Cards.Count > 0) {
+<div class="cards">
+@foreach (var m in print.Cards) {
+<div class="card" data-card="@m.MetricCode"><div class="card-label">@PdfPrintPresentation.Name(m, p.IsArabic)</div>
+<div class="value"><bdi dir="ltr">@PdfPrintPresentation.Value(m)</bdi></div><div class="unit">@ReportPresentationText.Unit(m.Unit, p.IsArabic)</div>
+@if (m.DataStatus != ReportDataStatus.NotAvailable && (m.Numerator.HasValue || m.Denominator.HasValue)) { <p class="note">@T("Basis", "الأساس"): <bdi dir="ltr">@N(m.Numerator) / @N(m.Denominator)</bdi></p> }
+@if (!PdfPrintPresentation.Measured(m) || m.DataStatus != ReportDataStatus.Complete) { <p class="note">@PdfPrintPresentation.MetricState(m, p.IsArabic)</p> }
+@if (m.WarningCode != null) { <p class="note">@PdfPrintPresentation.Warning(m.WarningCode, p.IsArabic)</p> }
 </div>
-</header>
-<h2>@T("Report summary", "ملخص التقرير")</h2>
-<p class="note">@T("Business dates follow the source practice; cash movements follow the displayed report time zone.", "تواريخ التشغيل حسب العيادة وتواريخ الحركات النقدية حسب المنطقة الزمنية للتقرير.")</p>
-<table><thead><tr><th style="width:30%">@T("Metric", "المؤشر")</th><th>@T("Value / unit", "القيمة والوحدة")</th><th>@T("Numerator / denominator", "البسط والمقام")</th><th>@T("Eligible / excluded", "المؤهل والمستبعد")</th><th>@T("Data status", "حالة البيانات")</th></tr></thead><tbody>
-@foreach (var m in r.Metrics) {
-<tr><td>@(p.IsArabic ? m.NameAr : m.NameEn)</td><td class="num">@ReportPresentationText.MetricValue(m) @ReportPresentationText.Unit(m.Unit, p.IsArabic)</td>
-<td class="num">@ReportDocumentRenderer.DecimalText(m.Numerator) / @ReportDocumentRenderer.DecimalText(m.Denominator)</td><td class="num">@m.EligibleSampleCount / @m.ExcludedSampleCount</td>
-<td>@ReportPresentationText.Status(m.DataStatus.ToString(), p.IsArabic)<br /><span class="note">@m.WarningCode</span></td></tr>
+}
+</div>
+} else { <p class="empty">@T("No headline measures were supplied. The authorized source and filters are documented below.", "لا توجد مقاييس رئيسية واردة. المصدر المصرح به والفلاتر موثقان أدناه.")</p> }
+@foreach (var visual in print.Sections) {
+<section class="visual" data-source="@visual.Source"><div class="visual-heading"><h2>@visual.Title</h2><p class="note">@visual.Caption</p></div>
+@if (visual.ChartDataUrl != null) {
+<figure><img src="@visual.ChartDataUrl" alt="@visual.Title" /><figcaption>@T("Reported values; complete source, denominators and quality in the appendix.", "القيم المسجلة؛ المصدر الكامل والمقامات والجودة في الملحق.")</figcaption></figure>
+} else if (visual.Points.Count > 0) {
+<table><thead><tr><th>@T("Group / measure", "المجموعة والمقياس")</th><th>@T("Value / unit", "القيمة والوحدة")</th><th>@T("Basis / status", "الأساس والحالة")</th></tr></thead><tbody>
+@foreach (var point in visual.Points) { var m = point.Metric;
+<tr><td>@point.Group<br />@PdfPrintPresentation.Name(m, p.IsArabic)</td><td class="num">@PdfPrintPresentation.Value(m) @ReportPresentationText.Unit(m.Unit, p.IsArabic)</td><td>@ReportPresentationText.Status(m.DataStatus.ToString(), p.IsArabic)
+@if (m.DataStatus != ReportDataStatus.NotAvailable && (m.Numerator.HasValue || m.Denominator.HasValue)) { <br /><bdi dir="ltr">@N(m.Numerator) / @N(m.Denominator)</bdi> }
+@if (!PdfPrintPresentation.Measured(m)) { <p class="note">@PdfPrintPresentation.MetricState(m, p.IsArabic)</p> }
+@if (m.WarningCode != null) { <p class="note">@PdfPrintPresentation.Warning(m.WarningCode, p.IsArabic)</p> }
+</td></tr>
 }
 </tbody></table>
+} else { <p class="empty">@T("No measured source for this analysis was supplied. No trend, cohort or comparison has been inferred. See source status and applied filters in the appendix.", "لم يرد مصدر مقاس لهذا التحليل. لم يستنتج اتجاه أو مجموعة أو مقارنة. راجع حالة المصدر والفلاتر في الملحق.")</p> }
+</section>
+}
+<section class="appendix" id="authorized-appendix"><h2>@T("Authorized source appendix", "ملحق المصدر المصرح به")</h2>
+<p class="note">@T("Source values are presented without recalculating metrics. Missing values are distinct from measured zero.", "تعرض قيم المصدر دون إعادة حساب المقاييس. القيم المفقودة تختلف عن الصفر المقاس.")</p>
+@foreach (var chapter in new[] { (Title: T("All report metrics", "كل مقاييس التقرير"), Groups: new[] { new ReportSeriesPoint("Metrics", "", "", r.Metrics) }.AsEnumerable()), (Title: T("Source series", "تسلسل المصدر"), Groups: series.AsEnumerable()), (Title: T("Source breakdowns", "توزيعات المصدر"), Groups: breakdowns.AsEnumerable()) }) {
+<h3>@chapter.Title</h3>
+<table><thead><tr><th class="metric-name">@T("Group / metric", "المجموعة والمؤشر")</th><th>@T("Value / unit", "القيمة والوحدة")</th><th>@T("Numerator / denominator", "البسط والمقام")</th><th>@T("Eligible / excluded", "المؤهل والمستبعد")</th><th>@T("Status / warning", "الحالة والتنبيه")</th></tr></thead><tbody>
+@foreach (var group in chapter.Groups) { foreach (var m in group.Metrics) {
+<tr data-appendix-metric="@m.MetricCode"><td>@(p.IsArabic ? group.NameAr : group.NameEn ?? group.NameAr)<br />@PdfPrintPresentation.Name(m, p.IsArabic)<br /><span class="provenance"><bdi>@group.Key · @m.MetricCode</bdi></span></td>
+<td class="num">@PdfPrintPresentation.Value(m) @ReportPresentationText.Unit(m.Unit, p.IsArabic)</td><td class="num">@(m.DataStatus == ReportDataStatus.NotAvailable ? "—" : N(m.Numerator)) / @(m.DataStatus == ReportDataStatus.NotAvailable ? "—" : N(m.Denominator))</td>
+<td class="num">@(m.DataStatus == ReportDataStatus.NotAvailable ? "—" : m.EligibleSampleCount.ToString(CultureInfo.InvariantCulture)) / @(m.DataStatus == ReportDataStatus.NotAvailable ? "—" : m.ExcludedSampleCount.ToString(CultureInfo.InvariantCulture))</td><td>@ReportPresentationText.Status(m.DataStatus.ToString(), p.IsArabic)<br /><span class="provenance">@m.WarningCode</span></td></tr>
+} }
+</tbody></table>
+}
 @if (r.PreviousPeriodComparisons is { Count: > 0 }) {
-<h2>@T("Previous-period comparison", "المقارنة بالفترة السابقة")</h2>
-<p class="note">@T("Changes in percentage metrics are percentage points; relative change is shown separately.", "تغير مؤشرات النسب يعرض بالنقاط المئوية، والتغير النسبي يعرض مستقلاً.")</p>
-<table><thead><tr><th>@T("Metric", "المؤشر")</th><th>@T("Previous period", "الفترة السابقة")</th><th>@T("Current / previous", "الحالي والسابق")</th><th>@T("Absolute change", "التغير المطلق")</th><th>@T("Relative change", "التغير النسبي")</th></tr></thead><tbody>
-@foreach (var c in r.PreviousPeriodComparisons) {
-var metric = r.Metrics.Single(m => m.MetricCode == c.MetricCode);
-<tr><td>@(p.IsArabic ? metric.NameAr : metric.NameEn)<br /><span class="note">@c.WarningCode</span></td>
-<td dir="ltr">@c.PreviousFromDate.ToString("yyyy-MM-dd") - @c.PreviousToDate.ToString("yyyy-MM-dd")</td>
-<td class="num">@ReportDocumentRenderer.DecimalText(c.CurrentValue) / @ReportDocumentRenderer.DecimalText(c.PreviousValue) @ReportPresentationText.Unit(metric.Unit, p.IsArabic)</td>
-<td class="num">@ReportDocumentRenderer.DecimalText(c.AbsoluteChange)</td><td class="num">@ReportDocumentRenderer.DecimalText(c.RelativeChangePercent)%</td></tr>
+<h3>@T("Previous-period comparisons", "المقارنات بالفترة السابقة")</h3><p class="note">@T("Absolute changes in percent metrics are percentage points; relative changes are percentages. Only supplied comparisons are shown.", "التغير المطلق في مؤشرات النسب بالنقاط المئوية والتغير النسبي بالنسبة المئوية؛ تعرض المقارنات الواردة فقط.")</p>
+<table><thead><tr><th>@T("Metric / previous period", "المؤشر والفترة السابقة")</th><th>@T("Current / previous", "الحالي والسابق")</th><th>@T("Absolute / relative change", "التغير المطلق والنسبي")</th><th>@T("Status / warning", "الحالة والتنبيه")</th></tr></thead><tbody>
+@foreach (var c in r.PreviousPeriodComparisons) { var m = r.Metrics.FirstOrDefault(x => x.MetricCode == c.MetricCode); var available = c.DataStatus is ReportDataStatus.Complete or ReportDataStatus.Partial;
+<tr><td>@(m == null ? c.MetricCode : PdfPrintPresentation.Name(m, p.IsArabic))<br /><bdi dir="ltr">@c.PreviousFromDate.ToString("yyyy-MM-dd") – @c.PreviousToDate.ToString("yyyy-MM-dd")</bdi></td><td class="num">@(available ? N(c.CurrentValue) : "—") / @(available ? N(c.PreviousValue) : "—") @(m == null ? "" : ReportPresentationText.Unit(m.Unit, p.IsArabic))</td><td class="num">@(available ? N(c.AbsoluteChange) : "—") @(m?.Unit == "percent" ? T("points", "نقطة") : "") / @(available ? N(c.RelativeChangePercent) : "—")%</td><td>@ReportPresentationText.Status(c.DataStatus.ToString(), p.IsArabic)<br />@c.WarningCode</td></tr>
 }
 </tbody></table>
 }
-@if (ReportDocumentRenderer.ChartMetrics(r).Length > 0) {
-<h2>@T("Selected percentage KPIs", "مؤشرات النسب المختارة")</h2><div class="chart"><div>
-@foreach (var m in ReportDocumentRenderer.ChartMetrics(r)) { <p>@(p.IsArabic ? m.NameAr : m.NameEn): @ReportDocumentRenderer.DecimalText(m.Value)%</p> }
-</div><img src="@ReportDocumentRenderer.ChartDataUrl(r)" alt="@T("Percentage KPI bars", "مؤشرات النسب")" /></div>
+<h3>@T("Authorized details", "التفاصيل المصرح بها")</h3>
+@if (r.Records.Count == 0) { <p class="empty">@T("No accessible detail records match these filters.", "لا توجد سجلات تفاصيل متاحة تطابق هذه الفلاتر.")</p> } else {
+<table><thead><tr><th style="width:16%">@T("Resource", "المورد")</th><th style="width:31%">@T("Reference / practice", "المرجع والعيادة")</th><th>@T("Business / recorded date", "تاريخ العمل والتسجيل")</th><th>@T("Status", "الحالة")</th>@if (hasAmounts) { <th>@T("Amount EGP", "القيمة جنيه")</th> }</tr></thead><tbody>
+@foreach (var item in r.Records) {
+<tr data-record="@item.Id"><td>@ReportPresentationText.Resource(item.ResourceType, p.IsArabic)</td><td><bdi>@item.Reference</bdi><br /><span class="provenance"><bdi>@item.PracticeId</bdi></span></td><td><bdi dir="ltr">@item.BusinessDate.ToString("yyyy-MM-dd")</bdi><br /><span class="provenance"><bdi dir="ltr">@item.RecordedAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</bdi></span></td><td>@ReportPresentationText.Status(item.Status, p.IsArabic)</td>@if (hasAmounts) { <td class="num">@(item.Amount?.ToString("#,##0.00", CultureInfo.InvariantCulture) ?? "—")</td> }</tr>
 }
-<h2>@T("Applied filters and data quality", "الفلاتر وجودة البيانات")</h2>
+</tbody></table>
+}
+<h3>@T("Method, filters and quality", "المنهج والفلاتر والجودة")</h3>
 <p>@T("Data status", "حالة البيانات"): @ReportPresentationText.Status(r.DataStatus.ToString(), p.IsArabic) · @T("Detail rows", "صفوف التفاصيل"): @r.DetailRowCount</p>
-@foreach (var filter in ReportPresentationText.Filters(p)) {
-<p class="note"><b>@filter.Label:</b> @filter.Value</p>
-}
-@foreach (var warning in r.Warnings) { <p class="warning">@warning</p> }
-@if (r.Series.Count > 0) {
-<h2 class="section">@T("Trends", "الاتجاهات")</h2>
-<table><thead><tr><th>@T("Period", "الفترة")</th><th>@T("Metric", "المؤشر")</th><th>@T("Value", "القيمة")</th><th>@T("Data status", "حالة البيانات")</th></tr></thead><tbody>
-@foreach (var s in r.Series) { foreach (var m in s.Metrics) { <tr><td>@(p.IsArabic ? s.NameAr : s.NameEn ?? s.Key)</td><td>@(p.IsArabic ? m.NameAr : m.NameEn)</td><td class="num">@ReportPresentationText.MetricValue(m) @ReportPresentationText.Unit(m.Unit, p.IsArabic)</td><td>@ReportPresentationText.Status(m.DataStatus.ToString(), p.IsArabic)</td></tr> } }
-</tbody></table>
-}
-@if (r.Breakdowns.Count > 0) {
-<h2 class="section">@T("Breakdowns", "التوزيعات")</h2>
-<table><thead><tr><th>@T("Group", "المجموعة")</th><th>@T("Metric", "المؤشر")</th><th>@T("Value", "القيمة")</th><th>@T("Data status", "حالة البيانات")</th></tr></thead><tbody>
-@foreach (var s in r.Breakdowns) { foreach (var m in s.Metrics) { <tr><td>@(p.IsArabic ? s.NameAr : s.NameEn ?? s.Key)</td><td>@(p.IsArabic ? m.NameAr : m.NameEn)</td><td class="num">@ReportPresentationText.MetricValue(m) @ReportPresentationText.Unit(m.Unit, p.IsArabic)</td><td>@ReportPresentationText.Status(m.DataStatus.ToString(), p.IsArabic)</td></tr> } }
-</tbody></table>
-}
-<h2 class="section">@T("Authorized details", "التفاصيل المصرح بها")</h2>
-@if (r.Records.Count == 0) { <p class="empty">@T("No accessible detail records match these filters.", "لا توجد سجلات تفاصيل متاحة تطابق هذه الفلاتر.")</p> }
-else {
-<table><thead><tr><th style="width:12%">@T("Resource", "المورد")</th><th style="width:35%">@T("Reference", "المرجع")</th><th>@T("Business date", "تاريخ العمل")</th><th>@T("Status", "الحالة")</th><th>@T("Amount EGP", "القيمة جنيه")</th></tr></thead><tbody>
-@foreach (var item in r.Records) { <tr><td>@ReportPresentationText.Resource(item.ResourceType, p.IsArabic)</td><td dir="ltr">@item.Reference</td><td dir="ltr">@item.BusinessDate.ToString("yyyy-MM-dd")</td><td>@ReportPresentationText.Status(item.Status, p.IsArabic)</td><td class="num">@(item.Amount?.ToString("#,##0.00", CultureInfo.InvariantCulture) ?? "-")</td></tr> }
-</tbody></table>
-}
-</body></html>
+<p>@T("Eligible / excluded", "المؤهل والمستبعد"): <bdi dir="ltr">@r.EligibleSampleCount / @r.ExcludedSampleCount</bdi></p>
+<p>@T("Data freshness UTC", "حداثة البيانات UTC"): <bdi dir="ltr">@r.DataFreshnessUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</bdi></p>
+<p>@T("Grouping", "التجميع"): @PdfPrintPresentation.Grouping(r.AppliedFilters.Grouping, p.IsArabic)</p>
+@foreach (var filter in ReportPresentationText.Filters(p)) { <p><b>@filter.Label:</b> <bdi>@filter.Value</bdi></p> }
+@foreach (var warning in r.Warnings) { <p class="note">@PdfPrintPresentation.Warning(warning, p.IsArabic) <bdi>@warning</bdi></p> }
+<p class="note">@T("Business periods follow source date bases. Snapshot and generation times are UTC; no implicit local-date conversion. Ratios retain reported numerators, denominators and exclusions.", "فترات العمل تتبع أساس تاريخ المصدر. اللقطة والإنشاء بتوقيت UTC دون تحويل ضمني للتاريخ المحلي. تحتفظ النسب بالبسط والمقام والاستبعادات الواردة.")</p>
+<p class="note"><bdi>@r.ReportCode</bdi> · @PdfPrintPresentation.Confidentiality(r.Scope.Actor, p.IsArabic) · <bdi dir="ltr">@r.Window.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm 'UTC'")</bdi></p>
+</section></body></html>
