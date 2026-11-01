@@ -7,9 +7,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports;
 public sealed record PdfPrintSpec(string QuestionEn, string QuestionAr, string[] Headlines, PdfPrintSource[] Sources);
 public sealed record PdfPrintSource(string TitleEn, string TitleAr, string Source, string[] Codes,
     string CaptionEn, string CaptionAr, bool Table = false, bool Optional = false);
-public sealed record PdfPrintPoint(string Group, ReportMetric Metric);
+public sealed record PdfPrintPoint(string Group, ReportMetric Metric, string? Key = null);
 public sealed record PdfPrintSection(string Title, string Caption, string Source, IReadOnlyList<PdfPrintPoint> Points,
-    bool Temporal, bool Table, string? ChartDataUrl);
+    bool Temporal, bool Table, string? ChartDataUrl, ReportGrouping Grouping = ReportGrouping.Day);
 public sealed record PdfPrintDocument(string Question, IReadOnlyList<ReportMetric> Cards,
     IReadOnlyList<PdfPrintSection> Sections, IReadOnlyList<string> QualityNotes);
 
@@ -24,9 +24,10 @@ public static class PdfPrintPresentation
     private static readonly PdfPrintSource Funnel = S("Booking creation cohort", "مجموعة الحجوزات المنشأة", "BookingCreationCohortFunnel", "BookingsCreated CheckIns TicketsCompleted",
         "Only stages reported inside this same creation cohort; drop-off does not establish no-show or cancellation.", "المراحل المسجلة داخل مجموعة الإنشاء نفسها فقط؛ الفرق لا يثبت عدم الحضور أو الإلغاء.");
     private static readonly PdfPrintSource Durations = S("Waiting and service intervals", "فترات الانتظار والخدمة", "Metrics", "WaitToFirstCall WaitToServiceStart ServiceDuration",
-        "Separate reported intervals, in minutes; eligible and excluded samples are retained in the appendix.", "فترات مستقلة بالدقائق؛ العينات المؤهلة والمستبعدة محفوظة في الملحق.");
+        "Separate reported intervals, in minutes; sample details remain in Excel when permitted.", "فترات مستقلة بالدقائق؛ تفاصيل العينات في Excel عند توافر الصلاحية.");
     private static readonly PdfPrintSource BookingCategories = S("Booking creation and cancellation events", "إنشاء الحجوزات وأحداث الإلغاء", "BookingWeekday:|BookingHour:|CancellationReason:|CancellationInitiator:", "",
         "Weekday/hour describe booking creation, not appointment demand. Cancellation groups are event counts.", "اليوم والساعة يصفان إنشاء الحجز وليس وقت الموعد؛ مجموعات الإلغاء تعد أحداثًا.", table: true);
+    private static readonly string[] BookingSummaryPrefixes = ["BookingWeekday:", "CancellationReason:", "CancellationInitiator:"];
     private static readonly PdfPrintSource Balances = S("Period obligations and snapshot balances", "التزامات الفترة وأرصدة اللقطة", "Metrics", "OutstandingDueInPeriod AllOutstandingAsOf OverdueAsOf ProjectedResultForPeriod",
         "Due in period uses the selected due dates. All outstanding and overdue are as-of stocks, not daily cash flows. Projection is supplied by the report.", "مستحقات الفترة حسب تواريخ الاستحقاق المختارة؛ الإجمالي والمتأخر أرصدة عند اللقطة وليست تدفقات يومية. النتيجة المتوقعة واردة من التقرير.", table: true);
     private static readonly PdfPrintSource Approval = S("Approval-state distribution", "توزيع حالات الاعتماد", "Approval:", "",
@@ -60,10 +61,10 @@ public static class PdfPrintPresentation
              S("Handover events", "أحداث التسليم", "Metrics", "HandoversCreated HandoverAcknowledgements HandoversClosed OpenHandovers", "Recorded events and open snapshot counts are separate measures.", "الأحداث المسجلة وأعداد اللقطة المفتوحة مقاييس مستقلة.", table: true, optional: true)]),
         (ReportActor.Reception, "reservations") => new("When are bookings created and how do they progress?", "متى تنشأ الحجوزات وكيف تتقدم؟",
             ["BookingsCreated", "AppointmentsScheduled", "ReservationToTicketConversion", "CancellationRateScheduledCohort", "ReservationNoShowRate"],
-            [S("Booking creation weekday", "يوم إنشاء الحجز", "BookingWeekday:", "", "Creation weekday, not busiest appointment day; full hour distribution is in the appendix.", "يوم إنشاء الحجز وليس أكثر أيام المواعيد ازدحامًا؛ توزيع الساعات الكامل في الملحق."), Funnel, BookingTrend]),
+            [S("Booking creation weekday", "يوم إنشاء الحجز", "BookingWeekday:", "", "Creation weekday, not busiest appointment day; other distributions remain in Excel when permitted.", "يوم إنشاء الحجز وليس أكثر أيام المواعيد ازدحامًا؛ التوزيعات الأخرى في Excel عند توافر الصلاحية."), Funnel, BookingTrend]),
         (ReportActor.Reception, "queue") => Queue(),
         (ReportActor.Reception, "activity") => new("What operational events were recorded?", "ما الأحداث التشغيلية المسجلة؟", ["ReceptionActivity"],
-            [S("Recorded reception events", "أحداث الاستقبال المسجلة", "Metrics", "ReceptionActivity", "Event counts are not patients served or employee productivity. Authorized event details follow in the appendix.", "عدد الأحداث لا يمثل المرضى المخدومين أو إنتاجية الموظف؛ التفاصيل المصرح بها في الملحق.", table: true),
+            [S("Recorded reception events", "أحداث الاستقبال المسجلة", "Metrics", "ReceptionActivity", "Event counts are not patients served or employee productivity. Event details remain in Excel when permitted.", "عدد الأحداث لا يمثل المرضى المخدومين أو إنتاجية الموظف؛ تفاصيل الأحداث في Excel عند توافر الصلاحية.", table: true),
              S("Dated reception activity", "نشاط الاستقبال المؤرخ", "Series", "ReceptionActivity", "Only a directly reported reception-activity series is shown.", "يعرض فقط تسلسل نشاط الاستقبال الوارد مباشرة من المصدر.", optional: true)]),
         (ReportActor.SuperAdmin, "overview") => new("What is the authorized platform lifecycle snapshot?", "ما لقطة مراحل المنصة المصرح بها؟",
             ["RegisteredDoctors", "PendingDoctors", "ApprovedDoctors", "ActivePractices", "CurrentBookableDoctors"], [Approval]),
@@ -106,6 +107,25 @@ public static class PdfPrintPresentation
         : State(m.DataStatus, ar);
     public static string Name(ReportMetric m, bool ar) => ar ? m.NameAr : m.NameEn;
     public static string Number(decimal? value) => value?.ToString("#,##0.##", CultureInfo.InvariantCulture) ?? "—";
+    public static string ExecutiveLabel(bool ar) => ar
+        ? "ملخص تنفيذي · البيانات التفصيلية المصرح بها متاحة عبر تصدير Excel (عند توافر الصلاحية)"
+        : "Executive summary · Detailed authorized data is available via Excel export (when permitted)";
+    public static IReadOnlyList<PdfPrintPoint> VisibleSummaryRows(PdfPrintSection section, int max = 8)
+    {
+        var rows = section.Points.AsEnumerable();
+        if (section.Source is "Governorate:" or "City:" or "Specialization:")
+            rows = rows.OrderByDescending(p => Measured(p.Metric)).ThenByDescending(p => p.Metric.Value)
+                .ThenBy(p => p.Group, StringComparer.Ordinal).ThenBy(p => p.Metric.MetricCode, StringComparer.Ordinal);
+        return rows.Take(Math.Clamp(max, 1, 8)).ToArray();
+    }
+    public static string SummaryNote(int shown, int total, bool ar, bool practices = false) => ar
+        ? $"يعرض {shown} من {total} {(practices ? "عيادات مصرح بها" : "مدخلات المصدر المصرح بها")}. التفاصيل في Excel عند توافر الصلاحية."
+        : $"Showing {shown} of {total} authorized source {(practices ? "practices" : "entries")}. Detailed values are in Excel when permitted.";
+    public static string MissingMeasurementSummary(PdfPrintSection section, bool ar) => section.Points.Any(p => Measured(p.Metric))
+        ? ar ? "تتوفر بعض القياسات، لكن لا تدعم رسمًا موثوقًا هنا. التفاصيل في Excel عند توافر الصلاحية."
+            : "Some measurements are available, but do not support a reliable chart here. Details are in Excel when permitted."
+        : ar ? "لا تتوفر قياسات لهذا التحليل. القيم غير المتاحة ليست صفرًا؛ راجع حالة الجودة أدناه."
+            : "No measurements are available for this analysis. Unavailable values are not zero; see data quality below.";
     public static string Confidentiality(ReportActor actor, bool ar) => actor == ReportActor.SuperAdmin
         ? ar ? "سري · تجميعات المنصة المصرح بها" : "Confidential · authorized platform aggregates"
         : actor == ReportActor.Reception ? ar ? "سري · تشغيل العيادات المفوضة" : "Confidential · delegated practice operations"
@@ -137,36 +157,46 @@ public static class PdfPrintPresentation
                 else groups = groups.Where(g => s.Source == "Practices"
                     ? Guid.TryParse(g.Key, out var id) && r.Scope.PracticeIds.Contains(id)
                     : s.Source.Split('|').Any(prefix => prefix.EndsWith(':') ? g.Key.StartsWith(prefix, StringComparison.Ordinal) : g.Key == prefix)).ToArray();
+                if (s.Source == BookingCategories.Source)
+                {
+                    // One distribution, never a concatenation of weekday/hour/cancellation families.
+                    var prefix = BookingSummaryPrefixes
+                        .FirstOrDefault(prefix => groups.Any(g => g.Key.StartsWith(prefix, StringComparison.Ordinal) && g.Metrics.Any(Measured)));
+                    groups = prefix == null ? [] : groups.Where(g => g.Key.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
+                }
+                if (s.Source is "DoctorRegistrationCohort:" or "PatientRegistrationCohort:") groups = groups.OrderBy(g => g.Key, StringComparer.Ordinal).ToArray();
                 points = groups.SelectMany(g => (s.Codes.Length == 0 ? g.Metrics : s.Codes.Select(code => g.Metrics.FirstOrDefault(m => m.MetricCode == code)).OfType<ReportMetric>())
-                    .Select(m => new PdfPrintPoint(s.Source == "Series" ? g.Key : p.IsArabic ? g.NameAr : g.NameEn ?? g.NameAr, m)));
+                    .Select(m => new PdfPrintPoint(s.Source == "Series" ? g.Key : p.IsArabic ? g.NameAr : g.NameEn ?? g.NameAr, m, g.Key)));
             }
             var rows = points.ToArray();
             if (s.Optional && rows.Length == 0) continue;
             var temporal = s.Source == "Series" && r.AppliedFilters.Grouping is ReportGrouping.Day or ReportGrouping.Week or ReportGrouping.Month;
-            var caption = T(s.CaptionEn, s.CaptionAr) + " " + T("Source: reported measures", "المصدر: المقاييس المسجلة") + " · " + s.Source;
+            var caption = T(s.CaptionEn, s.CaptionAr) + " " + T("Source: reported measures.", "المصدر: المقاييس المسجلة.");
             if (s.Source == "Series") caption += " · " + Grouping(r.AppliedFilters.Grouping, p.IsArabic);
-            if (rows.Any(x => x.Metric.DataStatus != ReportDataStatus.Complete || !Measured(x.Metric))) caption += " · " + T("Some source measures are partial or unavailable; see status beside each value.", "بعض مقاييس المصدر جزئية أو غير متاحة؛ راجع الحالة بجوار كل قيمة.");
-            foreach (var warning in rows.Select(x => x.Metric.WarningCode).OfType<string>().Distinct()) caption += " · " + Warning(warning, p.IsArabic);
+            if (s.Source == "Series") caption += " · " + T("Only measured observations are plotted; lines break across missing periods.", "ترسم القياسات المتاحة فقط؛ ينقطع الخط عند الفترات المفقودة.");
+            if (rows.Any(x => x.Metric.DataStatus != ReportDataStatus.Complete || !Measured(x.Metric))) caption += " · " + T("Partial or unavailable source; see data quality.", "المصدر جزئي أو غير متاح؛ راجع جودة البيانات.");
+            if (s.Source == BookingCategories.Source) caption += " · " + T("Other distributions remain in Excel when permitted.", "التوزيعات الأخرى في Excel عند توافر الصلاحية.");
             var incomplete = s.Codes.Any(code => !rows.Any(x => x.Metric.MetricCode == code));
-            var section = new PdfPrintSection(T(s.TitleEn, s.TitleAr), caption, s.Source, rows, temporal, s.Table || incomplete, null);
+            var section = new PdfPrintSection(T(s.TitleEn, s.TitleAr), caption, s.Source, rows, temporal, s.Table || (!temporal && incomplete), null, r.AppliedFilters.Grouping);
             sections.Add(section with { ChartDataUrl = PdfPrintChartRenderer.Render(section, p.IsArabic) });
         }
         var statuses = new[] { r.DataStatus }.Concat(r.Metrics.Select(m => m.DataStatus))
             .Concat(r.Series.Concat(r.Breakdowns).SelectMany(g => g.Metrics).Select(m => m.DataStatus))
             .Where(s => s != ReportDataStatus.Complete).Distinct();
-        var notes = statuses.Select(s => State(s, p.IsArabic)).Concat(r.Warnings.Select(w => Warning(w, p.IsArabic))).Distinct().ToArray();
-        return new(spec == null ? T("Authorized source appendix", "ملحق المصدر المصرح به") : T(spec.QuestionEn, spec.QuestionAr), cards, sections, notes);
+        var metricWarnings = r.Metrics.Concat(r.Series.Concat(r.Breakdowns).SelectMany(g => g.Metrics)).Select(m => m.WarningCode).OfType<string>();
+        var notes = statuses.Select(s => State(s, p.IsArabic)).Concat(r.Warnings.Concat(metricWarnings).Select(w => Warning(w, p.IsArabic))).Distinct().ToArray();
+        return new(spec == null ? T("Authorized executive summary", "ملخص تنفيذي مصرح به") : T(spec.QuestionEn, spec.QuestionAr), cards, sections, notes);
     }
     public static string Grouping(ReportGrouping grouping, bool ar) => ar ? grouping switch
     { ReportGrouping.Day => "يومي", ReportGrouping.Week => "أسبوعي", ReportGrouping.Month => "شهري", _ => "تجميع المصدر" } : grouping.ToString();
     public static string State(ReportDataStatus status, bool ar) => (status, ar) switch
     {
-        (ReportDataStatus.Partial, false) => "Partial coverage: only recorded measures are shown.",
-        (ReportDataStatus.Partial, true) => "تغطية جزئية: تعرض المقاييس المسجلة فقط.",
+        (ReportDataStatus.Partial, false) => "Partial coverage: recorded observations only.",
+        (ReportDataStatus.Partial, true) => "تغطية جزئية: القياسات المسجلة فقط.",
         (ReportDataStatus.NotAvailable, false) => "Some data are unavailable or privacy-suppressed; hidden groups are not reconstructed.",
         (ReportDataStatus.NotAvailable, true) => "بعض البيانات غير متاحة أو محجوبة للخصوصية؛ لا تستنتج المجموعات المحجوبة.",
-        (ReportDataStatus.NotMeasured, false) => "Not measured: the source does not establish a value.",
-        (ReportDataStatus.NotMeasured, true) => "غير مقاس: المصدر لا يثبت قيمة.",
+        (ReportDataStatus.NotMeasured, false) => "Not measured by the source.",
+        (ReportDataStatus.NotMeasured, true) => "غير مقاس من المصدر.",
         (ReportDataStatus.NotInstrumented, false) => "Not instrumented: this activity is not recorded.",
         (ReportDataStatus.NotInstrumented, true) => "غير مسجل: لا يجري تسجيل هذا النشاط.",
         (ReportDataStatus.Stale, false) => "Stale source: a current measured value is unavailable.",
@@ -179,6 +209,8 @@ public static class PdfPrintPresentation
         "Report.NoEligibleSample" or "Report.ZeroDenominator" => ar ? "لا توجد عينة مؤهلة لحساب النسبة." : "No eligible denominator is available for this ratio.",
         "Report.NotInstrumented" => State(ReportDataStatus.NotInstrumented, ar),
         "Report.Stale" => State(ReportDataStatus.Stale, ar),
-        _ => ar ? "تنبيه من المصدر؛ التفاصيل في ملحق الجودة." : "Source quality notice; details are in the quality appendix."
+        "Report.MixedPracticeTimeZones" or "Report.MultiplePracticeTimeZones" or "Report.MixedTimeZones" => ar
+            ? "قد تختلف المناطق الزمنية للعيادات؛ تواريخ العمل تتبع مصدرها." : "Practice time zones may differ; business dates retain their source basis.",
+        _ => ar ? "قيود جودة إضافية من المصدر؛ التفاصيل في Excel عند توافر الصلاحية." : "Additional source quality limitations; details are in Excel when permitted."
     };
 }

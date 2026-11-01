@@ -11,19 +11,27 @@ internal static class PdfPrintChartRenderer
     // Every element is constructed as XML. No source markup, URLs, styles or event handlers are accepted.
     public static string? Render(PdfPrintSection s, bool ar)
     {
-        var rows = s.Points;
-        if (s.Table || rows.Count == 0 || rows.Count > 800 || rows.Any(p => !PdfPrintPresentation.Measured(p.Metric)) ||
+        var temporal = s.Temporal;
+        var source = s.Points;
+        if (s.Table || source.Count == 0 || source.Count > 1200) return null;
+        IReadOnlyList<PdfPrintPoint> rows = temporal ? source.Where(p => PdfPrintPresentation.Measured(p.Metric)).ToArray()
+            : PdfPrintPresentation.VisibleSummaryRows(s);
+        if (rows.Count == 0 || rows.Any(p => !PdfPrintPresentation.Measured(p.Metric)) ||
             rows.Select(p => p.Metric.Unit).Distinct().Count() != 1 || rows.Any(p => p.Metric.Unit == "percent" && p.Metric.Value is < 0 or > 100) ||
             rows.Any(p => p.Metric.Unit == "count" && p.Metric.Value < 0)) return null;
-        var temporal = s.Temporal;
-        var keys = rows.Select(p => p.Group).Distinct().ToArray();
+        var keys = source.Select(p => p.Group).Distinct().ToArray();
         var codes = rows.Select(p => p.Metric.MetricCode).Distinct().ToArray();
-        // Missing observations must not become zeroes or connected trend segments.
-        if (temporal && (keys.Length < 2 || codes.Length > 3 || rows.Count != keys.Length * codes.Length ||
-            keys.Any(k => !DateKey(k)) || keys.Any(k => codes.Any(c => rows.Count(p => p.Group == k && p.Metric.MetricCode == c) != 1)))) return null;
-        var ranked = s.Source is "Governorate:" or "City:" or "Specialization:";
-        if (!temporal && rows.Count > 10 && !ranked) return null;
-        if (ranked) rows = rows.OrderByDescending(p => p.Metric.Value).Take(10).ToArray();
+        var periods = new Dictionary<string, int>(StringComparer.Ordinal);
+        if (temporal)
+        {
+            if (codes.Length > 3 || source.GroupBy(p => (p.Group, p.Metric.MetricCode)).Any(g => g.Count() != 1)) return null;
+            foreach (var key in keys)
+            {
+                if (!TryPeriod(key, s.Grouping, out var period)) return null;
+                periods.Add(key, period);
+            }
+            if (periods.Values.Distinct().Count() != keys.Length) return null;
+        }
         var min = Math.Min(0m, rows.Min(p => p.Metric.Value!.Value));
         var max = Math.Max(0m, rows.Max(p => p.Metric.Value!.Value));
         // Decimal values stay authoritative; floating point is used only for bounded drawing coordinates.
@@ -41,7 +49,8 @@ internal static class PdfPrintChartRenderer
         if (temporal)
         {
             double Y(decimal value) => 205 - Scale(value) * 145;
-            double X(int index) => 65 + index * 665.0 / (keys.Length - 1);
+            var first = periods.Values.Min(); var last = periods.Values.Max();
+            double X(string key) => last == first ? 397.5 : 65 + (periods[key] - first) * 665.0 / (last - first);
             for (var tick = 0; tick <= 4; tick++)
             {
                 var y = 205 - tick * 145.0 / 4; Line(65, y, 730, y, "#dce5e9");
@@ -50,17 +59,32 @@ internal static class PdfPrintChartRenderer
             string[] colors = ["#143c50", "#087d82", "#666666"];
             for (var i = 0; i < codes.Length; i++)
             {
-                var values = keys.Select(k => rows.Single(p => p.Group == k && p.Metric.MetricCode == codes[i])).ToArray();
-                var polyline = new XElement(Ns + "polyline", new XAttribute("fill", "none"), new XAttribute("stroke", colors[i]), new XAttribute("stroke-width", 2.5),
-                    new XAttribute("stroke-dasharray", i == 0 ? "none" : i == 1 ? "7 4" : "2 4"),
-                    new XAttribute("points", string.Join(" ", values.Select((p, j) => F(X(j)) + "," + F(Y(p.Metric.Value!.Value))))));
-                svg.Add(polyline); Text(65 + i * 225, 37, (i + 1) + ". " + PdfPrintPresentation.Name(values[0].Metric, ar), size: 11);
+                var values = rows.Where(p => p.Metric.MetricCode == codes[i]).OrderBy(p => periods[p.Group]).ToArray();
+                var group = new XElement(Ns + "g", new XAttribute("data-series", codes[i]));
+                List<PdfPrintPoint> run = [];
+                void DrawRun()
+                {
+                    if (run.Count > 1) group.Add(new XElement(Ns + "polyline", new XAttribute("fill", "none"), new XAttribute("stroke", colors[i]), new XAttribute("stroke-width", 2.5),
+                        new XAttribute("stroke-dasharray", i == 0 ? "none" : i == 1 ? "7 4" : "2 4"),
+                        new XAttribute("points", string.Join(" ", run.Select(p => F(X(p.Group)) + "," + F(Y(p.Metric.Value!.Value)))))));
+                    if (run.Count == 1 || keys.Length <= 31)
+                        foreach (var point in run) group.Add(new XElement(Ns + "circle", new XAttribute("cx", F(X(point.Group))), new XAttribute("cy", F(Y(point.Metric.Value!.Value))),
+                            new XAttribute("r", 2.5), new XAttribute("fill", colors[i])));
+                    run.Clear();
+                }
+                foreach (var point in values)
+                {
+                    if (run.Count > 0 && periods[point.Group] - periods[run[^1].Group] != (s.Grouping == ReportGrouping.Week ? 7 : 1)) DrawRun();
+                    run.Add(point);
+                }
+                DrawRun(); svg.Add(group);
+                Text(65 + i * 225, 37, (i + 1) + ". " + PdfPrintPresentation.Name(values[0].Metric, ar), size: 11);
                 // Numbered endpoint labels preserve series identity in monochrome print.
-                Text(735, Y(values[^1].Metric.Value!.Value) + 4, (i + 1).ToString(CultureInfo.InvariantCulture), size: 10);
+                Text(Math.Min(735, X(values[^1].Group) + 6), Y(values[^1].Metric.Value!.Value) + 4, (i + 1).ToString(CultureInfo.InvariantCulture), size: 10);
             }
             for (var i = 0; i < keys.Length; i++)
-                if (i == 0 || i == keys.Length - 1 || i % Math.Max(1, (keys.Length - 1) / 4) == 0)
-                    Text(X(i), 228, keys[i], i == 0 ? "start" : i == keys.Length - 1 ? "end" : "middle", 10);
+                if (i == 0 || i == keys.Length - 1 || i % Math.Max(1, (keys.Length + 3) / 4) == 0)
+                    Text(X(keys[i]), 228, keys[i], i == 0 ? "start" : i == keys.Length - 1 ? "end" : "middle", 10);
             Text(65, 258, ar ? "الفترة · حسب تجميع المصدر" : "Period · source grouping");
         }
         else
@@ -75,13 +99,21 @@ internal static class PdfPrintChartRenderer
                     new XAttribute("height", 19), new XAttribute("fill", "#087d82"), new XAttribute("stroke", "#143c50")));
                 Text(675, y + 14, PdfPrintPresentation.Value(p.Metric));
             }
-            if (s.Points.Count > rows.Count) Text(12, height - 5, ar ? "أعلى ١٠ قيم؛ المصدر الكامل في الملحق" : "Top 10 values; complete source in appendix", size: 10);
         }
         return "data:image/svg+xml;base64," + Convert.ToBase64String(Encoding.UTF8.GetBytes(svg.ToString(SaveOptions.DisableFormatting)));
     }
-    private static bool DateKey(string key) => DateOnly.TryParseExact(key, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ||
-        DateTime.TryParseExact(key, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ||
-        (key.Length == 8 && key[4..6] == "-W" && int.TryParse(key[..4], out var year) && year is >= 1 and <= 9999 && int.TryParse(key[6..], out var week) && week is >= 1 and <= 53);
+    private static bool TryPeriod(string key, ReportGrouping grouping, out int period)
+    {
+        period = 0;
+        if (DateOnly.TryParseExact(key, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        { period = grouping == ReportGrouping.Month ? date.Year * 12 + date.Month : date.DayNumber; return true; }
+        if (grouping == ReportGrouping.Month && DateTime.TryParseExact(key, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var month))
+        { period = month.Year * 12 + month.Month; return true; }
+        if (grouping == ReportGrouping.Week && key.Length == 8 && key[4..6] == "-W" && int.TryParse(key[..4], out var year) && year is >= 1 and < 9999 &&
+            int.TryParse(key[6..], out var week) && week >= 1 && week <= ISOWeek.GetWeeksInYear(year))
+        { period = DateOnly.FromDateTime(ISOWeek.ToDateTime(year, week, DayOfWeek.Monday)).DayNumber; return true; }
+        return false;
+    }
     private static string F(double n) => n.ToString("0.##", CultureInfo.InvariantCulture);
     private static string Short(string text) => text.Length <= 42 ? text : text[..39] + "…";
 }
