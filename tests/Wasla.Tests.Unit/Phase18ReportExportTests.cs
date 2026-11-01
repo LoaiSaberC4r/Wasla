@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Microsoft.Extensions.Options;
 using Wasla.Application.Features.Reporting;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports;
 
@@ -10,12 +9,13 @@ public sealed class Phase18ReportExportTests
     [Theory] [InlineData(false)] [InlineData(true)]
     public async Task Shared_model_renders_encoded_Razor_and_typed_safe_Excel_and_paginated_Pdf(bool arabic)
     {
-        var executable = Environment.GetEnvironmentVariable("WASLA_CHROMIUM_PATH");
-        using var renderer = new ReportDocumentRenderer(Options.Create(new Phase18Options { ChromiumExecutablePath = executable }));
+        var renderer = PdfTestSupport.Report();
         var report = Model(); var p = new ReportPresentation(report, arabic, false, "Doctor sample", "Practice sample");
         var html = await renderer.RenderHtmlAsync(p, TestContext.Current.CancellationToken);
         Assert.Contains("table-header-group", html); Assert.Contains("Content-Security-Policy", html);
         Assert.Contains(arabic ? "dir=\"rtl\"" : "dir=\"ltr\"", html);
+        Assert.Contains("size:A4 portrait", html);
+        Assert.Contains("size:A4 landscape", await renderer.RenderHtmlAsync(p with { Landscape = true }, TestContext.Current.CancellationToken));
         Assert.Contains("&lt;script&gt;", html); Assert.DoesNotContain("<script>", html);
         var excel = renderer.RenderExcel(p);
         using (var book = new XLWorkbook(new MemoryStream(excel)))
@@ -32,16 +32,11 @@ public sealed class Phase18ReportExportTests
         }
         var output = Environment.GetEnvironmentVariable("WASLA_EXPORT_QA_DIRECTORY");
         if (output != null) { Directory.CreateDirectory(output); await File.WriteAllBytesAsync(Path.Combine(output, arabic ? "report-ar.xlsx" : "report-en.xlsx"), excel, TestContext.Current.CancellationToken); }
-        if (executable == null) return;
-        var pdf = await renderer.RenderPdfAsync(p, TestContext.Current.CancellationToken);
-        Assert.True(pdf.IsSuccess, pdf.IsFailure ? string.Join(",", pdf.Errors.Select(e => e.Code)) : "");
-        Assert.True(pdf.Value.AsSpan().StartsWith("%PDF"u8)); Assert.True(pdf.Value.Length > 10_000);
-        if (output != null) await File.WriteAllBytesAsync(Path.Combine(output, arabic ? "report-ar.pdf" : "report-en.pdf"), pdf.Value, TestContext.Current.CancellationToken);
     }
     [Fact]
     public void Excel_handles_the_full_row_limit_and_empty_reports_with_no_silent_truncation()
     {
-        using var renderer = new ReportDocumentRenderer(Options.Create(new Phase18Options()));
+        var renderer = PdfTestSupport.Report();
         var model = Model();
         var rows = Enumerable.Range(0, 25_000).Select(i => model.Records[i % model.Records.Count] with { Reference = "ROW-" + i }).ToArray();
         using var large = new XLWorkbook(new MemoryStream(renderer.RenderExcel(new(model with { Records = rows, DetailRowCount = rows.Length }, false, true, "QA", "QA"))));
@@ -64,15 +59,17 @@ public sealed class Phase18ReportExportTests
         Assert.False(ReportLogoPolicy.IsBoundedImage(new byte[] { 255, 216, 255 }, "image/jpeg"));
     }
     [Fact]
-    public async Task Missing_browser_returns_controlled_unavailable_and_real_health_result()
+    public async Task Launch_failure_returns_controlled_unavailable_and_real_health_result()
     {
-        using var renderer = new ReportDocumentRenderer(Options.Create(new Phase18Options()));
+        var renderer = PdfTestSupport.Report();
         Assert.Equal("NotMeasured", renderer.Health.Status);
+        Assert.Equal("AutomaticDownload", renderer.Health.BrowserProvisioning);
+        Assert.Null(renderer.Health.LastProbeSucceeded);
         var result = await renderer.RenderPdfAsync(new(Model(), true, false, "Doctor", "Practice"), TestContext.Current.CancellationToken);
-        Assert.True(result.IsFailure); Assert.Equal("Report.ChromiumNotConfigured", result.Errors.First().Code);
+        Assert.True(result.IsFailure); Assert.Equal("Report.BrowserLaunchFailed", result.Errors.First().Code);
         Assert.Equal("Unavailable", renderer.Health.Status);
     }
-    private static ReportModel Model()
+    internal static ReportModel Model()
     {
         var now = new DateTime(2026, 10, 4, 9, 0, 0, DateTimeKind.Utc); var date = new DateOnly(2026, 10, 4);
         var scope = new ReportScope(ReportActor.Doctor, Guid.NewGuid(), Guid.NewGuid(), null, [Guid.NewGuid()], []);

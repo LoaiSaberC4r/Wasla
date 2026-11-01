@@ -1,8 +1,10 @@
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Wasla.Application.Features.Reporting;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using PuppeteerSharp;
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports;
 using Wasla.Domain.Security;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
 using static Wasla.Tests.Integration.Phase14MedicationApiTests;
@@ -22,10 +24,13 @@ public sealed class DoctorPatientPrescriptionTests
         var id = issued.Prescription.GetProperty("prescriptionId").GetGuid(); var root = $"/api/v1/doctors/me/prescriptions/{id}";
         var list = await GetAsync(doctor, $"/api/v1/doctors/me/patients/{f.PatientId}/prescriptions");
         Assert.Equal(1, list.GetProperty("totalCount").GetInt32()); Assert.True(list.GetProperty("items")[0].GetProperty("canExport").GetBoolean());
-        var path = Environment.GetEnvironmentVariable("WASLA_CHROMIUM_PATH");
-        Assert.SkipWhen(string.IsNullOrWhiteSpace(path), "WASLA_CHROMIUM_PATH is required for actual export.");
-        f.Services.GetRequiredService<IOptions<Phase18Options>>().Value.ChromiumExecutablePath = path;
-        using (var pdf = await doctor.GetAsync(root + "/versions/1/pdf?disposition=attachment", TestContext.Current.CancellationToken))
+        await using var pdfHost = f.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        {
+            if (Environment.GetEnvironmentVariable("WASLA_RUN_BROWSER_TESTS") == "1") return;
+            services.RemoveAll<IChromiumPdfRenderer>(); services.AddSingleton<IChromiumPdfRenderer, SyntheticPdf>();
+        }));
+        using var pdfDoctor = pdfHost.CreateClient(); pdfDoctor.DefaultRequestHeaders.Authorization = doctor.DefaultRequestHeaders.Authorization;
+        using (var pdf = await pdfDoctor.GetAsync(root + "/versions/1/pdf?disposition=attachment", TestContext.Current.CancellationToken))
         {
             Assert.True(pdf.StatusCode == HttpStatusCode.OK, await pdf.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
             Assert.Equal("application/pdf", pdf.Content.Headers.ContentType?.MediaType);
@@ -40,14 +45,14 @@ public sealed class DoctorPatientPrescriptionTests
         using (var draft = await doctor.GetAsync(root + "/versions/2/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.NotFound, draft.StatusCode);
         var corrected = await Phase14MedicationApiTests.AddAsync(doctor, root + "/correction-draft/finalize", new { rowVersion = correction.GetProperty("rowVersion").GetString() });
         var versions = await GetAsync(doctor, root + "/versions"); Assert.Equal("Superseded", versions[0].GetProperty("status").GetString());
-        using (var superseded = await doctor.GetAsync(root + "/versions/1/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.OK, superseded.StatusCode);
+        using (var superseded = await pdfDoctor.GetAsync(root + "/versions/1/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.OK, superseded.StatusCode);
         await Phase14MedicationApiTests.AddAsync(doctor, root + "/void", new { reason = "Synthetic void", rowVersion = corrected.GetProperty("rowVersion").GetString() });
-        using (var voided = await doctor.GetAsync(root + "/versions/2/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.OK, voided.StatusCode);
+        using (var voided = await pdfDoctor.GetAsync(root + "/versions/2/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.OK, voided.StatusCode);
         list = await GetAsync(doctor, $"/api/v1/doctors/me/patients/{f.PatientId}/prescriptions"); Assert.Equal("Voided", list.GetProperty("items")[0].GetProperty("currentStatus").GetString());
         await f.WithDbAsync(async db => { (await db.DoctorPractices.SingleAsync(p => p.Id == f.PracticeId)).Deactivate(f.DoctorUserId); await db.SaveChangesAsync(); });
         var state = await GetAsync(doctor, root); Assert.All(state.GetProperty("capabilities").EnumerateObject(), p => Assert.False(p.Value.GetBoolean()));
         await GetAsync(doctor, root + "/versions"); await GetAsync(doctor, root + "/versions/1");
-        using (var pdf = await doctor.GetAsync(root + "/versions/1/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.OK, pdf.StatusCode);
+        using (var pdf = await pdfDoctor.GetAsync(root + "/versions/1/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.OK, pdf.StatusCode);
         foreach (var operation in new[] { "/void", "/correction-draft" })
         {
             using var denied = await PostAsync(doctor, root + operation, new { reason = "Forbidden", rowVersion = state.GetProperty("rowVersion").GetString() });
@@ -56,5 +61,11 @@ public sealed class DoctorPatientPrescriptionTests
         await DoctorPatientsApiTests.RemoveGrants(f, PermissionNames.PrescriptionsExportOwn);
         using (var revoked = await doctor.GetAsync(root + "/versions/1/pdf", TestContext.Current.CancellationToken)) Assert.Equal(HttpStatusCode.Forbidden, revoked.StatusCode);
         await f.WithDbAsync(async db => Assert.Equal(4, await db.ArchiveAuditEvents.CountAsync(a => a.Action == "PrescriptionVersionPdfExport")));
+    }
+    private sealed class SyntheticPdf : IChromiumPdfRenderer
+    {
+        public bool BrowserDownloaded => false;
+        public Task<PdfRenderResult> RenderAsync(Func<CancellationToken, Task<string>> html, PdfOptions pdf, CancellationToken ct)
+            => Task.FromResult(new PdfRenderResult("%PDF-synthetic-API-contract-test"u8.ToArray(), null));
     }
 }

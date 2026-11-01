@@ -2,6 +2,8 @@
 
 Branch: `codex/phase18-part-one`. Reviewed baseline: `f91348fc64441523f5910b70260e26523d63a101`. The existing intermediate user commit `b0c3d7e` is preserved. This report covers the approved backend PartOne delivery and supporting integration documentation; production release remains separately blocked.
 
+Current export runtime update (2026-10-29): [CustomerSurvey parity implementation and executed verification](docs/phase18/customer-survey-export-runtime-report.md) supersedes the historical browser/template approach below. The earlier counters remain historical evidence, not results of the current change.
+
 ## Implementation and traceability
 
 The [business rule matrix](docs/phase18/part1-business-rule-traceability.md) explicitly maps all113 D.01–D.48, R.01–R.22, S.01–S.35 and P.01–P.08 IDs to IMPLEMENTED, REUSED, EXTENDED or DEFERRED with code/test evidence. S.30 is unassigned in the approved task and deliberately has no invented feature. Missing historical sources and disabled privacy gates are explicit unavailable states, not fabricated implementations. [Business scope](PHASE-18-PART-ONE-BUSINESS-SCOPE.md) and [the proposed master addendum](SOURCE-OF-TRUTH-PHASE-18-PART-ONE-ADDENDUM.md) distinguish existing rules, approved additions and excluded work.
@@ -16,7 +18,7 @@ The typed API surface includes 109 NEW endpoints and 108 REUSED existing endpoin
 | Reception | Scoped worklist/attention, existing operation routes, operational activity/reports/export and versioned same-Practice handovers |
 | Platform | Actual governance/acquisition/activity/cohort/geography/security metadata, conservative suppression, measured quality/job/runtime health and explicit investigation state machine |
 | Patient | Application self composer reusing approved handlers/access policies, small recent lists and explicit safe capabilities |
-| Exports | Shared model → embedded trusted Razor/installed sandboxed Chromium PDF or typed ClosedXML workbook; row/date/byte/runtime bounds, release-time authorization and immutable scope audit |
+| Exports | Shared model → published trusted Razor/shared automatically provisioned Chromium PDF or typed ClosedXML workbook; row/date/byte/runtime bounds, release-time authorization and immutable scope audit |
 | Persistence | Eight additive migrations, normalized restrictive ownership links, optimistic versions, append-only evidence, monetary/occurrence/settlement/reversal invariants and current-policy reconciliation |
 
 No original appsettings key/value was changed. No production database, deployment, push/merge, credential rotation, notification expansion, queue rule, clinical-sharing gate or PartTwo retention/archive behavior was changed. Logs additionally redact financial/operational note and snapshot payload names.
@@ -43,7 +45,7 @@ Synthetic artifact QA:600 detail rows,20 A4 pages per Arabic/English PDF, repeat
 
 Phase18ContractTests reads actual ApiExplorer/Swagger routes, typed response metadata, required Idempotency-Key headers and PDF binary schema. Contract/doc generation reads metadata only. `scripts/phase18/generate-contract-docs.py` and `generate-rule-matrix.py` reproduce documentation from test output. Behavioral coverage is journey/invariant coverage, not a false claim that every read alias has an independent end-to-end case.
 
-The saved final TRX files are under ignored `_local-data/phase18/validation/final`. Equivalent commands to reproduce those completed runs are recorded below; this is not an instruction to rerun all suites for a documentation change. SQL integration requires the test-only `WASLA_SQLSERVER_CONNECTION_STRING` supplied through the environment. PDF unit coverage used the installed Chrome executable via `WASLA_CHROMIUM_PATH`. Contract output used `WASLA_CONTRACT_OUTPUT_DIRECTORY`.
+The saved final TRX files are under ignored `_local-data/phase18/validation/final`. Equivalent commands to reproduce those completed runs are recorded below; this is not an instruction to rerun all suites for a documentation change. SQL integration requires the test-only `WASLA_SQLSERVER_CONNECTION_STRING` supplied through the environment. The original PDF run used an installed-browser override; current deterministic unit tests and opt-in automatic-download browser tests are described in the linked runtime report. Contract output used `WASLA_CONTRACT_OUTPUT_DIRECTORY`.
 
 ```powershell
 dotnet test tests/Wasla.Tests.Unit --no-restore --logger 'trx;LogFileName=phase18-unit-final.trx' --results-directory _local-data/phase18/validation/final

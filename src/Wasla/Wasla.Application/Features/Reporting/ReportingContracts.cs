@@ -90,7 +90,6 @@ public sealed class Phase18Options
     public bool ObligationGenerationEnabled { get; set; } = true;
     public bool ReportingPolicyRefreshEnabled { get; set; } = true;
     public int ReportingPolicyRefreshIntervalSeconds { get; set; } = 300;
-    public string? ChromiumExecutablePath { get; set; }
     public int PdfTimeoutSeconds { get; set; } = 45;
     public int MaximumConcurrentPdfRenders { get; set; } = 2;
 }

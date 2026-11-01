@@ -26,7 +26,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Persistence/Seeding/Data/egypt-governorates.v1.json" />
-    <EmbeddedResource Include="Reports/Templates/Report.cshtml" />
     <EmbeddedResource Include="Persistence/Seeding/Data/egypt-cities.v1.json" />
     <EmbeddedResource Include="Persistence/Seeding/Data/egypt-areas.v1.json" />
   </ItemGroup>

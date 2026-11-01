@@ -2,81 +2,66 @@ using System.Globalization;
 using System.Net;
 using BuildingBlock.Domain.Results;
 using ClosedXML.Excel;
-using Microsoft.Extensions.Options;
 using PuppeteerSharp;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Hosting;
 using PuppeteerSharp.Media;
 using RazorLight;
 using Wasla.Application.Features.Reporting;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports;
 
-public sealed class ReportDocumentRenderer : IReportDocumentRenderer, IDisposable
+public sealed class ReportDocumentRenderer : IReportDocumentRenderer
 {
     private readonly Phase18Options _options;
-    private readonly RazorLightEngine _razor;
-    private readonly SemaphoreSlim _renders;
+    private readonly Lazy<RazorLightEngine> _razor;
+    private readonly IChromiumPdfRenderer _pdf;
+    private readonly object _healthLock = new();
     private DateTime? _probeAt;
     private bool? _probeSucceeded;
     private string? _failureCode;
-    public ReportDocumentRenderer(IOptions<Phase18Options> options)
+    public ReportDocumentRenderer(IOptions<Phase18Options> options, IWebHostEnvironment environment, IChromiumPdfRenderer pdf)
     {
         _options = options.Value;
-        _renders = new(_options.MaximumConcurrentPdfRenders, _options.MaximumConcurrentPdfRenders);
-        _razor = new RazorLightEngineBuilder().UseEmbeddedResourcesProject(typeof(ReportDocumentRenderer).Assembly,
-                "Wasla.Infrastructure.EntityFrameworkCore.SqlServer")
-            .SetOperatingAssembly(typeof(ReportDocumentRenderer).Assembly).UseMemoryCachingProvider().Build();
+        _pdf = pdf;
+        var templatesPath = Path.Combine(environment.ContentRootPath, "Views", "Templates");
+        // Template availability/compilation must not become a prerequisite for Excel or API startup.
+        _razor = new(() => new RazorLightEngineBuilder().UseFileSystemProject(templatesPath)
+            .SetOperatingAssembly(typeof(ReportDocumentRenderer).Assembly).UseMemoryCachingProvider().Build());
     }
-    public ExportRuntimeHealth Health => new(!_probeSucceeded.HasValue ? "NotMeasured" : _probeSucceeded.Value ? "Ready" : "Unavailable",
-        !string.IsNullOrWhiteSpace(_options.ChromiumExecutablePath), _probeAt, _probeSucceeded, _failureCode,
-        _options.MaximumConcurrentPdfRenders, _options.PdfTimeoutSeconds);
+    public ExportRuntimeHealth Health
+    {
+        get
+        {
+            lock (_healthLock)
+                return new(!_probeSucceeded.HasValue ? "NotMeasured" : _probeSucceeded.Value ? "Ready" : "Unavailable",
+                    false, _probeAt, _probeSucceeded, _failureCode, _options.MaximumConcurrentPdfRenders,
+                    _options.PdfTimeoutSeconds, BrowserDownloaded: _pdf.BrowserDownloaded);
+        }
+    }
     public async Task<string> RenderHtmlAsync(ReportPresentation p, CancellationToken ct)
-        => await _razor.CompileRenderAsync("Reports.Templates.Report", p).WaitAsync(ct);
+        => await _razor.Value.CompileRenderAsync("Report.cshtml", p).WaitAsync(ct);
     public async Task<Result<byte[]>> RenderPdfAsync(ReportPresentation p, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(_options.ChromiumExecutablePath) || !Path.IsPathFullyQualified(_options.ChromiumExecutablePath) ||
-            !File.Exists(_options.ChromiumExecutablePath)) return Unavailable("Report.ChromiumNotConfigured");
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        deadline.CancelAfter(TimeSpan.FromSeconds(_options.PdfTimeoutSeconds));
-        var entered = false;
-        try
+        var result = await _pdf.RenderAsync(token => RenderHtmlAsync(p, token), new PdfOptions
         {
-            await _renders.WaitAsync(deadline.Token); entered = true;
-            var html = await RenderHtmlAsync(p, deadline.Token);
-            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-            {
-                ExecutablePath = _options.ChromiumExecutablePath, Headless = true, Timeout = _options.PdfTimeoutSeconds * 1000,
-                Args = ["--disable-background-networking", "--disable-extensions", "--disable-sync", "--no-first-run"]
-            });
-            await using var page = await browser.NewPageAsync();
-            await page.SetJavaScriptEnabledAsync(false);
-            await page.SetOfflineModeAsync(true);
-            await page.SetRequestInterceptionAsync(true);
-            page.Request += async (_, e) =>
-            {
-                try
-                {
-                    if (e.Request.Url.StartsWith("data:", StringComparison.Ordinal) || e.Request.Url == "about:blank")
-                        await e.Request.ContinueAsync();
-                    else await e.Request.AbortAsync();
-                }
-                catch (PuppeteerException) { /* A closed bounded render has no requests to continue. */ }
-            };
-            await page.SetContentAsync(html, new SetContentOptions { WaitUntil = [WaitUntilNavigation.Load], Timeout = _options.PdfTimeoutSeconds * 1000 }).WaitAsync(deadline.Token);
-            await page.EmulateMediaTypeAsync(MediaType.Print).WaitAsync(deadline.Token);
-            var bytes = await page.PdfDataAsync(new PdfOptions
-            {
-                Format = PaperFormat.A4, Landscape = p.Landscape, PrintBackground = true, DisplayHeaderFooter = true,
-                HeaderTemplate = "<span></span>",
-                FooterTemplate = "<div style='width:100%;text-align:center;font:9px sans-serif;color:#64748b'>WASLA · <span class='pageNumber'></span> / <span class='totalPages'></span></div>",
-                MarginOptions = new MarginOptions { Top = "12mm", Bottom = "16mm", Left = "12mm", Right = "12mm" }
-            }).WaitAsync(deadline.Token);
-            _probeAt = DateTime.UtcNow; _probeSucceeded = true; _failureCode = null;
-            return Result<byte[]>.Ok(bytes);
+            Format = PaperFormat.A4, Landscape = p.Landscape, PrintBackground = true, DisplayHeaderFooter = true,
+            HeaderTemplate = "<span></span>",
+            FooterTemplate = "<div style='width:100%;text-align:center;font:9px sans-serif;color:#64748b'>WASLA · <span class='pageNumber'></span> / <span class='totalPages'></span></div>",
+            MarginOptions = new MarginOptions { Top = "12mm", Bottom = "16mm", Left = "12mm", Right = "12mm" }
+        }, ct);
+        var oversized = result.Content is { } bytes && bytes.Length > new ExportLimits().PdfMaximumBytes;
+        lock (_healthLock)
+        {
+            _probeAt = DateTime.UtcNow;
+            _probeSucceeded = result.FailureCode is null && !oversized;
+            _failureCode = oversized ? "Report.ExportTooLarge"
+                : result.FailureCode is { } failure ? "Report." + failure : null;
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return Unavailable("Report.RenderTimeout"); }
-        catch (OperationCanceledException) { throw; }
-        catch (Exception) { return Unavailable("Report.RenderUnavailable"); }
-        finally { if (entered) _renders.Release(); }
+        // Keep report size rejection in ReportExportService so its Rejected audit includes the byte count.
+        return result.FailureCode is { } code
+            ? Result<byte[]>.Fail(Error.Infra("Report." + code, Wasla.Domain.Resources.ErrorMessage.GetString("Phase18ExportUnavailable")))
+            : Result<byte[]>.Ok(result.Content!);
     }
     public async Task ProbeAsync(CancellationToken ct)
     {
@@ -84,9 +69,7 @@ public sealed class ReportDocumentRenderer : IReportDocumentRenderer, IDisposabl
         var scope = new ReportScope(ReportActor.SuperAdmin, Guid.Empty, null, null, [], []);
         var report = new ReportModel("runtime-probe", "اختبار التصدير", "Export runtime probe", "", new(), scope, window, window.GeneratedAtUtc,
             ReportDataStatus.Complete, [], [], [], [], [], 0, 0, []);
-        var result = await RenderPdfAsync(new(report, true, false, "WASLA", "Runtime probe"), ct);
-        _probeAt = DateTime.UtcNow; _probeSucceeded = result.IsSuccess && result.Value.AsSpan().StartsWith("%PDF"u8);
-        _failureCode = result.IsFailure ? result.Errors.First().Code : _probeSucceeded == false ? "Report.InvalidPdf" : null;
+        await RenderPdfAsync(new(report, true, false, "WASLA", "Runtime probe"), ct);
     }
     public byte[] RenderExcel(ReportPresentation p)
     {
@@ -210,11 +193,4 @@ public sealed class ReportDocumentRenderer : IReportDocumentRenderer, IDisposabl
     {
         cell.Value = WebUtility.HtmlDecode(value); cell.Style.NumberFormat.Format = "@"; cell.Style.IncludeQuotePrefix = true;
     }
-    private Result<byte[]> Unavailable(string code)
-    {
-        _probeAt = DateTime.UtcNow; _probeSucceeded = false; _failureCode = code;
-        return Result<byte[]>.Fail(BuildingBlock.Domain.Results.Error.Infra(code,
-            Wasla.Domain.Resources.ErrorMessage.GetString("Phase18ExportUnavailable")));
-    }
-    public void Dispose() => _renders.Dispose();
 }

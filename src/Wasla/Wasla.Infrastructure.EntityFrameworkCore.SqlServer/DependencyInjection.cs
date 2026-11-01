@@ -132,6 +132,8 @@ public static class DependencyInjection
         services.AddScoped<IHandoverService, HandoverService>();
         services.AddScoped<IInvestigationService, InvestigationService>();
         services.AddScoped<IPlatformOperationsService, PlatformOperationsService>();
+        services.AddSingleton<Reports.IChromiumBrowserRuntime, Reports.ChromiumBrowserRuntime>();
+        services.AddSingleton<Reports.IChromiumPdfRenderer, Reports.ChromiumPdfRenderer>();
         services.AddSingleton<IReportDocumentRenderer, Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports.ReportDocumentRenderer>();
         services.AddScoped<IReportExportService, Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports.ReportExportService>();
         services.AddScoped<IReceptionOperationsService, ReceptionOperationsService>();
@@ -190,7 +192,6 @@ public static class DependencyInjection
         services.AddHostedService<ArchiveBackgroundService>();
         services.AddHostedService<OperatingObligationBackgroundService>();
         services.AddHostedService<ReportingPolicyReconciler>();
-        services.AddHostedService<Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports.ExportRuntimeProbeHostedService>();
 
         services.AddDbContext<WaslaDbContext>((serviceProvider, options) =>
             options

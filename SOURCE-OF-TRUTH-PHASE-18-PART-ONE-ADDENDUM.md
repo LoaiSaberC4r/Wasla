@@ -18,7 +18,7 @@ This document records the owner's already-approved Phase18 Part One implementati
 4. Doctor operational insights are deterministic source-backed signals, compare two complete7-day windows with≥20 valid samples and≥25% relative deterioration, and become persistent follow-up records only when tracked. No clinical advice, notification or automatic queue/payment action.
 5. Practice handovers contain operational summaries and authorized same-Practice links, require different-creator acknowledgement, permit Doctor reasoned direct close, and retain immutable history. Closed is terminal.
 6. Administrative investigations contain approved metadata purposes only. Assignment, review, resolution, closure and reasoned reopen are explicit versioned actions; no case grants clinical/private-financial access.
-7. PDF/Excel exports share the preview model and separate permissions, enforce row/date/byte/runtime bounds, use installed sandboxed Chromium and ClosedXML, support bilingual/RTL presentation and record safe immutable export metadata.
+7. PDF/Excel exports share the preview model and separate permissions, enforce row/date/byte/runtime bounds, use automatically provisioned Chromium with the approved CustomerSurvey launch lifecycle and ClosedXML, support bilingual/RTL presentation and record safe immutable export metadata.
 8. Policy snapshots capture only observed configuration and support measured reconciliation/job health. Missing past policies/quotas remain NotMeasured, and absent login/page-view/search telemetry remains NotInstrumented.
 9. Platform patient/clinical slices below five and complementary totals are suppressed. Patient dashboards compose only permitted self APIs and report disabled/unavailable capabilities explicitly.
 
