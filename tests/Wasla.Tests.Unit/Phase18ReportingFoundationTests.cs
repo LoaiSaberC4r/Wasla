@@ -51,10 +51,10 @@ public sealed class Phase18ReportingFoundationTests
     }
 
     [Theory]
-    [InlineData(ReportGrouping.Day)]
-    [InlineData(ReportGrouping.Week)]
-    [InlineData(ReportGrouping.Month)]
-    public void ReportingCritical_Series_matches_full_source_calculation_across_business_dates(ReportGrouping grouping)
+    [InlineData(ReportGrouping.Day, 0)] [InlineData(ReportGrouping.Day, 1)] [InlineData(ReportGrouping.Day, 2)]
+    [InlineData(ReportGrouping.Week, 0)] [InlineData(ReportGrouping.Week, 1)] [InlineData(ReportGrouping.Week, 2)]
+    [InlineData(ReportGrouping.Month, 0)] [InlineData(ReportGrouping.Month, 1)] [InlineData(ReportGrouping.Month, 2)]
+    public void ReportingCritical_Series_matches_full_source_calculation_across_business_dates(ReportGrouping grouping, int snapshot)
     {
         var registry = new KpiDefinitionRegistry();
         var calculator = new OperationalKpiCalculator(registry);
@@ -80,6 +80,24 @@ public sealed class Phase18ReportingFoundationTests
                 [new(TicketHistoryEventType.Completed, checkIn.AddDays(31).AddHours(2), TicketStatus.Completed, null)] },
             ticket with { Id = Guid.NewGuid(), ReservationId = null, BusinessDate = new(2026, 1, 1), Status = null, Events = [] }];
         var asOf = new DateTime(2026, 2, 4, 12, 0, 0, DateTimeKind.Utc);
+        if (snapshot > 0)
+        {
+            // Snapshot 1 precedes rescheduling/check-in; snapshot 2 precedes the cross-midnight completion.
+            asOf = snapshot == 1 ? created.AddHours(1) : checkIn.AddMinutes(30);
+            var cutoff = asOf;
+            reservations = reservations.Select(r => r with
+            {
+                Events = r.Events.Where(e => e.RecordedAtUtc <= cutoff).ToArray(),
+                ScheduledBusinessDate = snapshot == 1 ? new(2025, 12, 31) : r.ScheduledBusinessDate,
+                ScheduledStartUtc = snapshot == 1 ? r.OriginalStartUtc ?? r.ScheduledStartUtc : r.ScheduledStartUtc
+            }).ToArray();
+            tickets = tickets.Where(t => t.CheckInAtUtc <= cutoff).Select(t => t with
+            {
+                Events = t.Events.Where(e => e.RecordedAtUtc <= cutoff).ToArray(),
+                Status = t.Status == null ? null : t.Events.Where(e => e.RecordedAtUtc <= cutoff)
+                    .OrderBy(e => e.RecordedAtUtc).LastOrDefault()?.ToStatus ?? TicketStatus.Waiting
+            }).ToArray();
+        }
         var window = new ReportingWindow(new(2025, 12, 30), new(2026, 2, 3), asOf, asOf.AddDays(20), "Africa/Cairo");
         var sourceType = typeof(ReportingQueryService).GetNestedType("OperationalSources", BindingFlags.NonPublic)!;
         var source = Activator.CreateInstance(sourceType, [reservations, tickets, 0L]);
@@ -98,7 +116,8 @@ public sealed class Phase18ReportingFoundationTests
             // Record equality checks values, numerators, denominators, samples, statuses and warnings.
             Assert.Equal(reference, point.Metrics);
         }
-        Assert.Contains(actual, p => p.Metrics.Any(m => m.MetricCode == "TicketsCompleted" && m.Value > 0));
+        if (snapshot == 0) Assert.Contains(actual, p => p.Metrics.Any(m => m.MetricCode == "TicketsCompleted" && m.Value > 0));
+        else Assert.All(actual, p => Assert.Equal(0, p.Metrics.Single(m => m.MetricCode == "TicketsCompleted").Value));
         Assert.Contains(actual, p => p.Metrics.Any(m => m.Value == 0));
         Assert.Contains(actual, p => p.Metrics.Any(m => m.Value == null));
         Assert.Empty((ReportSeriesPoint[])build.Invoke(service, [source, ReportGrouping.Practice, window])!);

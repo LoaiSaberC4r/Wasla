@@ -156,7 +156,8 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
             if (window.FromDate.DayNumber <= length) return Result<ReportModel>.Fail(ReportingErrors.InvalidFilter);
             var previousFilter = filter with { FromDate = window.FromDate.AddDays(-length), ToDate = window.FromDate.AddDays(-1),
                 AsOfUtc = window.AsOfUtc, ReportTimeZoneId = window.ReportTimeZoneId, ComparePreviousPeriod = false };
-            var previous = await BuildAsync(actor, code, previousFilter, false, null, accessPermission, ct);
+            // Comparisons consume metrics only; do not project/enrich an unused previous-period detail page.
+            var previous = await BuildAsync(actor, code, previousFilter, false, null, accessPermission, ct, new DrilldownSources());
             if (previous.IsFailure) return Result<ReportModel>.Fail(previous.Errors);
             foreach (var current in metrics)
             {
@@ -256,6 +257,8 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
         if (result.IsFailure) return Result<ReportPage<ReportRecord>>.Fail(result.Errors);
         var report = result.Value;
         if (!report.Metrics.Any(m => m.MetricCode == metric && m.Value != null) || !SupportsDrilldown(report.Scope, metric))
+            return Result<ReportPage<ReportRecord>>.Fail(ReportingErrors.InvalidFilter);
+        if (FinancialDrilldownMetrics.Contains(metric) && sources.Financial is null)
             return Result<ReportPage<ReportRecord>>.Fail(ReportingErrors.InvalidFilter);
         await using var transaction = db.Database.IsSqlServer() && db.Database.CurrentTransaction is null
             ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
