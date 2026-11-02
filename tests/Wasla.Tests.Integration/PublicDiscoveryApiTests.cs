@@ -373,6 +373,7 @@ public sealed class PublicDiscoveryApiTests
             }
 
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            await SubscriptionTestData.SeedAsync(scope.ServiceProvider, db, TestContext.Current.CancellationToken);
             await scope.ServiceProvider
                 .GetRequiredService<IPublicDiscoveryRankingProjectionRefresher>()
                 .RefreshAllAsync(TestContext.Current.CancellationToken);

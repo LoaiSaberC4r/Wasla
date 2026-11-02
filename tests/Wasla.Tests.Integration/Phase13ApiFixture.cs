@@ -167,6 +167,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
         db.ReceptionPracticeAssignmentPermissions.AddRange(PermissionNames.ReceptionAssignmentScoped.Select(permission =>
             new ReceptionPracticeAssignmentPermission(Guid.NewGuid(), ReceptionAssignmentId, SystemPermissionIds.For(permission), doctorUser.Id, now)));
         await db.SaveChangesAsync(ct);
+        await SubscriptionTestData.SeedAsync(scope.ServiceProvider, db, ct);
     }
 
     public async Task<HttpClient> ClientAsync(string actor)

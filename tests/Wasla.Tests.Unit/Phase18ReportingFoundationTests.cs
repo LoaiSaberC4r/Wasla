@@ -58,7 +58,7 @@ public sealed class Phase18ReportingFoundationTests
     {
         var registry = new KpiDefinitionRegistry();
         var calculator = new OperationalKpiCalculator(registry);
-        var service = new ReportingQueryService(null!, null!, null!, registry);
+        var service = new ReportingQueryService(null!, null!, null!, registry, null!);
         var created = new DateTime(2025, 12, 30, 20, 0, 0, DateTimeKind.Utc);
         var scheduled = created.AddDays(32);
         var reservation = new ReservationReportingFact(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),

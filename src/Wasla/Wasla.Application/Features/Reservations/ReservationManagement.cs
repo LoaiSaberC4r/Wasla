@@ -687,7 +687,9 @@ internal sealed partial class ReservationApplicationService(
     IArchiveLocationResolver archive, IReportingAccessGuard archiveGuard, PatientIdentityReuseGuard identityReuse,
     Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions> notificationOptions,
     Wasla.Application.Features.DoctorPatients.DoctorOwnHistoricalReadPolicy historicalReads,
-    Wasla.Application.Features.DoctorPatients.IDoctorPatientReadService patientReads)
+    Wasla.Application.Features.DoctorPatients.IDoctorPatientReadService patientReads,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptionEntitlements,
+    Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptionPermissions)
 {
     public async Task<Result<IReadOnlyList<BookablePatientResponse>>> ListBookablePatientsAsync(
         CancellationToken cancellationToken)
@@ -740,6 +742,10 @@ internal sealed partial class ReservationApplicationService(
         }
 
         var (practice, doctor, configuration, segment, visitType, price) = context.Value;
+        var subscriptionAccess = await subscriptionEntitlements.EvaluateAsync(doctor.Id,
+            scope == ReservationOperationScope.Patient ? "ONLINE_BOOKING" : "RESERVATION_MANAGEMENT",
+            Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
+        if (subscriptionAccess.IsFailure) return Result<ReservationDetailsResponse>.Fail(subscriptionAccess.Errors);
         if (scope == ReservationOperationScope.Patient && !configuration.AllowOnlineBooking)
         {
             return Result<ReservationDetailsResponse>.Fail(ReservationErrors.OnlineBookingDisabled);
@@ -2207,6 +2213,7 @@ internal sealed partial class ReservationApplicationService(
 
         var snapshot = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
         return snapshot is not null && snapshot.User.IsActive && !snapshot.User.IsFirstLogin &&
+               await subscriptionPermissions.AllowedAsync(snapshot, permission, cancellationToken) &&
                (snapshot.IsRootSuperAdmin || snapshot.Permissions.Contains(
                    permission, StringComparer.OrdinalIgnoreCase))
             ? Result.Ok()

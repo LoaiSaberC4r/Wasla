@@ -17,7 +17,8 @@ internal sealed partial class FinanceReadService(
     WaslaDbContext db,
     ICurrentUser currentUser,
     IWaslaDataStore dataStore,
-    IReceptionPracticeAuthorizationService receptionAuthorization) : IFinanceReadService
+    IReceptionPracticeAuthorizationService receptionAuthorization,
+    Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptions) : IFinanceReadService
 {
     private static Error AccessDenied => Error.Security(
         "Finance.AccessDenied", ErrorMessage.GetString("FinanceAccessDenied"));
@@ -372,6 +373,7 @@ internal sealed partial class FinanceReadService(
     private async Task<Result<Guid>> ResolveDoctorAsync(string permission, CancellationToken cancellationToken)
     {
         var access = await AccessSnapshotAsync(cancellationToken);
+        if (access.IsSuccess && !await subscriptions.AllowedAsync(access.Value, permission, cancellationToken)) return Result<Guid>.Fail(AccessDenied);
         return access.IsSuccess && access.Value.Roles.Contains(SystemRoleNames.Doctor) &&
                access.Value.Permissions.Contains(permission) &&
                access.Value.DoctorStatus == DoctorApprovalStatus.Approved &&
@@ -398,6 +400,7 @@ internal sealed partial class FinanceReadService(
         if (access.IsFailure) return Result.Fail(access.Errors);
         if (access.Value.Roles.Contains(SystemRoleNames.Doctor))
         {
+            if (!await subscriptions.AllowedAsync(access.Value, doctorPermission, cancellationToken)) return Result.Fail(AccessDenied);
             return access.Value.DoctorStatus == DoctorApprovalStatus.Approved &&
                    access.Value.DoctorId is { } doctorId &&
                    access.Value.Permissions.Contains(doctorPermission) &&
@@ -407,6 +410,7 @@ internal sealed partial class FinanceReadService(
         if (access.Value.Roles.Contains(SystemRoleNames.Reception) &&
             access.Value.Permissions.Contains(receptionPermission))
         {
+            if (!await subscriptions.AllowedAsync(access.Value, receptionPermission, cancellationToken)) return Result.Fail(AccessDenied);
             var delegated = await receptionAuthorization.AuthorizeAsync(
                 practiceId, receptionPermission, cancellationToken);
             return delegated.IsSuccess ? Result.Ok() : Result.Fail(AccessDenied);

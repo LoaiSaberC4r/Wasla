@@ -12,6 +12,8 @@ using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Resources;
 using Wasla.Domain.Security;
+using Wasla.Application.Features.Subscriptions;
+using Wasla.Domain.Subscriptions;
 
 namespace Wasla.Application.Features.Registration;
 
@@ -29,13 +31,17 @@ public sealed record RegisterDoctorCommand(
     MediaUpload? PersonalIdFrontImage,
     MediaUpload? PersonalIdBackImage,
     MediaUpload? SyndicateCardFrontImage,
-    MediaUpload? SyndicateCardBackImage)
+    MediaUpload? SyndicateCardBackImage,
+    SubscriptionSelection? Subscription = null)
     : ICommand<RegisterDoctorResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
 public sealed record RegisterDoctorResponse(
     Guid DoctorId,
     Guid ApplicationUserId,
-    DoctorApprovalStatus ApprovalStatus);
+    DoctorApprovalStatus ApprovalStatus,
+    Guid SubscriptionId = default,
+    SubscriptionSelection? Subscription = null,
+    SubscriptionStatus SubscriptionStatus = SubscriptionStatus.Pending);
 
 public sealed record RegisterPatientCommand(
     string UserName,
@@ -61,6 +67,7 @@ internal sealed class RegisterDoctorCommandValidator : AbstractValidator<Registe
     public RegisterDoctorCommandValidator(IDateTimeProvider clock)
     {
         AddAccountRules();
+        RuleFor(command => command.Subscription).NotNull();
         RuleFor(command => command.NameAr).NotEmpty().WithMessage(ErrorMessage.NameArRequired).MaximumLength(200);
         RuleFor(command => command.NameEn).MaximumLength(200);
         RuleFor(command => command.DateOfBirth)
@@ -108,13 +115,17 @@ internal sealed class RegisterDoctorCommandHandler(
     IMediaService mediaService,
     IEmailNotificationFactory emailFactory,
     IEmailOutbox emailOutbox,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock,
+    ISubscriptionCatalogResolver subscriptionCatalog,
+    SubscriptionLifecycle subscriptions)
     : ICommandHandler<RegisterDoctorCommand, RegisterDoctorResponse>
 {
     public async Task<Result<RegisterDoctorResponse>> Handle(
         RegisterDoctorCommand request,
         CancellationToken cancellationToken)
     {
+        var terms = await subscriptionCatalog.ResolveAsync(request.Subscription, cancellationToken);
+        if (terms.IsFailure) return Result<RegisterDoctorResponse>.Fail(terms.Errors);
         var duplicate = await RegistrationChecks.CheckDuplicatesAsync(
             dataStore,
             request.UserName,
@@ -183,7 +194,14 @@ internal sealed class RegisterDoctorCommandHandler(
             }
 
             dataStore.Add(userResult.Value);
+            doctorResult.Value.CreatedOnUtc = now;
             dataStore.Add(doctorResult.Value);
+            var selection = subscriptions.Select(doctorId, terms.Value);
+            if (selection.IsFailure)
+            {
+                await CleanupAsync();
+                return Result<RegisterDoctorResponse>.Fail(selection.Errors);
+            }
             dataStore.Add(new UserRole(Guid.NewGuid(), applicationUserId, role.Id));
             dataStore.Add(new DoctorStatusHistory(
                 Guid.NewGuid(),
@@ -208,7 +226,9 @@ internal sealed class RegisterDoctorCommandHandler(
             return Result<RegisterDoctorResponse>.Ok(new RegisterDoctorResponse(
                 doctorId,
                 applicationUserId,
-                DoctorApprovalStatus.Pending));
+                DoctorApprovalStatus.Pending,
+                selection.Value.Id,
+                request.Subscription));
         }
         catch
         {

@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using Wasla.Application.Features.Archives;
 using Wasla.Application.Features.Reporting;
 using BuildingBlock.Application.Abstraction.Persistence;
@@ -216,12 +217,13 @@ internal sealed class TicketAccessService(
     IReadRepository<ApplicationUser, WaslaReadPersistence> users,
     IReadRepository<Doctor, WaslaReadPersistence> doctors,
     IReadRepository<DoctorPractice, WaslaReadPersistence> practices,
-    IReportingAccessGuard archiveGuard)
+    IReportingAccessGuard archiveGuard,
+    ISubscriptionPermissionGuard subscriptions)
 {
     public async Task<Result<TicketActor>> AuthorizeReceptionAsync(
         Guid practiceId,
         string permission,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, SubscriptionResource? subscriptionResource = null, bool deferSubscriptionCheck = false)
     {
         if (permission.StartsWith("Archives.", StringComparison.Ordinal))
         {
@@ -233,6 +235,8 @@ internal sealed class TicketAccessService(
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         }
 
+        if (!deferSubscriptionCheck && !await subscriptions.AllowedForUserAsync(actorId, permission, cancellationToken, subscriptionResource))
+            return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         var authorized = await receptionAuthorization.AuthorizeAsync(
             practiceId, permission, cancellationToken);
         return authorized.IsFailure
@@ -243,7 +247,7 @@ internal sealed class TicketAccessService(
     public async Task<Result<TicketActor>> AuthorizeDoctorAsync(
         Guid practiceId,
         string permission,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, SubscriptionResource? subscriptionResource = null, bool deferSubscriptionCheck = false)
     {
         if (permission.StartsWith("Archives.", StringComparison.Ordinal))
         {
@@ -262,6 +266,8 @@ internal sealed class TicketAccessService(
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         }
 
+        if (!deferSubscriptionCheck && !await subscriptions.AllowedForUserAsync(actorId, permission, cancellationToken, subscriptionResource))
+            return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         var doctor = await doctors.GetByPropertyAsync(
             item => item.ApplicationUserId == actorId, cancellationToken);
         if ((await archiveGuard.AuthorizeAsync(ReportActor.Doctor, permission, practiceId, null, cancellationToken)).IsFailure)
@@ -277,14 +283,14 @@ internal sealed class TicketAccessService(
         Guid practiceId,
         string doctorPermission,
         string receptionPermission,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, SubscriptionResource? subscriptionResource = null, bool deferSubscriptionCheck = false)
     {
         if (HasRole(SystemRoleNames.Doctor))
         {
-            return await AuthorizeDoctorAsync(practiceId, doctorPermission, cancellationToken);
+            return await AuthorizeDoctorAsync(practiceId, doctorPermission, cancellationToken, subscriptionResource, deferSubscriptionCheck);
         }
 
-        return await AuthorizeReceptionAsync(practiceId, receptionPermission, cancellationToken);
+        return await AuthorizeReceptionAsync(practiceId, receptionPermission, cancellationToken, subscriptionResource, deferSubscriptionCheck);
     }
 
     public async Task<Result<Guid>> ResolveOwnPatientIdAsync(CancellationToken cancellationToken, bool archived = false)

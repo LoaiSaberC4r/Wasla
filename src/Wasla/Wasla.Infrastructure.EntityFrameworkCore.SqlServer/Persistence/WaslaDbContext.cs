@@ -404,7 +404,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
             value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
         foreach (var entity in modelBuilder.Model.GetEntityTypes().Where(e => e.ClrType.Namespace is
-            "Wasla.Domain.Notifications" or "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations" or "Wasla.Domain.Patients"))
+            "Wasla.Domain.Subscriptions" or "Wasla.Domain.Notifications" or "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations" or "Wasla.Domain.Patients"))
             foreach (var property in entity.GetProperties().Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?)))
                 if (!property.Name.Contains("Local", StringComparison.Ordinal)) property.SetValueConverter(utcConverter);
         modelBuilder.ApplySoftDeleteQueryFilter();

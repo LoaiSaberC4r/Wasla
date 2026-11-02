@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
@@ -53,7 +54,7 @@ internal sealed class RestoreNoShowTicketCommandHandler(
             request.PracticeId,
             PermissionNames.DoctorPracticeTicketsRestoreNoShowOwn,
             PermissionNames.PracticeTicketsRestoreNoShow,
-            cancellationToken);
+            cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
         if (actor.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(actor.Errors);

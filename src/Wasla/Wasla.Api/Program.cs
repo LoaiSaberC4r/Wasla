@@ -63,6 +63,8 @@ builder.Services.PostConfigure<LogRedactionOptions>(options => options.Sensitive
 builder.Services.PostConfigure<LogRedactionOptions>(options => options.SensitivePropertyNames = [.. options.SensitivePropertyNames,
     "Otp", "EmailVerificationToken", "VerificationToken", "InvitationToken", "X-Onboarding-Token", "IdentityFront", "IdentityBack", "BirthCertificate", "GuardianRelationshipDocument", "ClaimantNormalizedEmail", "ApplicantNameAr", "VerificationNote", "OperatorPassword"]);
 builder.Services.AddWaslaCors(builder.Configuration);
+builder.Services.PostConfigure<LogRedactionOptions>(options => options.SensitivePropertyNames = [.. options.SensitivePropertyNames,
+    "AmountReceived", "PriceAmount", "DifferenceAmount", "TargetPriceSnapshot", "TermsSnapshotJson", "TargetTermsSnapshotJson", "IdempotencyKey", "Reference"]);
 builder.Services.AddWaslaApplication();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
 builder.Services.AddWaslaSqlServerPersistence(builder.Configuration);

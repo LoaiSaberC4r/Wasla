@@ -284,7 +284,8 @@ internal sealed class GetMyDoctorPracticeQueryHandler(IWaslaDataStore dataStore,
     }
 }
 
-internal sealed class CreateDoctorPracticeCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class CreateDoctorPracticeCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptions)
     : ICommandHandler<CreateDoctorPracticeCommand, DoctorPracticeResponse>
 {
     public async Task<Result<DoctorPracticeResponse>> Handle(
@@ -297,6 +298,8 @@ internal sealed class CreateDoctorPracticeCommandHandler(IWaslaDataStore dataSto
             return Result<DoctorPracticeResponse>.Fail(doctor.Errors);
         }
 
+        var capacity = await subscriptions.ValidateCapacityAsync(doctor.Value.Doctor.Id, false, cancellationToken);
+        if (capacity.IsFailure) return Result<DoctorPracticeResponse>.Fail(capacity.Errors);
         var location = await DoctorPracticeAccess.ValidateLocationAsync(
             dataStore, request.GovernorateId, request.CityId, request.AreaId, cancellationToken);
         if (location.IsFailure)
@@ -323,7 +326,8 @@ internal sealed class CreateDoctorPracticeCommandHandler(IWaslaDataStore dataSto
         }
 
         dataStore.Add(practice.Value);
-        DoctorPracticeCreation.AddDefaults(dataStore, practiceId, doctor.Value.ActorId);
+        var walkIn = await subscriptions.EvaluateAsync(doctor.Value.Doctor.Id, "CHECKIN_WALKIN", Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
+        DoctorPracticeCreation.AddDefaults(dataStore, practiceId, doctor.Value.ActorId, walkIn.IsSuccess);
         await dataStore.SaveChangesAsync(cancellationToken);
         return await DoctorPracticeMapper.ReloadAsync(dataStore, practiceId, cancellationToken);
     }
@@ -499,7 +503,8 @@ internal sealed class GetDoctorPracticeConfigurationQueryHandler(IWaslaDataStore
 internal sealed class UpdateDoctorPracticeConfigurationCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IPublicDiscoveryRankingProjectionRefresher projectionRefresher)
+    IPublicDiscoveryRankingProjectionRefresher projectionRefresher,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptions)
     : ICommandHandler<UpdateDoctorPracticeConfigurationCommand, DoctorPracticeConfigurationResponse>
 {
     public async Task<Result<DoctorPracticeConfigurationResponse>> Handle(
@@ -526,6 +531,14 @@ internal sealed class UpdateDoctorPracticeConfigurationCommandHandler(
             return Result<DoctorPracticeConfigurationResponse>.Fail(supplied.Errors);
         }
 
+        var operationalAccess = await subscriptions.EvaluateAsync(access.Value.Practice.DoctorId, "CHECKIN_WALKIN",
+            Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
+        if (operationalAccess.IsFailure && (request.AllowWalkIn || request.CheckInGracePeriodMinutes != configuration.CheckInGracePeriodMinutes ||
+            request.MaximumTicketCallAttempts != configuration.MaximumTicketCallAttempts || request.NoShowAfterPassedPatientsCount != configuration.NoShowAfterPassedPatientsCount ||
+            request.CheckInOpenBeforeMinutes != configuration.CheckInOpenBeforeMinutes || request.TicketNoShowReturnFastTrackLimit != configuration.TicketNoShowReturnFastTrackLimit))
+        {
+            return Result<DoctorPracticeConfigurationResponse>.Fail(operationalAccess.Errors);
+        }
         var updated = configuration.Update(
             request.AllowOnlineBooking,
             request.AllowWalkIn,
@@ -855,9 +868,11 @@ internal static class DoctorPracticeAccess
 
 internal static class DoctorPracticeCreation
 {
-    public static void AddDefaults(IWaslaDataStore dataStore, Guid practiceId, Guid actorId)
+    public static void AddDefaults(IWaslaDataStore dataStore, Guid practiceId, Guid actorId, bool allowWalkIn = true)
     {
-        dataStore.Add(DoctorPracticeConfiguration.CreateDefault(Guid.NewGuid(), practiceId, actorId).Value);
+        var configuration = DoctorPracticeConfiguration.CreateDefault(Guid.NewGuid(), practiceId, actorId).Value;
+        if (!allowWalkIn) configuration.DisableWalkIn();
+        dataStore.Add(configuration);
         dataStore.Add(DoctorPracticeBranding.CreateDefault(Guid.NewGuid(), practiceId, actorId).Value);
         dataStore.Add(DoctorPracticeSegment.CreateDefault(Guid.NewGuid(), practiceId, actorId).Value);
         dataStore.Add(DoctorPracticeVisitType.CreateDefault(

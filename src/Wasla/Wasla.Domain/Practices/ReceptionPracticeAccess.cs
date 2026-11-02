@@ -31,6 +31,7 @@ public sealed class Reception : AggregateRoot<Guid>, IAuditableEntity
     public string NameAr { get; private set; } = string.Empty;
     public string? NameEn { get; private set; }
     public Guid CreatedByApplicationUserId { get; private set; }
+    public int AccountStateRevision { get; private set; }
     public DateTime CreatedOnUtc { get; set; }
     public DateTime? ModifiedOnUtc { get; set; }
     public byte[] RowVersion { get; private set; } = [];
@@ -51,6 +52,7 @@ public sealed class Reception : AggregateRoot<Guid>, IAuditableEntity
             : Result<Reception>.Ok(new Reception(
                 id, applicationUserId, ownerDoctorId, normalizedAr, normalizedEn, actorId));
     }
+    public void RecordAccountStateChange() => AccountStateRevision++;
 }
 
 public sealed class ReceptionPracticeAssignment : AggregateRoot<Guid>, IAuditableEntity

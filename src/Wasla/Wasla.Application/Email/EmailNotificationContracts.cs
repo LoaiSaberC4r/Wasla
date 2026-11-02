@@ -20,6 +20,21 @@ public enum DoctorEmailEvent
 
 public interface IEmailNotificationFactory
 {
+    EmailNotificationContent SubscriptionLifecycle(string eventType, string doctorName, DateTime? endsAtUtc,
+        DateTime? startsAtUtc = null, string? planCode = null, int? practiceLimit = null, int? receptionLimit = null)
+    {
+        var title = eventType switch
+        {
+            "TrialStarted" => "بدأت الفترة التجريبية / Trial started",
+            "TrialReminder" => "تذكير بانتهاء الفترة التجريبية / Trial reminder",
+            "TrialExpired" => "انتهت الفترة التجريبية / Trial expired",
+            "Expired" => "انتهى الاشتراك / Subscription expired",
+            "TrialExtended" => "تم تمديد الفترة التجريبية / Trial extended",
+            _ => "تم تفعيل الاشتراك / Subscription activated"
+        };
+        var text = $"{title}\n{doctorName}\nالباقة / Plan: {planCode}\nتاريخ البداية / Starts (UTC): {startsAtUtc:O}\nتاريخ الانتهاء / Ends (UTC): {endsAtUtc:O}\nعدد العيادات / Practices: {practiceLimit}\nمقاعد الاستقبال / Reception seats: {receptionLimit}\nلا يوجد تجديد أو خصم تلقائي / No automatic renewal or charge.";
+        return new("Wasla | " + title, "<p dir=\"auto\">" + System.Net.WebUtility.HtmlEncode(text).Replace("\n", "<br/>", StringComparison.Ordinal) + "</p>", text);
+    }
     EmailNotificationContent PasswordResetOtp(string otp, int expirationMinutes);
     EmailNotificationContent DoctorLifecycle(DoctorEmailEvent emailEvent, string doctorName, string? reason = null);
     EmailNotificationContent DoctorSpecializationModificationRequested(

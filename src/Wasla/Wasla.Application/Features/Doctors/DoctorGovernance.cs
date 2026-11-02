@@ -412,7 +412,9 @@ internal sealed class DoctorLifecycleService(
     IDateTimeProvider clock,
     IReservationNotificationRecipientResolver recipientResolver,
     IReservationProjectionInvalidationOutbox projectionOutbox,
-    Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions> notificationOptions)
+    Microsoft.Extensions.Options.IOptions<Wasla.Application.Features.Notifications.NotificationOptions> notificationOptions,
+    Wasla.Application.Features.Subscriptions.SubscriptionLifecycle subscriptions,
+    ISubscriptionDataStore subscriptionStore)
 {
     public async Task<Result<DoctorLifecycleResponse>> ExecuteAsync(
         Guid doctorId,
@@ -429,6 +431,20 @@ internal sealed class DoctorLifecycleService(
                 ErrorMessage.AuthenticationRequired));
         }
 
+        var administrator = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
+        var lifecyclePermission = emailEvent switch
+        {
+            DoctorEmailEvent.Approved => PermissionNames.DoctorsApprove,
+            DoctorEmailEvent.Rejected => PermissionNames.DoctorsReject,
+            DoctorEmailEvent.Suspended => PermissionNames.DoctorsSuspend,
+            DoctorEmailEvent.Reactivated => PermissionNames.DoctorsReactivate,
+            _ => null
+        };
+        if (administrator is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.SuperAdmin, SuperAdminId: not null } ||
+            lifecyclePermission is null || !administrator.Permissions.Contains(lifecyclePermission, StringComparer.OrdinalIgnoreCase))
+            return Result<DoctorLifecycleResponse>.Fail(Error.Security("Doctor.AccessDenied", "Doctor governance requires an authorized SuperAdmin / إدارة الأطباء تتطلب مشرفاً عاماً مخولاً"));
+
+        await subscriptionStore.AcquireSubscriptionCapacityLockAsync(doctorId, cancellationToken);
         var doctor = await dataStore.FindDoctorByIdAsync(doctorId, cancellationToken);
         if (doctor is null)
         {
@@ -463,6 +479,12 @@ internal sealed class DoctorLifecycleService(
         }
 
         dataStore.SetOriginalRowVersion(doctor, suppliedRowVersion);
+        if (emailEvent is DoctorEmailEvent.Approved or DoctorEmailEvent.Rejected)
+        {
+            var subscriptionDecision = await subscriptions.DoctorDecisionAsync(doctor, actorId,
+                emailEvent == DoctorEmailEvent.Approved, cancellationToken);
+            if (subscriptionDecision.IsFailure) return Result<DoctorLifecycleResponse>.Fail(subscriptionDecision.Errors);
+        }
         var historyId = Guid.NewGuid();
         dataStore.Add(new DoctorStatusHistory(
             historyId,

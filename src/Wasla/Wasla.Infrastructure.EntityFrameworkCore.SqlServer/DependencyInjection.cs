@@ -49,6 +49,7 @@ public static class DependencyInjection
 
         services.Insert(0, ServiceDescriptor.Singleton<IExceptionToErrorMapper, ClinicalPersistenceErrorMapper>());
         services.Insert(0, ServiceDescriptor.Singleton<IExceptionToErrorMapper, Phase18PersistenceErrorMapper>());
+        services.Insert(0, ServiceDescriptor.Singleton<IExceptionToErrorMapper, SubscriptionPersistenceErrorMapper>());
         services.AddBuildingBlockEntityFrameworkCore<WaslaWritePersistence>();
         services.AddBuildingBlockInterceptors();
         services.AddBuildingBlockSqlServerExceptionMapping();
@@ -177,6 +178,12 @@ public static class DependencyInjection
         services.AddSingleton<Wasla.Application.Features.DoctorPatients.IPrescriptionPdfRenderer, Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports.PrescriptionPdfRenderer>();
         services.AddScoped<IReservationNoShowRuntimeReader, ReservationNoShowRuntimeReader>();
         services.AddScoped<WaslaSecuritySeeder>();
+        services.AddScoped<ISubscriptionDataStore, SubscriptionDataStore>();
+        services.AddScoped<Persistence.Seeding.SubscriptionCatalogSeeder>();
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<Wasla.Application.Features.Subscriptions.SubscriptionCatalogOptions>, Wasla.Application.Features.Subscriptions.SubscriptionCatalogOptionsValidator>();
+        services.AddOptions<Wasla.Application.Features.Subscriptions.SubscriptionCatalogOptions>()
+            .Bind(configuration.GetSection(Wasla.Application.Features.Subscriptions.SubscriptionCatalogOptions.SectionName))
+            .ValidateOnStart();
         services.AddScoped<MedicalSpecializationSeeder>();
         services.AddScoped<EgyptLocationSeedCoordinator>();
         services.AddScoped<EmailOutboxProcessor>();
@@ -185,6 +192,8 @@ public static class DependencyInjection
         services.AddHostedService<DatabaseInitializationHostedService>();
         services.AddHostedService<PublicDiscoveryProjectionMaintenanceHostedService>();
         services.AddHostedService<EmailOutboxBackgroundService>();
+        services.AddScoped<Subscriptions.SubscriptionLifecycleProcessor>();
+        services.AddHostedService<Subscriptions.SubscriptionLifecycleBackgroundService>();
         services.AddHostedService<Notifications.NotificationDispatchBackgroundService>();
         services.AddHostedService<ReservationExpirationBackgroundService>();
         services.AddHostedService<ReservationProjectionInvalidationBackgroundService>();

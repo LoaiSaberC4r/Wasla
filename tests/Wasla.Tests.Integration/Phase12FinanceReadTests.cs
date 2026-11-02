@@ -177,7 +177,7 @@ public sealed class Phase12FinanceReadTests
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.FinanceReadService")!;
         return (IFinanceReadService)Activator.CreateInstance(type,
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null,
-            [db, user, dataStore, receptionAuthorization!], null)!;
+            [db, user, dataStore, receptionAuthorization!, new SubscriptionTestData.EntitledPermissions()], null)!;
     }
 
     private static readonly Guid SharedSegmentId = Guid.NewGuid();

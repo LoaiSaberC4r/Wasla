@@ -1,5 +1,6 @@
 
 using System.Security.Cryptography;
+using Wasla.Application.Features.Subscriptions;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Media;
 using BuildingBlock.Application.Repositories;
@@ -31,7 +32,11 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
             DiagnosticResultMutation.Void => "Results.VoidOwn",
             _ => "Results.UploadOwn"
         });
-        var actor = await access.ActorAsync(permission, patient ? UserType.Patient : UserType.Doctor, ct);
+        var resourceKind = r.ResultId.HasValue ? r.Kind == DiagnosticKind.Lab ? SubscriptionResourceKind.LabResult : SubscriptionResourceKind.RadiologyResult :
+            r.SubmissionId.HasValue ? r.Kind == DiagnosticKind.Lab ? SubscriptionResourceKind.LabSubmission : SubscriptionResourceKind.RadiologySubmission :
+            r.Kind == DiagnosticKind.Lab ? SubscriptionResourceKind.LabRequest : SubscriptionResourceKind.RadiologyRequest;
+        var actor = await access.ActorAsync(permission, patient ? UserType.Patient : UserType.Doctor, ct,
+            new(resourceKind, r.ResultId ?? r.SubmissionId ?? r.RequestId.GetValueOrDefault()));
         if (actor.IsFailure) return Result<DiagnosticResultMutationResponse>.Fail(actor.Errors);
         var payload = new
         {

@@ -18,6 +18,10 @@ namespace Wasla.Api.Controllers;
 [Authorize]
 public sealed class DoctorPracticesController(ISender sender) : ControllerBase
 {
+    [HttpPut("{practiceId:guid}/booking-presentation/price")]
+    [Permission(PermissionNames.DoctorPracticesManageOwn)]
+    public async Task<IActionResult> BookingPresentationPrice(Guid practiceId, BookingPresentationPriceRequest request, CancellationToken cancellationToken)
+        => (await sender.Send(new SetBookingPresentationPriceCommand(practiceId, request.NewConsultationPrice, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
     [HttpGet]
     [Permission(PermissionNames.DoctorPracticesViewOwn)]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
@@ -360,6 +364,8 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
         => (await sender.Send(new DeleteDoctorPracticePriceCommand(
             practiceId, priceId, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
 }
+
+public sealed record BookingPresentationPriceRequest(decimal NewConsultationPrice, string? RowVersion = null);
 
 public record DoctorPracticeRequest(
     string NameAr,

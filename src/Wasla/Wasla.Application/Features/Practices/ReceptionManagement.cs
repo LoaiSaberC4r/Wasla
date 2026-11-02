@@ -37,7 +37,8 @@ public sealed record ReceptionResponse(
     string Email,
     string? PhoneNumber,
     IReadOnlyList<ReceptionAssignmentResponse> Assignments,
-    string RowVersion);
+    string RowVersion,
+    bool IsActive = true);
 public sealed record ReceptionPracticeContextResponse(
     Guid DoctorPracticeId,
     string NameAr,
@@ -210,7 +211,8 @@ internal sealed class CreateDoctorReceptionCommandHandler(
     IPasswordService passwordService,
     IDateTimeProvider clock,
     IEmailNotificationFactory emailFactory,
-    IEmailOutbox emailOutbox)
+    IEmailOutbox emailOutbox,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptions)
     : ICommandHandler<CreateDoctorReceptionCommand, ReceptionResponse>
 {
     public async Task<Result<ReceptionResponse>> Handle(
@@ -223,6 +225,8 @@ internal sealed class CreateDoctorReceptionCommandHandler(
             return Result<ReceptionResponse>.Fail(doctor.Errors);
         }
 
+        var capacity = await subscriptions.ValidateCapacityAsync(doctor.Value.Doctor.Id, true, cancellationToken);
+        if (capacity.IsFailure) return Result<ReceptionResponse>.Fail(capacity.Errors);
         var role = await dataStore.FindRoleByNameAsync(SystemRoleNames.Reception, cancellationToken);
         if (role is null)
         {
@@ -647,7 +651,7 @@ internal static class ReceptionMapper
             record.User.Email,
             record.User.PhoneNumber,
             mapped,
-            RowVersionCodec.Encode(record.Reception.RowVersion));
+            RowVersionCodec.Encode(record.Reception.RowVersion), record.User.IsActive);
     }
 
     public static ReceptionAssignmentResponse Map(

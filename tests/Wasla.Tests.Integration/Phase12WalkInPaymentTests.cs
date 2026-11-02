@@ -93,6 +93,8 @@ public sealed class Phase12WalkInPaymentTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddWaslaApplication();
+        services.AddScoped<Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard>(_ => new SubscriptionTestData.EntitledPermissions());
+        services.AddScoped<Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService>(_ => new SubscriptionTestData.EntitledService());
         services.AddBuildingBlockCaching();
         services.AddBuildingBlockEntityFrameworkCore<WaslaWritePersistence>();
         services.AddBuildingBlockDbContext<WaslaReadPersistence, WaslaDbContext>();

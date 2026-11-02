@@ -752,6 +752,7 @@ public sealed class DoctorOnboardingApiTests
         db.Doctors.Add(doctor);
         db.UserRoles.Add(new UserRole(Guid.NewGuid(), userId, SystemRoleIds.Doctor));
         await db.SaveChangesAsync(cancellationToken);
+        await SubscriptionTestData.SeedAsync(scope.ServiceProvider, db, cancellationToken);
     }
 
     private static async Task<JsonElement> CreatePracticeAsync(
@@ -805,6 +806,9 @@ public sealed class DoctorOnboardingApiTests
         AddFile(content, "PersonalIdFrontImage", "front.png");
         AddFile(content, "PersonalIdBackImage", "back.png");
         AddFile(content, "SyndicateCardFrontImage", "syndicate.png");
+        content.Add(new StringContent("FULL_PLATFORM"), "Subscription.ProductCode");
+        content.Add(new StringContent("STARTER"), "Subscription.PlanCode");
+        content.Add(new StringContent("STARTER_FREE_TRIAL_20D"), "Subscription.OfferCode");
         return content;
     }
 
@@ -908,6 +912,7 @@ public sealed class DoctorOnboardingApiTests
                     seeder,
                     [TestContext.Current.CancellationToken])!;
             }
+            await SubscriptionTestData.SeedAsync(scope.ServiceProvider, db, TestContext.Current.CancellationToken);
         }
     }
 }

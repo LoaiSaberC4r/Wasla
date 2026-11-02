@@ -348,6 +348,7 @@ public sealed class ReceptionWalkInOptionsTests
             // This fixture models first admission immediately after authorized Reception Basic creation.
             db.Patients.Local.Single(p => p.Id == PatientId).StampReceptionRegistration(PracticeId, _receptionUserId, now);
             await db.SaveChangesAsync(token);
+            await SubscriptionTestData.SeedAsync(scope.ServiceProvider, db, token);
             await DelegateAsync(PermissionNames.PracticeTicketsCreateWalkIn);
         }
 

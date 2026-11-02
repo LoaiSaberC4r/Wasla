@@ -44,6 +44,12 @@ public static class DependencyInjection
         services.AddTransient<MediatR.IPipelineBehavior<Wasla.Application.Features.Patients.UpdateMyPatientProfileCommand, BuildingBlock.Domain.Results.Result<Wasla.Application.Features.Patients.PatientProfileResponse>>, PatientIdentityMediaBehavior<Wasla.Application.Features.Patients.UpdateMyPatientProfileCommand, Wasla.Application.Features.Patients.PatientProfileResponse>>();
         services.AddBuildingBlockApplicationBehaviors();
         services.AddScoped<DoctorLifecycleService>();
+        services.AddScoped<Features.Subscriptions.ISubscriptionCatalogResolver, Features.Subscriptions.SubscriptionCatalogResolver>();
+        services.AddScoped<Features.Subscriptions.SubscriptionLifecycle>();
+        services.AddScoped<Features.Subscriptions.SubscriptionManager>();
+        services.AddScoped<Features.Subscriptions.ISubscriptionOperationalContinuityGuard, Features.Subscriptions.SubscriptionOperationalContinuityGuard>();
+        services.AddScoped<Features.Subscriptions.ISubscriptionEntitlementService, Features.Subscriptions.SubscriptionEntitlementService>();
+        services.AddScoped<Features.Subscriptions.ISubscriptionPermissionGuard, Features.Subscriptions.SubscriptionPermissionGuard>();
         services.AddScoped<Wasla.Application.Features.Dashboards.PatientDashboardComposer>();
         services.AddScoped<FamilyRelationshipWorkflowService>();
         services.AddScoped<IReceptionPracticeAuthorizationService, ReceptionPracticeAuthorizationService>();

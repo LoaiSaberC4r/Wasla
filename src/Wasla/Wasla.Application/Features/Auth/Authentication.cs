@@ -137,10 +137,8 @@ internal sealed class LoginCommandHandler(
         else if (snapshot.User.UserType == UserType.Doctor &&
                  snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
         {
-            permissions = permissions.Where(permission => string.Equals(
-                permission,
-                PermissionNames.DoctorOnboardingViewOwn,
-                StringComparison.OrdinalIgnoreCase));
+            permissions = permissions.Where(permission => string.Equals(permission, PermissionNames.DoctorOnboardingViewOwn, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(permission, Wasla.Domain.Subscriptions.SubscriptionPermissionNames.ViewOwn, StringComparison.OrdinalIgnoreCase));
         }
 
         if (snapshot.IsRootSuperAdmin)

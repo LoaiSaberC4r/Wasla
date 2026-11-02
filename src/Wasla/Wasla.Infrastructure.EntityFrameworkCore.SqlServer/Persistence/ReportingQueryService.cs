@@ -9,7 +9,8 @@ using Wasla.Domain.Tickets;
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportingAccessGuard guard,
-    IReportingTimeScope time, IKpiDefinitionRegistry registry) : IReportingQueryService, IInsightEvidenceReader
+    IReportingTimeScope time, IKpiDefinitionRegistry registry,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptionEntitlements) : IReportingQueryService, IInsightEvidenceReader
 {
     private readonly OperationalKpiCalculator calculator = new(registry);
     // Owned by one drilldown call only; never retained on the scoped service or shared across requests.
@@ -42,6 +43,11 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
         var view = await guard.AuthorizeAsync(actor, requiredView, filter.PracticeId, filter.DoctorId, ct);
         if (view.IsFailure) return Result<ReportModel>.Fail(view.Errors);
         var scope = view.Value;
+        if (actor == ReportActor.Doctor && code == "practice-comparison" && scope.DoctorId is { } ownerDoctor)
+        {
+            var comparison = await subscriptionEntitlements.EvaluateAsync(ownerDoctor, "CROSS_PRACTICE_COMPARISON", Wasla.Domain.Subscriptions.FeatureAccessLevel.ReadOnly, ct);
+            if (comparison.IsFailure) return Result<ReportModel>.Fail(comparison.Errors);
+        }
         if (export && scope.PracticeIds.Any(p => !access.Value.PracticeIds.Contains(p)))
             return Result<ReportModel>.Fail(ReportingErrors.Denied);
         if (definition.Financial && !FinancialPermissions(scope, code)) return Result<ReportModel>.Fail(ReportingErrors.Denied);

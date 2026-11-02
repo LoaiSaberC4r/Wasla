@@ -313,7 +313,7 @@ public sealed class Phase18DoctorReportingApiTests
     }
     private static IReportingQueryService QueryService(WaslaDbContext db, IReportingAccessGuard guard, IReportingTimeScope time)
         => (IReportingQueryService)Activator.CreateInstance(typeof(WaslaDbContext).Assembly.GetType(
-            "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.ReportingQueryService")!, [db, guard, time, new KpiDefinitionRegistry()])!;
+            "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.ReportingQueryService")!, [db, guard, time, new KpiDefinitionRegistry(), SubscriptionTestData.Entitlements(db)])!;
     private static async Task AssertPagesAsync(IReportingQueryService service, ReportActor actor, string code, ReportFilter filter, int count)
     {
         var full = await service.GetAsync(actor, code, filter with { PageNumber = 1, PageSize = 100 }, TestContext.Current.CancellationToken);

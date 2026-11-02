@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Domain.Results;
@@ -52,7 +53,7 @@ internal sealed class GetTicketDetailsQueryHandler(
             request.PracticeId,
             archived ? Phase18PartTwoPermissionNames.TicketsPractice : PermissionNames.DoctorPracticeTicketsViewOwn,
             archived ? Phase18PartTwoPermissionNames.TicketsAssigned : PermissionNames.PracticeTicketsView,
-            cancellationToken);
+            cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
         if (historical is not null) actor = Result<TicketActor>.Ok(new(historical.Actor.UserId, true, false));
         if (actor.IsFailure)
         {
@@ -88,7 +89,7 @@ internal sealed class GetTicketDetailsQueryHandler(
         {
             archived = true;
             actor = await access.AuthorizeDoctorOrReceptionAsync(request.PracticeId,
-                Phase18PartTwoPermissionNames.TicketsPractice, Phase18PartTwoPermissionNames.TicketsAssigned, cancellationToken);
+                Phase18PartTwoPermissionNames.TicketsPractice, Phase18PartTwoPermissionNames.TicketsAssigned, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
             if (actor.IsFailure) return Result<TicketDetailsResponse>.Fail(actor.Errors);
             details = details with { IsArchived = true, ArchivedAtUtc = location?.ArchivedAtUtc ?? details.ArchivedAtUtc,
                 OperationalCapabilities = new(false, false, false, false), PatientsAheadNow = 0, PatientsAheadNowIsCurrent = false };
@@ -120,14 +121,14 @@ internal sealed class GetTicketDetailsQueryHandler(
         if (archived)
         {
             await archive.AuditStaffTicketReadAsync(request.TicketId, request.PracticeId, actor.Value.ApplicationUserId, cancellationToken);
-            var finance = await access.AuthorizeDoctorOrReceptionAsync(request.PracticeId, PermissionNames.DoctorPracticePaymentsViewOwn, PermissionNames.PracticePaymentsView, cancellationToken);
+            var finance = await access.AuthorizeDoctorOrReceptionAsync(request.PracticeId, PermissionNames.DoctorPracticePaymentsViewOwn, PermissionNames.PracticePaymentsView, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
             if (finance.IsFailure && !details.CanRefund) details = details with { PaymentId = null, PaymentTransactionNumber = null, RefundId = null, RefundTransactionNumber = null, RefundableAmount = 0 };
             if (!actor.Value.IsDoctor) details = details with { MedicalEncounterId = null, MedicalEncounterRowVersion = null, PrescriptionId = null };
             else
             {
-                var clinical = await access.AuthorizeDoctorAsync(request.PracticeId, PermissionNames.MedicalEncountersViewOwn, cancellationToken);
-                var diagnosis = await access.AuthorizeDoctorAsync(request.PracticeId, PermissionNames.DiagnosesViewOwn, cancellationToken);
-                var prescription = await access.AuthorizeDoctorAsync(request.PracticeId, PermissionNames.PrescriptionsViewOwn, cancellationToken);
+                var clinical = await access.AuthorizeDoctorAsync(request.PracticeId, PermissionNames.MedicalEncountersViewOwn, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
+                var diagnosis = await access.AuthorizeDoctorAsync(request.PracticeId, PermissionNames.DiagnosesViewOwn, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
+                var prescription = await access.AuthorizeDoctorAsync(request.PracticeId, PermissionNames.PrescriptionsViewOwn, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
                 if (clinical.IsFailure || diagnosis.IsFailure) details = details with { MedicalEncounterId = null, MedicalEncounterRowVersion = null };
                 if (prescription.IsFailure) details = details with { PrescriptionId = null };
             }

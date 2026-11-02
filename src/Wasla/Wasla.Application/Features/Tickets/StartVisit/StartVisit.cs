@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
@@ -50,14 +51,14 @@ internal sealed class StartVisitCommandHandler(
         CancellationToken cancellationToken)
     {
         var actor = await access.AuthorizeDoctorAsync(
-            request.PracticeId, PermissionNames.DoctorPracticeTicketsStartOwn, cancellationToken);
+            request.PracticeId, PermissionNames.DoctorPracticeTicketsStartOwn, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
         if (actor.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(actor.Errors);
         }
 
         var clinicalAccess = await access.AuthorizeDoctorAsync(
-            request.PracticeId, PermissionNames.MedicalEncountersStartOwn, cancellationToken);
+            request.PracticeId, PermissionNames.MedicalEncountersStartOwn, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
         if (clinicalAccess.IsFailure) return Result<TicketDetailsResponse>.Fail(clinicalAccess.Errors);
 
         var key = TicketIdempotency.ValidateKey(request.IdempotencyKey);
