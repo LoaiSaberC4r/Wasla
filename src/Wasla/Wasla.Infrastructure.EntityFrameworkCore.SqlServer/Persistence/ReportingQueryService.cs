@@ -12,6 +12,12 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
     IReportingTimeScope time, IKpiDefinitionRegistry registry) : IReportingQueryService, IInsightEvidenceReader
 {
     private readonly OperationalKpiCalculator calculator = new(registry);
+    // Owned by one drilldown call only; never retained on the scoped service or shared across requests.
+    private sealed class DrilldownSources
+    {
+        public OperationalSources Operational { get; set; } = new([], []);
+        public FinancialSources? Financial { get; set; }
+    }
     public Task<Result<ReportModel>> GetAsync(ReportActor actor, string code, ReportFilter filter, CancellationToken ct)
         => BuildAsync(actor, code, filter, false, null, null, ct);
     public Task<Result<ReportModel>> BuildExportAsync(ReportActor actor, string code, ReportFilter filter, string format, CancellationToken ct)
@@ -20,7 +26,7 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
         => BuildAsync(ReportActor.Doctor, "queue", new(fromDate, toDate, PracticeId: practiceId), false, null, Phase18PermissionNames.InsightsView, cancellationToken);
 
     private async Task<Result<ReportModel>> BuildAsync(ReportActor actor, string code, ReportFilter filter,
-        bool export, string? format, string? accessPermission, CancellationToken ct)
+        bool export, string? format, string? accessPermission, CancellationToken ct, DrilldownSources? drilldownSources = null)
     {
         var definition = ReportDefinitionCatalog.Definitions.SingleOrDefault(d => d.Code == code && d.Actors.Contains(actor));
         if (definition is null) return Result<ReportModel>.Fail(ReportingErrors.NotFound);
@@ -92,7 +98,13 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
             financial = await FinancialSourcesAsync(scope, definition.Financial ? code : "operating-finance", window, ct, filter);
             metrics.AddRange(FinancialMetrics(financial, window, definition.Financial ? code : "operating-finance"));
         }
-        var records = definition.Financial ? FinancialRecords(financial!, scope, window) : code == "activity"
+        if (drilldownSources != null)
+        {
+            drilldownSources.Operational = source;
+            drilldownSources.Financial = financial;
+        }
+        // Drilldown needs the validated metrics and authorized facts, not an unused preview page.
+        var records = drilldownSources != null ? Array.Empty<ReportRecord>() : definition.Financial ? FinancialRecords(financial!, scope, window) : code == "activity"
             ? await OperationalDrilldownAsync(scope, "ReceptionActivity", source, filter, window, ct) : await RecordsAsync(scope, code, source, filter, window, ct);
         if (export && records.Count > (format == "pdf" ? 5_000 : 25_000))
             return Result<ReportModel>.Fail(ExportTooLarge());
@@ -127,7 +139,6 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
         warnings.AddRange(metrics.Where(m => m.WarningCode != null).Select(m => m.WarningCode!).Distinct());
         var normalized = filter with { FromDate = window.FromDate, ToDate = window.ToDate, AsOfUtc = window.AsOfUtc, ReportTimeZoneId = window.ReportTimeZoneId };
         var quality = source.ExcludedSourceCount > 0 || metrics.Any(m => m.DataStatus != ReportDataStatus.Complete) ? ReportDataStatus.Partial : ReportDataStatus.Complete;
-        var sorted = OrderRecords(await ArchiveLinksAsync(records, scope, ct), filter).ToArray();
         metrics = metrics.Select(m =>
         {
             var allowed = definition.Drilldown && SupportsDrilldown(scope, m.MetricCode) && m.Value != null;
@@ -135,7 +146,9 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
                 allowed ? DrilldownRoute(actor, code, m.MetricCode, normalized) : null,
                 allowed ? null : "Report.NoPermittedIndividualDetail")] };
         }).ToList();
-        var visible = export ? sorted : sorted.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToArray();
+        // Archive enrichment cannot change any sort key. Count all rows, but enrich only the returned page.
+        var sorted = OrderRecords(records, filter);
+        var visible = await ArchiveLinksAsync(export ? sorted : sorted.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize), scope, ct);
         List<ReportComparison> comparisons = [];
         if (filter.ComparePreviousPeriod)
         {
@@ -143,7 +156,8 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
             if (window.FromDate.DayNumber <= length) return Result<ReportModel>.Fail(ReportingErrors.InvalidFilter);
             var previousFilter = filter with { FromDate = window.FromDate.AddDays(-length), ToDate = window.FromDate.AddDays(-1),
                 AsOfUtc = window.AsOfUtc, ReportTimeZoneId = window.ReportTimeZoneId, ComparePreviousPeriod = false };
-            var previous = await BuildAsync(actor, code, previousFilter, false, null, accessPermission, ct);
+            // Comparisons consume metrics only; do not project/enrich an unused previous-period detail page.
+            var previous = await BuildAsync(actor, code, previousFilter, false, null, accessPermission, ct, new DrilldownSources());
             if (previous.IsFailure) return Result<ReportModel>.Fail(previous.Errors);
             foreach (var current in metrics)
             {
@@ -162,7 +176,7 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
             [new("Drilldown", definition.Drilldown), new("ExportPdf", scope.Permissions.Contains(ReportDefinitionCatalog.ExportPermission(actor, definition.Financial))),
              new("ExportExcel", scope.Permissions.Contains(ReportDefinitionCatalog.ExportPermission(actor, definition.Financial)))],
             warnings.Distinct().ToArray(), privacySuppressed ? 0 : source.Reservations.Count + source.Tickets.Count,
-            privacySuppressed ? 0 : source.ExcludedSourceCount, visible, sorted.LongLength, comparisons));
+            privacySuppressed ? 0 : source.ExcludedSourceCount, visible, records.Count, comparisons));
     }
     private static string DrilldownRoute(ReportActor actor, string code, string metricCode, ReportFilter filter)
     {
@@ -238,22 +252,24 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
         if (!registry.Definitions.Any(d => d.MetricCode == metric)) return Result<ReportPage<ReportRecord>>.Fail(ReportingErrors.InvalidFilter);
         var definition = ReportDefinitionCatalog.Definitions.SingleOrDefault(d => d.Code == code && d.Actors.Contains(actor));
         if (definition is null || !definition.Drilldown) return Result<ReportPage<ReportRecord>>.Fail(ReportingErrors.NotFound);
-        var result = await GetAsync(actor, code, filter, ct);
+        var sources = new DrilldownSources();
+        var result = await BuildAsync(actor, code, filter, false, null, null, ct, sources);
         if (result.IsFailure) return Result<ReportPage<ReportRecord>>.Fail(result.Errors);
         var report = result.Value;
         if (!report.Metrics.Any(m => m.MetricCode == metric && m.Value != null) || !SupportsDrilldown(report.Scope, metric))
             return Result<ReportPage<ReportRecord>>.Fail(ReportingErrors.InvalidFilter);
+        if (FinancialDrilldownMetrics.Contains(metric) && sources.Financial is null)
+            return Result<ReportPage<ReportRecord>>.Fail(ReportingErrors.InvalidFilter);
         await using var transaction = db.Database.IsSqlServer() && db.Database.CurrentTransaction is null
             ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
-        var rows = FinancialDrilldownMetrics.Contains(metric) ? FinancialDrilldown(await FinancialSourcesAsync(report.Scope,
-                definition.Financial ? code : "operating-finance", report.Window, ct, report.AppliedFilters), report.Scope, report.Window, metric)
+        var rows = FinancialDrilldownMetrics.Contains(metric) ? FinancialDrilldown(sources.Financial!, report.Scope, report.Window, metric)
             : actor == ReportActor.SuperAdmin ? await PlatformDrilldownAsync(report.Scope, code, report.Window, metric, ct)
-            : await OperationalDrilldownAsync(report.Scope, metric, await OperationalSourcesAsync(report.Scope, report.AppliedFilters, report.Window, ct), report.AppliedFilters, report.Window, ct);
-        var ordered = OrderRecords(await ArchiveLinksAsync(rows, report.Scope, ct), filter).ToArray();
+            : await OperationalDrilldownAsync(report.Scope, metric, sources.Operational, report.AppliedFilters, report.Window, ct);
+        var visible = await ArchiveLinksAsync(OrderRecords(rows, filter).Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize), report.Scope, ct);
         if (transaction != null) await transaction.CommitAsync(ct);
         var selected = report.Metrics.Single(m => m.MetricCode == metric);
-        return Result<ReportPage<ReportRecord>>.Ok(new(ordered.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToArray(),
-            ordered.LongLength, filter.PageNumber, filter.PageSize, selected.DataStatus, selected.WarningCode == null ? [] : [selected.WarningCode]));
+        return Result<ReportPage<ReportRecord>>.Ok(new(visible,
+            rows.LongLength, filter.PageNumber, filter.PageSize, selected.DataStatus, selected.WarningCode == null ? [] : [selected.WarningCode]));
     }
     private async Task<bool> ValidDimensionFiltersAsync(ReportScope scope, ReportFilter f, CancellationToken ct)
         => (f.SegmentId == null || await db.DoctorPracticeSegments.AnyAsync(s => s.Id == f.SegmentId && scope.PracticeIds.Contains(s.DoctorPracticeId), ct)) &&

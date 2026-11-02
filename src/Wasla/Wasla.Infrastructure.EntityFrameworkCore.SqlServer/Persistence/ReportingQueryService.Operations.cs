@@ -75,14 +75,23 @@ internal sealed partial class ReportingQueryService
         string Key(DateOnly d) => grouping == ReportGrouping.Month ? d.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture)
             : grouping == ReportGrouping.Week ? d.AddDays(-((int)d.DayOfWeek + 6) % 7).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
             : d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-        var keys = Enumerable.Range(w.FromDate.DayNumber, w.ToDate.DayNumber - w.FromDate.DayNumber + 1)
-            .Select(n => Key(DateOnly.FromDayNumber(n))).Distinct().ToArray();
-        return keys.Select(key =>
+        var periods = Enumerable.Range(w.FromDate.DayNumber, w.ToDate.DayNumber - w.FromDate.DayNumber + 1)
+            .Select(DateOnly.FromDayNumber).GroupBy(Key)
+            .Select(g => (Key: g.Key, FromDate: g.First(), ToDate: g.Last())).ToArray();
+        // These six series use creation, scheduled, attendance and completion-event dates independently.
+        // Keep entire facts (including earlier lifecycle events) in every relevant period.
+        var reservations = source.Reservations.SelectMany(r => new[] { r.CreatedBusinessDate, r.ScheduledBusinessDate }
+            .Where(d => OperationalKpiCalculator.InWindow(d, w)).Select(Key).Distinct().Select(key => (Key: key, Fact: r)))
+            .ToLookup(x => x.Key, x => x.Fact);
+        var tickets = source.Tickets.SelectMany(t => new[] { t.BusinessDate }.Concat(t.Events
+                .Where(e => e.EventType == TicketHistoryEventType.Completed)
+                .Select(e => OperationalKpiCalculator.LocalDate(e.RecordedAtUtc, t.TimeZoneId)))
+            .Where(d => OperationalKpiCalculator.InWindow(d, w)).Select(Key).Distinct().Select(key => (Key: key, Fact: t)))
+            .ToLookup(x => x.Key, x => x.Fact);
+        return periods.Select(period =>
         {
-            var days = Enumerable.Range(w.FromDate.DayNumber, w.ToDate.DayNumber - w.FromDate.DayNumber + 1)
-                .Select(DateOnly.FromDayNumber).Where(d => Key(d) == key).ToArray();
-            var window = w with { FromDate = days[0], ToDate = days[^1] };
-            return new ReportSeriesPoint(key, key, key, calculator.Calculate(source.Reservations, source.Tickets, window)
+            var window = w with { FromDate = period.FromDate, ToDate = period.ToDate };
+            return new ReportSeriesPoint(period.Key, period.Key, period.Key, calculator.Calculate(reservations[period.Key].ToArray(), tickets[period.Key].ToArray(), window)
                 .Where(m => m.MetricCode is "BookingsCreated" or "AppointmentsScheduled" or "CheckIns" or "TicketsCompleted" or "WalkInShare" or "WaitToFirstCall").ToArray());
         }).ToArray();
     }

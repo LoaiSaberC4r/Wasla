@@ -2,7 +2,16 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Options;
+using System.Data.Common;
+using System.Reflection;
+using BuildingBlock.Domain.Results;
+using Wasla.Application.Features.Reporting;
+using Wasla.Domain.Operations;
+using Wasla.Domain.Security;
 using Wasla.Domain.Tickets;
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
 
 namespace Wasla.Tests.Integration;
@@ -11,7 +20,7 @@ public sealed class Phase18DoctorReportingApiTests
 {
     private const string Base = "/api/v1/doctors/me";
     [Theory] [InlineData(false)] [InlineData(true)]
-    public async Task Financial_asof_preserves_old_amounts_and_excludes_later_settlements(bool sql)
+    public async Task ReportingCritical_Financial_asof_preserves_old_amounts_and_excludes_later_settlements(bool sql)
     {
         await using var app = await Phase13ApiFixture.CreateAsync(sql); using var doctor = await app.ClientAsync("doctor");
         var recorded = app.Clock.UtcNow;
@@ -41,6 +50,40 @@ public sealed class Phase18DoctorReportingApiTests
         Assert.Equal(HttpStatusCode.OK, settled.StatusCode);
         now = await GetAsync(doctor, Base + "/reports/operating-finance" + query);
         Assert.Equal(650, Value(now, "PaidOperatingExpenses")); Assert.Equal(0, Value(now, "AllOutstandingAsOf"));
+        var detail = await GetAsync(doctor, Base + "/reports/operating-finance/drilldown" + query + "&metricCode=NetOperatingCashResult");
+        Assert.Equal(1, detail.GetProperty("totalCount").GetInt64());
+        Assert.Equal(-650, detail.GetProperty("items")[0].GetProperty("metricValue").GetDecimal());
+        using var small = await PostAsync(doctor, Base + "/expenses", new
+        { amount = 50, businessDate = app.Today, dueBusinessDate = app.Today, category = "Utilities", descriptionAr = "مصروف آخر", reason = "paging fixture",
+            allocations = new[] { new { practiceId = app.PracticeId, percentage = 100 } } }, "paging-small");
+        Assert.Equal(HttpStatusCode.OK, small.StatusCode);
+        await app.WithDbAsync(async db =>
+        {
+            var commands = new ReportingCommands();
+            await using var observed = Observe(db, app, commands);
+            var scope = new ReportScope(ReportActor.Doctor, app.DoctorUserId, app.DoctorId, null, [app.PracticeId],
+                [Phase18PermissionNames.DoctorReports, Phase18PermissionNames.ExpensesView, Phase18PermissionNames.SalaryObligationsView, PermissionNames.DoctorRevenueViewOwn]);
+            var time = new ReportingTimeScope(app.Clock, Options.Create(new Phase18Options()));
+            var service = QueryService(observed, new FixedReportingGuard(scope), time);
+            var filter = new ReportFilter(app.Today.AddDays(-1), app.Today, PracticeId: app.PracticeId, ReportTimeZoneId: "Africa/Cairo");
+            await AssertPagesAsync(service, ReportActor.Doctor, "operating-finance", filter, 3);
+            commands.Texts.Clear();
+            var result = await service.DrilldownAsync(ReportActor.Doctor, "operating-finance", "NetOperatingCashResult", filter, TestContext.Current.CancellationToken);
+            Assert.True(result.IsSuccess); Assert.Equal(1, result.Value.TotalCount);
+            Assert.Equal(-650, Assert.Single(result.Value.Items).MetricValue);
+            Assert.Equal(1, commands.FinancialSourceReads);
+            var historical = await service.DrilldownAsync(ReportActor.Doctor, "operating-finance", "AllOutstandingAsOf",
+                filter with { AsOfUtc = recorded }, TestContext.Current.CancellationToken);
+            Assert.True(historical.IsSuccess); Assert.Equal(500, Assert.Single(historical.Value.Items).MetricValue);
+            historical = await service.DrilldownAsync(ReportActor.Doctor, "operating-finance", "NetOperatingCashResult",
+                filter with { AsOfUtc = recorded }, TestContext.Current.CancellationToken);
+            Assert.True(historical.IsSuccess); Assert.Equal(0, historical.Value.TotalCount); Assert.Empty(historical.Value.Items);
+            var unavailable = QueryService(observed, new FixedReportingGuard(scope with { Permissions = [Phase18PermissionNames.DoctorReports] }), time);
+            var denied = await unavailable.DrilldownAsync(ReportActor.Doctor, "operating-finance", "NetCollected", filter, TestContext.Current.CancellationToken);
+            Assert.True(denied.IsFailure); Assert.Equal("Report.AccessDenied", Assert.Single(denied.Errors).Code);
+            denied = await unavailable.DrilldownAsync(ReportActor.Doctor, "queue", "NetCollected", filter, TestContext.Current.CancellationToken);
+            Assert.True(denied.IsFailure); Assert.Equal("Report.InvalidFilter", Assert.Single(denied.Errors).Code);
+        });
         using var foreign = await doctor.GetAsync(Base + $"/reports/queue?practiceId={app.OtherPracticeId}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
     }
@@ -81,6 +124,244 @@ public sealed class Phase18DoctorReportingApiTests
         var detail = await GetAsync(doctor, Base + $"/insights/{id}");
         Assert.Equal("Resolved", detail.GetProperty("state").GetString()); Assert.Equal(15, detail.GetProperty("currentValue").GetDecimal());
         var history = await GetAsync(doctor, Base + $"/insights/{id}/history"); Assert.Equal(3, history.GetProperty("totalCount").GetInt64());
+    }
+
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public async Task ReportingCritical_Pages_archive_and_drilldown_preserve_scope_and_source_reads(bool sql)
+    {
+        await using var app = await Phase13ApiFixture.CreateAsync(sql);
+        using var doctor = await app.ClientAsync("doctor");
+        var ids = Enumerable.Range(0, 5).Select(_ => Guid.NewGuid()).Order().ToArray();
+        var date = app.Today.AddDays(-2);
+        await app.WithDbAsync(async db =>
+        {
+            for (var index = 0; index <= ids.Length; ++index)
+            {
+                var previous = index == ids.Length;
+                var at = app.Clock.UtcNow.AddDays(previous ? -3 : -2).AddMinutes(index);
+                var ticket = Ticket.CreateWalkIn(new(previous ? Guid.NewGuid() : ids[index], app.DoctorId, app.PracticeId, app.PatientId, null,
+                    previous ? date.AddDays(-1) : date, previous ? 1 : index + 1, TicketSource.WalkIn, app.SegmentId, "عادي", "Normal", 0, app.ConsultationTypeId,
+                    "NewConsultation", "كشف", "Visit", 300, "Africa/Cairo", at, at, CheckInMode.WalkIn, app.DoctorUserId, null)).Value;
+                Assert.True(ticket.Call(app.DoctorUserId, at.AddMinutes(5)).IsSuccess);
+                Assert.True(ticket.StartVisit(app.DoctorUserId, at.AddMinutes(6)).IsSuccess);
+                Assert.True(ticket.Complete(app.DoctorUserId, at.AddMinutes(15)).IsSuccess);
+                db.Tickets.Add(ticket);
+            }
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            foreach (var identity in await db.TicketRegistry.Where(t => ids.Contains(t.Id)).ToArrayAsync(TestContext.Current.CancellationToken))
+                identity.MarkArchived(app.Clock.UtcNow, "ReportingCritical", 1);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        });
+        var query = $"?fromDate={date:yyyy-MM-dd}&toDate={date:yyyy-MM-dd}&pageSize=2&sortDirection=asc";
+        List<Guid> returned = [];
+        for (var page = 1; page <= 3; ++page)
+        {
+            var report = await GetAsync(doctor, Base + "/reports/queue" + query + "&pageNumber=" + page);
+            Assert.Equal(5, report.GetProperty("detailRowCount").GetInt64());
+            Assert.Equal(5, Value(report, "CheckIns"));
+            foreach (var row in report.GetProperty("records").EnumerateArray())
+            {
+                returned.Add(row.GetProperty("id").GetGuid());
+                Assert.True(row.GetProperty("isArchived").GetBoolean());
+                Assert.Contains("/tickets/", row.GetProperty("detailRoute").GetString());
+                Assert.True(row.GetProperty("availableActions")[0].GetProperty("allowed").GetBoolean());
+            }
+        }
+        Assert.Equal(ids, returned);
+        var empty = await GetAsync(doctor, Base + "/reports/queue" + query + "&pageNumber=4");
+        Assert.Empty(empty.GetProperty("records").EnumerateArray());
+        Assert.Equal(5, empty.GetProperty("detailRowCount").GetInt64());
+        await app.WithDbAsync(async db =>
+        {
+            var commands = new ReportingCommands();
+            await using var observed = Observe(db, app, commands);
+            var scope = new ReportScope(ReportActor.Doctor, app.DoctorUserId, app.DoctorId, null, [app.PracticeId],
+                [Phase18PermissionNames.DoctorReports, PermissionNames.DoctorPracticeTicketsViewOwn, Phase18PartTwoPermissionNames.TicketsPractice]);
+            var time = new ReportingTimeScope(app.Clock, Options.Create(new Phase18Options()));
+            var service = QueryService(observed, new FixedReportingGuard(scope), time);
+            var filter = new ReportFilter(date, date, PageNumber: 2, PageSize: 2, SortDirection: "asc");
+            await AssertPagesAsync(service, ReportActor.Doctor, "queue", filter, 5);
+            commands.Texts.Clear();
+            var outOfRange = await service.GetAsync(ReportActor.Doctor, "queue", filter with { PageNumber = 4 }, TestContext.Current.CancellationToken);
+            Assert.True(outOfRange.IsSuccess); Assert.Equal(5, outOfRange.Value.DetailRowCount); Assert.Empty(outOfRange.Value.Records);
+            Assert.Equal(0, commands.ArchiveLookups);
+            commands.Texts.Clear();
+            var result = await service.DrilldownAsync(ReportActor.Doctor, "queue", "CheckIns", filter, TestContext.Current.CancellationToken);
+            Assert.True(result.IsSuccess);
+            Assert.Equal(5, result.Value.TotalCount);
+            Assert.Equal(ids.Skip(2).Take(2), result.Value.Items.Select(r => r.Id));
+            Assert.All(result.Value.Items, r => { Assert.True(r.IsArchived); Assert.NotNull(r.DetailRoute); });
+            // Only the operational source query selects the ticket's time-zone snapshot.
+            Assert.Single(commands.Texts, s => s.Contains("PracticeTimeZoneIdSnapshot", StringComparison.Ordinal));
+            Assert.Equal(1, commands.ArchiveLookups);
+            var preview = await service.GetAsync(ReportActor.Doctor, "queue", filter with { ComparePreviousPeriod = true }, TestContext.Current.CancellationToken);
+            Assert.True(preview.IsSuccess);
+            var comparison = preview.Value.PreviousPeriodComparisons!.Single(c => c.MetricCode == "CheckIns");
+            Assert.Equal(5, comparison.CurrentValue); Assert.Equal(1, comparison.PreviousValue);
+            commands.Texts.Clear();
+            var compared = await service.DrilldownAsync(ReportActor.Doctor, "queue", "CheckIns", filter with { ComparePreviousPeriod = true }, TestContext.Current.CancellationToken);
+            Assert.True(compared.IsSuccess);
+            Assert.Equal(JsonSerializer.Serialize(result.Value), JsonSerializer.Serialize(compared.Value));
+            Assert.Equal(1, commands.ArchiveLookups);
+            var denied = QueryService(observed, new FixedReportingGuard(scope with
+                { Permissions = [Phase18PermissionNames.DoctorReports, PermissionNames.DoctorPracticeTicketsViewOwn] }), time);
+            result = await denied.DrilldownAsync(ReportActor.Doctor, "queue", "CheckIns", filter, TestContext.Current.CancellationToken);
+            Assert.True(result.IsSuccess);
+            Assert.All(result.Value.Items, r => { Assert.True(r.IsArchived); Assert.Null(r.DetailRoute);
+                Assert.All(r.AvailableActions!, a => Assert.False(a.Allowed)); });
+            var receptionId = await db.Receptions.Where(r => r.OwnerDoctorId == app.DoctorId).Select(r => r.ApplicationUserId).SingleAsync(TestContext.Current.CancellationToken);
+            var archivePermission = SystemPermissionIds.For(Phase18PartTwoPermissionNames.TicketsAssigned);
+            var delegated = await db.ReceptionPracticeAssignmentPermissions.SingleOrDefaultAsync(p => p.AssignmentId == app.ReceptionAssignmentId && p.PermissionId == archivePermission, TestContext.Current.CancellationToken);
+            if (delegated == null)
+            {
+                delegated = new(Guid.NewGuid(), app.ReceptionAssignmentId, archivePermission, app.DoctorUserId, app.Clock.UtcNow);
+                db.ReceptionPracticeAssignmentPermissions.Add(delegated);
+                await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            }
+            var receptionScope = scope with { Actor = ReportActor.Reception, ActorId = receptionId,
+                Permissions = [Phase18PermissionNames.ReceptionReports, PermissionNames.PracticeTicketsView, Phase18PartTwoPermissionNames.TicketsAssigned] };
+            var delegatedService = QueryService(observed, new FixedReportingGuard(receptionScope), time);
+            var assigned = await delegatedService.GetAsync(ReportActor.Reception, "queue", filter, TestContext.Current.CancellationToken);
+            Assert.True(assigned.IsSuccess); Assert.Equal(5, assigned.Value.DetailRowCount);
+            Assert.All(assigned.Value.Records, r => { Assert.True(r.IsArchived); Assert.NotNull(r.DetailRoute); Assert.All(r.AvailableActions!, a => Assert.True(a.Allowed)); });
+            db.ReceptionPracticeAssignmentPermissions.Remove(delegated);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            assigned = await delegatedService.GetAsync(ReportActor.Reception, "queue", filter, TestContext.Current.CancellationToken);
+            Assert.True(assigned.IsSuccess);
+            Assert.All(assigned.Value.Records, r => { Assert.True(r.IsArchived); Assert.Null(r.DetailRoute); Assert.All(r.AvailableActions!, a => Assert.False(a.Allowed)); });
+        });
+        using var foreign = await doctor.GetAsync(Base + "/reports/queue/drilldown" + query + $"&metricCode=CheckIns&practiceId={app.OtherPracticeId}", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
+        foreach (var suffix in new[] { "&metricCode=UnknownMetric", "&metricCode=CheckIns&expenseCategory=Utilities" })
+        {
+            using var invalid = await doctor.GetAsync(Base + "/reports/queue/drilldown" + query + suffix, TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, invalid.StatusCode);
+        }
+        using var reception = await app.ClientAsync("reception");
+        using var financial = await reception.GetAsync("/api/v1/reception/reports/queue/drilldown" + query + "&metricCode=NetCollected", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, financial.StatusCode);
+        using var admin = await app.ClientAsync("root");
+        var platform = await GetAsync(admin, "/api/v1/admin/reports/operations" + query);
+        var suppressed = platform.GetProperty("metrics").EnumerateArray().Single(m => m.GetProperty("metricCode").GetString() == "CheckIns");
+        Assert.Equal(JsonValueKind.Null, suppressed.GetProperty("value").ValueKind);
+        Assert.Equal("NotAvailable", suppressed.GetProperty("dataStatus").GetString());
+        Assert.Empty(platform.GetProperty("series").EnumerateArray());
+        Assert.Empty(platform.GetProperty("breakdowns").EnumerateArray());
+    }
+
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public async Task ReportingCritical_Investigation_history_is_permission_gated_and_counted_asof(bool sql)
+    {
+        await using var app = await Phase13ApiFixture.CreateAsync(sql);
+        await app.WithDbAsync(async db =>
+        {
+            var admin = await db.SuperAdmins.SingleAsync(TestContext.Current.CancellationToken);
+            var now = app.Clock.UtcNow;
+            var investigation = AdministrativeInvestigation.Create(Guid.NewGuid(), "مراجعة", "Review", "Administrative review",
+                InvestigationIssueType.DataQuality, InvestigationPriority.Normal, InvestigationResourceType.None, null, admin.ApplicationUserId, now.AddDays(-5)).Value;
+            Assert.True(investigation.Assign(admin.Id, true, admin.ApplicationUserId, now.AddDays(-5).AddMinutes(1)).IsSuccess);
+            Assert.True(investigation.StartReview(true, admin.ApplicationUserId, now.AddDays(-4)).IsSuccess);
+            Assert.True(investigation.Resolve(InvestigationResolutionType.Verified, "Verified", true, admin.ApplicationUserId, now.AddDays(-3)).IsSuccess);
+            Assert.True(investigation.Close("Closed", admin.ApplicationUserId, now.AddDays(-2)).IsSuccess);
+            Assert.True(investigation.Reopen("Review again", true, admin.ApplicationUserId, now.AddDays(-1)).IsSuccess);
+            Assert.True(investigation.Resolve(InvestigationResolutionType.Verified, "Verified again", true, admin.ApplicationUserId, now.AddDays(-1).AddHours(1)).IsSuccess);
+            Assert.True(investigation.Close("Future closure", admin.ApplicationUserId, now.AddDays(1)).IsSuccess);
+            var closed = AdministrativeInvestigation.Create(Guid.NewGuid(), "مراجعة أخرى", "Other review", "Administrative review",
+                InvestigationIssueType.DataQuality, InvestigationPriority.Normal, InvestigationResourceType.None, null, admin.ApplicationUserId, now.AddDays(-5)).Value;
+            Assert.True(closed.Close("Withdrawn", admin.ApplicationUserId, now.AddDays(-2)).IsSuccess);
+            db.Set<AdministrativeInvestigation>().AddRange(investigation, closed);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            var commands = new ReportingCommands();
+            await using var observed = Observe(db, app, commands);
+            var scope = new ReportScope(ReportActor.SuperAdmin, admin.ApplicationUserId, null, null, [app.PracticeId, app.OtherPracticeId], []);
+            var window = new ReportingWindow(app.Today.AddDays(-7), app.Today, now, now, "Africa/Cairo");
+            var service = QueryService(observed, new FixedReportingGuard(scope), new ReportingTimeScope(app.Clock, Options.Create(new Phase18Options())));
+            var method = service.GetType().GetMethod("AdditionalPlatformMetricsAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            async Task<IReadOnlyList<ReportMetric>> Metrics(ReportScope authorized, ReportingWindow w)
+                => await (Task<IReadOnlyList<ReportMetric>>)method.Invoke(service, [authorized, "adoption", w, TestContext.Current.CancellationToken])!;
+            var metrics = await Metrics(scope, window);
+            Assert.DoesNotContain(metrics, m => m.MetricCode is "OpenInvestigations" or "InvestigationResolutions");
+            Assert.DoesNotContain(commands.Texts, s => s.Contains("InvestigationHistor", StringComparison.Ordinal));
+            commands.Texts.Clear();
+            scope = scope with { Permissions = [Phase18PermissionNames.InvestigationsView] };
+            metrics = await Metrics(scope, window);
+            Assert.Equal(1, metrics.Single(m => m.MetricCode == "OpenInvestigations").Value);
+            Assert.Equal(2, metrics.Single(m => m.MetricCode == "InvestigationResolutions").Value);
+            var counts = commands.Texts.Where(s => s.Contains("InvestigationHistor", StringComparison.Ordinal)).ToArray();
+            Assert.Equal(2, counts.Length);
+            Assert.All(counts, s => Assert.True(s.Contains("COUNT(", StringComparison.Ordinal) || s.Contains("COUNT_BIG(", StringComparison.Ordinal)));
+            metrics = await Metrics(scope, window with { AsOfUtc = now.AddDays(-2).AddHours(1) });
+            Assert.Equal(0, metrics.Single(m => m.MetricCode == "OpenInvestigations").Value);
+            Assert.Equal(1, metrics.Single(m => m.MetricCode == "InvestigationResolutions").Value);
+            metrics = await Metrics(scope, window with { AsOfUtc = now.AddDays(-4).AddHours(1) });
+            Assert.Equal(2, metrics.Single(m => m.MetricCode == "OpenInvestigations").Value);
+            Assert.Equal(0, metrics.Single(m => m.MetricCode == "InvestigationResolutions").Value);
+            var resolutionDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now.AddDays(-3), TimeZoneInfo.FindSystemTimeZoneById("Africa/Cairo")));
+            metrics = await Metrics(scope, window with { FromDate = resolutionDate, ToDate = resolutionDate });
+            Assert.Equal(1, metrics.Single(m => m.MetricCode == "InvestigationResolutions").Value);
+            metrics = await Metrics(scope, window with { FromDate = resolutionDate.AddDays(1), ToDate = resolutionDate.AddDays(1) });
+            Assert.Equal(0, metrics.Single(m => m.MetricCode == "InvestigationResolutions").Value);
+        });
+    }
+
+    private static WaslaDbContext Observe(WaslaDbContext db, Phase13ApiFixture app, ReportingCommands commands)
+    {
+        var options = new DbContextOptionsBuilder<WaslaDbContext>();
+        if (db.Database.IsSqlServer()) options.UseSqlServer(db.Database.GetDbConnection());
+        else options.UseSqlite(db.Database.GetDbConnection());
+        return new(options.AddInterceptors(commands).Options, app.Clock);
+    }
+    private static IReportingQueryService QueryService(WaslaDbContext db, IReportingAccessGuard guard, IReportingTimeScope time)
+        => (IReportingQueryService)Activator.CreateInstance(typeof(WaslaDbContext).Assembly.GetType(
+            "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.ReportingQueryService")!, [db, guard, time, new KpiDefinitionRegistry()])!;
+    private static async Task AssertPagesAsync(IReportingQueryService service, ReportActor actor, string code, ReportFilter filter, int count)
+    {
+        var full = await service.GetAsync(actor, code, filter with { PageNumber = 1, PageSize = 100 }, TestContext.Current.CancellationToken);
+        Assert.True(full.IsSuccess); Assert.Equal(count, full.Value.DetailRowCount); Assert.Equal(count, full.Value.Records.Count);
+        foreach (var sort in new[] { "Date", "Status", "Reference", "Amount" })
+        foreach (var direction in new[] { "asc", "desc" })
+        {
+            // Reference is the original enrich-all, sort-all, then page behavior.
+            var rows = full.Value.Records;
+            var ordered = sort switch
+            {
+                "Status" => direction == "asc" ? rows.OrderBy(r => r.Status).ThenBy(r => r.Id) : rows.OrderByDescending(r => r.Status).ThenBy(r => r.Id),
+                "Reference" => direction == "asc" ? rows.OrderBy(r => r.Reference).ThenBy(r => r.Id) : rows.OrderByDescending(r => r.Reference).ThenBy(r => r.Id),
+                "Amount" => direction == "asc" ? rows.OrderBy(r => r.Amount).ThenBy(r => r.Id) : rows.OrderByDescending(r => r.Amount).ThenBy(r => r.Id),
+                _ => direction == "asc" ? rows.OrderBy(r => r.BusinessDate).ThenBy(r => r.Id) : rows.OrderByDescending(r => r.BusinessDate).ThenBy(r => r.Id)
+            };
+            foreach (var page in new[] { 1, 2, 4 })
+            {
+                var actual = await service.GetAsync(actor, code, full.Value.AppliedFilters with { SortBy = sort, SortDirection = direction, PageSize = 2, PageNumber = page }, TestContext.Current.CancellationToken);
+                Assert.True(actual.IsSuccess); Assert.Equal(count, actual.Value.DetailRowCount);
+                Assert.Equal(JsonSerializer.Serialize(ordered.Skip((page - 1) * 2).Take(2)), JsonSerializer.Serialize(actual.Value.Records));
+                Assert.Equal(full.Value.Metrics.Select(m => m with { AvailableActions = null }), actual.Value.Metrics.Select(m => m with { AvailableActions = null }));
+                Assert.Equal(full.Value.DataStatus, actual.Value.DataStatus);
+            }
+        }
+    }
+    private sealed class FixedReportingGuard(ReportScope scope) : IReportingAccessGuard
+    {
+        public Task<Result<ReportScope>> AuthorizeAsync(ReportActor actor, string permission, Guid? practiceId, Guid? doctorId, CancellationToken cancellationToken)
+            => Task.FromResult(Result<ReportScope>.Ok(scope));
+    }
+    private sealed class ReportingCommands : DbCommandInterceptor
+    {
+        public List<string> Texts { get; } = [];
+        public int ArchiveLookups => Texts.Count(sql => FirstTable(sql) is "TicketRegistry" or "ReservationRegistry");
+        public int FinancialSourceReads => Texts.Count(sql => FirstTable(sql) == "OperatingCostAllocationSnapshots");
+        private static string FirstTable(string sql)
+        {
+            var normalized = sql.Replace("[", "").Replace("]", "").Replace("\"", "");
+            var from = normalized.IndexOf("FROM ", StringComparison.Ordinal);
+            return from < 0 ? "" : normalized[(from + 5)..].TrimStart().Split([' ', '\r', '\n'])[0].Split('.')[^1];
+        }
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
+            InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        {
+            Texts.Add(command.CommandText);
+            return ValueTask.FromResult(result);
+        }
     }
     private static decimal Value(JsonElement report, string code) => report.GetProperty("metrics").EnumerateArray()
         .Single(m => m.GetProperty("metricCode").GetString() == code).GetProperty("value").GetDecimal();

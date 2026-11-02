@@ -16,7 +16,9 @@ public sealed class Phase18ReportExportTests
         Assert.Contains(arabic ? "dir=\"rtl\"" : "dir=\"ltr\"", html);
         Assert.Contains("size:A4 portrait", html);
         Assert.Contains("size:A4 landscape", await renderer.RenderHtmlAsync(p with { Landscape = true }, TestContext.Current.CancellationToken));
-        Assert.Contains("&lt;script&gt;", html); Assert.DoesNotContain("<script>", html);
+        var escapedHtml = await renderer.RenderHtmlAsync(p with { ScopeLabel = "<script>alert(1)</script> & synthetic" }, TestContext.Current.CancellationToken);
+        Assert.Contains("&lt;script&gt;", escapedHtml); Assert.Contains("&amp; synthetic", escapedHtml);
+        Assert.DoesNotContain("<script>", escapedHtml); Assert.DoesNotContain("<script>", html);
         var excel = renderer.RenderExcel(p);
         using (var book = new XLWorkbook(new MemoryStream(excel)))
         {
