@@ -50,12 +50,16 @@ internal sealed partial class ReportingQueryService
             .Select(r => new { r.SubmittedOnUtc, r.ReviewedOnUtc }).ToArrayAsync(ct);
         var durations = reviews.Where(r => r.ReviewedOnUtc >= r.SubmittedOnUtc).Select(r => (decimal)(r.ReviewedOnUtc!.Value - r.SubmittedOnUtc).TotalMinutes).ToArray();
         result.Add(calculator.Ratio("SpecializationReviewMinutes", durations.Sum(), durations.Length, reviews.Length - durations.Length));
-        var investigationEvents = await db.Set<InvestigationHistory>().AsNoTracking().Where(h => h.RecordedAtUtc <= w.AsOfUtc)
-            .Select(h => new { h.CaseId, h.SequenceNumber, h.Status, h.Operation, h.RecordedAtUtc }).ToArrayAsync(ct);
         if (scope.Permissions.Contains(Phase18PermissionNames.InvestigationsView))
         {
-            result.Add(calculator.Count("OpenInvestigations", investigationEvents.GroupBy(h => h.CaseId).Count(g => g.MaxBy(h => h.SequenceNumber)!.Status != InvestigationStatus.Closed)));
-            result.Add(calculator.Count("InvestigationResolutions", investigationEvents.Count(h => h.Operation == "Resolved" && h.RecordedAtUtc >= bounds.FromUtc && h.RecordedAtUtc < bounds.BeforeUtc)));
+            var investigationEvents = db.Set<InvestigationHistory>().AsNoTracking().Where(h => h.RecordedAtUtc <= w.AsOfUtc);
+            // (CaseId, SequenceNumber) is unique. Select the latest eligible sequence, including reopened cases.
+            var open = await investigationEvents.LongCountAsync(h => h.Status != InvestigationStatus.Closed &&
+                !investigationEvents.Any(later => later.CaseId == h.CaseId && later.SequenceNumber > h.SequenceNumber), ct);
+            var resolutions = await investigationEvents.LongCountAsync(h => h.Operation == "Resolved" &&
+                h.RecordedAtUtc >= bounds.FromUtc && h.RecordedAtUtc < bounds.BeforeUtc, ct);
+            result.Add(calculator.Count("OpenInvestigations", open));
+            result.Add(calculator.Count("InvestigationResolutions", resolutions));
         }
         if (w.AsOfUtc != w.GeneratedAtUtc)
         {

@@ -9,12 +9,13 @@ internal sealed partial class ReportingQueryService
     private async Task<IReadOnlyList<ReportRecord>> ArchiveLinksAsync(IEnumerable<ReportRecord> records, ReportScope scope, CancellationToken ct)
     {
         var rows = records.ToArray();
+        if (rows.Length == 0) return rows;
         var ticketIds = rows.Where(x => x.ResourceType == "Ticket").Select(x => x.Id).ToArray();
         var reservationIds = rows.Where(x => x.ResourceType == "Reservation").Select(x => x.Id).ToArray();
-        var tickets = await db.TicketRegistry.AsNoTracking().Where(x => ticketIds.Contains(x.Id) && x.IsArchived).Select(x => x.Id).ToArrayAsync(ct);
-        var reservations = await db.ReservationRegistry.AsNoTracking().Where(x => reservationIds.Contains(x.Id) && x.IsArchived).Select(x => x.Id).ToArrayAsync(ct);
+        var tickets = ticketIds.Length == 0 ? [] : await db.TicketRegistry.AsNoTracking().Where(x => ticketIds.Contains(x.Id) && x.IsArchived).Select(x => x.Id).ToArrayAsync(ct);
+        var reservations = reservationIds.Length == 0 ? [] : await db.ReservationRegistry.AsNoTracking().Where(x => reservationIds.Contains(x.Id) && x.IsArchived).Select(x => x.Id).ToArrayAsync(ct);
         var archivedTickets = tickets.ToHashSet(); var archivedReservations = reservations.ToHashSet();
-        var delegated = scope.Actor == ReportActor.Reception ? await (from a in db.ReceptionPracticeAssignments
+        var delegated = scope.Actor == ReportActor.Reception && (tickets.Length > 0 || reservations.Length > 0) ? await (from a in db.ReceptionPracticeAssignments
             join r in db.Receptions on a.ReceptionId equals r.Id
             join p in db.ReceptionPracticeAssignmentPermissions on a.Id equals p.AssignmentId
             where a.IsActive && r.ApplicationUserId == scope.ActorId &&
