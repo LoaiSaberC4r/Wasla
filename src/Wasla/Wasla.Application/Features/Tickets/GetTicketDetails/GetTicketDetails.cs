@@ -44,7 +44,7 @@ internal sealed class GetTicketDetailsQueryHandler(
         if (practice is { IsActive: false } && currentUser.Roles.Contains(SystemRoleNames.Doctor, StringComparer.OrdinalIgnoreCase))
         {
             if (location is null || location.DoctorPracticeId != request.PracticeId) return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
-            var read = await historicalReads.AuthorizeOwnReadAsync(request.PracticeId, PermissionNames.DoctorPracticeTicketsViewOwn, location.PatientId, cancellationToken);
+            var read = await historicalReads.AuthorizeOwnReadAsync(request.PracticeId, PermissionNames.DoctorPracticeTicketsViewOwn, location.PatientId, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
             if (read.IsFailure) return Result<TicketDetailsResponse>.Fail(read.Errors);
             if (archived && !read.Value.Actor.Has(Phase18PartTwoPermissionNames.TicketsPractice)) return Result<TicketDetailsResponse>.Fail(TicketErrors.AccessDenied);
             historical = read.Value;
@@ -67,7 +67,7 @@ internal sealed class GetTicketDetailsQueryHandler(
         }
         if (historical is not null)
         {
-            var latest = await historicalReads.AuthorizeOwnReadAsync(request.PracticeId, PermissionNames.DoctorPracticeTicketsViewOwn, details.PatientId, cancellationToken);
+            var latest = await historicalReads.AuthorizeOwnReadAsync(request.PracticeId, PermissionNames.DoctorPracticeTicketsViewOwn, details.PatientId, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
             if (latest.IsFailure) return Result<TicketDetailsResponse>.Fail(latest.Errors);
             var a = latest.Value.Actor;
             if (details.DoctorId != a.DoctorId) return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
@@ -107,7 +107,7 @@ internal sealed class GetTicketDetailsQueryHandler(
 
         if (actor.Value.IsDoctor)
         {
-            var current = await relationships.ActorAsync(archived ? Phase18PartTwoPermissionNames.TicketsPractice : PermissionNames.DoctorPracticeTicketsViewOwn, cancellationToken);
+            var current = await relationships.ActorAsync(archived ? Phase18PartTwoPermissionNames.TicketsPractice : PermissionNames.DoctorPracticeTicketsViewOwn, cancellationToken, new(SubscriptionResourceKind.Ticket, request.TicketId));
             if (current.IsFailure) return Result<TicketDetailsResponse>.Fail(current.Errors);
             if (details.DoctorId != current.Value.DoctorId) return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
             if (!current.Value.Has(PermissionNames.MedicalEncountersViewOwn) || !current.Value.Has(PermissionNames.DiagnosesViewOwn))

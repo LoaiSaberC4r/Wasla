@@ -2,6 +2,8 @@
 
 Branch: `codex/commercial-subscriptions`. Base commit: `23ed851`. Implementation date: 2026-11-02.
 
+PR #36 received targeted authorization hardening on 2026-11-03. Current archive policy, capability contract, permission coverage, regression evidence, reseeding requirements, and merge recommendation are documented in [PR36-PRE-MERGE-HARDENING-REPORT.md](PR36-PRE-MERGE-HARDENING-REPORT.md). The implementation and original verification record below are retained.
+
 ## Baseline inspection
 
 The repository targets .NET 10 and uses Clean Architecture, MediatR CQRS, `Result/Error`, FluentValidation, BuildingBlock transactions, one `WaslaDbContext`, and existing email Outbox infrastructure. `BuildingBlockWithNET10` transaction behavior and the historical v1.2 Source of Truth were inspected. The source left monetization open; the approved rules are recorded in the separate commercial addendum.

@@ -230,3 +230,40 @@ Use actual returned `entitlements`, usage, and pending/future periods for commer
 | 422 | `Subscription.InvalidSelection`, `ProductNotAvailable`, `PlanNotAvailable`, `InvalidBillingCycle`, `TrialNotEligible`, `TrialExtensionInvalid`, `PaymentMethodDisabled`, `PaymentAmountMismatch`, `PaymentRequired`, `InvalidTransition`, `ChangeRequestInvalid`, `ChangeRequestNotFound`, `BookingOnlyNotConfigured`, `ConfigurationInvalid`, or validation errors |
 
 Capacity messages report actual usage and the limit. Downgrade excess errors also supply a JSON `details` string containing `CurrentPracticeCount`, `CurrentReceptionCount`, `TargetPracticeLimit`, and `TargetReceptionLimit`. Refresh details on concurrency conflicts. Never display database exception internals or infer that a rejected request charged money.
+
+## PR #36 authorization clarification — 2026-11-03
+
+Doctor and Reception archive permissions are commercial reads:
+
+| Existing permission | Feature | Required access |
+|---|---|---|
+| `Archives.Tickets.ViewPractice` / `ViewAssigned` | `TICKET_QUEUE` | ReadOnly |
+| `Archives.Reservations.ViewPractice` / `ViewAssigned` | `RESERVATION_MANAGEMENT` | ReadOnly |
+
+The requested permission must pass its own commercial check as well as the existing account, role, ownership, assignment, and governance checks. Missing mappings and feature snapshots fail closed. Patient/Guardian archive rights and SuperAdmin metadata routes keep their existing authorization policies.
+
+An effective current read entitlement permits the actor's authorized owned history. When access instead relies on past accepted entitlements, the original resource must fall inside a proven subscription period. Legacy transition history can cover older owned records, but ends at transition expiry or paid supersession. Archive collection filters run before pagination; `hasMore`, linked Ticket IDs, and cursors do not expose excluded records. A changed scope or historical entitlement invalidates a cursor. Use the existing error response to refresh a stale page.
+
+For an otherwise valid active reservation, a Doctor whose accepted `RESERVATION_MANAGEMENT` access is ReadOnly receives:
+
+```json
+{
+  "capabilities": {
+    "canCancel": false,
+    "cancelBlockedReason": "Subscription.AccessLevelInsufficient",
+    "canReschedule": false,
+    "rescheduleBlockedReason": "Subscription.AccessLevelInsufficient",
+    "canRestoreFromNoShow": false
+  },
+  "linkedTicketId": null,
+  "canViewLinkedTicket": false
+}
+```
+
+The linked Ticket fields above apply when no independently authorized current or historical Ticket read exists. Flags derive from current stored permissions, Reception assignment grants, and accepted entitlements; a role name or linked identifier alone is insufficient. Missing role/assignment rights return an access-denial reason. Cancelled/invalid reservations retain lifecycle-specific reasons, and archived reservations always return false mutation flags with `Archive.ReadOnly`. Inactive-practice historical reads remain read-only with `Reservation.PracticeUnavailable` where that existing rule applies.
+
+Doctor/Reception capabilities may retain a narrowly authorized action on an actual pre-expiry commitment when the existing continuity policy permits that same mutation endpoint. Expiry never authorizes a new booking or post-expiry queue commitment. Patient self-service capabilities continue to use ownership/Guardian rights, cutoff, reschedule limits, and lifecycle policy; they do not require the Doctor's operational subscription. Replay responses resolve current authorization and current lifecycle state.
+
+`Subscription.PermissionDenied` denotes a missing current actor grant in capability evaluation. `Subscription.FeatureNotEntitled`, `Subscription.AccessLevelInsufficient`, `Subscription.DoctorNotApproved`, and existing expiry codes identify commercial/governance restrictions. HTTP status and opaque resource-not-found conventions are preserved. Standard ProblemDetails `instance` may echo the caller-supplied request URI; error payloads contain no protected resource DTO.
+
+The complete reviewed inventory, including original PR #36 mappings, stable permission GUIDs, actor types, and source references, is [permission-coverage.csv](permission-coverage.csv). Existing databases must rerun the commercial catalog seeder after deployment. No new migration or configuration is required. Prescription PDF export uses the existing `PDF_XLSX_EXPORT` feature; reception account state uses `RECEPTION_MANAGEMENT` Full access.

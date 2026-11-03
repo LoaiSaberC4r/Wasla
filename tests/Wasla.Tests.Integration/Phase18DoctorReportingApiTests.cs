@@ -342,7 +342,7 @@ public sealed class Phase18DoctorReportingApiTests
     }
     private sealed class FixedReportingGuard(ReportScope scope) : IReportingAccessGuard
     {
-        public Task<Result<ReportScope>> AuthorizeAsync(ReportActor actor, string permission, Guid? practiceId, Guid? doctorId, CancellationToken cancellationToken)
+        public Task<Result<ReportScope>> AuthorizeAsync(ReportActor actor, string permission, Guid? practiceId, Guid? doctorId, CancellationToken cancellationToken, Wasla.Application.Features.Subscriptions.SubscriptionResource? resource = null)
             => Task.FromResult(Result<ReportScope>.Ok(scope));
     }
     private sealed class ReportingCommands : DbCommandInterceptor

@@ -15,6 +15,9 @@ internal static class SubscriptionTestData
     {
         public Task<bool> AllowedForUserAsync(Guid userId, string permission, CancellationToken ct, SubscriptionResource? resource = null) => Task.FromResult(true);
         public Task<bool> AllowedAsync(Wasla.Application.Persistence.UserAccessSnapshot user, string permission, CancellationToken ct, SubscriptionResource? resource = null) => Task.FromResult(true);
+        public Task<IReadOnlyDictionary<string, SubscriptionPermissionDecision>> EvaluateManyAsync(Wasla.Application.Persistence.UserAccessSnapshot user,
+            IReadOnlyCollection<string> permissions, CancellationToken ct, SubscriptionResource? resource = null) =>
+            Task.FromResult<IReadOnlyDictionary<string, SubscriptionPermissionDecision>>(permissions.ToDictionary(p => p, _ => new SubscriptionPermissionDecision(true)));
     }
     internal sealed class EntitledService : ISubscriptionEntitlementService
     {
@@ -50,6 +53,27 @@ internal static class SubscriptionTestData
         return new SubscriptionEntitlementService(new SubscriptionDataStore(db), general, new FixedClock());
     }
     private sealed class FixedClock : IDateTimeProvider { public DateTime UtcNow => DateTime.UtcNow; }
+
+    internal static async Task<Guid> BookingOnlyAsync(Phase13ApiFixture app, bool preserveHistory = false)
+    {
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<SubscriptionCatalogOptions>>().CurrentValue;
+            options.BookingOnly.Enabled = true; options.BookingOnly.MaximumSelectablePractices = 3;
+            options.BookingOnly.PricingTiers = [new() { MinPracticeCount = 1, MaxPracticeCount = 3, MonthlyPrice = 300 }];
+        }
+        var id = await ReplaceAsync(app, selection: new("ONLINE_BOOKING_ONLY", "BOOKING_ONLY", BillingCycle.Monthly, SelectedPracticeCount: 2));
+        if (!preserveHistory)
+            await app.WithDbAsync(async db =>
+            {
+                var old = await db.DoctorSubscriptions.Where(s => s.DoctorId == app.DoctorId && s.Id != id).Select(s => s.Id).ToArrayAsync();
+                db.RemoveRange(await db.SubscriptionFeatureSnapshots.Where(f => old.Contains(f.SubscriptionId)).ToArrayAsync());
+                db.RemoveRange(await db.SubscriptionHistories.Where(h => old.Contains(h.SubscriptionId)).ToArrayAsync());
+                db.RemoveRange(await db.DoctorSubscriptions.Where(s => old.Contains(s.Id)).ToArrayAsync());
+                await db.SaveChangesAsync();
+            });
+        return id;
+    }
 
     internal static async Task<Guid> ReplaceAsync(Phase13ApiFixture app, string plan = "STARTER", SubscriptionKind kind = SubscriptionKind.Paid,
         bool activate = true, BillingCycle cycle = BillingCycle.Monthly, SubscriptionSelection? selection = null)

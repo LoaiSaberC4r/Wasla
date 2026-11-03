@@ -91,3 +91,11 @@ Legacy enrollment is explicit, SuperAdmin-only, disabled by default, and uses on
 - Deployment and actual verification: [SUBSCRIPTION-COMMERCIAL-IMPLEMENTATION-REPORT.md](SUBSCRIPTION-COMMERCIAL-IMPLEMENTATION-REPORT.md).
 
 Gateways, Fawry, card/wallet processing, automatic charges/renewal, fees, commission, taxes, invoices, refunds, add-ons, promotions, product switching between selected commercial products, and Angular implementation remain out of scope.
+
+## Authorization clarification — PR #36 hardening, 2026-11-03
+
+The approved plan matrix, prices, capacities, trial duration, and immutable accepted terms above are unchanged. The existing Doctor/Reception Ticket archive permissions require `TICKET_QUEUE` ReadOnly; the corresponding Reservation archive permissions require `RESERVATION_MANAGEMENT` ReadOnly. Unknown permissions and missing expected mappings cannot bypass commercial authorization. Explicit account/onboarding, patient, privacy/relationship, platform-governance, and system permissions are reviewed separately; a subscription never grants those rights.
+
+Current entitled reads remain subject to existing ownership and relationship rules. An exception based on past accepted archive entitlements is tied to the original owned resource or a filtered owned collection. Paid/trial coverage uses inclusive start and exclusive end. Legacy transition coverage can include older owned records and ends at expiry or paid supersession. Filters precede pagination and cursor construction. Past Full Platform coverage does not give an active Booking Only account general Ticket/Queue access or new operational work.
+
+Reservation capability responses must reflect actual current authorization. ReadOnly Reservation Management does not advertise cancellation, rescheduling, restoration, or unrelated Ticket navigation. Existing lifecycle/cutoff rules and narrowly proven operational continuity remain authoritative. Patient/Guardian rights and SuperAdmin governance remain outside Doctor subscription prerequisites. Prescription PDF export and Reception account-state operations use their existing export and Reception Management features respectively.

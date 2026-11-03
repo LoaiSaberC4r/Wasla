@@ -44,8 +44,19 @@ public sealed class SubscriptionCatalogSeeder(WaslaDbContext db, IDateTimeProvid
         foreach (var p in await db.Permissions.ToArrayAsync(ct))
         {
             var featureCode = CommercialFeatures.FeatureForPermission(p.Name);
-            if (featureCode is not null && !await db.FeaturePermissionMappings.AnyAsync(m => m.PermissionId == p.Id, ct))
-                db.Add(new FeaturePermissionMapping(StableId("permission:" + p.Name), features[featureCode].Id, p.Id, CommercialFeatures.RequiredAccess(p.Name), now));
+            var mapping = await db.FeaturePermissionMappings.SingleOrDefaultAsync(m => m.PermissionId == p.Id, ct);
+            if (featureCode is not null)
+            {
+                if (mapping is null)
+                    db.Add(new FeaturePermissionMapping(StableId("permission:" + p.Name), features[featureCode].Id, p.Id, CommercialFeatures.RequiredAccess(p.Name), now));
+                else
+                {
+                    db.Entry(mapping).Property(m => m.FeatureId).CurrentValue = features[featureCode].Id;
+                    db.Entry(mapping).Property(m => m.RequiredAccessLevel).CurrentValue = CommercialFeatures.RequiredAccess(p.Name);
+                }
+            }
+            else if (mapping is not null && CommercialPermissionCatalog.All.ContainsKey(p.Name))
+                db.Remove(mapping); // Remove old prefix classifications of explicitly universal/platform permissions only.
         }
         await db.SaveChangesAsync(ct);
     }

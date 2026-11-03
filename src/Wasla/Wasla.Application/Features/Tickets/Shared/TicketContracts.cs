@@ -227,7 +227,7 @@ internal sealed class TicketAccessService(
     {
         if (permission.StartsWith("Archives.", StringComparison.Ordinal))
         {
-            var scopedArchive = await archiveGuard.AuthorizeAsync(ReportActor.Reception, permission, practiceId, null, cancellationToken);
+            var scopedArchive = await archiveGuard.AuthorizeAsync(ReportActor.Reception, permission, practiceId, null, cancellationToken, subscriptionResource);
             return scopedArchive.IsFailure ? Result<TicketActor>.Fail(scopedArchive.Errors) : Result<TicketActor>.Ok(new(scopedArchive.Value.ActorId, false, true));
         }
         if (!TryGetActor(out var actorId) || !HasRole(SystemRoleNames.Reception))
@@ -251,7 +251,7 @@ internal sealed class TicketAccessService(
     {
         if (permission.StartsWith("Archives.", StringComparison.Ordinal))
         {
-            var archiveAccess = await archiveGuard.AuthorizeAsync(ReportActor.Doctor, permission, practiceId, null, cancellationToken);
+            var archiveAccess = await archiveGuard.AuthorizeAsync(ReportActor.Doctor, permission, practiceId, null, cancellationToken, subscriptionResource);
             return archiveAccess.IsFailure ? Result<TicketActor>.Fail(archiveAccess.Errors) : Result<TicketActor>.Ok(new(archiveAccess.Value.ActorId, true, false));
         }
         if (!TryGetActor(out var actorId) || !HasRole(SystemRoleNames.Doctor) ||
@@ -270,8 +270,8 @@ internal sealed class TicketAccessService(
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         var doctor = await doctors.GetByPropertyAsync(
             item => item.ApplicationUserId == actorId, cancellationToken);
-        if ((await archiveGuard.AuthorizeAsync(ReportActor.Doctor, permission, practiceId, null, cancellationToken)).IsFailure)
-            return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
+        // The permission guard checks the current stored grant. Scope is proved below;
+        // CallNext performs its deferred commercial check only after selecting the actual Ticket.
         var practice = await practices.GetByIdAsync(practiceId, cancellationToken);
         return doctor is not null && doctor.ApprovalStatus == DoctorApprovalStatus.Approved &&
                practice is not null && practice.IsActive && practice.DoctorId == doctor.Id

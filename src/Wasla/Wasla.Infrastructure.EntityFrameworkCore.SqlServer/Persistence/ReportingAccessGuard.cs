@@ -5,15 +5,15 @@ using Wasla.Application.Features.Reporting;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
 using Wasla.Domain.Security;
+using Wasla.Application.Features.Subscriptions;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 internal sealed class ReportingAccessGuard(WaslaDbContext db, ICurrentUser currentUser,
-    IWaslaDataStore store, Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptions,
-    BuildingBlock.Application.Time.IDateTimeProvider subscriptionClock) : IReportingAccessGuard
+    IWaslaDataStore store, ISubscriptionPermissionGuard subscriptions) : IReportingAccessGuard
 {
     public async Task<Result<ReportScope>> AuthorizeAsync(ReportActor actor, string permission,
-        Guid? practiceId, Guid? doctorId, CancellationToken cancellationToken)
+        Guid? practiceId, Guid? doctorId, CancellationToken cancellationToken, SubscriptionResource? resource = null)
     {
         if (!currentUser.IsAuthenticated || currentUser.UserId is not { } userId)
             return Result<ReportScope>.Fail(ReportingErrors.Denied);
@@ -21,9 +21,6 @@ internal sealed class ReportingAccessGuard(WaslaDbContext db, ICurrentUser curre
         if (access is null || !access.User.IsActive || access.User.IsFirstLogin || !access.Permissions.Contains(permission, StringComparer.Ordinal))
             return Result<ReportScope>.Fail(ReportingErrors.Denied);
         Guid? ownDoctor = null;
-        var commercialFeature = Wasla.Application.Features.Subscriptions.CommercialFeatures.FeatureForPermission(permission);
-        if (commercialFeature is "OPERATIONAL_REPORTS" or "PDF_XLSX_EXPORT" or "ADVANCED_RULE_BASED_INSIGHTS" or "RECEPTION_HANDOVER" or "OPERATING_EXPENSES" or "SALARY_MANAGEMENT" or "DOCTOR_REVENUE_DASHBOARD" &&
-            !await subscriptions.AllowedAsync(access, permission, cancellationToken)) return Result<ReportScope>.Fail(ReportingErrors.Denied);
         Guid? patient = null;
         Guid[] practices;
         switch (actor)
@@ -73,21 +70,22 @@ internal sealed class ReportingAccessGuard(WaslaDbContext db, ICurrentUser curre
         }
         if (practiceId != null && practices.Length == 0) return Result<ReportScope>.Fail(ReportingErrors.NotFound);
         var effectivePermissions = access.Permissions;
+        SubscriptionReadScope? readScope = null;
+        IReadOnlyDictionary<string, SubscriptionReadScope>? readScopes = null;
         if (actor is ReportActor.Doctor or ReportActor.Reception)
         {
-            var owner = ownDoctor ?? await db.Receptions.Where(r => r.ApplicationUserId == userId).Select(r => (Guid?)r.OwnerDoctorId).SingleOrDefaultAsync(cancellationToken);
-            var now = subscriptionClock.UtcNow;
-            var terms = await db.DoctorSubscriptions.AsNoTracking().Where(s => s.DoctorId == owner && s.StartsAtUtc <= now)
-                .OrderByDescending(s => s.StartsAtUtc).ThenByDescending(s => s.CreatedOnUtc).FirstOrDefaultAsync(cancellationToken);
-            var valid = terms?.IsValidAt(now) == true;
-            var subscriptionId = terms?.Id ?? Guid.Empty;
-            var blocked = await (from mapping in db.FeaturePermissionMappings
-                join permissionRecord in db.Permissions on mapping.PermissionId equals permissionRecord.Id
-                where subscriptionId == Guid.Empty || !valid && mapping.RequiredAccessLevel == Wasla.Domain.Subscriptions.FeatureAccessLevel.Full ||
-                    !db.SubscriptionFeatureSnapshots.Any(f => f.SubscriptionId == subscriptionId && f.FeatureId == mapping.FeatureId && f.AccessLevel >= mapping.RequiredAccessLevel)
-                select permissionRecord.Name).ToArrayAsync(cancellationToken);
-            effectivePermissions = access.Permissions.Except(blocked, StringComparer.Ordinal).ToArray();
+            var evaluated = await subscriptions.EvaluateManyAsync(access, access.Permissions.ToArray(), cancellationToken);
+            var requested = evaluated[permission];
+            if (resource is not null)
+                requested = (await subscriptions.EvaluateManyAsync(access, [permission], cancellationToken, resource))[permission];
+            if (!requested.Allowed) return Result<ReportScope>.Fail(ReportingErrors.Denied);
+            readScope = requested.ReadScope;
+            readScopes = evaluated.Where(p => p.Value.ReadScope?.HasAccess == true)
+                .GroupBy(p => CommercialFeatures.FeatureForPermission(p.Key)!, StringComparer.Ordinal)
+                .OrderBy(g => g.Key, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => g.First().Value.ReadScope!, StringComparer.Ordinal);
+            effectivePermissions = evaluated.Where(p => p.Value.Allowed).Select(p => p.Key).Append(permission).Distinct(StringComparer.Ordinal).ToArray();
         }
-        return Result<ReportScope>.Ok(new(actor, userId, ownDoctor, patient, practices, effectivePermissions));
+        return Result<ReportScope>.Ok(new(actor, userId, ownDoctor, patient, practices, effectivePermissions, readScope, readScopes));
     }
 }

@@ -51,45 +51,13 @@ public static class CommercialFeatures
         return included ? FeatureAccessLevel.Full : null;
     }
 
-    // This is seed metadata. Runtime authorization resolves mappings from the database, never plan names.
-    public static string? FeatureForPermission(string permission)
-    {
-        var group = permission.Split('.')[0];
-        return group switch
-        {
-            "DoctorOnboarding" or "DoctorProfile" or "DoctorSpecializations" or "DoctorPracticeLocation" => "DOCTOR_PROFILE",
-            "DoctorPractices" or "DoctorPracticeConfiguration" => "PRACTICE_MANAGEMENT",
-            "DoctorPracticeBranding" => "PRACTICE_BRANDING",
-            "DoctorPracticeSchedule" => "SCHEDULE_AVAILABILITY",
-            "DoctorPracticeSegments" or "DoctorPracticePricing" => "BASIC_SEGMENTS_PRICING",
-            "DoctorPracticeReservations" or "PracticeReservations" => "RESERVATION_MANAGEMENT",
-            "ReceptionUsers" or "ReceptionAssignments" => "RECEPTION_MANAGEMENT",
-            "PracticeWalkIns" => "CHECKIN_WALKIN",
-            "PracticeTickets" when permission.Contains("CheckIn", StringComparison.Ordinal) || permission.Contains("WalkIn", StringComparison.Ordinal) => "CHECKIN_WALKIN",
-            "PracticeTickets" when permission.Contains("Payment", StringComparison.Ordinal) => "PAYMENT_COLLECTION",
-            "PracticeTickets" or "DoctorPracticeTickets" or "PracticeQueue" => "TICKET_QUEUE",
-            "PracticePayments" or "DoctorPracticePayments" => "PAYMENT_COLLECTION",
-            "DoctorRevenue" => "DOCTOR_REVENUE_DASHBOARD",
-            "DoctorPatients" or "Patients" => "PATIENT_MANAGEMENT",
-            "Encounters" or "MedicalEncounters" => "MEDICAL_ENCOUNTER",
-            "Diagnoses" => "DIAGNOSIS",
-            "Prescriptions" or "DrugCatalog" or "DrugCatalogRequests" => "PRESCRIPTION",
-            "LabCatalog" or "LabCatalogRequests" or "LabRequests" or "LabResults" or "LabResultSubmissions" or
-            "RadiologyCatalog" or "RadiologyCatalogRequests" or "RadiologyRequests" or "RadiologyResults" or "RadiologyResultSubmissions" => "LAB_RADIOLOGY",
-            "FollowUpEligibility" => "FOLLOWUP_ELIGIBILITY",
-            "MedicalRecords" when permission == PermissionNames.MedicalRecordsViewTreatingPatient => "MEDICAL_RECORD_ACCESS",
-            "Handovers" => "RECEPTION_HANDOVER",
-            "FinancialExpenses" => "OPERATING_EXPENSES",
-            "SalaryPlans" or "SalaryObligations" or "SalarySettlements" => "SALARY_MANAGEMENT",
-            "Reports" when permission.Contains("Export", StringComparison.Ordinal) => "PDF_XLSX_EXPORT",
-            "Reports" => "OPERATIONAL_REPORTS",
-            "Insights" => "ADVANCED_RULE_BASED_INSIGHTS",
-            "Dashboards" when permission == Phase18PermissionNames.DoctorDashboard => "DOCTOR_REVENUE_DASHBOARD",
-            "Dashboards" when permission == Phase18PermissionNames.ReceptionDashboard => "TICKET_QUEUE",
-            _ => null
-        };
-    }
+    // Exact reviewed permission inventory; unknown permissions never inherit a prefix's feature.
+    public static string? FeatureForPermission(string permission) =>
+        CommercialPermissionCatalog.All.TryGetValue(permission, out var classification) ? classification.FeatureCode : null;
     public static FeatureAccessLevel RequiredAccess(string permission) =>
-        permission.Contains(".View", StringComparison.Ordinal) || permission.Contains(".Search", StringComparison.Ordinal)
-            ? FeatureAccessLevel.ReadOnly : FeatureAccessLevel.Full;
+        CommercialPermissionCatalog.All.TryGetValue(permission, out var classification) && classification.RequiredAccess is { } access
+            ? access : FeatureAccessLevel.Full;
+    public static bool IsArchivePermission(string permission) => permission is
+        Phase18PartTwoPermissionNames.TicketsPractice or Phase18PartTwoPermissionNames.TicketsAssigned or
+        Phase18PartTwoPermissionNames.ReservationsPractice or Phase18PartTwoPermissionNames.ReservationsAssigned;
 }

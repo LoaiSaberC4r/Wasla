@@ -1,0 +1,244 @@
+{
+  "baselineCommit": "a448a3daca2b64ab8277842d9b0adf177a1bf875",
+  "branch": "codex/commercial-subscriptions",
+  "pullRequest": "https://github.com/LoaiSaberC4r/Wasla/pull/36",
+  "build": {
+    "configuration": "Release",
+    "succeeded": true,
+    "log": "artifacts/pr36-build.log"
+  },
+  "permissionInventory": {
+    "total": 335,
+    "classifications": {
+      "SuperAdminGovernance": 114,
+      "AuthenticationOnboardingAccount": 19,
+      "CommercialFeature": 137,
+      "PrivacyConsentRelationship": 39,
+      "UniversalPatient": 24,
+      "InternalSystem": 2
+    },
+    "originalMappings": 184,
+    "unresolved": 0,
+    "permissionIdsChanged": false
+  },
+  "integration": {
+    "discovered": 453,
+    "uniqueOutcomes": {
+      "Passed": 452,
+      "NotExecuted": 1
+    },
+    "notCovered": [],
+    "unresolvedFailures": [],
+    "skipped": [
+      "Wasla.Tests.Integration.ExportBrowserSmokeTests.Automatic_download_renders_bilingual_reports_and_every_issued_prescription_status"
+    ],
+    "runs": [
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-0.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 31
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-1.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 24,
+          "NotExecuted": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-10.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 24
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-11.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 9
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-2.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 22
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-3.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 35
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-4.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-5.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 48
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-6.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 29
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-7.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 26
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-8.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 31
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-9.trx",
+        "runOutcome": "Failed",
+        "outcomes": {
+          "Passed": 27,
+          "Failed": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-concurrency-initial.trx",
+        "runOutcome": "Failed",
+        "outcomes": {
+          "Passed": 54,
+          "Failed": 6
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-concurrency.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 60
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-directory.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-discovery.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-final-focus.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 9
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-focused.trx",
+        "runOutcome": "Failed",
+        "outcomes": {
+          "Passed": 17,
+          "Failed": 3
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-migration.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-regression.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 52
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-replay.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 2
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-retry.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 2
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-subscriptions-initial.trx",
+        "runOutcome": "Failed",
+        "outcomes": {
+          "Passed": 57,
+          "Failed": 3
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/pr36-subscriptions.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 60
+        }
+      }
+    ]
+  },
+  "database": {
+    "engine": "SQL Server LocalDB",
+    "scope": "Existing disposable test databases",
+    "schemaChanged": false,
+    "newMigrationRequired": false,
+    "catalogReseedingRequired": true,
+    "configurationChanged": false,
+    "productionMigrationOrDeploymentExecuted": false
+  },
+  "ci": {
+    "status": "pending"
+  },
+  "iterationNotes": [
+    "Initial new negative tests were corrected to preserve the standard ProblemDetails instance echo of the caller-supplied URI while asserting that protected DTO data and identifiers are absent from all other error fields.",
+    "The legacy archive fixture now runs the existing operational-day closer before the archive engine. Queue denial is tested against an actual selectable post-expiry Ticket; an empty queue uses its existing NotFound contract.",
+    "One existing reconciliation case encountered Persistence.Timeout during LocalDB login under parallel load. It passed in an isolated two-case rerun without product changes or weakened assertions.",
+    "An initial SQL concurrency run using default parallelism passed 54 and hit six LocalDB/time-out failures. The complete suite passed all 60 with the existing CI setting xUnit.MaxParallelThreads=2; assertions were unchanged.",
+    "One rebuild overlapped a test host and failed to copy the Windows apphost. The subsequent sequential Release build passed with zero warnings and errors."
+  ],
+  "unit": {
+    "file": "tests/Wasla.Tests.Unit/TestResults/pr36-unit.trx",
+    "runOutcome": "Completed",
+    "outcomes": {
+      "Passed": 428
+    }
+  },
+  "architecture": {
+    "file": "tests/Wasla.Tests.Architecture/TestResults/pr36-architecture.trx",
+    "runOutcome": "Completed",
+    "outcomes": {
+      "Passed": 26
+    }
+  }
+}

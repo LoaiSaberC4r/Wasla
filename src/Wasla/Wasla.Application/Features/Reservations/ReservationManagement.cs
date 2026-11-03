@@ -2133,11 +2133,20 @@ internal sealed partial class ReservationApplicationService(
                 cancellationToken);
         }
 
+        if (scope == ReservationOperationScope.Reception && receptionPermission == Phase18PartTwoPermissionNames.ReservationsAssigned)
+        {
+            var archiveScope = await archiveGuard.AuthorizeAsync(ReportActor.Reception, receptionPermission, reservation.DoctorPracticeId, null,
+                cancellationToken, new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation, reservation.Id));
+            return archiveScope.IsFailure ? Result<ReservationActorAccess>.Fail(archiveScope.Errors) :
+                Result<ReservationActorAccess>.Ok(new(actorId, ReservationBookingSource.Reception, ReservationActionInitiator.Reception, null, false));
+        }
         if (scope == ReservationOperationScope.Reception)
         {
             var access = await receptionAuthorization.AuthorizeAsync(
                 reservation.DoctorPracticeId, receptionPermission, cancellationToken);
-            return access.IsFailure
+            var commercial = access.IsSuccess && await subscriptionPermissions.AllowedForUserAsync(actorId, receptionPermission,
+                cancellationToken, new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation, reservation.Id));
+            return !commercial
                 ? Result<ReservationActorAccess>.Fail(ReservationErrors.AccessDenied)
                 : Result<ReservationActorAccess>.Ok(new ReservationActorAccess(
                     actorId,
@@ -2149,12 +2158,14 @@ internal sealed partial class ReservationApplicationService(
 
         if (scope == ReservationOperationScope.Doctor && doctorPermission == Phase18PartTwoPermissionNames.ReservationsPractice)
         {
-            var currentArchiveScope = await archiveGuard.AuthorizeAsync(ReportActor.Doctor, doctorPermission, reservation.DoctorPracticeId, null, cancellationToken);
+            var currentArchiveScope = await archiveGuard.AuthorizeAsync(ReportActor.Doctor, doctorPermission, reservation.DoctorPracticeId, null, cancellationToken,
+                new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation, reservation.Id));
             return currentArchiveScope.IsFailure ? Result<ReservationActorAccess>.Fail(currentArchiveScope.Errors) : Result<ReservationActorAccess>.Ok(new(actorId, ReservationBookingSource.Patient, ReservationActionInitiator.Doctor, null, false));
         }
         if (scope == ReservationOperationScope.Doctor)
         {
-            var permission = await RequirePermissionAsync(doctorPermission, cancellationToken);
+            var permission = await RequirePermissionAsync(doctorPermission, cancellationToken,
+                new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation, reservation.Id));
             var doctor = await dataStore.FindDoctorByUserIdAsync(actorId, cancellationToken);
             var practice = await dataStore.FindDoctorPracticeAsync(
                 reservation.DoctorPracticeId, cancellationToken);
@@ -2204,7 +2215,7 @@ internal sealed partial class ReservationApplicationService(
 
     private async Task<Result> RequirePermissionAsync(
         string permission,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, Wasla.Application.Features.Subscriptions.SubscriptionResource? resource = null)
     {
         if (!currentUser.IsAuthenticated || currentUser.UserId is not { } actorId)
         {
@@ -2213,7 +2224,7 @@ internal sealed partial class ReservationApplicationService(
 
         var snapshot = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
         return snapshot is not null && snapshot.User.IsActive && !snapshot.User.IsFirstLogin &&
-               await subscriptionPermissions.AllowedAsync(snapshot, permission, cancellationToken) &&
+               await subscriptionPermissions.AllowedAsync(snapshot, permission, cancellationToken, resource) &&
                (snapshot.IsRootSuperAdmin || snapshot.Permissions.Contains(
                    permission, StringComparer.OrdinalIgnoreCase))
             ? Result.Ok()
@@ -2294,7 +2305,8 @@ internal sealed partial class ReservationApplicationService(
         if (scope == ReservationOperationScope.Doctor && !record.Practice.IsActive)
         {
             var historical = await historicalReads.AuthorizeOwnReadAsync(record.Practice.Id,
-                PermissionNames.DoctorPracticeReservationsViewOwn, null, cancellationToken);
+                PermissionNames.DoctorPracticeReservationsViewOwn, null, cancellationToken,
+                new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation, reservationId));
             if (historical.IsFailure) return Result<ReservationDetailsResponse>.Fail(historical.Errors);
             // Phase 18 already permits the owner to read an archived standalone booking.
             // This source endpoint proves its own Reservation ownership; admission remains
@@ -2305,7 +2317,8 @@ internal sealed partial class ReservationApplicationService(
                 return Result<ReservationDetailsResponse>.Fail(ReservationErrors.AccessDenied);
             var ownDetails = await MapDetailsAsync(record, scope, includeBookingNote, cancellationToken);
             historical = await historicalReads.AuthorizeOwnReadAsync(record.Practice.Id,
-                PermissionNames.DoctorPracticeReservationsViewOwn, null, cancellationToken);
+                PermissionNames.DoctorPracticeReservationsViewOwn, null, cancellationToken,
+                new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation, reservationId));
             if (historical.IsFailure) return Result<ReservationDetailsResponse>.Fail(historical.Errors);
             var finalLocation = await archive.ReservationAsync(reservationId, cancellationToken);
             if ((ownDetails.IsArchived || finalLocation?.IsArchived == true) && !historical.Value.Actor.Has(Phase18PartTwoPermissionNames.ReservationsPractice))
@@ -2380,7 +2393,8 @@ internal sealed partial class ReservationApplicationService(
             configuration.AllowOnlineBooking,
             currentCatalog.IsSuccess && liveClaim.IsSuccess,
             restoreEligibility.IsSuccess,
-            restoreEligibility.IsFailure ? restoreEligibility.Errors[0].Code : null);
+            restoreEligibility.IsFailure ? restoreEligibility.Errors[0].Code : null,
+            await ResolveMutationCapabilitiesAsync(reservation, scope, cancellationToken));
         var location = await archive.ReservationAsync(reservation.Id, cancellationToken);
         var isArchived = location?.IsArchived == true;
         if (isArchived) capabilities = capabilities with { CanCancel = false, CanReschedule = false, CanRestoreFromNoShow = false, CancelBlockedReason = "Archive.ReadOnly", RescheduleBlockedReason = "Archive.ReadOnly", RestoreBlockedReason = "Archive.ReadOnly" };
@@ -2425,9 +2439,13 @@ internal sealed partial class ReservationApplicationService(
             {
                 var actor = scope == ReservationOperationScope.Doctor ? ReportActor.Doctor : ReportActor.Reception;
                 var permission = scope == ReservationOperationScope.Doctor ? (ticketLocation?.IsArchived == true ? Phase18PartTwoPermissionNames.TicketsPractice : PermissionNames.DoctorPracticeTicketsViewOwn) : (ticketLocation?.IsArchived == true ? Phase18PartTwoPermissionNames.TicketsAssigned : PermissionNames.PracticeTicketsView);
-                canViewLinkedTicket = (await archiveGuard.AuthorizeAsync(actor, permission, reservation.DoctorPracticeId, null, cancellationToken)).IsSuccess;
+                canViewLinkedTicket = ticketLocation?.DoctorPracticeId == reservation.DoctorPracticeId &&
+                    (await archiveGuard.AuthorizeAsync(actor, permission, reservation.DoctorPracticeId, null, cancellationToken,
+                        new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Ticket, ticketId))).IsSuccess;
             }
         }
+        if (scope is ReservationOperationScope.Doctor or ReservationOperationScope.Reception && !canViewLinkedTicket)
+            linkedTicketId = null;
         return new ReservationDetailsResponse(
             reservation.Id,
             reservation.ReservationReference,
@@ -2477,30 +2495,33 @@ internal sealed partial class ReservationApplicationService(
         bool allowOnlineBooking,
         bool currentCatalogValid,
         bool restoreEligible,
-        string? restoreBlockedReason)
+        string? restoreBlockedReason, ReservationMutationAuthorization authorization)
     {
         var active = reservation.Status == ReservationStatus.Active;
         var patient = scope == ReservationOperationScope.Patient;
         var provider = scope is ReservationOperationScope.Reception or ReservationOperationScope.Doctor;
         var beforeCutoff = clock.UtcNow <= reservation.ScheduledStartUtc.AddMinutes(-cutoffMinutes);
         var late = reservation.IsLate(clock.UtcNow, graceMinutes);
-        var canCancel = active && (provider || patient && beforeCutoff);
-        var canReschedule = active && currentCatalogValid &&
+        var canCancel = active && authorization.Cancel.Allowed && (provider || patient && beforeCutoff);
+        var canReschedule = active && currentCatalogValid && authorization.Reschedule.Allowed &&
             (provider || patient && allowOnlineBooking && beforeCutoff && !late &&
              reservation.PatientInitiatedRescheduleCount < ReservationPolicy.MaxPatientReschedulesPerReservation);
-        var canRestore = scope == ReservationOperationScope.Reception && restoreEligible;
+        var canRestore = scope == ReservationOperationScope.Reception && restoreEligible && authorization.Restore.Allowed;
         return new ReservationCapabilitiesResponse(
             canCancel,
-            canCancel ? null : active ? "Reservation.CancellationCutoffReached" : "Reservation.InvalidState",
+            canCancel ? null : !active ? "Reservation.InvalidState" : !authorization.Cancel.Allowed
+                ? authorization.Cancel.BlockedReason : "Reservation.CancellationCutoffReached",
             canReschedule,
             canReschedule ? null : !active ? "Reservation.InvalidState" :
                 !currentCatalogValid ? "Reservation.CurrentCatalogInvalid" :
+                !authorization.Reschedule.Allowed ? authorization.Reschedule.BlockedReason :
                 patient && !allowOnlineBooking ? "Reservation.OnlineBookingDisabled" :
                 reservation.PatientInitiatedRescheduleCount >= ReservationPolicy.MaxPatientReschedulesPerReservation
                     ? "Reservation.RescheduleLimitReached"
                     : "Reservation.RescheduleCutoffReached",
             canRestore,
-            canRestore ? null : restoreBlockedReason ?? "Reservation.NoShowRestoreNotAllowed",
+            canRestore ? null : scope == ReservationOperationScope.Reception && restoreEligible && !authorization.Restore.Allowed
+                ? authorization.Restore.BlockedReason : restoreBlockedReason ?? "Reservation.NoShowRestoreNotAllowed",
             patient ? reservation.ScheduledStartUtc.AddMinutes(-cutoffMinutes) : null,
             patient ? reservation.ScheduledStartUtc.AddMinutes(-cutoffMinutes) : null,
             reservation.PatientInitiatedRescheduleCount,

@@ -8,6 +8,33 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 public sealed class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionDataStore
 {
+    public async Task<IReadOnlyList<SubscriptionPermissionRule>> PermissionRulesAsync(IReadOnlyCollection<string> permissions, CancellationToken ct) =>
+        await (from mapping in db.FeaturePermissionMappings.AsNoTracking()
+               join permission in db.Permissions on mapping.PermissionId equals permission.Id
+               join feature in db.CommercialFeatures on mapping.FeatureId equals feature.Id
+               where permissions.Contains(permission.Name)
+               select new SubscriptionPermissionRule(permission.Name, feature.Code, mapping.RequiredAccessLevel)).ToArrayAsync(ct);
+
+    public async Task<IReadOnlyList<SubscriptionReadWindow>> ReadWindowsAsync(Guid doctorId, DateTime now, CancellationToken ct) =>
+        await (from subscription in db.DoctorSubscriptions.AsNoTracking()
+               join feature in db.SubscriptionFeatureSnapshots.AsNoTracking() on subscription.Id equals feature.SubscriptionId
+               where subscription.DoctorId == doctorId && subscription.StartsAtUtc != null && subscription.StartsAtUtc <= now &&
+                   subscription.EndsAtUtc != null && subscription.Status != SubscriptionStatus.Pending && subscription.Status != SubscriptionStatus.Cancelled &&
+                   feature.AccessLevel >= FeatureAccessLevel.ReadOnly
+               orderby feature.FeatureCodeSnapshot, subscription.StartsAtUtc, subscription.Id
+               select new SubscriptionReadWindow(feature.FeatureCodeSnapshot,
+                   subscription.SubscriptionKind == SubscriptionKind.LegacyTransition ? null : subscription.StartsAtUtc,
+                   subscription.Status == SubscriptionStatus.Superseded && subscription.ModifiedOnUtc != null && subscription.ModifiedOnUtc < subscription.EndsAtUtc
+                        ? subscription.ModifiedOnUtc.Value : subscription.EndsAtUtc!.Value)).ToArrayAsync(ct);
+
+    public Task<SubscriptionCommitment?> ReadCommitmentAsync(SubscriptionResource resource, CancellationToken ct) => resource.Kind switch
+    {
+        SubscriptionResourceKind.Reservation => db.AllReservations.AsNoTracking().Where(r => r.Id == resource.Id)
+            .Select(r => new SubscriptionCommitment(r.DoctorId, r.CreatedOnUtc)).SingleOrDefaultAsync(ct),
+        SubscriptionResourceKind.Ticket => db.AllTickets.AsNoTracking().Where(t => t.Id == resource.Id)
+            .Select(t => new SubscriptionCommitment(t.DoctorId, t.CreatedOnUtc)).SingleOrDefaultAsync(ct),
+        _ => CommitmentAsync(resource, ct)
+    };
     public async Task<SubscriptionCommitment?> CommitmentAsync(SubscriptionResource resource, CancellationToken ct)
     {
         if (resource.Kind == SubscriptionResourceKind.Reservation)

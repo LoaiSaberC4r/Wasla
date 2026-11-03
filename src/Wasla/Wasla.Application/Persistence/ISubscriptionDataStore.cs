@@ -10,6 +10,9 @@ public sealed record SubscriptionListFilter(int PageNumber = 1, int PageSize = 2
     DateTime? CreatedFromUtc = null, DateTime? CreatedToUtc = null, DateTime? EndsFromUtc = null, DateTime? EndsToUtc = null);
 public interface ISubscriptionDataStore
 {
+    Task<IReadOnlyList<Wasla.Application.Features.Subscriptions.SubscriptionPermissionRule>> PermissionRulesAsync(IReadOnlyCollection<string> permissions, CancellationToken ct);
+    Task<IReadOnlyList<Wasla.Application.Features.Subscriptions.SubscriptionReadWindow>> ReadWindowsAsync(Guid doctorId, DateTime now, CancellationToken ct);
+    Task<Wasla.Application.Features.Subscriptions.SubscriptionCommitment?> ReadCommitmentAsync(Wasla.Application.Features.Subscriptions.SubscriptionResource resource, CancellationToken ct);
     Task<Wasla.Application.Features.Subscriptions.SubscriptionCommitment?> CommitmentAsync(Wasla.Application.Features.Subscriptions.SubscriptionResource resource, CancellationToken ct);
     Task<SubscriptionCatalogData> CatalogAsync(CancellationToken ct);
     Task<DoctorSubscription?> FindAsync(Guid id, CancellationToken ct);

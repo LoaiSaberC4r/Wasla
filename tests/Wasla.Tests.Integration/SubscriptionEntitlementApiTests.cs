@@ -13,6 +13,26 @@ namespace Wasla.Tests.Integration;
 
 public sealed class SubscriptionEntitlementApiTests
 {
+    [Theory]
+    [InlineData("STARTER", false)][InlineData("PROFESSIONAL", false)][InlineData("PREMIUM", false)]
+    [InlineData("STARTER", true)][InlineData("PROFESSIONAL", true)][InlineData("PREMIUM", true)]
+    public async Task Professional_and_premium_features_are_checked_independently_of_shared_role_permissions(string plan, bool sql)
+    {
+        await using var app = await Phase13ApiFixture.CreateAsync(sql); await SubscriptionTestData.ReplaceAsync(app, plan);
+        using var doctor = await app.ClientAsync("doctor");
+        foreach (var route in new[] { "/expenses/categories", "/reports/reservations" })
+        {
+            using var response = await doctor.GetAsync("/api/v1/doctors/me" + route, TestContext.Current.CancellationToken);
+            Assert.Equal(plan == "STARTER" ? HttpStatusCode.Forbidden : HttpStatusCode.OK, response.StatusCode);
+        }
+        foreach (var route in new[] { "/reports/practice-comparison", "/insights" })
+        {
+            using var response = await doctor.GetAsync("/api/v1/doctors/me" + route, TestContext.Current.CancellationToken);
+            Assert.Equal(plan == "PREMIUM" ? HttpStatusCode.OK : HttpStatusCode.Forbidden, response.StatusCode);
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            { var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken); Assert.DoesNotContain("patientName", body); Assert.DoesNotContain("SqlException", body); }
+        }
+    }
     [Theory][InlineData(false)][InlineData(true)]
     public async Task Booking_only_can_configure_booking_and_read_reservations_but_cannot_use_operations_or_clinical_features(bool sql)
     {

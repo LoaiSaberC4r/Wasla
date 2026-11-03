@@ -78,10 +78,12 @@ public interface ISubscriptionPermissionGuard
 {
     Task<bool> AllowedForUserAsync(Guid userId, string permission, CancellationToken ct, SubscriptionResource? resource = null);
     Task<bool> AllowedAsync(UserAccessSnapshot user, string permission, CancellationToken ct, SubscriptionResource? resource = null);
+    Task<IReadOnlyDictionary<string, SubscriptionPermissionDecision>> EvaluateManyAsync(UserAccessSnapshot user,
+        IReadOnlyCollection<string> permissions, CancellationToken ct, SubscriptionResource? resource = null);
 }
 public sealed class SubscriptionPermissionGuard(ISubscriptionDataStore store, IWaslaDataStore doctors,
     ISubscriptionEntitlementService entitlements,
-    ISubscriptionOperationalContinuityGuard continuity) : ISubscriptionPermissionGuard
+    ISubscriptionOperationalContinuityGuard continuity, IDateTimeProvider clock) : ISubscriptionPermissionGuard
 {
     public async Task<bool> AllowedForUserAsync(Guid userId, string permission, CancellationToken ct, SubscriptionResource? resource = null)
     {
@@ -90,22 +92,80 @@ public sealed class SubscriptionPermissionGuard(ISubscriptionDataStore store, IW
     }
     public async Task<bool> AllowedAsync(UserAccessSnapshot user, string permission, CancellationToken ct, SubscriptionResource? resource = null)
     {
-        if (user.User.UserType is not (UserType.Doctor or UserType.Reception)) return true;
-        Guid? doctorId = user.DoctorId;
-        if (user.User.UserType == UserType.Reception)
-            doctorId = (await doctors.FindReceptionByApplicationUserIdAsync(user.User.Id, ct))?.OwnerDoctorId;
-        if (doctorId is null) return false;
-        // Profile, onboarding and subscription account operations remain available without operational access.
-        if (SubscriptionPermissionNames.DoctorDefaults.Contains(permission) ||
-            Wasla.Domain.Security.PermissionNames.PendingDoctorOnboarding.Contains(permission) || permission.StartsWith("DoctorProfile.", StringComparison.Ordinal)) return true;
-        var mapping = await store.PermissionMappingAsync(permission, ct);
-        if (mapping is null) return CommercialFeatures.FeatureForPermission(permission) is null; // Missing expected seed fails closed.
-        var feature = (await store.CatalogAsync(ct)).Features.SingleOrDefault(f => f.Id == mapping.FeatureId);
-        if (feature is null) return false;
-        var access = await entitlements.EvaluateAsync(doctorId.Value, feature.Code, mapping.RequiredAccessLevel, ct);
-        if (access.IsSuccess) return true;
-        if (resource is not null && mapping.RequiredAccessLevel == FeatureAccessLevel.Full &&
-            (await continuity.EvaluateAsync(doctorId.Value, feature.Code, resource, ct)).IsSuccess) return true;
-        return false;
+        return (await EvaluateManyAsync(user, [permission], ct, resource))[permission].Allowed;
+    }
+
+    public async Task<IReadOnlyDictionary<string, SubscriptionPermissionDecision>> EvaluateManyAsync(UserAccessSnapshot user,
+        IReadOnlyCollection<string> permissions, CancellationToken ct, SubscriptionResource? resource = null)
+    {
+        var decisions = new Dictionary<string, SubscriptionPermissionDecision>(StringComparer.Ordinal);
+        var commercial = new List<string>();
+        foreach (var permission in permissions.Distinct(StringComparer.Ordinal))
+        {
+            // Patient rights, catalog managers and platform governance retain their own authorization policies.
+            if (user.User.UserType is not (UserType.Doctor or UserType.Reception)) { decisions[permission] = new(true); continue; }
+            if (!user.User.IsActive || user.User.IsFirstLogin || !user.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase))
+            { decisions[permission] = new(false, "Subscription.PermissionDenied"); continue; }
+            if (!CommercialPermissionCatalog.All.TryGetValue(permission, out var classification))
+            { decisions[permission] = new(false, "Subscription.FeatureNotEntitled"); continue; }
+            if (classification.Category == SubscriptionPermissionCategory.CommercialFeature) commercial.Add(permission);
+            else decisions[permission] = classification.Category is SubscriptionPermissionCategory.SuperAdminGovernance or SubscriptionPermissionCategory.UniversalPatient
+                ? new(false, "Subscription.PermissionDenied") : new(true);
+        }
+        if (commercial.Count == 0) return decisions;
+        var doctorId = user.User.UserType == UserType.Reception
+            ? (await doctors.FindReceptionByApplicationUserIdAsync(user.User.Id, ct))?.OwnerDoctorId : user.DoctorId;
+        if (doctorId is null)
+        { foreach (var permission in commercial) decisions[permission] = new(false, "Subscription.DoctorNotApproved"); return decisions; }
+        var active = await entitlements.ActiveAsync(doctorId.Value, ct);
+        if (active.IsFailure && active.Errors.Any(e => e.Code == "Subscription.DoctorNotApproved"))
+        { foreach (var permission in commercial) decisions[permission] = new(false, "Subscription.DoctorNotApproved"); return decisions; }
+        var rules = (await store.PermissionRulesAsync(commercial, ct)).ToDictionary(r => r.Permission, StringComparer.Ordinal);
+        var features = active.IsSuccess ? await store.FeaturesAsync(active.Value.Id, ct) : [];
+        var readWindows = active.IsFailure || commercial.Any(p => CommercialFeatures.RequiredAccess(p) == FeatureAccessLevel.ReadOnly)
+            ? await store.ReadWindowsAsync(doctorId.Value, clock.UtcNow, ct) : [];
+        var latest = active.IsFailure ? await store.LatestEndedAsync(doctorId.Value, ct) : null;
+        var latestFeatures = latest is not null && latest.EndsAtUtc <= clock.UtcNow &&
+            latest.Status is SubscriptionStatus.Active or SubscriptionStatus.Expired or SubscriptionStatus.Superseded
+            ? await store.FeaturesAsync(latest.Id, ct) : [];
+        SubscriptionCommitment? commitment = null;
+        var commitmentLoaded = false;
+        var evaluated = new Dictionary<(string Feature, FeatureAccessLevel Access, bool Archive), SubscriptionPermissionDecision>();
+        foreach (var permission in commercial)
+        {
+            var classification = CommercialPermissionCatalog.All[permission];
+            if (!rules.TryGetValue(permission, out var rule) || rule.FeatureCode != classification.FeatureCode || rule.RequiredAccess != classification.RequiredAccess)
+            { decisions[permission] = new(false, "Subscription.FeatureNotEntitled"); continue; }
+            var key = (rule.FeatureCode, rule.RequiredAccess, CommercialFeatures.IsArchivePermission(permission));
+            if (evaluated.TryGetValue(key, out var cached)) { decisions[permission] = cached; continue; }
+            var feature = features.SingleOrDefault(f => f.FeatureCodeSnapshot == rule.FeatureCode);
+            var scope = new SubscriptionReadScope(feature?.AccessLevel >= FeatureAccessLevel.ReadOnly,
+                readWindows.Where(w => w.FeatureCode == rule.FeatureCode).ToArray());
+            SubscriptionPermissionDecision decision;
+            if (rule.RequiredAccess == FeatureAccessLevel.ReadOnly)
+            {
+                var allowed = scope.CurrentEntitlement;
+                if (!allowed && resource is not null)
+                {
+                    if (!commitmentLoaded) { commitment = await store.ReadCommitmentAsync(resource, ct); commitmentLoaded = true; }
+                    allowed = commitment?.DoctorId == doctorId && scope.Covers(commitment.CreatedOnUtc);
+                }
+                else if (!allowed && key.Item3) allowed = scope.HasAccess;
+                else if (!allowed && active.IsFailure)
+                    allowed = latestFeatures.Any(f => f.FeatureCodeSnapshot == rule.FeatureCode && f.AccessLevel >= FeatureAccessLevel.ReadOnly);
+                decision = new(allowed, allowed ? null : "Subscription.FeatureNotEntitled", scope);
+            }
+            else
+            {
+                var allowed = feature?.AccessLevel == FeatureAccessLevel.Full;
+                if (!allowed && resource is not null && active.IsFailure)
+                    allowed = (await continuity.EvaluateAsync(doctorId.Value, rule.FeatureCode, resource, ct)).IsSuccess;
+                decision = new(allowed, allowed ? null : feature is not null ? "Subscription.AccessLevelInsufficient" :
+                    active.IsFailure ? active.Errors[0].Code : "Subscription.FeatureNotEntitled", scope);
+            }
+            evaluated[key] = decision;
+            decisions[permission] = decision;
+        }
+        return decisions;
     }
 }
