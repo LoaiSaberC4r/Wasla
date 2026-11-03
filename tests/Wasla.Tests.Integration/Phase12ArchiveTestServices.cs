@@ -29,7 +29,7 @@ internal static class Phase12ArchiveTestServices
     private sealed class ComponentGuard(ICurrentUser user) : IReportingAccessGuard
     {
         public Task<Result<ReportScope>> AuthorizeAsync(ReportActor actor, string permission,
-            Guid? practiceId, Guid? doctorId, CancellationToken cancellationToken)
+            Guid? practiceId, Guid? doctorId, CancellationToken cancellationToken, Wasla.Application.Features.Subscriptions.SubscriptionResource? resource = null)
             => Task.FromResult(user.IsAuthenticated && user.UserId is { } id && user.Permissions.Contains(permission)
                 ? Result<ReportScope>.Ok(new(actor, id, doctorId, null,
                     practiceId is { } practice ? [practice] : [], user.Permissions.ToArray()))

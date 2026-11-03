@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Repositories;
 using BuildingBlock.Application.Time;
@@ -21,7 +22,7 @@ internal sealed class MutatePrescriptionHandler(MedicationAccess access, IUnitOf
     {
         var permission = r.Mutation switch { PrescriptionMutation.StartCorrection or PrescriptionMutation.FinalizeCorrection or PrescriptionMutation.DiscardCorrection => PermissionNames.PrescriptionsCorrectOwn,
             PrescriptionMutation.Void => PermissionNames.PrescriptionsVoidOwn, _ => PermissionNames.PrescriptionsManageOwnDraft };
-        var actor = await access.ActorAsync(permission, UserType.Doctor, ct);
+        var actor = await access.ActorAsync(permission, UserType.Doctor, ct, new(r.PrescriptionId.HasValue ? SubscriptionResourceKind.Prescription : SubscriptionResourceKind.Encounter, r.PrescriptionId ?? r.EncounterId.GetValueOrDefault()));
         if (actor.IsFailure) return Result<PrescriptionStateResponse>.Fail(actor.Errors);
         if (!actor.Value.Permissions.Contains(PermissionNames.PrescriptionsViewOwn) ||
             r.NewMedication is not null && !actor.Value.Permissions.Contains(PermissionNames.DrugCatalogRequestsCreateOwn) ||

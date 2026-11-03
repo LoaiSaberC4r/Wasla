@@ -1,4 +1,5 @@
 using Wasla.Application.Features.Archives;
+using Wasla.Application.Features.Subscriptions;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -69,7 +70,7 @@ internal sealed class RefundPaymentCommandHandler(
             request.PracticeId,
             PermissionNames.DoctorPracticePaymentsRefundOwn,
             PermissionNames.PracticePaymentsRefund,
-            cancellationToken);
+            cancellationToken, new(SubscriptionResourceKind.Payment, request.PaymentId));
         if (actor.IsFailure)
         {
             return Result<RefundPaymentResponse>.Fail(FinancialWriteErrors.AccessDenied);
@@ -210,7 +211,7 @@ internal sealed class CorrectPaymentCommandHandler(
             request.PracticeId,
             PermissionNames.DoctorPracticePaymentsCorrectOwn,
             PermissionNames.PracticePaymentsCorrect,
-            cancellationToken);
+            cancellationToken, new(SubscriptionResourceKind.Payment, request.PaymentId));
         if (actor.IsFailure)
         {
             return Result<FinancialCorrectionResponse>.Fail(FinancialWriteErrors.AccessDenied);
@@ -317,7 +318,7 @@ internal sealed class CorrectRefundCommandHandler(
             request.PracticeId,
             PermissionNames.DoctorPracticePaymentsCorrectOwn,
             PermissionNames.PracticePaymentsCorrect,
-            cancellationToken);
+            cancellationToken, new(SubscriptionResourceKind.Refund, request.RefundId));
         if (actor.IsFailure)
         {
             return Result<FinancialCorrectionResponse>.Fail(FinancialWriteErrors.AccessDenied);

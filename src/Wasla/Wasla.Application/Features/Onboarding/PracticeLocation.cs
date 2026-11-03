@@ -143,7 +143,9 @@ internal sealed class GetMyDoctorPracticeLocationQueryHandler(
 
 internal sealed class UpsertMyDoctorPracticeLocationCommandHandler(
     IWaslaDataStore dataStore,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    ISubscriptionDataStore subscriptions,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService entitlements)
     : ICommandHandler<UpsertMyDoctorPracticeLocationCommand, DoctorPracticeLocationResponse>
 {
     public async Task<Result<DoctorPracticeLocationResponse>> Handle(
@@ -170,6 +172,7 @@ internal sealed class UpsertMyDoctorPracticeLocationCommandHandler(
             return Result<DoctorPracticeLocationResponse>.Fail(LocationErrors.Inactive);
         }
 
+        await subscriptions.AcquireSubscriptionCapacityLockAsync(doctor.Value.Id, cancellationToken);
         var location = await dataStore.FindDoctorPracticeLocationAsync(doctor.Value.Id, cancellationToken);
         if (location is null)
         {
@@ -178,6 +181,8 @@ internal sealed class UpsertMyDoctorPracticeLocationCommandHandler(
                 return Result<DoctorPracticeLocationResponse>.Fail(DoctorPracticeLocationErrors.RowVersionMustBeNull);
             }
 
+            var capacity = await entitlements.ValidateOnboardingPracticeCapacityAsync(doctor.Value.Id, cancellationToken);
+            if (capacity.IsFailure) return Result<DoctorPracticeLocationResponse>.Fail(capacity.Errors);
             var created = DoctorPracticeLocation.Create(
                 Guid.NewGuid(), doctor.Value.Id, request.GovernorateId, request.CityId, request.AreaId,
                 request.DetailedAddress, request.Latitude, request.Longitude);
@@ -188,7 +193,8 @@ internal sealed class UpsertMyDoctorPracticeLocationCommandHandler(
 
             location = created.Value;
             dataStore.Add(location);
-            DoctorPracticeCreation.AddDefaults(dataStore, location.Id, doctor.Value.ApplicationUserId);
+            var walkIn = await entitlements.EvaluateAsync(doctor.Value.Id, "CHECKIN_WALKIN", Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
+            DoctorPracticeCreation.AddDefaults(dataStore, location.Id, doctor.Value.ApplicationUserId, walkIn.IsSuccess);
         }
         else
         {

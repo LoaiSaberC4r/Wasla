@@ -114,8 +114,20 @@ public sealed class Phase18PartTwoMigrationTests(ITestOutputHelper output)
         var restore="WaslaPhase18PartTwoRestore_"+Guid.NewGuid().ToString("N");
         var masterBuilder=new SqlConnectionStringBuilder(connectionString){InitialCatalog="master"};
         await using var connection=new SqlConnection(masterBuilder.ConnectionString);await connection.OpenAsync(ct);using var command=connection.CreateCommand();command.CommandTimeout=120;
-        command.CommandText="SELECT CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultBackupPath')),CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultDataPath')),CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultLogPath'))";
+        // LocalDB can return NULL for these properties. Use the synthetic database's
+        // server-side file directories, which are already accessible to SQL Server.
+        command.CommandText="""
+            SELECT COALESCE(CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultBackupPath')),data.Directory),
+                   COALESCE(CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultDataPath')),data.Directory),
+                   COALESCE(CONVERT(nvarchar(4000),SERVERPROPERTY('InstanceDefaultLogPath')),logs.Directory)
+            FROM (SELECT TOP (1) LEFT(physical_name,LEN(physical_name)-CHARINDEX('/',REVERSE(REPLACE(physical_name,'\','/')))+1) AS Directory
+                  FROM sys.master_files WHERE database_id=DB_ID(@database) AND type=0 ORDER BY file_id) data
+            CROSS JOIN (SELECT TOP (1) LEFT(physical_name,LEN(physical_name)-CHARINDEX('/',REVERSE(REPLACE(physical_name,'\','/')))+1) AS Directory
+                        FROM sys.master_files WHERE database_id=DB_ID(@database) AND type=1 ORDER BY file_id) logs
+            """;
+        command.Parameters.AddWithValue("@database",database);
         string backupDirectory,dataDirectory,logDirectory;await using(var reader=await command.ExecuteReaderAsync(ct)){Assert.True(await reader.ReadAsync(ct));backupDirectory=reader.GetString(0);dataDirectory=reader.GetString(1);logDirectory=reader.GetString(2);}
+        command.Parameters.Clear();
         var file=Path.Combine(backupDirectory,database+"_"+Guid.NewGuid().ToString("N")+".bak");
         command.CommandText=$"BACKUP DATABASE [{database}] TO DISK=@file WITH COPY_ONLY,CHECKSUM";command.Parameters.AddWithValue("@file",file);await command.ExecuteNonQueryAsync(ct);
         command.CommandText="RESTORE VERIFYONLY FROM DISK=@file WITH CHECKSUM";await command.ExecuteNonQueryAsync(ct);command.Parameters.Clear();

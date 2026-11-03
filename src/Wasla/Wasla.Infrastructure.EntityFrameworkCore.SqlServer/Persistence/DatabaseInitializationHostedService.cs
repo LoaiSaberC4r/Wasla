@@ -55,6 +55,8 @@ internal sealed partial class DatabaseInitializationHostedService(
         {
             await scope.ServiceProvider.GetRequiredService<WaslaSecuritySeeder>()
                 .SeedAsync(cancellationToken);
+            await scope.ServiceProvider.GetRequiredService<Seeding.SubscriptionCatalogSeeder>()
+                .SeedAsync(cancellationToken);
             await scope.ServiceProvider.GetRequiredService<MedicalSpecializationSeeder>()
                 .SeedAsync(cancellationToken);
             await scope.ServiceProvider.GetRequiredService<EgyptLocationSeedCoordinator>()

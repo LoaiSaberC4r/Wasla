@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Domain.Results;
 using Microsoft.Extensions.Options;
@@ -30,12 +31,13 @@ public interface IMedicalRecordAccessPolicy
     Task<Result<MedicalRecordActor>> DoctorAsync(string permission, CancellationToken ct);
 }
 internal sealed class MedicalRecordAccessPolicy(IWaslaDataStore store, ICurrentUser current, ICurrentTreatmentReader treatments,
-    IOptions<MedicalRecordOptions> options, IFamilyMedicalAccessPolicy families) : IMedicalRecordAccessPolicy
+    IOptions<MedicalRecordOptions> options, IFamilyMedicalAccessPolicy families, ISubscriptionPermissionGuard subscriptions) : IMedicalRecordAccessPolicy
 {
     private async Task<UserAccessSnapshot?> SnapshotAsync(string permission, CancellationToken ct)
     {
         if (!current.IsAuthenticated || current.UserId is not { } id || !current.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase)) return null;
         var s = await store.GetAccessSnapshotAsync(id, ct);
+        if (s is not null && !await subscriptions.AllowedAsync(s, permission, ct)) return null;
         return s is { User.IsActive: true, User.IsFirstLogin: false } && s.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase) ? s : null;
     }
     public async Task<Result<MedicalRecordActor>> DoctorAsync(string permission, CancellationToken ct)

@@ -1,4 +1,5 @@
 using Wasla.Application.Features.Archives;
+using Wasla.Application.Features.Subscriptions;
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Abstraction.Persistence;
 using BuildingBlock.Application.Repositories;
@@ -42,7 +43,7 @@ internal sealed class CallNextCommandHandler(
             request.PracticeId,
             PermissionNames.DoctorPracticeTicketsCallOwn,
             PermissionNames.PracticeTicketsCall,
-            cancellationToken);
+            cancellationToken, deferSubscriptionCheck: true);
         if (actor.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(actor.Errors);
@@ -81,6 +82,9 @@ internal sealed class CallNextCommandHandler(
 
         if (idempotency.Value.ExistingTicketId is { } replayId)
         {
+            var replayAccess = await access.AuthorizeDoctorOrReceptionAsync(request.PracticeId,
+                PermissionNames.DoctorPracticeTicketsCallOwn, PermissionNames.PracticeTicketsCall, cancellationToken, new(SubscriptionResourceKind.Ticket, replayId));
+            if (replayAccess.IsFailure) return Result<TicketDetailsResponse>.Fail(replayAccess.Errors);
             return await DetailsAsync(replayId, cancellationToken);
         }
 
@@ -97,6 +101,9 @@ internal sealed class CallNextCommandHandler(
             return Result<TicketDetailsResponse>.Fail(TicketErrors.NotFound);
         }
 
+        var targetAccess = await access.AuthorizeDoctorOrReceptionAsync(request.PracticeId,
+            PermissionNames.DoctorPracticeTicketsCallOwn, PermissionNames.PracticeTicketsCall, cancellationToken, new(SubscriptionResourceKind.Ticket, nextId.Value));
+        if (targetAccess.IsFailure) return Result<TicketDetailsResponse>.Fail(targetAccess.Errors);
         var archivedReplay = await archiveReplay.TryAsync(actor.Value.ApplicationUserId, "CallNext", key.Value, TicketIdempotency.Fingerprint(request.PracticeId, businessDate), request.PracticeId, cancellationToken);
         if (archivedReplay != null) return archivedReplay;
 

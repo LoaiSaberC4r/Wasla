@@ -1,0 +1,113 @@
+{
+  "branch": "codex/commercial-subscriptions",
+  "baseCommit": "23ed851",
+  "build": {
+    "warnings": 0,
+    "errors": 0,
+    "log": "artifacts/subscription-final-build.log"
+  },
+  "unit": {
+    "passed": 418,
+    "failed": 0,
+    "skipped": 0,
+    "log": "artifacts/subscription-final-unit-tests.log"
+  },
+  "architecture": {
+    "passed": 26,
+    "failed": 0,
+    "skipped": 0,
+    "log": "artifacts/subscription-final-architecture-tests.log"
+  },
+  "integration": {
+    "discovered": 426,
+    "uniqueOutcomes": {
+      "Passed": 425,
+      "NotExecuted": 1
+    },
+    "notCovered": [],
+    "subscriptionSpecificPassed": 33,
+    "subscriptionSqlConcurrencyPassed": 6,
+    "unresolvedFailures": [],
+    "skipped": [
+      "Wasla.Tests.Integration.ExportBrowserSmokeTests.Automatic_download_renders_bilingual_reports_and_every_issued_prescription_status"
+    ],
+    "runs": [
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-subscriptions_net10.0_20261102220949.trx",
+        "runOutcome": "Failed",
+        "outcomes": {
+          "Passed": 293,
+          "NotExecuted": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-final-focused.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 63
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-final-directory.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-final-migration.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 1
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-final-diagnostics.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 45
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-remaining-0.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 29
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-remaining-1.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-remaining-2.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 22
+        }
+      },
+      {
+        "file": "tests/Wasla.Tests.Integration/TestResults/commercial-remaining-3.trx",
+        "runOutcome": "Completed",
+        "outcomes": {
+          "Passed": 15
+        }
+      },
+      {
+        "file": "artifacts/subscription-discovery-performance-test.log",
+        "outcomes": {
+          "Passed": 1
+        }
+      }
+    ],
+    "executionNote": "The monolithic SQL run aborted on inactivity after 293 passing cases. All remaining cases were run in isolated batches. The migration backup harness was corrected for nullable LocalDB default paths and rerun. The existing browser smoke test is opt-in (WASLA_RUN_BROWSER_TESTS=1) and was skipped."
+  },
+  "database": {
+    "engine": "SQL Server LocalDB",
+    "scope": "Dedicated test harness and disposable generated test databases",
+    "productionMigrationExecuted": false
+  }
+}

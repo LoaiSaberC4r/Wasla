@@ -60,7 +60,7 @@ internal sealed class ClinicalMutationService(ClinicalAccessService access, IUni
     public async Task<Result<EncounterDetailsResponse>> MutateAsync(Guid practiceId, Guid encounterId, string rowVersion,
         string permission, Func<MedicalEncounter, ClinicalActor, Result> mutate, CancellationToken ct)
     {
-        var actor = await access.DoctorAsync(practiceId, permission, ct);
+        var actor = await access.DoctorAsync(practiceId, permission, ct, encounterId);
         if (actor.IsFailure) return Result<EncounterDetailsResponse>.Fail(actor.Errors);
         // Mutation responses include notes and diagnoses, so reading both is also required.
         if (!access.HasPermission(PermissionNames.MedicalEncountersViewOwn) || !access.HasPermission(PermissionNames.DiagnosesViewOwn))
@@ -153,7 +153,7 @@ internal sealed class CreateFollowUpEligibilityHandler(ClinicalAccessService acc
 {
     public async Task<Result<FollowUpEligibilityResponse>> Handle(CreateFollowUpEligibilityCommand r, CancellationToken ct)
     {
-        var actor = await access.DoctorAsync(r.PracticeId, PermissionNames.FollowUpEligibilityCreateOwn, ct);
+        var actor = await access.DoctorAsync(r.PracticeId, PermissionNames.FollowUpEligibilityCreateOwn, ct, r.EncounterId);
         if (actor.IsFailure) return Result<FollowUpEligibilityResponse>.Fail(actor.Errors);
         var encounter = await unitOfWork.WriteRepository<MedicalEncounter>().GetByIdAsync(r.EncounterId, ct);
         if (encounter is null || encounter.DoctorId != actor.Value.DoctorId || encounter.DoctorPracticeId != r.PracticeId)

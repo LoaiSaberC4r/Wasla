@@ -483,3 +483,14 @@ Implementation
 ## License
 
 License and distribution terms are to be defined before public release.
+
+## Commercial subscriptions
+
+The backend includes configured Full Platform plans, approval-started Starter trials, manual subscription payments, immutable entitlement snapshots, capacity enforcement, manual changes/renewal, expiry continuity, and controlled legacy enrollment. Booking Only remains disabled until its tier prices and maximum practice count are approved and configured.
+
+- [Approved commercial Source of Truth addendum](SOURCE-OF-TRUTH-SUBSCRIPTION-COMMERCIAL-ADDENDUM.md)
+- [API contracts for Angular](docs/subscriptions/API-CONTRACT.md)
+- [Implementation, verification, and deployment report](SUBSCRIPTION-COMMERCIAL-IMPLEMENTATION-REPORT.md)
+- [Idempotent migration SQL](docs/subscriptions/CommercialSubscriptionFoundation.sql), following `20261028111250_DoctorMyPatientsReadIndexes`
+
+Configuration lives under `SubscriptionCatalog` in the API settings. Environment overrides use normal .NET keys, for example `SubscriptionCatalog__FullPlatform__Plans__0__MonthlyPrice`; update its explicitly configured annual price consistently. Existing subscriptions keep accepted snapshots. Production migrations remain operator-controlled; `DatabaseInitialization.ApplyMigrationsOnStartup` is unchanged and false.

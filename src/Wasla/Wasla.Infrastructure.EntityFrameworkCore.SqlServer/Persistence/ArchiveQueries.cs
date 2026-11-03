@@ -68,11 +68,14 @@ internal sealed class ArchiveQueries(WaslaDbContext db, IReportingAccessGuard gu
         if (!Valid(filter, actor, true)) return Result<ArchivePage<ArchivedTicketItem>>.Fail(ArchiveErrors.InvalidFilter);
         var scope = await guard.AuthorizeAsync(actor, Permission(actor, true), practice ?? filter.PracticeId, null, ct);
         if (scope.IsFailure) return Result<ArchivePage<ArchivedTicketItem>>.Fail(scope.Errors);
-        var binding = ArchiveTokens.Binding(new { type = "Ticket", actor, filter = filter with { Cursor = null }, practice }, scope.Value.ActorId, scope.Value.PracticeIds, scope.Value.Permissions);
+        var binding = ArchiveTokens.Binding(new { type = "Ticket", actor, filter = filter with { Cursor = null }, practice, scope.Value.CommercialReadScope }, scope.Value.ActorId, scope.Value.PracticeIds, scope.Value.Permissions);
         ArchiveCursor? cursor; try { cursor = tokens.Decode(filter.Cursor, binding); } catch (FormatException) { return Result<ArchivePage<ArchivedTicketItem>>.Fail(ArchiveErrors.InvalidCursor); }
         var watermark = cursor?.Watermark ?? await db.ArchiveProgress.AsNoTracking().Where(x => x.Id == "CommittedSequence").Select(x => x.Sequence).SingleOrDefaultAsync(ct);
         var asOf = cursor?.AsOfUtc ?? clock.UtcNow; var practices = scope.Value.PracticeIds.ToArray();
-        var query = from t in db.Set<ArchivedTicket>().AsNoTracking() join r in db.TicketRegistry.AsNoTracking() on t.Id equals r.Id
+        var readableTickets = db.Set<ArchivedTicket>().AsNoTracking();
+        if (scope.Value.CommercialReadScope is { } ticketReadScope)
+            readableTickets = readableTickets.Where(ticketReadScope.Predicate<ArchivedTicket>(t => t.CreatedOnUtc));
+        var query = from t in readableTickets join r in db.TicketRegistry.AsNoTracking() on t.Id equals r.Id
             where r.IsArchived && r.ArchiveSequence <= watermark && r.ArchivedAtUtc <= asOf && (actor == ReportActor.Patient ? t.PatientId == scope.Value.PatientId : practices.Contains(t.DoctorPracticeId))
             select new { Ticket = t, Registry = r };
         if (filter.FromBusinessDate != null) query = query.Where(x => x.Ticket.BusinessDate >= filter.FromBusinessDate);
@@ -97,13 +100,22 @@ internal sealed class ArchiveQueries(WaslaDbContext db, IReportingAccessGuard gu
         var patient = scope.Value.PatientId;
         if (actor == ReportActor.Patient && filter.PatientId is { } dependent && dependent != patient)
         { if (!await DependentAsync(scope.Value, dependent, ct)) return Result<ArchivePage<ArchivedReservationItem>>.Fail(ArchiveErrors.NotFound); patient = dependent; }
-        var binding = ArchiveTokens.Binding(new { type = "Reservation", actor, filter = filter with { Cursor = null }, practice }, scope.Value.ActorId, scope.Value.PracticeIds, scope.Value.Permissions);
+        var ticketPermission = actor == ReportActor.Doctor ? Phase18PartTwoPermissionNames.TicketsPractice : Phase18PartTwoPermissionNames.TicketsAssigned;
+        var ticketScope = scope.Value.CommercialReadScopes?.GetValueOrDefault("TICKET_QUEUE");
+        var exposeTicket = actor == ReportActor.Patient || actor is ReportActor.Doctor or ReportActor.Reception && scope.Value.Permissions.Contains(ticketPermission);
+        var linkedTickets = db.AllTickets.AsNoTracking();
+        if (ticketScope is not null) linkedTickets = linkedTickets.Where(ticketScope.Predicate<Ticket>(t => t.CreatedOnUtc));
+        var binding = ArchiveTokens.Binding(new { type = "Reservation", actor, filter = filter with { Cursor = null }, practice, scope.Value.CommercialReadScope, ticketScope, exposeTicket }, scope.Value.ActorId, scope.Value.PracticeIds, scope.Value.Permissions);
         ArchiveCursor? cursor; try { cursor = tokens.Decode(filter.Cursor, binding); } catch (FormatException) { return Result<ArchivePage<ArchivedReservationItem>>.Fail(ArchiveErrors.InvalidCursor); }
         var watermark = cursor?.Watermark ?? await db.ArchiveProgress.AsNoTracking().Where(x => x.Id == "CommittedSequence").Select(x => x.Sequence).SingleOrDefaultAsync(ct);
         var asOf = cursor?.AsOfUtc ?? clock.UtcNow; var practices = scope.Value.PracticeIds.ToArray();
-        var query = from t in db.Set<ArchivedReservation>().AsNoTracking() join r in db.ReservationRegistry.AsNoTracking() on t.Id equals r.Id
+        var readableReservations = db.Set<ArchivedReservation>().AsNoTracking();
+        if (scope.Value.CommercialReadScope is { } reservationReadScope)
+            readableReservations = readableReservations.Where(reservationReadScope.Predicate<ArchivedReservation>(r => r.CreatedOnUtc));
+        var query = from t in readableReservations join r in db.ReservationRegistry.AsNoTracking() on t.Id equals r.Id
             where r.IsArchived && r.ArchiveSequence <= watermark && r.ArchivedAtUtc <= asOf && (actor == ReportActor.Patient ? t.PatientId == patient : practices.Contains(t.DoctorPracticeId))
-            select new { Reservation = t, Registry = r, TicketId = db.TicketRegistry.Where(x => x.ReservationId == t.Id).Select(x => (Guid?)x.Id).FirstOrDefault() };
+            select new { Reservation = t, Registry = r, TicketId = exposeTicket
+                ? linkedTickets.Where(x => x.ReservationId == t.Id && x.DoctorId == t.DoctorId && x.DoctorPracticeId == t.DoctorPracticeId).Select(x => (Guid?)x.Id).FirstOrDefault() : null };
         if (filter.FromBusinessDate != null) query = query.Where(x => x.Reservation.BusinessDate >= filter.FromBusinessDate);
         if (filter.ToBusinessDate != null) query = query.Where(x => x.Reservation.BusinessDate <= filter.ToBusinessDate);
         if (filter.Status != null) { var status = Enum.Parse<ReservationStatus>(filter.Status); query = query.Where(x => x.Reservation.Status == status); }

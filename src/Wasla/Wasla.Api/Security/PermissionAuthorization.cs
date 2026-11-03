@@ -42,6 +42,7 @@ internal sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> op
 internal sealed class PermissionAuthorizationHandler(
     ICurrentUser currentUser,
     IWaslaDataStore dataStore,
+    Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptionGuard,
     Wasla.Application.Features.Notifications.INotificationAuthorizationAudit notificationAudit)
     : AuthorizationHandler<PermissionRequirement>
 {
@@ -76,10 +77,8 @@ internal sealed class PermissionAuthorizationHandler(
         else if (snapshot.User.UserType == UserType.Doctor &&
                  snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
         {
-            effective = effective.Where(permission => string.Equals(
-                permission,
-                PermissionNames.DoctorOnboardingViewOwn,
-                StringComparison.OrdinalIgnoreCase));
+            effective = effective.Where(permission => string.Equals(permission, PermissionNames.DoctorOnboardingViewOwn, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(permission, Wasla.Domain.Subscriptions.SubscriptionPermissionNames.ViewOwn, StringComparison.OrdinalIgnoreCase));
         }
 
         if (snapshot.IsRootSuperAdmin)
@@ -89,10 +88,24 @@ internal sealed class PermissionAuthorizationHandler(
 
         if (effective.Contains(requirement.Permission, StringComparer.OrdinalIgnoreCase))
         {
-            context.Succeed(requirement);
+            if (await subscriptionGuard.AllowedAsync(snapshot, requirement.Permission, CancellationToken.None, ContinuityResource(context)))
+                context.Succeed(requirement);
         }
         else if (requirement.Permission == PermissionNames.NotificationsDeliveriesRetry)
             await notificationAudit.RetryDeniedAsync(userId, CancellationToken.None);
+    }
+
+    private static Wasla.Application.Features.Subscriptions.SubscriptionResource? ContinuityResource(AuthorizationHandlerContext context)
+    {
+        if (context.Resource is not HttpContext http) return null;
+        foreach (var (key, kind) in new[]
+        {
+            ("reservationId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation),
+            ("ticketId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Ticket),
+            ("encounterId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Encounter)
+        })
+            if (http.Request.RouteValues.TryGetValue(key, out var value) && Guid.TryParse(value?.ToString(), out var id)) return new(kind, id);
+        return null;
     }
 }
 

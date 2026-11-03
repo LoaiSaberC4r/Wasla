@@ -15,6 +15,10 @@ namespace Wasla.Api.Controllers;
 [Authorize]
 public sealed class DoctorReceptionsController(ISender sender) : ControllerBase
 {
+    [HttpPut("{receptionId:guid}/account-state")]
+    [Permission(Wasla.Domain.Subscriptions.SubscriptionPermissionNames.ReceptionAccountStateOwn)]
+    public async Task<IActionResult> AccountState(Guid receptionId, ReceptionAccountStateRequest request, CancellationToken cancellationToken)
+        => (await sender.Send(new SetReceptionAccountStateCommand(receptionId, request.IsActive, request.RowVersion), cancellationToken)).ToIActionResult(cancellationToken);
     [HttpGet("assignable-permissions")]
     [Permission(PermissionNames.ReceptionAssignmentsManageOwn)]
     public async Task<IActionResult> AssignablePermissions(CancellationToken cancellationToken)
@@ -98,6 +102,8 @@ public sealed class DoctorReceptionsController(ISender sender) : ControllerBase
             receptionId, assignmentId, request.RowVersion), cancellationToken))
             .ToIActionResult(cancellationToken);
 }
+
+public sealed record ReceptionAccountStateRequest(bool IsActive, string RowVersion);
 
 public sealed record CreateDoctorReceptionRequest(
     string UserName,

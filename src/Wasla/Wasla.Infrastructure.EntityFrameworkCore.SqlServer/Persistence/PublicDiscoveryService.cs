@@ -348,8 +348,12 @@ internal sealed class PublicDiscoveryService(
            join user in dbContext.ApplicationUsers.AsNoTracking()
                on doctor.ApplicationUserId equals user.Id
            where doctor.ApprovalStatus == DoctorApprovalStatus.Approved && user.IsActive &&
+                 dbContext.DoctorSubscriptions.Any(s => s.DoctorId == doctor.Id &&
+                     (s.Status == Wasla.Domain.Subscriptions.SubscriptionStatus.Active || s.Status == Wasla.Domain.Subscriptions.SubscriptionStatus.Scheduled) && s.StartsAtUtc <= clock.UtcNow && clock.UtcNow < s.EndsAtUtc &&
+                     dbContext.SubscriptionFeatureSnapshots.Any(f => f.SubscriptionId == s.Id && f.FeatureCodeSnapshot == "PUBLIC_DISCOVERY") &&
+                     dbContext.SubscriptionFeatureSnapshots.Any(f => f.SubscriptionId == s.Id && f.FeatureCodeSnapshot == "ONLINE_BOOKING")) &&
                  dbContext.DoctorPractices.Any(practice =>
-                     practice.DoctorId == doctor.Id && practice.IsActive)
+                     practice.DoctorId == doctor.Id && practice.IsActive && dbContext.DoctorPracticeConfigurations.Any(c => c.DoctorPracticeId == practice.Id && c.AllowOnlineBooking))
            select doctor;
 
     private async Task<PublicCatalog> LoadCatalogAsync(

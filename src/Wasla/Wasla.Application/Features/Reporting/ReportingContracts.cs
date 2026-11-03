@@ -20,7 +20,9 @@ public sealed record ReportFilter(DateOnly? FromDate = null, DateOnly? ToDate = 
 public sealed record ReportingWindow(DateOnly FromDate, DateOnly ToDate, DateTime AsOfUtc,
     DateTime GeneratedAtUtc, string ReportTimeZoneId);
 public sealed record ReportScope(ReportActor Actor, Guid ActorId, Guid? DoctorId, Guid? PatientId,
-    IReadOnlyList<Guid> PracticeIds, IReadOnlyList<string> Permissions);
+    IReadOnlyList<Guid> PracticeIds, IReadOnlyList<string> Permissions,
+    [property: System.Text.Json.Serialization.JsonIgnore] Wasla.Application.Features.Subscriptions.SubscriptionReadScope? CommercialReadScope = null,
+    [property: System.Text.Json.Serialization.JsonIgnore] IReadOnlyDictionary<string, Wasla.Application.Features.Subscriptions.SubscriptionReadScope>? CommercialReadScopes = null);
 public sealed record ReportMetric(string MetricCode, string NameAr, string NameEn, decimal? Value,
     string Unit, decimal? Numerator, decimal? Denominator, long EligibleSampleCount,
     long ExcludedSampleCount, ReportDataStatus DataStatus, string? WarningCode = null, IReadOnlyList<ReportAction>? AvailableActions = null);
@@ -68,7 +70,7 @@ public sealed record KpiDefinition(string MetricCode, string NameAr, string Name
 public interface IReportingAccessGuard
 {
     Task<Result<ReportScope>> AuthorizeAsync(ReportActor actor, string permission, Guid? practiceId,
-        Guid? doctorId, CancellationToken cancellationToken);
+        Guid? doctorId, CancellationToken cancellationToken, Wasla.Application.Features.Subscriptions.SubscriptionResource? resource = null);
 }
 public interface IReportingQueryService
 {

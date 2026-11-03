@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using System.Text.Json;
 using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Application.Repositories;
@@ -15,9 +16,9 @@ using Wasla.Domain.Security;
 namespace Wasla.Application.Features.Medications;
 
 internal sealed record MedicationActor(Guid UserId, Guid? DoctorId, IReadOnlyList<string> Permissions);
-internal sealed class MedicationAccess(IWaslaDataStore store, ICurrentUser current)
+internal sealed class MedicationAccess(IWaslaDataStore store, ICurrentUser current, ISubscriptionPermissionGuard subscriptions)
 {
-    public async Task<Result<MedicationActor>> ActorAsync(string permission, UserType type, CancellationToken ct)
+    public async Task<Result<MedicationActor>> ActorAsync(string permission, UserType type, CancellationToken ct, SubscriptionResource? resource = null)
     {
         if (!current.IsAuthenticated || current.UserId is not { } id) return Result<MedicationActor>.Fail(MedicationErrors.AccessDenied("Prescription.AccessDenied"));
         var snapshot = await store.GetAccessSnapshotAsync(id, ct);
@@ -27,6 +28,7 @@ internal sealed class MedicationAccess(IWaslaDataStore store, ICurrentUser curre
             type == UserType.Doctor && (snapshot.DoctorId is null || snapshot.DoctorStatus != DoctorApprovalStatus.Approved) ||
             type == UserType.DrugCatalogManager && !snapshot.Roles.Contains(SystemRoleNames.DrugCatalogManager))
             return Result<MedicationActor>.Fail(MedicationErrors.AccessDenied(type == UserType.DrugCatalogManager ? "DrugCatalog.AccessDenied" : "Prescription.AccessDenied"));
+        if (!await subscriptions.AllowedAsync(snapshot, permission, ct, resource)) return Result<MedicationActor>.Fail(MedicationErrors.AccessDenied("Prescription.AccessDenied"));
         return Result<MedicationActor>.Ok(new(id, snapshot.DoctorId, snapshot.Permissions.Intersect(current.Permissions, StringComparer.OrdinalIgnoreCase).ToArray()));
     }
     public async Task<bool> OwnPracticeAsync(Guid doctorId, Guid practiceId, CancellationToken ct)

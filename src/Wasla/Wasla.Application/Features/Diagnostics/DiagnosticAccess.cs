@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using System.Linq.Expressions;
 using BuildingBlock.Application.Abstraction.Security;
 using BuildingBlock.Domain.Results;
@@ -14,9 +15,9 @@ internal sealed record DiagnosticActor(Guid UserId, Guid? DoctorId, Guid? Patien
 {
     public Guid OwnerId => DoctorId ?? PatientId ?? UserId;
 }
-internal sealed class DiagnosticAccess(IWaslaDataStore store, ICurrentUser current)
+internal sealed class DiagnosticAccess(IWaslaDataStore store, ICurrentUser current, ISubscriptionPermissionGuard subscriptions)
 {
-    public async Task<Result<DiagnosticActor>> ActorAsync(string permission, UserType type, CancellationToken ct)
+    public async Task<Result<DiagnosticActor>> ActorAsync(string permission, UserType type, CancellationToken ct, SubscriptionResource? resource = null)
     {
         if (!current.IsAuthenticated || current.UserId is not { } id) return Result<DiagnosticActor>.Fail(DiagnosticErrors.Denied());
         var snapshot = await store.GetAccessSnapshotAsync(id, ct);
@@ -32,6 +33,7 @@ internal sealed class DiagnosticAccess(IWaslaDataStore store, ICurrentUser curre
             patient = (await store.FindPatientAccountLinkAsync(id, ct))?.PatientId;
             if (patient is null) return Result<DiagnosticActor>.Fail(DiagnosticErrors.Denied());
         }
+        if (!await subscriptions.AllowedAsync(snapshot, permission, ct, resource)) return Result<DiagnosticActor>.Fail(DiagnosticErrors.Denied());
         return Result<DiagnosticActor>.Ok(new(id, snapshot.DoctorId, patient,
             LoginCommandHandler.EffectivePermissions(snapshot).Intersect(current.Permissions, StringComparer.OrdinalIgnoreCase).ToArray()));
     }

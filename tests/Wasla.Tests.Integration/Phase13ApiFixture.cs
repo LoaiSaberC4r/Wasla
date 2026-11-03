@@ -30,6 +30,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
     private const string Password = "Phase13TestPass123!";
     private readonly SqliteConnection? _sqlite;
     private readonly string? _sqlConnection;
+    private readonly Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor? _commands;
     private readonly string _medicalMediaRoot = Path.Combine(Path.GetTempPath(), "WaslaClinicalTests_" + Guid.NewGuid().ToString("N"));
     internal string MedicalMediaRoot => _medicalMediaRoot;
     public Guid PracticeId { get; } = Guid.NewGuid();
@@ -47,8 +48,9 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
     public string TicketUrl(Guid id) => $"/api/v1/practices/{PracticeId}/tickets/{id}";
     public string EncounterUrl(Guid id) => $"/api/v1/doctors/me/practices/{PracticeId}/encounters/{id}";
 
-    private Phase13ApiFixture(string? sqlConnection)
+    private Phase13ApiFixture(string? sqlConnection, Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor? commands = null)
     {
+        _commands = commands;
         if (sqlConnection is null) _sqlite = new SqliteConnection("Data Source=:memory:");
         else
         {
@@ -58,11 +60,11 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
         }
     }
 
-    public static async Task<Phase13ApiFixture> CreateAsync(bool sqlServer = false)
+    public static async Task<Phase13ApiFixture> CreateAsync(bool sqlServer = false, Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor? commands = null)
     {
         var connection = sqlServer ? Environment.GetEnvironmentVariable("WASLA_SQLSERVER_CONNECTION_STRING") : null;
         if (sqlServer) Assert.SkipWhen(string.IsNullOrWhiteSpace(connection), "WASLA_SQLSERVER_CONNECTION_STRING is required.");
-        var fixture = new Phase13ApiFixture(connection);
+        var fixture = new Phase13ApiFixture(connection, commands);
         if (fixture._sqlite is not null) await fixture._sqlite.OpenAsync(TestContext.Current.CancellationToken);
         using var client = fixture.CreateClient();
         try { await fixture.InitializeAsync(); }
@@ -100,6 +102,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
             {
                 if (_sqlite is not null) options.UseSqlite(_sqlite);
                 else options.UseSqlServer(_sqlConnection);
+                if (_commands is not null) options.AddInterceptors(_commands);
             });
             services.RemoveAll<IDateTimeProvider>();
             services.AddSingleton<IDateTimeProvider>(Clock);
@@ -167,6 +170,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
         db.ReceptionPracticeAssignmentPermissions.AddRange(PermissionNames.ReceptionAssignmentScoped.Select(permission =>
             new ReceptionPracticeAssignmentPermission(Guid.NewGuid(), ReceptionAssignmentId, SystemPermissionIds.For(permission), doctorUser.Id, now)));
         await db.SaveChangesAsync(ct);
+        await SubscriptionTestData.SeedAsync(scope.ServiceProvider, db, ct);
     }
 
     public async Task<HttpClient> ClientAsync(string actor)

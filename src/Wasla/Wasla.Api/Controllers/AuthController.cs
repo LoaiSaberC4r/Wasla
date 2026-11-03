@@ -55,7 +55,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
             ToUpload(request.PersonalIdFrontImage),
             ToUpload(request.PersonalIdBackImage),
             ToUpload(request.SyndicateCardFrontImage),
-            ToUpload(request.SyndicateCardBackImage)), cancellationToken);
+            ToUpload(request.SyndicateCardBackImage), request.Subscription), cancellationToken);
         return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -120,6 +120,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
 public sealed class RegisterDoctorRequest
 {
+    public Wasla.Application.Features.Subscriptions.SubscriptionSelection? Subscription { get; set; }
     public string UserName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;

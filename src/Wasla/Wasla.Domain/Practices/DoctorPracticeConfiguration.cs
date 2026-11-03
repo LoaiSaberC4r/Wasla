@@ -71,6 +71,8 @@ public sealed class DoctorPracticeConfiguration : AggregateRoot<Guid>, IAuditabl
             ? Result<DoctorPracticeConfiguration>.Fail(DoctorPracticeConfigurationErrors.Invalid)
             : Result<DoctorPracticeConfiguration>.Ok(new DoctorPracticeConfiguration(id, doctorPracticeId, actorId));
 
+    public void DisableWalkIn() => AllowWalkIn = false;
+
     public Result Update(
         bool allowOnlineBooking,
         bool allowWalkIn,

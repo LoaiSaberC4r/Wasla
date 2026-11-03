@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 
 using BuildingBlock.Application.Abstraction;
 using BuildingBlock.Application.Repositories;
@@ -22,7 +23,7 @@ internal sealed class DiagnosticOrderHandler(DiagnosticAccess access, IUnitOfWor
     public async Task<Result<DiagnosticRequestStateResponse>> Handle(DiagnosticOrderCommand r, CancellationToken ct)
     {
         var permission = r.Kind + "Requests." + (r.Mutation == DiagnosticOrderMutation.PostVisit ? "CreatePostVisitOwn" : r.Mutation == DiagnosticOrderMutation.Cancel ? "CancelOwn" : "ManageOwnDraft");
-        var actor = await access.ActorAsync(permission, UserType.Doctor, ct);
+        var actor = await access.ActorAsync(permission, UserType.Doctor, ct, new(r.RequestId.HasValue ? r.Kind == DiagnosticKind.Lab ? SubscriptionResourceKind.LabRequest : SubscriptionResourceKind.RadiologyRequest : SubscriptionResourceKind.Encounter, r.RequestId ?? r.EncounterId.GetValueOrDefault()));
         if (actor.IsFailure) return Result<DiagnosticRequestStateResponse>.Fail(actor.Errors);
         if ((r.Item?.NewTest is not null || r.Items?.Any(i => i.NewTest is not null) == true) && !actor.Value.Permissions.Contains(r.Kind + "CatalogRequests.CreateOwn"))
             return Result<DiagnosticRequestStateResponse>.Fail(DiagnosticErrors.Denied());

@@ -8,9 +8,9 @@ namespace Wasla.Application.Features.DoctorPatients;
 public sealed class DoctorOwnHistoricalReadPolicy(DoctorPatientRelationshipPolicy relationships, IDoctorPatientReadService reader)
 {
     public async Task<Result<DoctorOwnReadContext>> AuthorizeOwnReadAsync(Guid practiceId, string permission,
-        Guid? patientId, CancellationToken ct)
+        Guid? patientId, CancellationToken ct, Wasla.Application.Features.Subscriptions.SubscriptionResource? resource = null)
     {
-        var actor = await relationships.ActorAsync(permission, ct);
+        var actor = await relationships.ActorAsync(permission, ct, resource);
         if (actor.IsFailure) return Result<DoctorOwnReadContext>.Fail(actor.Errors);
         var practice = await reader.PracticeScopeAsync(practiceId, ct);
         if (practice is null || practice.DoctorId != actor.Value.DoctorId)

@@ -49,9 +49,9 @@ public sealed class DoctorPatientPolicyTests
     [Fact]
     public void New_permissions_are_unique_append_only_and_have_deterministic_ids()
     {
-        Assert.Equal(PermissionNames.DoctorPatientDefaults, PermissionNames.All.TakeLast(3));
+        Assert.Equal(PermissionNames.DoctorPatientDefaults, PermissionNames.All.Skip(PermissionNames.All.Count - Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count - 3).Take(3));
         Assert.Equal(PermissionNames.All.Count, PermissionNames.All.Distinct(StringComparer.Ordinal).Count());
-        var first = PermissionNames.All.Count - 2;
+        var first = PermissionNames.All.Count - Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count - 2;
         Assert.Equal(Guid.Parse($"20000000-0000-0000-0000-{first:D12}"), SystemPermissionIds.For(PermissionNames.DoctorPatientsViewOwn));
     }
     [Fact]
@@ -77,7 +77,8 @@ public sealed class DoctorPatientPolicyTests
         proxy.Practice = DoctorPractice.Create(Guid.NewGuid(), doctor, "عيادة", "Practice", 1, 1, 1, "Address", 30, 31, user.Id).Value;
         var current = DispatchProxy.Create<ICurrentUser, PolicyProxy>(); ((PolicyProxy)current).Snapshot = proxy.Snapshot;
         var reader = DispatchProxy.Create<IDoctorPatientReadService, PolicyProxy>(); ((PolicyProxy)reader).Parent = proxy;
-        var policy = new DoctorPatientRelationshipPolicy(store, current, reader);
+        var subscriptions = DispatchProxy.Create<Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard, PolicyProxy>();
+        var policy = new DoctorPatientRelationshipPolicy(store, current, reader, subscriptions);
         return (policy, new(policy, reader), proxy);
     }
     public class PolicyProxy : DispatchProxy
@@ -88,6 +89,7 @@ public sealed class DoctorPatientPolicyTests
         public PolicyProxy? Parent { get; set; }
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) => targetMethod?.Name switch
         {
+            "AllowedAsync" => Task.FromResult(true),
             "get_IsAuthenticated" => true, "get_UserId" => (Guid?)Snapshot.User.Id,
             "get_Permissions" => Grants, "GetAccessSnapshotAsync" => Task.FromResult<UserAccessSnapshot?>(Snapshot),
             "FindDoctorPracticeAsync" => Task.FromResult<DoctorPractice?>(Practice),

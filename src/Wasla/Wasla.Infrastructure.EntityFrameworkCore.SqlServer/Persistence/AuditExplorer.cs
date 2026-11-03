@@ -73,6 +73,39 @@ internal sealed class AuditExplorer(WaslaDbContext db,IReportingAccessGuard guar
             list.Add(new("MedicalAccess",from h in db.Set<MedicalRecordAccessAudit>() join e in db.MedicalEncounters on h.TargetEncounterId equals e.Id select new Row { Id = h.Id, Time = h.OccurredAtUtc, Practice = e.DoctorPracticeId, Actor = h.ActorApplicationUserId, Entity = h.TargetEncounterId, Action = "MedicalAccess."+h.Action, Type = "MedicalAccess" }));
             list.Add(new("TreatmentAccess",from h in db.Set<MedicalRecordAccessAudit>() join r in db.TicketRegistry on h.RequestingTicketId equals r.Id where h.TargetEncounterId==null select new Row { Id = h.Id, Time = h.OccurredAtUtc, Practice = r.DoctorPracticeId, Actor = h.ActorApplicationUserId, Entity = h.RequestingTicketId, Action = "MedicalAccess."+h.Action, Type = "MedicalAccess" }));
         }
+        if (actor is ReportActor.Doctor or ReportActor.Reception)
+        {
+            var tickets = db.AllTickets.AsNoTracking();
+            var reservations = db.AllReservations.AsNoTracking();
+            var scopes = scope.CommercialReadScopes;
+            if (scopes?.GetValueOrDefault("TICKET_QUEUE") is { } ticketScope)
+                tickets = tickets.Where(ticketScope.Predicate<Wasla.Domain.Tickets.Ticket>(t => t.CreatedOnUtc));
+            else tickets = tickets.Where(_ => false);
+            if (scopes?.GetValueOrDefault("RESERVATION_MANAGEMENT") is { } reservationScope)
+                reservations = reservations.Where(reservationScope.Predicate<Wasla.Domain.Reservations.Reservation>(r => r.CreatedOnUtc));
+            else reservations = reservations.Where(_ => false);
+            for (var i = 0; i < list.Count; i++)
+            {
+                var source = list[i];
+                var query = source.Query;
+                if (source.Name == "TicketHistory") query = query.Where(r => tickets.Any(t => t.Id == r.Entity));
+                else if (source.Name == "ReservationHistory") query = query.Where(r => reservations.Any(t => t.Id == r.Entity));
+                else if (source.Name == "Archive") query = query.Where(r =>
+                    (r.Type != "Ticket" || tickets.Any(t => t.Id == r.Entity)) &&
+                    (r.Type != "Reservation" || reservations.Any(t => t.Id == r.Entity)));
+                var feature = source.Name switch
+                {
+                    "Handover" => "RECEPTION_HANDOVER",
+                    "Export" => "PDF_XLSX_EXPORT",
+                    "PaymentCorrection" or "Refund" or "RefundCorrection" => "PAYMENT_COLLECTION",
+                    _ => null
+                };
+                if (feature is not null)
+                    query = scopes?.GetValueOrDefault(feature) is { } readScope
+                        ? query.Where(readScope.Predicate<Row>(r => r.Time)) : query.Where(_ => false);
+                list[i] = source with { Query = query };
+            }
+        }
         return list;
     }
     private static IQueryable<Row> Scoped(IQueryable<Row> query,ReportScope scope)
@@ -87,7 +120,7 @@ internal sealed class AuditExplorer(WaslaDbContext db,IReportingAccessGuard guar
             actor==ReportActor.Reception&&filter.ActorId!=null&&filter.ActorId!=user.UserId||sensitive&&actor==ReportActor.SuperAdmin&&(string.IsNullOrWhiteSpace(reason)||reason.Length>1000))return Result<ArchivePage<SafeAuditEvent>>.Fail(ArchiveErrors.InvalidFilter);
         var scope=await Access(actor,practice??filter.PracticeId,sensitive,ct);if(scope.IsFailure)return Result<ArchivePage<SafeAuditEvent>>.Fail(scope.Errors);
         if(filter.ActorId is {} selected&&!await db.ApplicationUsers.AnyAsync(x=>x.Id==selected&&x.UserType!=UserType.Patient,ct))return Result<ArchivePage<SafeAuditEvent>>.Fail(ArchiveErrors.InvalidFilter);
-        var binding=ArchiveTokens.Binding(new{actor,practice,sensitive,filter=filter with{Cursor=null}},scope.Value.ActorId,scope.Value.PracticeIds,scope.Value.Permissions);
+        var binding=ArchiveTokens.Binding(new{actor,practice,sensitive,filter=filter with{Cursor=null},scope.Value.CommercialReadScopes},scope.Value.ActorId,scope.Value.PracticeIds,scope.Value.Permissions);
         ArchiveCursor? cursor;try{cursor=tokens.Decode(filter.Cursor,binding);}catch(FormatException){return Result<ArchivePage<SafeAuditEvent>>.Fail(ArchiveErrors.InvalidCursor);}
         var asOf=cursor?.AsOfUtc??clock.UtcNow;await tokens.InitialiseEventsAsync(ct);
         if(sensitive&&actor==ReportActor.SuperAdmin){db.ArchiveAuditEvents.Add(new("RestrictedAuditSearched","ArchiveControl",null,null,scope.Value.ActorId,clock.UtcNow,reasonHash:Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(reason!.Trim())))));await db.SaveChangesAsync(ct);}

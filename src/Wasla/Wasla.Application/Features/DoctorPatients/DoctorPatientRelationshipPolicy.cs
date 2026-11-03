@@ -9,9 +9,10 @@ using Wasla.Domain.Security;
 namespace Wasla.Application.Features.DoctorPatients;
 
 public sealed class DoctorPatientRelationshipPolicy(IWaslaDataStore store, ICurrentUser current,
-    IDoctorPatientReadService reader)
+    IDoctorPatientReadService reader, Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptions)
 {
-    public async Task<Result<DoctorPatientActor>> ActorAsync(string permission, CancellationToken ct)
+    public async Task<Result<DoctorPatientActor>> ActorAsync(string permission, CancellationToken ct,
+        Wasla.Application.Features.Subscriptions.SubscriptionResource? resource = null)
     {
         if (!current.IsAuthenticated || current.UserId is not { } userId)
             return Result<DoctorPatientActor>.Fail(ClinicalErrors.AccessDenied);
@@ -22,6 +23,7 @@ public sealed class DoctorPatientRelationshipPolicy(IWaslaDataStore store, ICurr
         var permissions = LoginCommandHandler.EffectivePermissions(snapshot)
             .Intersect(current.Permissions, StringComparer.OrdinalIgnoreCase).ToArray();
         var actor = new DoctorPatientActor(userId, snapshot.DoctorId.Value, permissions);
+        if (!await subscriptions.AllowedAsync(snapshot, permission, ct, resource)) return Result<DoctorPatientActor>.Fail(ClinicalErrors.AccessDenied);
         return actor.Has(permission) ? Result<DoctorPatientActor>.Ok(actor)
             : Result<DoctorPatientActor>.Fail(ClinicalErrors.AccessDenied);
     }

@@ -159,6 +159,8 @@ public sealed class Phase12TicketRefundProjectionTests
         services.AddBuildingBlockDbContext<WaslaWritePersistence, WaslaDbContext>();
         services.AddScoped(_ => context);
         services.AddWaslaApplication();
+        services.AddScoped<Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard>(_ => new SubscriptionTestData.EntitledPermissions());
+        services.AddScoped<Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService>(_ => new SubscriptionTestData.EntitledService());
         services.AddScoped<ICurrentUser>(_ => new DoctorCurrentUser(actorId));
         services.AddScoped<IReceptionPracticeAuthorizationService, UnusedReceptionAuthorization>();
         services.AddSingleton<IDateTimeProvider>(new FixedClock(now.AddMinutes(2)));

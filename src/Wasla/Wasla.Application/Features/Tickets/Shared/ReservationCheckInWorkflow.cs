@@ -1,3 +1,4 @@
+using Wasla.Application.Features.Subscriptions;
 using Wasla.Application.Features.Archives;
 using BuildingBlock.Application.Repositories;
 using BuildingBlock.Application.Time;
@@ -44,14 +45,14 @@ internal sealed class ReservationCheckInWorkflow(
         var permission = force
             ? PermissionNames.PracticeTicketsForceCheckIn
             : PermissionNames.PracticeTicketsCheckIn;
-        var actor = await access.AuthorizeReceptionAsync(practiceId, permission, cancellationToken);
+        var actor = await access.AuthorizeReceptionAsync(practiceId, permission, cancellationToken, new(SubscriptionResourceKind.Reservation, reservationId));
         if (actor.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(actor.Errors);
         }
 
         var paymentAccess = await access.AuthorizeReceptionAsync(
-            practiceId, PermissionNames.PracticeTicketsRecordPayment, cancellationToken);
+            practiceId, PermissionNames.PracticeTicketsRecordPayment, cancellationToken, new(SubscriptionResourceKind.Reservation, reservationId));
         if (paymentAccess.IsFailure)
         {
             return Result<TicketDetailsResponse>.Fail(paymentAccess.Errors);

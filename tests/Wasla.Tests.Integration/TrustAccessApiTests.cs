@@ -438,6 +438,9 @@ public sealed class TrustAccessApiTests
         AddFile(content, "PersonalIdFrontImage", "front.png");
         AddFile(content, "PersonalIdBackImage", "back.png");
         AddFile(content, "SyndicateCardFrontImage", "syndicate.png");
+        content.Add(new StringContent("FULL_PLATFORM"), "Subscription.ProductCode");
+        content.Add(new StringContent("STARTER"), "Subscription.PlanCode");
+        content.Add(new StringContent("STARTER_FREE_TRIAL_20D"), "Subscription.OfferCode");
         return content;
     }
 
@@ -547,6 +550,7 @@ public sealed class TrustAccessApiTests
                     ["DatabaseInitialization:ApplyMigrationsOnStartup"] = "false",
                     ["DatabaseInitialization:ApplySeedingOnStartup"] = "false",
                     ["EmailOutbox:Enabled"] = "false",
+                    ["SubscriptionCatalog:BackgroundProcessing:Enabled"] = "false",
                     ["RootSuperAdmin:UserName"] = "root",
                     ["RootSuperAdmin:Email"] = "root@example.test",
                     ["RootSuperAdmin:NameAr"] = "المشرف الجذر",
@@ -630,6 +634,7 @@ public sealed class TrustAccessApiTests
             db.SuperAdmins.Add(root);
             db.UserRoles.Add(new UserRole(Guid.NewGuid(), rootUser.Id, SystemRoleIds.SuperAdmin));
             await db.SaveChangesAsync();
+            await SubscriptionTestData.SeedAsync(scope.ServiceProvider, db, TestContext.Current.CancellationToken);
         }
     }
 }

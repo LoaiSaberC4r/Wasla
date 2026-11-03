@@ -195,7 +195,8 @@ internal sealed class ListDoctorPracticeSegmentsQueryHandler(IWaslaDataStore dat
     }
 }
 
-internal sealed class CreateDoctorPracticeSegmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class CreateDoctorPracticeSegmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptions)
     : ICommandHandler<CreateDoctorPracticeSegmentCommand, DoctorPracticeSegmentResponse>
 {
     public async Task<Result<DoctorPracticeSegmentResponse>> Handle(
@@ -209,6 +210,12 @@ internal sealed class CreateDoctorPracticeSegmentCommandHandler(IWaslaDataStore 
             return Result<DoctorPracticeSegmentResponse>.Fail(access.Errors);
         }
 
+        if (request.Priority != 0 || request.ReservedDailyQuota.HasValue || request.QuotaReleaseBeforeMinutes.HasValue)
+        {
+            var advanced = await subscriptions.EvaluateAsync(access.Value.Practice.DoctorId, "ADVANCED_SEGMENTS_PRIORITY_QUOTA",
+                Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
+            if (advanced.IsFailure) return Result<DoctorPracticeSegmentResponse>.Fail(advanced.Errors);
+        }
         var segment = DoctorPracticeSegment.Create(
             Guid.NewGuid(), request.PracticeId, request.NameAr, request.NameEn, request.Priority,
             request.ReservedDailyQuota, request.QuotaReleaseBeforeMinutes, actorId: access.Value.ActorId);
@@ -223,7 +230,8 @@ internal sealed class CreateDoctorPracticeSegmentCommandHandler(IWaslaDataStore 
     }
 }
 
-internal sealed class UpdateDoctorPracticeSegmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class UpdateDoctorPracticeSegmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser,
+    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptions)
     : ICommandHandler<UpdateDoctorPracticeSegmentCommand, DoctorPracticeSegmentResponse>
 {
     public async Task<Result<DoctorPracticeSegmentResponse>> Handle(
@@ -250,6 +258,12 @@ internal sealed class UpdateDoctorPracticeSegmentCommandHandler(IWaslaDataStore 
             return Result<DoctorPracticeSegmentResponse>.Fail(supplied.Errors);
         }
 
+        if (request.Priority != segment.Priority || request.ReservedDailyQuota != segment.ReservedDailyQuota || request.QuotaReleaseBeforeMinutes != segment.QuotaReleaseBeforeMinutes)
+        {
+            var advanced = await subscriptions.EvaluateAsync(access.Value.Practice.DoctorId, "ADVANCED_SEGMENTS_PRIORITY_QUOTA",
+                Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
+            if (advanced.IsFailure) return Result<DoctorPracticeSegmentResponse>.Fail(advanced.Errors);
+        }
         var updated = segment.Update(
             request.NameAr, request.NameEn, request.Priority, request.ReservedDailyQuota,
             request.QuotaReleaseBeforeMinutes, request.IsActive, access.Value.ActorId);
