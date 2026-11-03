@@ -51,6 +51,7 @@ The machine-readable [current evidence](docs/subscriptions/pr36-test-evidence.js
 | Release build | Zero warnings and errors |
 | Unit tests | 428 passed |
 | Architecture tests | 26 passed |
+| BuildingBlock foundation and frozen main API compatibility | 323 passed |
 | Existing focused subscription/archive/historical regression run | 52 passed |
 | Complete integration coverage | All 453 discovered cases accounted for: 452 passed across exhaustive batches/isolated runs, one existing opt-in browser smoke test skipped; zero uncovered or unresolved failures |
 | All subscription integration cases | 60 passed, including 27 new cases |
@@ -60,7 +61,7 @@ The machine-readable [current evidence](docs/subscriptions/pr36-test-evidence.js
 | Separate large discovery test | Passed, 11 minutes 39 seconds |
 | Separate large patient-directory test | Passed, 5 minutes 52 seconds |
 | Separate migration/backfill/backup/restore test | Passed, 1 minute 48 seconds |
-| Updated GitHub Actions head | Pending |
+| GitHub Actions on the hardening commit | [CI run 72 passed](https://github.com/LoaiSaberC4r/Wasla/actions/runs/41621780963) on `e9370390bbc62b2f60de46f12861e3b277cae105`: 428 unit, 392 integration, 60 SQL concurrency, 26 architecture and 323 BuildingBlock tests passed; one existing opt-in browser smoke skipped; zero warnings/errors. Latest branch checks: [PR #36](https://github.com/LoaiSaberC4r/Wasla/pull/36/checks). |
 
 Focused new scenarios cover A01–A10 and B01–B11 through `SubscriptionArchiveAuthorizationTests`, `SubscriptionReservationCapabilityTests`, `SubscriptionPermissionMappingTests` and the existing archive/continuity suites. They exercise Booking Only denials and accurate flags, owned Reservation reads, expired Full Platform history, active Booking Only with proven old Full Platform coverage, legacy supersession, cross-Doctor/assignment concealment, account governance, Patient/Guardian rights, SuperAdmin metadata, current-grant revocation and replay behavior. Cross-feature HTTP tests cover Starter expenses/reports, Professional comparison/insights and Premium access.
 
@@ -92,7 +93,7 @@ Existing databases must rerun `SubscriptionCatalogSeeder` through the existing c
 
 ## F. Merge recommendation
 
-`NOT_READY_FOR_MERGE` until the updated-head GitHub Actions run completes. Local implementation, security review, build and exhaustive integration reconciliation are complete with no unresolved P0/P1 code findings. The remaining verification gate is the updated commit's CI: open [PR #36 checks](https://github.com/LoaiSaberC4r/Wasla/pull/36/checks) and require the CI workflow to succeed. This recommendation will be updated after that run. Do not merge automatically.
+`READY_FOR_MERGE`. No unresolved P0/P1 findings remain in the reviewed scope. Local implementation, security review, build and exhaustive integration reconciliation are complete. [CI run 72](https://github.com/LoaiSaberC4r/Wasla/actions/runs/41621780963) passed on the functional hardening commit `e9370390bbc62b2f60de46f12861e3b277cae105`, with all 1,229 executed tests passing and one existing opt-in browser smoke skipped. This evidence update changes documentation only. Require the [latest PR #36 checks](https://github.com/LoaiSaberC4r/Wasla/pull/36/checks) to remain green before merging. Leave the PR unmerged for final review; do not deploy automatically.
 
 ## Changed-file review
 
