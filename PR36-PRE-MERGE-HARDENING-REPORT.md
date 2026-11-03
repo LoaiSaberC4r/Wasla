@@ -95,6 +95,31 @@ Existing databases must rerun `SubscriptionCatalogSeeder` through the existing c
 
 `READY_FOR_MERGE`. No unresolved P0/P1 findings remain in the reviewed scope. Local implementation, security review, build and exhaustive integration reconciliation are complete. [CI run 72](https://github.com/LoaiSaberC4r/Wasla/actions/runs/41621780963) passed on the functional hardening commit `e9370390bbc62b2f60de46f12861e3b277cae105`, with all 1,229 executed tests passing and one existing opt-in browser smoke skipped. This evidence update changes documentation only. Require the [latest PR #36 checks](https://github.com/LoaiSaberC4r/Wasla/pull/36/checks) to remain green before merging. Leave the PR unmerged for final review; do not deploy automatically.
 
+## Archived clinical operational continuity follow-up
+
+This targeted follow-up starts from `17077a41b9fa5226a230c378d341bd0958ebe977` on the same branch. The full-suite counts and CI runs above describe the preceding hardening commits; they are not a claim that the full suite was rerun for this hotfix.
+
+The independent-review finding is confirmed: `CommitmentAsync` followed clinical resources through their Encounter into live-only Ticket/Reservation queries. After the Archive Engine moved those records, the lookup returned null and denied an otherwise eligible clinical operation. Three query sources now use the existing SQL-composable `AllTickets` / `AllReservations` projections. Linked commitments retain the original Reservation creation time, direct commitments retain the original Ticket creation time, and both retain the original Doctor ID. Missing original resources still return null. `ReadCommitmentAsync` already used historical projections for Ticket/Reservation reads and remains unchanged, including its distinct Ticket creation-time coverage semantics.
+
+| Changed file | Correction / reason |
+|---|---|
+| `src/Wasla/Wasla.Infrastructure.EntityFrameworkCore.SqlServer/Persistence/SubscriptionDataStore.cs` | Replace only the three live commitment query sources; keep the existing projection, clinical resource chain, left join and server-side execution. |
+| `tests/Wasla.Tests.Integration/SubscriptionArchivedClinicalContinuityTests.cs` | Add the requested focused SQL Server cases using the existing fixture, clock, production authorization/lifecycle services and Archive Engine. |
+| `PR36-PRE-MERGE-HARDENING-REPORT.md` | Record this finding, correction and targeted verification separately from the prior full-suite evidence. |
+
+Release solution build (`--configuration Release --no-restore`): passed, **zero warnings/errors**. Only `FullyQualifiedName~SubscriptionArchivedClinicalContinuityTests` was executed, with `--no-build --no-restore` and `xUnit.MaxParallelThreads=2`: **5 passed, 0 failed, 0 skipped**, in 1 minute 35 seconds against disposable SQL Server LocalDB databases.
+
+| Focused scenario | Result |
+|---|---|
+| Archived linked Ticket / Reservation / Encounter preserve the original Reservation commitment | Passed |
+| Archived direct Ticket / Encounter preserve the original Ticket commitment; nonexistent resources remain null | Passed |
+| Eligible archived clinical amendment succeeds through the HTTP authorization pipeline after expiry | Passed; foreign Doctor and wrong Practice denied, fresh archived-Ticket mutation remains 404, operational capability flags remain false, and new Ticket/Reservation creation remains forbidden |
+| Commitment exactly at expiry and one second after expiry | Both passed; production continuity guard and amendment endpoint deny access without changing the Encounter |
+
+Evidence: `artifacts/pr36-clinical-build.log`, `artifacts/pr36-clinical-tests-final.log`, and `tests/Wasla.Tests.Integration/TestResults/pr36-archived-clinical-final.trx`. Initial new-test setup was corrected to include the required Patient ID and to assert the existing 404 contract for a fresh archived-Ticket mutation; no existing assertion or production restriction was weakened.
+
+**The full Integration Suite was NOT rerun for this follow-up.** No broader subscription, unit, architecture, concurrency or previous hardening batches were run. The existing automatic PR workflow is unchanged; no full workflow was manually launched or restarted. Merge remains subject to the latest PR checks and final review. No business rule, permission, plan, feature entitlement, Patient/Guardian policy, domain/state machine, Archive Engine, API contract, schema, migration, deployment configuration or unrelated feature changed. No production deployment or merge was performed.
+
 ## Changed-file review
 
 | File | Change / reason | Related business rule |

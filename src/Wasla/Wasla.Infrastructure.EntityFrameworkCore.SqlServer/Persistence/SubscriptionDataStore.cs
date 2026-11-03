@@ -38,7 +38,7 @@ public sealed class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionData
     public async Task<SubscriptionCommitment?> CommitmentAsync(SubscriptionResource resource, CancellationToken ct)
     {
         if (resource.Kind == SubscriptionResourceKind.Reservation)
-            return await db.Reservations.Where(r => r.Id == resource.Id).Select(r => new SubscriptionCommitment(r.DoctorId, r.CreatedOnUtc)).SingleOrDefaultAsync(ct);
+            return await db.AllReservations.AsNoTracking().Where(r => r.Id == resource.Id).Select(r => new SubscriptionCommitment(r.DoctorId, r.CreatedOnUtc)).SingleOrDefaultAsync(ct);
         Guid? ticketId = resource.Kind == SubscriptionResourceKind.Ticket ? resource.Id : null;
         if (resource.Kind == SubscriptionResourceKind.Payment)
             ticketId = await db.Payments.Where(p => p.Id == resource.Id).Select(p => (Guid?)p.TicketId).SingleOrDefaultAsync(ct);
@@ -60,8 +60,8 @@ public sealed class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionData
             };
             ticketId = await db.MedicalEncounters.Where(e => e.Id == encounterId).Select(e => (Guid?)e.TicketId).SingleOrDefaultAsync(ct);
         }
-        return await (from t in db.Tickets
-            join r in db.Reservations on t.ReservationId equals r.Id into reservations
+        return await (from t in db.AllTickets
+            join r in db.AllReservations on t.ReservationId equals r.Id into reservations
             from r in reservations.DefaultIfEmpty()
             where t.Id == ticketId
             select new SubscriptionCommitment(t.DoctorId, r == null ? t.CreatedOnUtc : r.CreatedOnUtc)).SingleOrDefaultAsync(ct);
