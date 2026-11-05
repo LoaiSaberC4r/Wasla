@@ -1,0 +1,288 @@
+{
+  "baseSha": "4c2ab2afcc86a3923b593aa4c06a3a6eff4e2ee4",
+  "branch": "codex/commercial-subscriptions-v1.2",
+  "sdk": "10.0.401",
+  "configuration": "Release",
+  "sqlProvider": "SQL Server LocalDB MSSQLLocalDB",
+  "integrationLatestOutcomeCoverage": {
+    "Passed": 489
+  },
+  "integrationRuns": [
+    {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-full_net10.0_20261105153241.trx",
+      "sha256": "b8d7f14ca08f191ff1a428c0509402de5c0d290c6e4305b8a9b79577688a1a38",
+      "times": {
+        "creation": "2026-11-05T14:40:05.8423433+02:00",
+        "queuing": "2026-11-05T14:40:05.8423438+02:00",
+        "start": "2026-11-05T14:39:30.5599104+02:00",
+        "finish": "2026-11-05T15:32:40.2930621+02:00"
+      },
+      "outcomes": {
+        "Passed": 485,
+        "Failed": 2,
+        "NotExecuted": 1
+      }
+    },
+    {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-browser_net10.0_20261105180934.trx",
+      "sha256": "01680930e714276e58664848a166a6cbb5b2d76d69ce99d5cc4846590627726a",
+      "times": {
+        "creation": "2026-11-05T18:09:33.9828162+02:00",
+        "queuing": "2026-11-05T18:09:33.9828165+02:00",
+        "start": "2026-11-05T18:09:25.5790880+02:00",
+        "finish": "2026-11-05T18:09:33.9938040+02:00"
+      },
+      "outcomes": {
+        "Failed": 1
+      }
+    },
+    {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-final-auth_net10.0_20261105181042.trx",
+      "sha256": "4c0f96e345a3c4ba639084c95cf892c4905bfdb1934f1f3fb4b956d439c07281",
+      "times": {
+        "creation": "2026-11-05T18:10:11.6961416+02:00",
+        "queuing": "2026-11-05T18:10:11.6961421+02:00",
+        "start": "2026-11-05T18:09:25.5794401+02:00",
+        "finish": "2026-11-05T18:10:42.5722936+02:00"
+      },
+      "outcomes": {
+        "Passed": 6
+      }
+    },
+    {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-browser-final_net10.0_20261105181214.trx",
+      "sha256": "f151523a29a76136d42322a32f9a460aa58eea5415c5ee2b1f021701ef9ba061",
+      "times": {
+        "creation": "2026-11-05T18:12:14.5147442+02:00",
+        "queuing": "2026-11-05T18:12:14.5147447+02:00",
+        "start": "2026-11-05T18:11:44.9001745+02:00",
+        "finish": "2026-11-05T18:12:14.5291692+02:00"
+      },
+      "outcomes": {
+        "Passed": 1
+      }
+    },
+    {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-final-invariants_net10.0_20261105181449.trx",
+      "sha256": "420024406f67da8dd9bffdbd0f98c21cc9540435cd3fa67cec1b1826302a0383",
+      "times": {
+        "creation": "2026-11-05T18:14:22.3597713+02:00",
+        "queuing": "2026-11-05T18:14:22.3597718+02:00",
+        "start": "2026-11-05T18:13:39.4540146+02:00",
+        "finish": "2026-11-05T18:14:49.4550431+02:00"
+      },
+      "outcomes": {
+        "Passed": 4
+      }
+    },
+    {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-dashboard_net10.0_20261105181700.trx",
+      "sha256": "3712058f280dbcbba1edda8ce90593d611e9bf6ac932d01b7029c4626e050912",
+      "times": {
+        "creation": "2026-11-05T18:15:56.0219750+02:00",
+        "queuing": "2026-11-05T18:15:56.0219753+02:00",
+        "start": "2026-11-05T18:15:33.4214935+02:00",
+        "finish": "2026-11-05T18:17:00.2758267+02:00"
+      },
+      "outcomes": {
+        "Passed": 14
+      }
+    }
+  ],
+  "interpretation": "Latest result per test name across the full Release integration run and subsequent targeted reruns. This is not a claim that the original full run had no failures. Raw TRX files remain in ignored artifacts; hashes identify the exact evidence.",
+  "otherSuites": {
+    "unitPassed": 432,
+    "architecturePassed": 26,
+    "buildingBlockPassed": 323,
+    "unit": {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-unit_net10.0_20261105143255.trx",
+      "sha256": "7eb4f6ade7451c3545497ad644caafca886407df818442f2561f228ee9d05400",
+      "counters": {
+        "total": "432",
+        "executed": "432",
+        "passed": "432",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "times": {
+        "creation": "2026-11-05T14:32:31.3458514+02:00",
+        "queuing": "2026-11-05T14:32:31.3458519+02:00",
+        "start": "2026-11-05T14:32:27.6205248+02:00",
+        "finish": "2026-11-05T14:32:55.2418548+02:00"
+      }
+    },
+    "architecture": {
+      "file": "artifacts/commercial-v1.2-tests/v12-release-architecture_net10.0_20261105143237.trx",
+      "sha256": "3a5b0a4d6366070d7f80efdd2032a87fbac00a3774eb6046367b5c6ba69e804d",
+      "counters": {
+        "total": "26",
+        "executed": "26",
+        "passed": "26",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "times": {
+        "creation": "2026-11-05T14:32:30.4181196+02:00",
+        "queuing": "2026-11-05T14:32:30.4181200+02:00",
+        "start": "2026-11-05T14:32:27.5895211+02:00",
+        "finish": "2026-11-05T14:32:37.3685888+02:00"
+      }
+    },
+    "buildingBlock": {
+      "file": "artifacts/commercial-v1.2-tests/v12-buildingblock_net10.0_20261105140904.trx",
+      "sha256": "f8c4c8feaaf3bf9f787e8f5fe2c1ad6835cd22de03bbdf1ba2552ea5c31e18c1",
+      "counters": {
+        "total": "323",
+        "executed": "323",
+        "passed": "323",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "times": {
+        "creation": "2026-11-05T14:08:36.1898169+02:00",
+        "queuing": "2026-11-05T14:08:36.1898172+02:00",
+        "start": "2026-11-05T14:08:32.1933300+02:00",
+        "finish": "2026-11-05T14:09:04.3732882+02:00"
+      }
+    }
+  },
+  "migration": {
+    "representativeBackupRestoreRehearsal": "CommercialV12MigrationRehearsalTests",
+    "deploymentScriptAppliedTwice": true,
+    "reconciliationBeforeAfter": true,
+    "overlapTriggerVerified": true,
+    "productionExecuted": false,
+    "scriptSha256": "55dec0d8749bf513d47c280f019d9c2f3fa6f6c9308a5b79aaa388ef51563c5b"
+  },
+  "sqlConcurrencyLatestPassed": 66,
+  "sqlConcurrencyEvidence": "65 named SQL category tests passed in the full Release run; the added parallel-transfer SQL case passed in the final invariant rerun.",
+  "ciAuthenticationRegression": {
+    "failedGitHubRun": "https://github.com/LoaiSaberC4r/Wasla/actions/runs/42063378984",
+    "cause": "Reconstructing the master connection from an opened SqlConnection omitted its SQL password.",
+    "fix": "Build both master connections from the original WASLA_SQLSERVER_CONNECTION_STRING configuration; retain default credential-redaction behavior.",
+    "applicationChanged": false,
+    "workflowChecksChanged": false,
+    "runs": [
+      {
+        "provider": "Linux SQL Server 2022 container, SQL authentication, before fix",
+        "file": "artifacts/commercial-v1.2-ci-fix/v12-ci-auth-repro_net10.0_20261105185005.trx",
+        "sha256": "3bb5c1d7aa08ee5cacaef7656808b73ac3a75ecf104fda60e5d0f183afcaf8dc",
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "0",
+          "failed": "1",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "times": {
+          "creation": "2026-11-05T18:50:05.6645989+02:00",
+          "queuing": "2026-11-05T18:50:05.6645991+02:00",
+          "start": "2026-11-05T18:49:23.4184987+02:00",
+          "finish": "2026-11-05T18:50:05.7513933+02:00"
+        }
+      },
+      {
+        "provider": "Linux SQL Server 2022 container, SQL authentication, after fix",
+        "file": "artifacts/commercial-v1.2-ci-fix/v12-ci-auth-fixed_net10.0_20261105185243.trx",
+        "sha256": "95be9413dbb6ae173842c90f81cb3068b9982cc472e85599b163f9a48d7863bc",
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "times": {
+          "creation": "2026-11-05T18:52:43.4770712+02:00",
+          "queuing": "2026-11-05T18:52:43.4770715+02:00",
+          "start": "2026-11-05T18:51:49.8677938+02:00",
+          "finish": "2026-11-05T18:52:43.4851137+02:00"
+        }
+      },
+      {
+        "provider": "SQL Server LocalDB, Windows authentication, after fix",
+        "file": "artifacts/commercial-v1.2-ci-fix/v12-ci-integrated-fixed_net10.0_20261105185251.trx",
+        "sha256": "8d3658e6ee2b20c4291e2138c244cf108021a9037a87c6a82eff156cb626d29d",
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "times": {
+          "creation": "2026-11-05T18:52:51.8866953+02:00",
+          "queuing": "2026-11-05T18:52:51.8866960+02:00",
+          "start": "2026-11-05T18:52:01.4247975+02:00",
+          "finish": "2026-11-05T18:52:51.8960511+02:00"
+        }
+      }
+    ]
+  }
+}

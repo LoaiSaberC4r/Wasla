@@ -1,3 +1,5 @@
+> Historical v1.0 reference. Commercial v1.2 supersedes conflicting behavior below. Implement clients from the [v1.2 API and Angular handoff](V1.2-API-ANGULAR-HANDOFF.md). See the [approved source](../../SOURCE-OF-TRUTH-SUBSCRIPTION-COMMERCIAL-ADDENDUM.md) and [impact plan](V1.2-IMPACT-PLAN.md).
+
 # Commercial subscription API — Angular handoff
 
 Version 1.0. All routes below use `/api/v1`. Authentication, permission errors, validation, localization, and ProblemDetails follow the existing Wasla API. JSON enums use their names. UTC timestamps use ISO 8601 with `Z`; period ends are exclusive. Row versions are opaque Base64 strings.

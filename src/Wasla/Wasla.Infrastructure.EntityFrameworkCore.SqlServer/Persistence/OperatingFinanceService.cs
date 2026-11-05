@@ -15,7 +15,7 @@ using Wasla.Domain.Security;
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 internal sealed partial class OperatingFinanceService(WaslaDbContext db, IReportingAccessGuard guard,
-    ITicketQueueLock coordination, IDateTimeProvider clock, IOptions<Phase18Options> options) : IOperatingFinanceService
+    ITicketQueueLock coordination, IDateTimeProvider clock, IOptions<Phase18Options> options, Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService commercial) : IOperatingFinanceService
 {
     public async Task<Result<OperatingFinanceWriteResponse>> ExecuteAsync(WriteOperatingFinanceCommand command, CancellationToken ct)
     {
@@ -86,6 +86,8 @@ internal sealed partial class OperatingFinanceService(WaslaDbContext db, IReport
             .SingleOrDefaultAsync(p => p.Id == command.ResourceId && p.DoctorId == scope.DoctorId &&
                 p.Kind == (salary ? OperatingPlanKind.Salary : OperatingPlanKind.RecurringExpense), ct);
         if (plan is null) return Missing();
+        if (!await CommercialPracticesAsync(plan.DoctorId, plan.Revisions.Single(r => r.RevisionNumber == plan.CurrentRevisionNumber).Allocations.Select(a => a.PracticeId), salary, ct))
+            return Result<OperatingFinanceWriteResponse>.Fail(ReportingErrors.Denied);
         if (!Version(plan, command.Plan?.RowVersion ?? command.Transition?.RowVersion)) return Conflict();
         Result changed;
         if (command.Operation is OperatingFinanceOperation.ReviseSalaryPlan or OperatingFinanceOperation.ReviseRecurringPlan)
@@ -143,6 +145,8 @@ internal sealed partial class OperatingFinanceService(WaslaDbContext db, IReport
             .SingleOrDefaultAsync(o => o.Id == command.ResourceId && o.DoctorId == scope.DoctorId &&
                 (o.Kind == OperatingObligationKind.Salary) == salary, ct);
         if (obligation is null) return Missing();
+        if (!await CommercialPracticesAsync(obligation.DoctorId, obligation.Revisions.Single(r => r.RevisionNumber == obligation.CurrentRevisionNumber).Allocations.Select(a => a.PracticeId), salary, ct))
+            return Result<OperatingFinanceWriteResponse>.Fail(ReportingErrors.Denied);
         var token = command.Settlement?.RowVersion ?? command.Correction?.RowVersion ?? command.Actual?.RowVersion ?? command.Transition?.RowVersion;
         if (!Version(obligation, token)) return Conflict();
         if (command.Operation is OperatingFinanceOperation.SettleSalary or OperatingFinanceOperation.SettleExpense)
@@ -193,8 +197,10 @@ internal sealed partial class OperatingFinanceService(WaslaDbContext db, IReport
         if (command.Reversal is not { } r) return Fail();
         var original = await db.OperatingSettlements.SingleOrDefaultAsync(s => s.Id == command.ResourceId && s.DoctorId == scope.DoctorId, ct);
         if (original is null) return Missing();
-        var obligation = await db.OperatingObligations.SingleAsync(o => o.Id == original.ObligationId, ct);
+        var obligation = await db.OperatingObligations.Include(o => o.Revisions).ThenInclude(r => r.Allocations).SingleAsync(o => o.Id == original.ObligationId, ct);
         if ((obligation.Kind == OperatingObligationKind.Salary) != (command.Operation == OperatingFinanceOperation.ReverseSalary)) return Missing();
+        if (!await CommercialPracticesAsync(obligation.DoctorId, obligation.Revisions.Single(r => r.RevisionNumber == obligation.CurrentRevisionNumber).Allocations.Select(a => a.PracticeId), obligation.Kind == OperatingObligationKind.Salary, ct))
+            return Result<OperatingFinanceWriteResponse>.Fail(ReportingErrors.Denied);
         if (!Version(obligation, r.RowVersion)) return Conflict();
         if (await db.OperatingSettlementReversals.AnyAsync(x => x.OriginalSettlementId == original.Id, ct))
             return Result<OperatingFinanceWriteResponse>.Fail(OperatingFinanceErrors.State("OperatingFinance.AlreadyReversed"));
@@ -213,12 +219,21 @@ internal sealed partial class OperatingFinanceService(WaslaDbContext db, IReport
         bool salary, CancellationToken ct)
     {
         if (allocations is null || allocations.Any(a => a is null) || allocations.Count is 0 or > 100) return false;
+        if (!await CommercialPracticesAsync(doctor, allocations.Select(a => a.PracticeId), salary, ct)) return false;
         var ids = allocations.Select(a => a.PracticeId).Distinct().ToArray();
         if (ids.Length != allocations.Count || await db.DoctorPractices.CountAsync(p => ids.Contains(p.Id) && p.DoctorId == doctor, ct) != ids.Length) return false;
         if (!salary) return reception is null;
         return reception is { } r && await db.Receptions.AnyAsync(x => x.Id == r && x.OwnerDoctorId == doctor &&
                 db.ApplicationUsers.Any(u => u.Id == x.ApplicationUserId && u.IsActive), ct) &&
             await db.ReceptionPracticeAssignments.CountAsync(a => a.ReceptionId == r && a.IsActive && ids.Contains(a.DoctorPracticeId), ct) == ids.Length;
+    }
+    private async Task<bool> CommercialPracticesAsync(Guid doctor, IEnumerable<Guid> practices, bool salary, CancellationToken ct)
+    {
+        var ids = practices.Distinct().ToArray();
+        if (ids.Length == 0) return false;
+        foreach (var practice in ids)
+            if ((await commercial.EvaluateForPracticeAsync(doctor, practice, salary ? "SALARY_MANAGEMENT" : "OPERATING_EXPENSES", Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, ct)).IsFailure) return false;
+        return true;
     }
     private Task<bool> SalaryOverlapAsync(Guid doctor, Guid reception, DateOnly from, DateOnly? to, Guid? except, CancellationToken ct)
         => db.OperatingFinancialPlans.AnyAsync(p => p.DoctorId == doctor && p.ReceptionId == reception && p.Kind == OperatingPlanKind.Salary &&

@@ -767,6 +767,7 @@ public sealed class DoctorOnboardingApiTests
             "/api/v1/doctors/me/practices",
             new
             {
+                subscriptionContractId = (await client.GetFromJsonAsync<JsonElement>("/api/v1/doctors/me/subscriptions", cancellationToken))[0].GetProperty("subscriptionContractId").GetGuid(),
                 nameAr,
                 nameEn = "Test Practice",
                 governorateId,
@@ -806,9 +807,6 @@ public sealed class DoctorOnboardingApiTests
         AddFile(content, "PersonalIdFrontImage", "front.png");
         AddFile(content, "PersonalIdBackImage", "back.png");
         AddFile(content, "SyndicateCardFrontImage", "syndicate.png");
-        content.Add(new StringContent("FULL_PLATFORM"), "Subscription.ProductCode");
-        content.Add(new StringContent("STARTER"), "Subscription.PlanCode");
-        content.Add(new StringContent("STARTER_FREE_TRIAL_20D"), "Subscription.OfferCode");
         return content;
     }
 

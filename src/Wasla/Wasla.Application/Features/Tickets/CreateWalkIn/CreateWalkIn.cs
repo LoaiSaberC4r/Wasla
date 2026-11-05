@@ -64,7 +64,7 @@ internal sealed class CreateWalkInCommandHandler(
     IFinancialNumberAllocator financialNumberAllocator,
     ITicketQueueReader queueReader,
     IReservationNoShowRuntimeReader reservationNoShowReader,
-    IDateTimeProvider clock, ArchiveTicketReplay archiveReplay, PatientIdentityReuseGuard identityReuse)
+    IDateTimeProvider clock, ArchiveTicketReplay archiveReplay, PatientIdentityReuseGuard identityReuse, ISubscriptionDataStore subscriptions)
     : ICommandHandler<CreateWalkInCommand, TicketDetailsResponse>
 {
     public async Task<Result<TicketDetailsResponse>> Handle(
@@ -246,6 +246,11 @@ internal sealed class CreateWalkInCommandHandler(
             if (claim.IsFailure) return Result<TicketDetailsResponse>.Fail(claim.Errors);
         }
         identity.Value?.Associate(null, ticket.Value.Id, clock.UtcNow);
+        var allocation = await subscriptions.AllocationAsync(request.PracticeId, cancellationToken);
+        var covered = allocation is null ? null : await subscriptions.EffectivePeriodAsync(allocation.SubscriptionContractId, clock.UtcNow, cancellationToken);
+        if (allocation is null || covered is null) return Result<TicketDetailsResponse>.Fail(Wasla.Domain.Subscriptions.SubscriptionErrors.Denied("PracticeCommerciallyInactive"));
+        subscriptions.Add(new Wasla.Domain.Subscriptions.ReservationCommercialProvenance(ticket.Value.Id, covered.DoctorId, request.PracticeId, allocation.Id,
+            covered.SubscriptionContractId, covered.Id, clock.UtcNow, covered.Terms, Wasla.Domain.Subscriptions.CommercialCommitmentKind.WalkInTicket));
         await unitOfWork.WriteRepository<Ticket>().AddAsync(ticket.Value, cancellationToken);
         await unitOfWork.WriteRepository<Payment>().AddAsync(payment.Value, cancellationToken);
         idempotency.Value.Record!.Complete(ticketId, nowUtc);

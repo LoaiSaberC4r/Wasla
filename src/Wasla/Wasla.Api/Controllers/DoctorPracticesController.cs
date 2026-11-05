@@ -46,7 +46,7 @@ public sealed class DoctorPracticesController(ISender sender) : ControllerBase
             request.AreaId,
             request.DetailedAddress,
             request.Latitude,
-            request.Longitude), cancellationToken);
+            request.Longitude, request.SubscriptionContractId), cancellationToken);
         return result.IsSuccess
             ? CreatedAtAction(nameof(Get), new { practiceId = result.Value.Id, version = "1.0" }, result.Value)
             : result.Errors.ToActionProblem(cancellationToken);
@@ -375,7 +375,8 @@ public record DoctorPracticeRequest(
     int AreaId,
     string DetailedAddress,
     decimal Latitude,
-    decimal Longitude);
+    decimal Longitude,
+    Guid? SubscriptionContractId = null);
 public sealed record UpdateDoctorPracticeRequest(
     string NameAr,
     string? NameEn,

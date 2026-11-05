@@ -7,6 +7,7 @@ using BuildingBlock.Domain.Results;
 using FluentValidation;
 using Wasla.Application.Email;
 using Wasla.Application.Features.Doctors;
+using Wasla.Application.Features.Subscriptions;
 using Wasla.Application.Persistence;
 using Wasla.Domain.Common;
 using Wasla.Domain.Practices;
@@ -212,7 +213,7 @@ internal sealed class CreateDoctorReceptionCommandHandler(
     IDateTimeProvider clock,
     IEmailNotificationFactory emailFactory,
     IEmailOutbox emailOutbox,
-    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptions)
+    ISubscriptionDataStore subscriptionStore, ISubscriptionPermissionGuard guard)
     : ICommandHandler<CreateDoctorReceptionCommand, ReceptionResponse>
 {
     public async Task<Result<ReceptionResponse>> Handle(
@@ -225,8 +226,9 @@ internal sealed class CreateDoctorReceptionCommandHandler(
             return Result<ReceptionResponse>.Fail(doctor.Errors);
         }
 
-        var capacity = await subscriptions.ValidateCapacityAsync(doctor.Value.Doctor.Id, true, cancellationToken);
-        if (capacity.IsFailure) return Result<ReceptionResponse>.Fail(capacity.Errors);
+        if (!await guard.AllowedForUserAsync(doctor.Value.ActorId, PermissionNames.ReceptionUsersManageOwn, cancellationToken))
+            return Result<ReceptionResponse>.Fail(ReceptionErrors.AccessDenied);
+        await subscriptionStore.AcquireSubscriptionCapacityLockAsync(doctor.Value.Doctor.Id, cancellationToken);
         var role = await dataStore.FindRoleByNameAsync(SystemRoleNames.Reception, cancellationToken);
         if (role is null)
         {
@@ -313,7 +315,7 @@ internal sealed class CreateDoctorReceptionCommandHandler(
 internal sealed class CreateReceptionAssignmentCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock, Wasla.Application.Features.Subscriptions.PracticeSubscriptionAllocationService subscriptions, ISubscriptionPermissionGuard guard)
     : ICommandHandler<CreateReceptionAssignmentCommand, ReceptionAssignmentResponse>
 {
     public async Task<Result<ReceptionAssignmentResponse>> Handle(
@@ -327,6 +329,10 @@ internal sealed class CreateReceptionAssignmentCommandHandler(
             return Result<ReceptionAssignmentResponse>.Fail(access.Errors);
         }
 
+        if (!await guard.AllowedForUserAsync(access.Value.ActorId, PermissionNames.ReceptionAssignmentsManageOwn, cancellationToken, new(SubscriptionResourceKind.Practice, request.DoctorPracticeId)))
+            return Result<ReceptionAssignmentResponse>.Fail(ReceptionErrors.AccessDenied);
+        var capacity = await subscriptions.ValidateReceptionAssignmentAsync(access.Value.Practice.DoctorId, request.DoctorPracticeId, request.ReceptionId, cancellationToken);
+        if (capacity.IsFailure) return Result<ReceptionAssignmentResponse>.Fail(capacity.Errors);
         if (await dataStore.ReceptionAssignmentExistsAsync(
                 request.ReceptionId, request.DoctorPracticeId, cancellationToken))
         {
@@ -364,7 +370,7 @@ internal sealed class CreateReceptionAssignmentCommandHandler(
 internal sealed class UpdateReceptionAssignmentCommandHandler(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
-    IDateTimeProvider clock)
+    IDateTimeProvider clock, ISubscriptionPermissionGuard guard)
     : ICommandHandler<UpdateReceptionAssignmentCommand, ReceptionAssignmentResponse>
 {
     public async Task<Result<ReceptionAssignmentResponse>> Handle(
@@ -379,6 +385,8 @@ internal sealed class UpdateReceptionAssignmentCommandHandler(
             return Result<ReceptionAssignmentResponse>.Fail(loaded.Errors);
         }
 
+        if (!await guard.AllowedForUserAsync(loaded.Value.ActorId, PermissionNames.ReceptionAssignmentsManageOwn, cancellationToken, new(SubscriptionResourceKind.Practice, loaded.Value.Assignment.DoctorPracticeId)))
+            return Result<ReceptionAssignmentResponse>.Fail(ReceptionErrors.AccessDenied);
         var permissions = await ReceptionManagementAccess.ValidatePermissionsAsync(
             dataStore, request.PermissionIds, cancellationToken);
         if (permissions.IsFailure)
@@ -403,14 +411,15 @@ internal sealed class UpdateReceptionAssignmentCommandHandler(
     }
 }
 
-internal sealed class ActivateReceptionAssignmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class ActivateReceptionAssignmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser,
+    Wasla.Application.Features.Subscriptions.PracticeSubscriptionAllocationService subscriptions, ISubscriptionPermissionGuard guard)
     : ICommandHandler<ActivateReceptionAssignmentCommand, ReceptionAssignmentResponse>
 {
     public async Task<Result<ReceptionAssignmentResponse>> Handle(
         ActivateReceptionAssignmentCommand request,
         CancellationToken cancellationToken)
         => await ChangeStateAsync(dataStore, currentUser, request.ReceptionId, request.AssignmentId,
-            request.RowVersion, true, cancellationToken);
+            request.RowVersion, true, subscriptions, guard, cancellationToken);
 
     internal static async Task<Result<ReceptionAssignmentResponse>> ChangeStateAsync(
         IWaslaDataStore dataStore,
@@ -419,7 +428,8 @@ internal sealed class ActivateReceptionAssignmentCommandHandler(IWaslaDataStore 
         Guid assignmentId,
         string rowVersion,
         bool activate,
-        CancellationToken cancellationToken)
+        Wasla.Application.Features.Subscriptions.PracticeSubscriptionAllocationService subscriptions,
+        ISubscriptionPermissionGuard guard, CancellationToken cancellationToken)
     {
         var loaded = await ReceptionManagementAccess.LoadOwnedAssignmentAsync(
             dataStore, currentUser, receptionId, assignmentId, rowVersion, cancellationToken);
@@ -428,6 +438,16 @@ internal sealed class ActivateReceptionAssignmentCommandHandler(IWaslaDataStore 
             return Result<ReceptionAssignmentResponse>.Fail(loaded.Errors);
         }
 
+        var snapshot = await dataStore.GetAccessSnapshotAsync(loaded.Value.ActorId, cancellationToken);
+        if (snapshot is null || !snapshot.Permissions.Contains(PermissionNames.ReceptionAssignmentsManageOwn, StringComparer.OrdinalIgnoreCase) ||
+            activate && !await guard.AllowedForUserAsync(loaded.Value.ActorId, PermissionNames.ReceptionAssignmentsManageOwn, cancellationToken, new(SubscriptionResourceKind.Practice, loaded.Value.Assignment.DoctorPracticeId)))
+            return Result<ReceptionAssignmentResponse>.Fail(ReceptionErrors.AccessDenied);
+        if (activate)
+        {
+            var practice = await dataStore.FindDoctorPracticeAsync(loaded.Value.Assignment.DoctorPracticeId, cancellationToken);
+            var capacity = await subscriptions.ValidateReceptionAssignmentAsync(practice!.DoctorId, practice.Id, receptionId, cancellationToken);
+            if (capacity.IsFailure) return Result<ReceptionAssignmentResponse>.Fail(capacity.Errors);
+        }
         var changed = activate
             ? loaded.Value.Assignment.Activate(loaded.Value.ActorId)
             : loaded.Value.Assignment.Deactivate(loaded.Value.ActorId);
@@ -445,7 +465,8 @@ internal sealed class ActivateReceptionAssignmentCommandHandler(IWaslaDataStore 
     }
 }
 
-internal sealed class DeactivateReceptionAssignmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class DeactivateReceptionAssignmentCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser,
+    Wasla.Application.Features.Subscriptions.PracticeSubscriptionAllocationService subscriptions, ISubscriptionPermissionGuard guard)
     : ICommandHandler<DeactivateReceptionAssignmentCommand, ReceptionAssignmentResponse>
 {
     public async Task<Result<ReceptionAssignmentResponse>> Handle(
@@ -453,7 +474,7 @@ internal sealed class DeactivateReceptionAssignmentCommandHandler(IWaslaDataStor
         CancellationToken cancellationToken)
         => await ActivateReceptionAssignmentCommandHandler.ChangeStateAsync(
             dataStore, currentUser, request.ReceptionId, request.AssignmentId,
-            request.RowVersion, false, cancellationToken);
+            request.RowVersion, false, subscriptions, guard, cancellationToken);
 }
 
 internal sealed class ListMyReceptionPracticesQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)

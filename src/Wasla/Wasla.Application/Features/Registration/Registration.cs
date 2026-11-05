@@ -67,7 +67,6 @@ internal sealed class RegisterDoctorCommandValidator : AbstractValidator<Registe
     public RegisterDoctorCommandValidator(IDateTimeProvider clock)
     {
         AddAccountRules();
-        RuleFor(command => command.Subscription).NotNull();
         RuleFor(command => command.NameAr).NotEmpty().WithMessage(ErrorMessage.NameArRequired).MaximumLength(200);
         RuleFor(command => command.NameEn).MaximumLength(200);
         RuleFor(command => command.DateOfBirth)
@@ -124,8 +123,14 @@ internal sealed class RegisterDoctorCommandHandler(
         RegisterDoctorCommand request,
         CancellationToken cancellationToken)
     {
-        var terms = await subscriptionCatalog.ResolveAsync(request.Subscription, cancellationToken);
-        if (terms.IsFailure) return Result<RegisterDoctorResponse>.Fail(terms.Errors);
+        SubscriptionTerms? selectedTerms = null;
+        if (request.Subscription is not null)
+        {
+            if (request.Subscription.OfferCode is not null) return Result<RegisterDoctorResponse>.Fail(SubscriptionErrors.Invalid("TrialRequiresSelfActivation"));
+            var terms = await subscriptionCatalog.ResolveAsync(request.Subscription, cancellationToken);
+            if (terms.IsFailure) return Result<RegisterDoctorResponse>.Fail(terms.Errors);
+            selectedTerms = terms.Value;
+        }
         var duplicate = await RegistrationChecks.CheckDuplicatesAsync(
             dataStore,
             request.UserName,
@@ -196,11 +201,12 @@ internal sealed class RegisterDoctorCommandHandler(
             dataStore.Add(userResult.Value);
             doctorResult.Value.CreatedOnUtc = now;
             dataStore.Add(doctorResult.Value);
-            var selection = subscriptions.Select(doctorId, terms.Value);
-            if (selection.IsFailure)
+            DoctorSubscription? selected = null;
+            if (selectedTerms is not null)
             {
-                await CleanupAsync();
-                return Result<RegisterDoctorResponse>.Fail(selection.Errors);
+                var selection = subscriptions.Select(doctorId, selectedTerms);
+                if (selection.IsFailure) { await CleanupAsync(); return Result<RegisterDoctorResponse>.Fail(selection.Errors); }
+                selected = selection.Value;
             }
             dataStore.Add(new UserRole(Guid.NewGuid(), applicationUserId, role.Id));
             dataStore.Add(new DoctorStatusHistory(
@@ -227,7 +233,7 @@ internal sealed class RegisterDoctorCommandHandler(
                 doctorId,
                 applicationUserId,
                 DoctorApprovalStatus.Pending,
-                selection.Value.Id,
+                selected?.Id ?? Guid.Empty,
                 request.Subscription));
         }
         catch

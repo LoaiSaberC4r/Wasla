@@ -155,6 +155,8 @@ public static class CommercialPermissionCatalog
             PermissionNames.NotificationsPreferencesViewOwn,
             PermissionNames.NotificationsPreferencesManageOwn,
             SubscriptionPermissionNames.ViewOwn,
+            SubscriptionPermissionNames.ActivateTrialOwn,
+            SubscriptionPermissionNames.AllocationsManageOwn,
             SubscriptionPermissionNames.RequestChangeOwn,
             SubscriptionPermissionNames.CancelAtPeriodEndOwn,
         ]);

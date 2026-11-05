@@ -17,7 +17,7 @@ namespace Wasla.Tests.Integration;
 public sealed class SubscriptionLegacyAndRenewalTests
 {
     [Theory][InlineData(false)][InlineData(true)]
-    public async Task Legacy_enrollment_uses_one_fixed_batch_preserves_usage_and_is_superseded_by_manual_payment(bool sql)
+    public async Task Legacy_enrollment_uses_one_fixed_batch_preserves_usage_and_coexists_with_independent_manual_paid_contract(bool sql)
     {
         await using var app = await Phase13ApiFixture.CreateAsync(sql); Guid legacyDoctor = default;
         await using (var scope = app.Services.CreateAsyncScope()) scope.ServiceProvider.GetRequiredService<IOptionsMonitor<SubscriptionCatalogOptions>>().CurrentValue.LegacyTransition.Enabled = true;
@@ -47,21 +47,21 @@ public sealed class SubscriptionLegacyAndRenewalTests
         }
         var detail = await GetAsync(admin, "/api/v1/admin/subscriptions/" + pendingId);
         using var activated = await PostAsync(admin, $"/api/v1/admin/subscriptions/{pendingId}/activate", new { rowVersion = detail.GetProperty("rowVersion").GetString(), amountReceived = 499, paymentMethod = "Cash" }); Assert.Equal(HttpStatusCode.OK, activated.StatusCode);
-        await app.WithDbAsync(async db => { Assert.Equal(SubscriptionStatus.Superseded, (await db.DoctorSubscriptions.SingleAsync(s => s.Id == transitionId)).Status); Assert.Equal(4, await db.DoctorPractices.CountAsync(p => p.DoctorId == legacyDoctor)); });
+        await app.WithDbAsync(async db => { Assert.Equal(SubscriptionStatus.Active, (await db.DoctorSubscriptions.SingleAsync(s => s.Id == transitionId)).Status); Assert.Equal(4, await db.DoctorPractices.CountAsync(p => p.DoctorId == legacyDoctor)); });
         using var legacyClient = await app.ClientAsync("legacy");
-        using var over = await PostAsync(legacyClient, "/api/v1/doctors/me/practices", new { nameAr = "فوق الحد", governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 }); Assert.Equal(HttpStatusCode.Conflict, over.StatusCode);
+        using var over = await PostAsync(legacyClient, "/api/v1/doctors/me/practices", new { nameAr = "فوق الحد", subscriptionContractId = (await JsonAsync(activated)).GetProperty("subscription").GetProperty("subscriptionContractId").GetGuid(), governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 }); Assert.Equal(HttpStatusCode.Created, over.StatusCode);
     }
     [Fact]
-    public async Task Scheduled_downgrade_revalidates_actual_persisted_usage_when_renewal_is_paid()
+    public async Task Scheduled_downgrade_retains_the_accepted_selection_without_blocking_on_new_old_period_usage()
     {
         await using var app = await Phase13ApiFixture.CreateAsync(); var id = await SubscriptionTestData.ReplaceAsync(app, "PROFESSIONAL"); using var doctor = await app.ClientAsync("doctor"); using var admin = await app.ClientAsync("root");
         var own = await GetAsync(doctor, "/api/v1/doctors/me/subscription");
         using var requested = await PostAsync(doctor, "/api/v1/doctors/me/subscription/change-requests", new { rowVersion = own.GetProperty("rowVersion").GetString(), changeType = "Downgrade", selection = new { productCode = "FULL_PLATFORM", planCode = "STARTER", billingCycle = "Monthly" } }); Assert.Equal(HttpStatusCode.OK, requested.StatusCode);
         var detail = await GetAsync(admin, "/api/v1/admin/subscriptions/" + id); var change = detail.GetProperty("changeRequests")[0];
         using var approved = await PostAsync(admin, $"/api/v1/admin/subscriptions/{id}/change-requests/{change.GetProperty("id").GetGuid()}/approve", new { rowVersion = detail.GetProperty("rowVersion").GetString(), changeRowVersion = change.GetProperty("rowVersion").GetString() }); Assert.Equal(HttpStatusCode.OK, approved.StatusCode);
-        using var added = await PostAsync(doctor, "/api/v1/doctors/me/practices", new { nameAr = "عيادة إضافية غير نشطة", governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 }); Assert.Equal(HttpStatusCode.Created, added.StatusCode);
-        using var renewal = await PostAsync(admin, $"/api/v1/admin/subscriptions/{id}/renew", new { rowVersion = (await JsonAsync(approved)).GetProperty("rowVersion").GetString(), paymentMethod = "Cash", amountReceived = 499 }); Assert.Equal(HttpStatusCode.Conflict, renewal.StatusCode);
-        Assert.Contains("Subscription.DowngradeUsageExceedsLimit", await renewal.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        using var added = await PostAsync(doctor, "/api/v1/doctors/me/practices", new { nameAr = "عيادة إضافية غير نشطة", subscriptionContractId = own.GetProperty("subscription").GetProperty("subscriptionContractId").GetGuid(), governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 }); Assert.Equal(HttpStatusCode.Created, added.StatusCode);
+        using var renewal = await PostAsync(admin, $"/api/v1/admin/subscriptions/{id}/renew", new { rowVersion = (await JsonAsync(approved)).GetProperty("rowVersion").GetString(), paymentMethod = "Cash", amountReceived = 499 }); Assert.Equal(HttpStatusCode.OK, renewal.StatusCode);
+        Assert.Equal("Scheduled", (await JsonAsync(renewal)).GetProperty("subscription").GetProperty("status").GetString());
         await app.WithDbAsync(async db => Assert.Empty(await db.SubscriptionPayments.Where(p => p.SubscriptionId == id).ToArrayAsync()));
     }
     [Fact]

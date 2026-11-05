@@ -19,11 +19,11 @@ internal sealed class ClinicalAccessService(IWaslaDataStore dataStore, ICurrentU
 {
     private UserAccessSnapshot? _snapshot;
     public bool IsReadOnly { get; private set; }
-    public async Task<Result<ClinicalActor>> AuthorizeOwnReadAsync(Guid practiceId, string permission, CancellationToken ct, Guid? patientId = null)
+    public async Task<Result<ClinicalActor>> AuthorizeOwnReadAsync(Guid practiceId, string permission, CancellationToken ct, Guid? patientId = null, SubscriptionResource? resource = null)
     {
         var subscriptionUser = await SnapshotAsync(ct);
-        if (subscriptionUser is null || !await subscriptions.AllowedAsync(subscriptionUser, permission, ct)) return Result<ClinicalActor>.Fail(ClinicalErrors.AccessDenied);
-        var scope = await historicalReads.AuthorizeOwnReadAsync(practiceId, permission, patientId, ct);
+        if (subscriptionUser is null || !await subscriptions.AllowedAsync(subscriptionUser, permission, ct, resource ?? new(SubscriptionResourceKind.Practice, practiceId))) return Result<ClinicalActor>.Fail(ClinicalErrors.AccessDenied);
+        var scope = await historicalReads.AuthorizeOwnReadAsync(practiceId, permission, patientId, ct, resource);
         // Preserve the established practice-scoped API's opaque 403 contract. New patient
         // resource routes use the relationship policy's safe 404 contract directly.
         if (scope.IsFailure) return Result<ClinicalActor>.Fail(ClinicalErrors.AccessDenied);
@@ -31,13 +31,13 @@ internal sealed class ClinicalAccessService(IWaslaDataStore dataStore, ICurrentU
         return Result<ClinicalActor>.Ok(new(scope.Value.Actor.UserId, scope.Value.Actor.DoctorId, scope.Value.Actor.Permissions));
     }
 
-    public async Task<Result<ClinicalActor>> DoctorAsync(Guid practiceId, string permission, CancellationToken ct, Guid? encounterId = null)
+    public async Task<Result<ClinicalActor>> DoctorAsync(Guid practiceId, string permission, CancellationToken ct, Guid? encounterId = null, Guid? ticketId = null)
     {
         var snapshot = await SnapshotAsync(ct);
         if (snapshot is null || snapshot.User.UserType != UserType.Doctor || !Has(snapshot, permission) || snapshot.DoctorId is not { } doctorId ||
             snapshot.DoctorStatus != DoctorApprovalStatus.Approved)
             return Result<ClinicalActor>.Fail(ClinicalErrors.AccessDenied);
-        if (!await subscriptions.AllowedAsync(snapshot, permission, ct, encounterId.HasValue ? new(SubscriptionResourceKind.Encounter, encounterId.Value) : null))
+        if (!await subscriptions.AllowedAsync(snapshot, permission, ct, encounterId.HasValue ? new(SubscriptionResourceKind.Encounter, encounterId.Value) : ticketId.HasValue ? new(SubscriptionResourceKind.Ticket, ticketId.Value) : new(SubscriptionResourceKind.Practice, practiceId)))
             return Result<ClinicalActor>.Fail(ClinicalErrors.AccessDenied);
         var practice = await dataStore.FindDoctorPracticeAsync(practiceId, ct);
         return practice is not null && practice.IsActive && practice.DoctorId == doctorId

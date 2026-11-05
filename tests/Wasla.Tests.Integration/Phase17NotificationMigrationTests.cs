@@ -14,7 +14,7 @@ public sealed class Phase17NotificationMigrationTests
     {
         using var db = new WaslaDbContext(new DbContextOptionsBuilder<WaslaDbContext>().UseSqlServer("Server=localhost;Database=ModelOnly;Integrated Security=True;TrustServerCertificate=True").Options);
         Assert.False(db.Database.HasPendingModelChanges());
-        var script = db.GetService<IMigrator>().GenerateScript("20261024174818_Phase16ExactFamilyRelationshipProof");
+        var script = db.GetService<IMigrator>().GenerateScript("20261024174818_Phase16ExactFamilyRelationshipProof", db.Database.GetMigrations().Last(m => m.Contains("Phase17", StringComparison.Ordinal)));
         Assert.Contains("CREATE TABLE [NotificationEvents]", script, StringComparison.Ordinal);
         Assert.Contains("ALTER TABLE [EmailOutboxMessages] ADD [NotificationDeliveryId]", script, StringComparison.Ordinal);
         Assert.DoesNotContain("DROP TABLE", script, StringComparison.OrdinalIgnoreCase);

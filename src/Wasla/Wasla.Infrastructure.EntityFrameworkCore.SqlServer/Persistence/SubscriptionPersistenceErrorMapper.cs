@@ -15,9 +15,9 @@ internal sealed class SubscriptionPersistenceErrorMapper : IExceptionToErrorMapp
         { error = SubscriptionErrors.Conflict(); return true; }
         var inner = exception;
         while (inner.InnerException is not null && inner is not SqlException) inner = inner.InnerException;
-        if (inner is SqlException sql && (sql.Number == 51060 || sql.Number is 2601 or 2627 && exception is DbUpdateException update && update.Entries.Any(e => e.Entity.GetType().Namespace == typeof(DoctorSubscription).Namespace)))
+        if (inner is SqlException sql && (sql.Number is 51060 or 51063 || sql.Number is 2601 or 2627 && exception is DbUpdateException update && update.Entries.Any(e => e.Entity.GetType().Namespace == typeof(DoctorSubscription).Namespace)))
         {
-            var code = sql.Message.Contains("UX_OneTrialPerDoctor", StringComparison.Ordinal) ? "TrialAlreadyUsed" :
+            var code = sql.Number == 51063 ? "PeriodOverlap" : sql.Message.Contains("UX_OneTrialPerDoctor", StringComparison.Ordinal) ? "TrialAlreadyUsed" :
                 sql.Message.Contains("IX_SubscriptionPayments_IdempotencyKey", StringComparison.Ordinal) ? "PaymentAlreadyRecorded" : "ConcurrencyConflict";
             error = SubscriptionErrors.Conflict(code); return true;
         }

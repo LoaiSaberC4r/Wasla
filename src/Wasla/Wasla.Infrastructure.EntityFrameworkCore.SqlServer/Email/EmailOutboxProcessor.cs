@@ -15,7 +15,8 @@ public sealed partial class EmailOutboxProcessor(
     IDateTimeProvider clock,
     IOptions<EmailOutboxOptions> options,
     ILogger<EmailOutboxProcessor> logger,
-    Notifications.NotificationEmailGuard? notificationGuard = null)
+    Notifications.NotificationEmailGuard? notificationGuard = null,
+    SubscriptionEmailGuard? subscriptionGuard = null)
 {
     private readonly EmailOutboxOptions _options = options.Value;
 
@@ -87,6 +88,21 @@ public sealed partial class EmailOutboxProcessor(
     {
         try
         {
+            var commercialReminder = SubscriptionEmailGuard.TryPeriod(message.IdempotencyKey, out var periodId);
+            await using var commercialAdmission = commercialReminder && subscriptionGuard is not null ? await subscriptionGuard.AcquireAsync(periodId, cancellationToken) : null;
+            if (commercialReminder)
+            {
+                var denial = subscriptionGuard is null ? "Subscription.GuardUnavailable" : await subscriptionGuard.DenialAsync(periodId, cancellationToken);
+                if (denial is not null)
+                {
+                    await dbContext.EmailOutboxMessages.Where(m => m.Id == message.Id && m.Status == EmailOutboxStatus.Processing && m.ProcessingToken == processingToken)
+                        .ExecuteUpdateAsync(s => s.SetProperty(m => m.Status, EmailOutboxStatus.Suppressed).SetProperty(m => m.ProcessedOnUtc, clock.UtcNow)
+                            .SetProperty(m => m.ProcessingToken, (Guid?)null).SetProperty(m => m.NextAttemptOnUtc, (DateTime?)null).SetProperty(m => m.LastError, denial), cancellationToken);
+                    return;
+                }
+            }
+            if (!await dbContext.EmailOutboxMessages.AsNoTracking().AnyAsync(m => m.Id == message.Id && m.Status == EmailOutboxStatus.Processing &&
+                m.ProcessingToken == processingToken && m.NextAttemptOnUtc > clock.UtcNow, cancellationToken)) return;
             await using var admission = message.NotificationDeliveryId is { } deliveryId && notificationGuard is not null
                 ? await notificationGuard.AcquireAsync(deliveryId, cancellationToken) : null;
             if (message.NotificationDeliveryId is { } correlated)

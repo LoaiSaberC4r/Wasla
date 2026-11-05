@@ -66,12 +66,12 @@ internal sealed class GetDoctorEncounterHandler(ClinicalAccessService access, IC
 {
     public async Task<Result<EncounterDetailsResponse>> Handle(GetDoctorEncounterQuery r, CancellationToken ct)
     {
-        var actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
+        var actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, resource: new(r.ByTicket ? Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Ticket : Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Encounter, r.Id));
         if (actor.IsFailure) return Result<EncounterDetailsResponse>.Fail(actor.Errors);
         if (!access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<EncounterDetailsResponse>.Fail(ClinicalErrors.AccessDenied);
         var details = await reader.DoctorDetailsAsync(actor.Value.DoctorId, r.PracticeId, r.Id, r.ByTicket, ct);
         if (details is null) return Result<EncounterDetailsResponse>.Fail(ClinicalErrors.NotFound);
-        var current = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, details.Patient.Id);
+        var current = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, details.Patient.Id, new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Encounter, details.EncounterId));
         if (current.IsFailure || !access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<EncounterDetailsResponse>.Fail(ClinicalErrors.AccessDenied);
         await reader.AuditReadAsync(details.EncounterId, actor.Value.UserId, clock.UtcNow, ct);
         return Result<EncounterDetailsResponse>.Ok(ClinicalCapabilities.Apply(details, access));
@@ -106,12 +106,12 @@ internal sealed class ListEncounterAmendmentsHandler(ClinicalAccessService acces
 {
     public async Task<Result<IReadOnlyList<EncounterAmendmentResponse>>> Handle(ListEncounterAmendmentsQuery r, CancellationToken ct)
     {
-        var actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct);
+        var actor = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, resource: new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Encounter, r.EncounterId));
         if (actor.IsFailure) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(actor.Errors);
         if (!access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(ClinicalErrors.AccessDenied);
         var details = await reader.DoctorDetailsAsync(actor.Value.DoctorId, r.PracticeId, r.EncounterId, false, ct);
         if (details is null) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(ClinicalErrors.NotFound);
-        var current = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, details.Patient.Id);
+        var current = await access.AuthorizeOwnReadAsync(r.PracticeId, PermissionNames.MedicalEncountersViewOwn, ct, details.Patient.Id, new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Encounter, details.EncounterId));
         if (current.IsFailure || !access.HasPermission(PermissionNames.DiagnosesViewOwn)) return Result<IReadOnlyList<EncounterAmendmentResponse>>.Fail(ClinicalErrors.AccessDenied);
         await reader.AuditReadAsync(details.EncounterId, actor.Value.UserId, clock.UtcNow, ct);
         return Result<IReadOnlyList<EncounterAmendmentResponse>>.Ok(await reader.AmendmentsAsync(r.EncounterId, ct));

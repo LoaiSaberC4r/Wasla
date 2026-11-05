@@ -5,6 +5,14 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 public sealed partial class WaslaDbContext
 {
+    public DbSet<SubscriptionContract> SubscriptionContracts => Set<SubscriptionContract>();
+    public DbSet<PracticeSubscriptionAllocation> PracticeSubscriptionAllocations => Set<PracticeSubscriptionAllocation>();
+    public DbSet<SubscriptionAllocationSelection> SubscriptionAllocationSelections => Set<SubscriptionAllocationSelection>();
+    public DbSet<SubscriptionRetainedPractice> SubscriptionRetainedPractices => Set<SubscriptionRetainedPractice>();
+    public DbSet<SubscriptionRetainedReception> SubscriptionRetainedReceptions => Set<SubscriptionRetainedReception>();
+    public DbSet<ReservationCommercialProvenance> ReservationCommercialProvenances => Set<ReservationCommercialProvenance>();
+    public DbSet<SubscriptionMutationReceipt> SubscriptionMutationReceipts => Set<SubscriptionMutationReceipt>();
+    public DbSet<SubscriptionMigrationIssue> SubscriptionMigrationIssues => Set<SubscriptionMigrationIssue>();
     public DbSet<CommercialFeature> CommercialFeatures => Set<CommercialFeature>();
     public DbSet<CommercialPlan> CommercialPlans => Set<CommercialPlan>();
     public DbSet<CommercialProduct> CommercialProducts => Set<CommercialProduct>();

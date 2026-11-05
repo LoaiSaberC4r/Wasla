@@ -18,17 +18,27 @@ internal sealed class ProcessSubscriptionLifecycleCommandHandler(ISubscriptionDa
         await store.AcquireSubscriptionCapacityLockAsync(doctorId.Value, cancellationToken);
         var s = (await store.FindAsync(request.SubscriptionId, cancellationToken))!;
         var now = clock.UtcNow;
+        if (s.SubscriptionKind == SubscriptionKind.Paid && s.EndsAtUtc is not null && s.Status is SubscriptionStatus.Active or SubscriptionStatus.Scheduled &&
+            (await store.RemindersAsync(s.Id, cancellationToken)).Count == 0)
+        {
+            await lifecycle.ScheduleRemindersAsync(s, cancellationToken);
+            await store.SaveChangesAsync(cancellationToken);
+        }
+        var periods = (await store.PeriodsAsync(s.DoctorId, cancellationToken)).Where(p => p.SubscriptionContractId == s.SubscriptionContractId).ToArray();
+        var successor = periods.Any(p => p.Id != s.Id && p.SubscriptionKind == SubscriptionKind.Paid && p.StartsAtUtc == s.EndsAtUtc &&
+            p.Status is SubscriptionStatus.Active or SubscriptionStatus.Scheduled or SubscriptionStatus.Expired);
+        await store.ApplyDueSelectionsAsync(s.DoctorId, now, s.ActivatedByApplicationUserId!.Value, cancellationToken);
         if (s.Status == SubscriptionStatus.Scheduled && s.EndsAtUtc <= now)
         {
             s.Expire(now);
             lifecycle.History(s, "Expired", SubscriptionStatus.Scheduled, null, null, "expired:" + s.Id);
-            await lifecycle.NotifyAsync(s, "Expired", "subscription-expired:" + s.Id, cancellationToken);
+            if (!successor) await lifecycle.NotifyAsync(s, "Expired", "subscription-expired:" + s.Id, cancellationToken);
             await store.SaveChangesAsync(cancellationToken);
             return Result<bool>.Ok(true);
         }
         if (s.Status == SubscriptionStatus.Scheduled && s.StartsAtUtc <= now)
         {
-            var previous = await store.CurrentAsync(s.DoctorId, cancellationToken);
+            var previous = periods.SingleOrDefault(p => p.Id != s.Id && p.Status == SubscriptionStatus.Active);
             if (previous is not null)
             {
                 previous.Expire(now);
@@ -38,15 +48,19 @@ internal sealed class ProcessSubscriptionLifecycleCommandHandler(ISubscriptionDa
             }
             s.BeginScheduledPeriod(now);
             lifecycle.History(s, "PeriodStarted", SubscriptionStatus.Scheduled, null, null, "period-started:" + s.Id);
+            await lifecycle.QueueProjectionAsync(s, "period-started:" + s.Id, cancellationToken);
         }
         if (s.Status != SubscriptionStatus.Active) return Result<bool>.Ok(false);
-        var reminders = s.SubscriptionKind == SubscriptionKind.Trial ? await store.RemindersAsync(s.Id, cancellationToken) : [];
-        if (s.SubscriptionKind == SubscriptionKind.Trial)
+        var reminders = await store.RemindersAsync(s.Id, cancellationToken);
+        if (s.SubscriptionKind is SubscriptionKind.Trial or SubscriptionKind.Paid)
             foreach (var reminder in reminders.Where(r => r.Status == SubscriptionReminderStatus.Pending && r.DueAtUtc <= now))
             {
+                if (successor && s.SubscriptionKind == SubscriptionKind.Paid) { reminder.Cancel(); continue; }
                 if (now < s.EndsAtUtc || reminder.ReminderCode == "D0")
-                    await lifecycle.NotifyAsync(s, reminder.ReminderCode == "D0" ? "TrialExpired" : "TrialReminder",
-                        $"subscription-trial-reminder:{s.Id}:{reminder.TrialRevision}:{reminder.ReminderCode}", cancellationToken);
+                    await lifecycle.NotifyAsync(s, s.SubscriptionKind == SubscriptionKind.Trial
+                        ? reminder.ReminderCode == "D0" ? "TrialExpired" : "TrialReminder"
+                        : reminder.ReminderCode == "D0" ? "Expired" : "PaidReminder",
+                        $"subscription-{(s.SubscriptionKind == SubscriptionKind.Trial ? "trial" : "paid")}-reminder:{s.Id}:{reminder.TrialRevision}:{reminder.ReminderCode}", cancellationToken);
                 reminder.Queue(now);
             }
         if (s.EndsAtUtc <= now)
@@ -54,8 +68,8 @@ internal sealed class ProcessSubscriptionLifecycleCommandHandler(ISubscriptionDa
             s.Expire(now);
             lifecycle.History(s, "Expired", SubscriptionStatus.Active, null, null, "expired:" + s.Id);
             // D0 is the single trial expiration notification; paid and transition expiry use the lifecycle key.
-            if (s.SubscriptionKind != SubscriptionKind.Trial) await lifecycle.NotifyAsync(s, "Expired", "subscription-expired:" + s.Id, cancellationToken);
-            else if (!reminders.Any(r => r.TrialRevision == s.TrialExtensionCount && r.ReminderCode == "D0" && r.Status == SubscriptionReminderStatus.Queued))
+            if (s.SubscriptionKind == SubscriptionKind.LegacyTransition && !successor) await lifecycle.NotifyAsync(s, "Expired", "subscription-expired:" + s.Id, cancellationToken);
+            else if (s.SubscriptionKind == SubscriptionKind.Trial && !reminders.Any(r => r.TrialRevision == s.TrialExtensionCount && r.ReminderCode == "D0" && r.Status == SubscriptionReminderStatus.Queued))
                 await lifecycle.NotifyAsync(s, "TrialExpired", "subscription-expired:" + s.Id, cancellationToken);
         }
         await store.SaveChangesAsync(cancellationToken);

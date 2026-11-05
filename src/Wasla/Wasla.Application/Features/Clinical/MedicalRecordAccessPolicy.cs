@@ -58,6 +58,8 @@ internal sealed class MedicalRecordAccessPolicy(IWaslaDataStore store, ICurrentU
         {
             var actor = await DoctorAsync(permission, ct);
             if (actor.IsFailure || practiceId is null || ticketId is null) return Result<MedicalRecordScope>.Fail(MedicalRecordErrors.Denied);
+            if (!await subscriptions.AllowedForUserAsync(actor.Value.UserId, permission, ct, new(SubscriptionResourceKind.Ticket, ticketId.Value)))
+                return Result<MedicalRecordScope>.Fail(MedicalRecordErrors.Denied);
             var t = await treatments.CurrentAsync(actor.Value.DoctorId, practiceId.Value, ticketId.Value, ct);
             return t is null ? Result<MedicalRecordScope>.Fail(MedicalRecordErrors.Denied)
                 : Result<MedicalRecordScope>.Ok(new(actor.Value.UserId, t.PatientId, mode, actor.Value.DoctorId, practiceId, ticketId, t.EncounterId,

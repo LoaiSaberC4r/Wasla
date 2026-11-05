@@ -97,6 +97,11 @@ public sealed class SubscriptionArchiveAuthorizationTests
             var subscription = await db.DoctorSubscriptions.SingleAsync(s => s.Id == period);
             db.Entry(subscription).Property(s => s.StartsAtUtc).CurrentValue = start;
             db.Entry(subscription).Property(s => s.EndsAtUtc).CurrentValue = end;
+            foreach (var a in await db.PracticeSubscriptionAllocations.Where(a => a.SubscriptionContractId == subscription.SubscriptionContractId).ToArrayAsync())
+            {
+                db.Entry(a).Property(a => a.AllocatedFromUtc).CurrentValue = start;
+                if (a.ReleasedAtUtc is not null) db.Entry(a).Property(a => a.ReleasedAtUtc).CurrentValue = end;
+            }
             subscription.Expire(app.Clock.UtcNow); await db.SaveChangesAsync();
         });
         var first = await HistoricalAsync(app, start.AddHours(1), 1); var second = await HistoricalAsync(app, end.AddHours(-2), 2);
@@ -146,6 +151,7 @@ public sealed class SubscriptionArchiveAuthorizationTests
         await using var app = await Phase13ApiFixture.CreateAsync(true);
         await app.WithDbAsync(async db =>
         {
+            db.RemoveRange(await db.PracticeSubscriptionAllocations.Where(a => db.DoctorPractices.Any(p => p.Id == a.DoctorPracticeId && p.DoctorId == app.DoctorId)).ToArrayAsync());
             var initial = await db.DoctorSubscriptions.Where(s => s.DoctorId == app.DoctorId).Select(s => s.Id).ToArrayAsync();
             db.RemoveRange(await db.SubscriptionFeatureSnapshots.Where(f => initial.Contains(f.SubscriptionId)).ToArrayAsync());
             db.RemoveRange(await db.DoctorSubscriptions.Where(s => initial.Contains(s.Id)).ToArrayAsync()); await db.SaveChangesAsync();

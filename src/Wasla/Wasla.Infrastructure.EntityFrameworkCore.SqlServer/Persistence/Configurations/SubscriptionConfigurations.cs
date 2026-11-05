@@ -85,13 +85,16 @@ internal sealed class DoctorSubscriptionConfiguration : IWriteEntityConfiguratio
         b.HasOne<Wasla.Domain.Security.ApplicationUser>().WithMany().HasForeignKey(x => x.ActivatedByApplicationUserId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => new { x.DoctorId, x.Status });
         b.HasIndex(x => new { x.Status, x.EndsAtUtc });
-        b.HasIndex(x => x.DoctorId, "UX_OnePendingSubscriptionPerDoctor").IsUnique().HasFilter("[Status] = 1");
-        b.HasIndex(x => x.DoctorId, "UX_OneActiveSubscriptionPerDoctor").IsUnique().HasFilter("[Status] = 2");
+        b.HasOne(x => x.Contract).WithMany().HasForeignKey(x => x.SubscriptionContractId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.SubscriptionContractId, "UX_OnePendingPeriodPerContract").IsUnique().HasFilter("[Status] = 1");
+        b.HasIndex(x => x.SubscriptionContractId, "UX_OneActivePeriodPerContract").IsUnique().HasFilter("[Status] = 2");
         b.HasIndex(x => x.DoctorId, "UX_OneTrialPerDoctor").IsUnique().HasFilter("[SubscriptionKind] = 2");
-        b.HasIndex(x => x.DoctorId, "UX_OneScheduledSubscriptionPerDoctor").IsUnique().HasFilter("[Status] = 6");
+        b.HasIndex(x => x.SubscriptionContractId, "UX_OneScheduledPeriodPerContract").IsUnique().HasFilter("[Status] = 6");
+        b.HasIndex(x => new { x.SubscriptionContractId, x.StartsAtUtc, x.EndsAtUtc });
         b.Ignore(x => x.Terms);
         b.Ignore(x => x.DomainEvents);
         b.ToTable(t => t.HasCheckConstraint("CK_DoctorSubscriptions_Terms", "[PracticeLimit] > 0 AND [ReceptionLimit] >= 0 AND [PriceAmount] >= 0"));
+        b.ToTable(t => t.HasTrigger("TR_DoctorSubscriptions_NoPeriodOverlap"));
     }
 }
 
@@ -158,6 +161,7 @@ internal sealed class SubscriptionChangeRequestConfiguration : IWriteEntityConfi
         b.HasIndex(x => x.SubscriptionId).IsUnique().HasFilter("[Status] = 1").HasDatabaseName("UX_OnePendingChangePerSubscription");
         b.HasIndex(x => new { x.SubscriptionId, x.Status });
         b.Ignore(x => x.TargetTerms);
+        b.Ignore(x => x.RetainedAllocations);
     }
 }
 

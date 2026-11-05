@@ -3,6 +3,8 @@ namespace Wasla.Domain.Subscriptions;
 public static class SubscriptionPermissionNames
 {
     public const string ViewOwn = "Subscriptions.ViewOwn";
+    public const string ActivateTrialOwn = "Subscriptions.ActivateTrialOwn";
+    public const string AllocationsManageOwn = "Subscriptions.AllocationsManageOwn";
     public const string RequestChangeOwn = "Subscriptions.RequestChangeOwn";
     public const string CancelAtPeriodEndOwn = "Subscriptions.CancelAtPeriodEndOwn";
     public const string ViewAll = "Subscriptions.ViewAll";
@@ -13,7 +15,8 @@ public static class SubscriptionPermissionNames
     public const string ReviewChangeRequests = "Subscriptions.ReviewChangeRequests";
     public const string EnrollLegacyTransition = "Subscriptions.EnrollLegacyTransition";
     public const string ReceptionAccountStateOwn = "ReceptionUsers.ManageAccountStateOwn";
-    public static readonly IReadOnlyList<string> DoctorDefaults = [ViewOwn, RequestChangeOwn, CancelAtPeriodEndOwn, ReceptionAccountStateOwn];
+    public static readonly IReadOnlyList<string> DoctorDefaults = [ViewOwn, ActivateTrialOwn, AllocationsManageOwn, RequestChangeOwn, CancelAtPeriodEndOwn, ReceptionAccountStateOwn];
     public static readonly IReadOnlyList<string> AdminDefaults = [ViewAll, ViewDetails, Activate, ExtendTrial, Renew, ReviewChangeRequests, EnrollLegacyTransition];
-    public static readonly IReadOnlyList<string> All = [.. DoctorDefaults, .. AdminDefaults];
+    // SystemPermissionIds derives stable GUIDs from this order. New entries must be appended.
+    public static readonly IReadOnlyList<string> All = [ViewOwn, RequestChangeOwn, CancelAtPeriodEndOwn, ReceptionAccountStateOwn, .. AdminDefaults, ActivateTrialOwn, AllocationsManageOwn];
 }

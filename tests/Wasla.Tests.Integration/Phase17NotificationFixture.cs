@@ -26,6 +26,7 @@ internal static class Phase17NotificationFixture
                 start, DateTime.SpecifyKind(local, DateTimeKind.Unspecified), DateOnly.FromDateTime(local), "Africa/Cairo", 20,
                 "عادي", "Normal", 1, "NewConsultation", "كشف جديد", "New consultation", 300, "PRIVATE_BOOKING_NOTE", app.Clock.UtcNow)).Value;
             db.Reservations.Add(r); await db.SaveChangesAsync();
+            await SubscriptionTestData.CaptureKnownOriginAsync(db, r);
         });
         return id;
     }

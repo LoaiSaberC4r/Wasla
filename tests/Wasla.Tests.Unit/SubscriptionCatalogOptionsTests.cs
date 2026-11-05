@@ -13,18 +13,18 @@ public sealed class SubscriptionCatalogOptionsTests
         return new ConfigurationBuilder().AddJsonFile(Path.Combine(root!.FullName, "src/Wasla/Wasla.Api/appsettings.json"))
             .Build().GetSection(SubscriptionCatalogOptions.SectionName).Get<SubscriptionCatalogOptions>()!;
     }
-    [Fact] public void Approved_configuration_is_valid_and_booking_is_disabled()
+    [Fact] public void Approved_v12_configuration_is_valid_with_per_practice_booking_and_self_started_trial()
     {
         var o = Configured(); Assert.True(new SubscriptionCatalogOptionsValidator().Validate(null, o).Succeeded);
-        Assert.False(o.BookingOnly.Enabled); Assert.Empty(o.BookingOnly.PricingTiers); Assert.False(o.PaymentMethods.Card); Assert.False(o.PaymentMethods.EWallet);
+        Assert.True(o.BookingOnly.Enabled); Assert.Equal(50m, o.BookingOnly.MonthlyUnitPrice); Assert.False(o.FullPlatform.Trial.StartsOnDoctorApproval); Assert.False(o.PaymentMethods.Card); Assert.False(o.PaymentMethods.EWallet);
         Assert.Equal(499m, o.FullPlatform.Plans.Single(p => p.Code == "STARTER").MonthlyPrice);
         Assert.Equal(9990m, o.FullPlatform.Plans.Single(p => p.Code == "PROFESSIONAL").AnnualPrice);
         Assert.Equal(1799m, o.FullPlatform.Plans.Single(p => p.Code == "PREMIUM").MonthlyPrice);
     }
     [Theory]
     [InlineData("missing-price")][InlineData("negative-price")][InlineData("zero-capacity")][InlineData("negative-capacity")]
-    [InlineData("annual-mismatch")][InlineData("duplicate-plan")][InlineData("booking-empty")][InlineData("booking-overlap")]
-    [InlineData("booking-gap")][InlineData("booking-maximum")][InlineData("booking-price")][InlineData("automatic-renewal")]
+    [InlineData("annual-mismatch")][InlineData("duplicate-plan")][InlineData("booking-zero-price")][InlineData("approval-started-trial")]
+    [InlineData("booking-wrong-plan")][InlineData("booking-wrong-price")][InlineData("booking-price")][InlineData("automatic-renewal")]
     [InlineData("overflow-price")][InlineData("fractional-price")][InlineData("overflow-duration")]
     public void Invalid_configuration_fails_fast(string invalid)
     {
@@ -41,15 +41,10 @@ public sealed class SubscriptionCatalogOptionsTests
             case "fractional-price": o.FullPlatform.Plans[0].MonthlyPrice = 499.001m; break;
             case "overflow-duration": o.FullPlatform.Trial.DurationDays = int.MaxValue; break;
             case "automatic-renewal": o.Policies.AutomaticRenewalEnabled = true; break;
-            default:
-                o.BookingOnly.Enabled = true; o.BookingOnly.MaximumSelectablePractices = 4;
-                if (invalid == "booking-empty") break;
-                o.BookingOnly.PricingTiers = [new() { MinPracticeCount = 1, MaxPracticeCount = 2, MonthlyPrice = 200 }, new() { MinPracticeCount = 3, MaxPracticeCount = 4, MonthlyPrice = 300 }];
-                if (invalid == "booking-overlap") o.BookingOnly.PricingTiers[1].MinPracticeCount = 2;
-                if (invalid == "booking-gap") o.BookingOnly.PricingTiers[1].MinPracticeCount = 4;
-                if (invalid == "booking-maximum") o.BookingOnly.MaximumSelectablePractices = 5;
-                if (invalid == "booking-price") o.BookingOnly.PricingTiers[0].MonthlyPrice = 0;
-                break;
+            case "approval-started-trial": o.FullPlatform.Trial.StartsOnDoctorApproval = true; break;
+            case "booking-wrong-plan": o.BookingOnly.PlanCode = "OTHER"; break;
+            case "booking-wrong-price": o.BookingOnly.MonthlyUnitPrice = 51; break;
+            default: o.BookingOnly.MonthlyUnitPrice = 0; break;
         }
         Assert.True(new SubscriptionCatalogOptionsValidator().Validate(null, o).Failed);
     }
@@ -72,7 +67,7 @@ public sealed class SubscriptionDomainTests
             kind == SubscriptionKind.Trial ? o.FullPlatform.Trial.DurationDays : null, [.. o.FullPlatform.Trial.ReminderDaysBeforeEnd],
             [new(Guid.NewGuid(), "PRACTICE_MANAGEMENT", FeatureAccessLevel.Full)]);
     }
-    [Fact] public void Trial_starts_at_approval_once_with_exclusive_end_and_no_billing_cycle()
+    [Fact] public void Trial_starts_at_explicit_activation_once_with_exclusive_end_and_no_billing_cycle()
     {
         var approved = new DateTime(2026, 11, 2, 12, 0, 0, DateTimeKind.Utc);
         var s = DoctorSubscription.Select(Guid.NewGuid(), Terms(), approved.AddDays(-4)).Value;

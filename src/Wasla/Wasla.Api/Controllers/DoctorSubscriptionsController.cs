@@ -16,8 +16,8 @@ public sealed class DoctorSubscriptionsController(ISender sender) : ControllerBa
     [HttpGet, Permission(SubscriptionPermissionNames.ViewOwn)]
     public async Task<IActionResult> Get(CancellationToken ct) => (await sender.Send(new SubscriptionQuery(), ct)).ToIActionResult(ct);
     [HttpPost("selection"), Permission(SubscriptionPermissionNames.RequestChangeOwn)]
-    public async Task<IActionResult> Select(SubscriptionSelection selection, CancellationToken ct) =>
-        (await sender.Send(new SubscriptionCommand(SubscriptionOperation.SelectPaid, null, new("", Selection: selection)), ct)).ToIActionResult(ct);
+    public async Task<IActionResult> Select(SubscriptionSelection selection, [FromHeader(Name = "Idempotency-Key")] string key, CancellationToken ct) =>
+        (await sender.Send(new SubscriptionCommand(SubscriptionOperation.SelectPaid, null, new("", Selection: selection), key), ct)).ToIActionResult(ct);
     [HttpPost("change-requests"), Permission(SubscriptionPermissionNames.RequestChangeOwn)]
     public async Task<IActionResult> RequestChange(SubscriptionMutationRequest request, CancellationToken ct) =>
         (await sender.Send(new SubscriptionCommand(SubscriptionOperation.RequestChange, null, request), ct)).ToIActionResult(ct);

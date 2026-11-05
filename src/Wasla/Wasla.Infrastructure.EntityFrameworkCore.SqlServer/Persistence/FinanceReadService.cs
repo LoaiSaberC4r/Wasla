@@ -48,8 +48,12 @@ internal sealed partial class FinanceReadService(
         if (!ValidFilter(filter)) return Result<FinancialPage<FinancialTransactionItem>>.Fail(InvalidFilter);
         if (filter.PracticeId is { } practiceId && !await OwnsPracticeAsync(doctor.Value, practiceId, cancellationToken))
             return Result<FinancialPage<FinancialTransactionItem>>.Fail(AccessDenied);
-        var rows = await PageAsync(Transactions(filter, doctor.Value, null),
-            filter.PageNumber, filter.PageSize, cancellationToken);
+        var snapshot = (await AccessSnapshotAsync(cancellationToken)).Value;
+        var decision = (await subscriptions.EvaluateManyAsync(snapshot, [PermissionNames.DoctorPracticePaymentsViewOwn], cancellationToken))[PermissionNames.DoctorPracticePaymentsViewOwn];
+        var query = Transactions(filter, doctor.Value, null);
+        if (decision.ReadScope is { } scope) query = query.Where(scope.Predicate<FinancialListRow>(r => r.OccurredOnUtc, r => r.DoctorPracticeId));
+        else query = query.Where(_ => false);
+        var rows = await PageAsync(query, filter.PageNumber, filter.PageSize, cancellationToken);
         return Result<FinancialPage<FinancialTransactionItem>>.Ok(new(
             rows.Items.Select(ToInternalItem).ToArray(), rows.TotalCount, rows.PageNumber, rows.PageSize));
     }
@@ -400,7 +404,7 @@ internal sealed partial class FinanceReadService(
         if (access.IsFailure) return Result.Fail(access.Errors);
         if (access.Value.Roles.Contains(SystemRoleNames.Doctor))
         {
-            if (!await subscriptions.AllowedAsync(access.Value, doctorPermission, cancellationToken)) return Result.Fail(AccessDenied);
+            if (!await subscriptions.AllowedAsync(access.Value, doctorPermission, cancellationToken, new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Practice, practiceId))) return Result.Fail(AccessDenied);
             return access.Value.DoctorStatus == DoctorApprovalStatus.Approved &&
                    access.Value.DoctorId is { } doctorId &&
                    access.Value.Permissions.Contains(doctorPermission) &&
@@ -410,7 +414,7 @@ internal sealed partial class FinanceReadService(
         if (access.Value.Roles.Contains(SystemRoleNames.Reception) &&
             access.Value.Permissions.Contains(receptionPermission))
         {
-            if (!await subscriptions.AllowedAsync(access.Value, receptionPermission, cancellationToken)) return Result.Fail(AccessDenied);
+            if (!await subscriptions.AllowedAsync(access.Value, receptionPermission, cancellationToken, new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Practice, practiceId))) return Result.Fail(AccessDenied);
             var delegated = await receptionAuthorization.AuthorizeAsync(
                 practiceId, receptionPermission, cancellationToken);
             return delegated.IsSuccess ? Result.Ok() : Result.Fail(AccessDenied);

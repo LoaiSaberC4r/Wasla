@@ -17,6 +17,7 @@ internal static class Phase12ArchiveTestServices
         services.AddLogging();
         services.TryAddScoped(typeof(Wasla.Application.Persistence.IWaslaDataStore), typeof(WaslaDbContext).Assembly.GetType(
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.WaslaDataStore")!);
+        services.TryAddScoped<Wasla.Application.Persistence.ISubscriptionDataStore, SubscriptionDataStore>();
         services.AddScoped(typeof(Wasla.Application.Persistence.IPatientIdentityStore), typeof(WaslaDbContext).Assembly.GetType(
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.PatientIdentityStore")!);
         services.AddScoped(typeof(IArchiveLocationResolver), typeof(WaslaDbContext).Assembly.GetType(

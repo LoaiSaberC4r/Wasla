@@ -44,7 +44,11 @@ public sealed class BookingOnlyOptions
 {
     public bool Enabled { get; set; }
     public string PlanCode { get; set; } = "";
+    public decimal MonthlyUnitPrice { get; set; } = 50.00m;
+    public int MinimumSelectedPractices { get; } = 1;
+    [System.Text.Json.Serialization.JsonIgnore]
     public int MaximumSelectablePractices { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
     public List<BookingPricingTier> PricingTiers { get; set; } = [];
 }
 public sealed class BookingPricingTier
@@ -94,30 +98,21 @@ public sealed class SubscriptionCatalogOptionsValidator(IDateTimeProvider? clock
             errors.Add("Plans require positive prices (annual = 10 monthly payments), money precision and positive capacities.");
         var trial = options.FullPlatform.Trial;
         var maximumDuration = (DateTime.MaxValue.Date - (clock?.UtcNow ?? DateTime.UnixEpoch).Date).Days;
-        if (trial.Enabled && (string.IsNullOrWhiteSpace(trial.OfferCode) || trial.OfferCode.Length > 200 || trial.DurationDays <= 0 || trial.DurationDays > maximumDuration || !trial.StartsOnDoctorApproval ||
+        if (trial.Enabled && (string.IsNullOrWhiteSpace(trial.OfferCode) || trial.OfferCode.Length > 200 || trial.DurationDays != 20 || trial.DurationDays > maximumDuration || trial.StartsOnDoctorApproval ||
             trial.MaximumTrialsPerDoctor != 1 || trial.PracticeLimit <= 0 || trial.ReceptionLimit <= 0 ||
             trial.ReminderDaysBeforeEnd.Length == 0 || trial.ReminderDaysBeforeEnd.Distinct().Count() != trial.ReminderDaysBeforeEnd.Length ||
             trial.ReminderDaysBeforeEnd.Any(d => d < 0 || d >= trial.DurationDays))) errors.Add("Trial offer is invalid.");
         var starter = plans.FirstOrDefault(p => p.Code == "STARTER");
         if (trial.Enabled && starter is not null && (trial.PracticeLimit != starter.PracticeLimit || trial.ReceptionLimit != starter.ReceptionLimit)) errors.Add("Trial capacity must match Starter.");
         var booking = options.BookingOnly;
-        if (booking.Enabled)
-        {
-            var next = 1;
-            if (booking.PlanCode != "BOOKING_ONLY" || booking.MaximumSelectablePractices <= 0 || booking.PricingTiers.Count == 0) errors.Add("Enabled Booking Only requires a maximum and pricing tiers.");
-            foreach (var tier in booking.PricingTiers.OrderBy(t => t.MinPracticeCount))
-            {
-                if (tier.MinPracticeCount != next || tier.MaxPracticeCount < tier.MinPracticeCount || !ValidMoney(tier.MonthlyPrice)) errors.Add("Booking tiers must be positive, contiguous and non-overlapping.");
-                if (tier.MaxPracticeCount == int.MaxValue) errors.Add("Booking maximum is invalid.");
-                next = tier.MaxPracticeCount == int.MaxValue ? int.MaxValue : tier.MaxPracticeCount + 1;
-            }
-            if ((long)next - 1 != booking.MaximumSelectablePractices) errors.Add("Booking maximum must equal the last tier maximum.");
-        }
+        if (booking.Enabled && (booking.PlanCode != "BOOKING_ONLY" || booking.MonthlyUnitPrice != 50.00m))
+            errors.Add("Booking Only requires the approved 50 EGP monthly unit price.");
         if (options.LegacyTransition.DurationDays <= 0 || options.LegacyTransition.DurationDays > maximumDuration || options.LegacyTransition.MinimumPracticeLimit <= 0 || options.LegacyTransition.MinimumReceptionLimit <= 0) errors.Add("Legacy transition duration and minimum capacities must be valid and positive.");
         if (options.BackgroundProcessing.PollingIntervalSeconds <= 0 || options.BackgroundProcessing.BatchSize <= 0) errors.Add("Background interval and batch size must be positive.");
         if (options.Policies.AutomaticRenewalEnabled || options.Policies.ProrationEnabled || options.Policies.SetupFeeEnabled ||
             options.Policies.PlatformCommissionEnabled || options.Policies.TaxCalculationEnabled || !options.Policies.ManualRenewalEnabled || !options.Policies.CancellationAtPeriodEnd)
             errors.Add("Unsupported commercial policy enabled.");
+        if (options.PaymentMethods.Card || options.PaymentMethods.EWallet || !options.PaymentMethods.Cash) errors.Add("Only manual Cash SaaS payments are enabled.");
         return errors.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(errors);
     }
     private static bool ValidMoney(decimal? value) => value is > 0 && decimal.Round(value.Value, 2) == value &&

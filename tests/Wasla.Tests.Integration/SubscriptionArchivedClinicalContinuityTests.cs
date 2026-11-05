@@ -37,10 +37,13 @@ public sealed class SubscriptionArchivedClinicalContinuityTests
         // Historical read coverage uses the actual Ticket's creation time, independently of operational continuity.
         await using var scope = app.Services.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<ISubscriptionDataStore>();
-        Assert.Equal(new(app.DoctorId, visit.TicketCreatedAtUtc),
-            await store.ReadCommitmentAsync(new(SubscriptionResourceKind.Ticket, visit.TicketId), TestContext.Current.CancellationToken));
-        Assert.Equal(new(app.DoctorId, visit.ReservationCreatedAtUtc.Value),
-            await store.ReadCommitmentAsync(new(SubscriptionResourceKind.Reservation, visit.ReservationId.Value), TestContext.Current.CancellationToken));
+        var ticketRead = await store.ReadCommitmentAsync(new(SubscriptionResourceKind.Ticket, visit.TicketId), TestContext.Current.CancellationToken);
+        Assert.NotNull(ticketRead); Assert.Equal(app.DoctorId, ticketRead.DoctorId); Assert.Equal(visit.TicketCreatedAtUtc, ticketRead.CreatedOnUtc);
+        Assert.Equal(app.PracticeId, ticketRead.PracticeId); Assert.Equal(visit.TicketId, ticketRead.TicketId); Assert.Equal(visit.ReservationId, ticketRead.ReservationId);
+        var reservationRead = await store.ReadCommitmentAsync(new(SubscriptionResourceKind.Reservation, visit.ReservationId.Value), TestContext.Current.CancellationToken);
+        Assert.NotNull(reservationRead); Assert.Equal(app.DoctorId, reservationRead.DoctorId); Assert.Equal(visit.ReservationCreatedAtUtc.Value, reservationRead.CreatedOnUtc);
+        Assert.Equal(app.PracticeId, reservationRead.PracticeId); Assert.Equal(visit.ReservationId, reservationRead.ReservationId);
+
     }
 
     [Fact]
@@ -235,6 +238,7 @@ public sealed class SubscriptionArchivedClinicalContinuityTests
         await using var scope = app.Services.CreateAsyncScope();
         var commitment = await scope.ServiceProvider.GetRequiredService<ISubscriptionDataStore>()
             .CommitmentAsync(resource, TestContext.Current.CancellationToken);
-        Assert.Equal(new(app.DoctorId, createdAtUtc), commitment);
+        Assert.NotNull(commitment); Assert.Equal(app.DoctorId, commitment.DoctorId); Assert.Equal(createdAtUtc, commitment.CreatedOnUtc);
+        Assert.Equal(app.PracticeId, commitment.PracticeId); if (resource.Kind != SubscriptionResourceKind.Reservation) Assert.NotNull(commitment.TicketId);
     }
 }

@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddOptions<Wasla.Application.Features.Notifications.NotificationPrivacyOptions>().Bind(configuration.GetSection("NotificationPrivacy"));
         services.AddScoped<Notifications.NotificationEligibility>();
         services.AddScoped<Notifications.NotificationEmailGuard>();
+        services.AddScoped<Email.SubscriptionEmailGuard>();
         services.AddScoped<Notifications.NotificationDispatchProcessor>();
         services.AddScoped<Wasla.Application.Features.Notifications.INotificationService, Notifications.NotificationService>();
         services.AddScoped<Wasla.Application.Features.Notifications.INotificationAuthorizationAudit, Notifications.NotificationAuthorizationAudit>();

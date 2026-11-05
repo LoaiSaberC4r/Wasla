@@ -44,7 +44,8 @@ internal sealed class DoctorInsightService(WaslaDbContext db, IReportingAccessGu
         var scope = await guard.AuthorizeAsync(ReportActor.Doctor, Phase18PermissionNames.InsightsView, null, null, ct);
         if (scope.IsFailure) return Result<DoctorInsightResponse>.Fail(scope.Errors);
         var row = await db.Set<DoctorInsightFollowUp>().AsNoTracking().SingleOrDefaultAsync(i => i.Id == id && i.DoctorId == scope.Value.DoctorId, ct);
-        if (row != null) return Result<DoctorInsightResponse>.Ok(Response(row, scope.Value));
+        if (row != null) return scope.Value.PracticeIds.Contains(row.PracticeId)
+            ? Result<DoctorInsightResponse>.Ok(Response(row, scope.Value)) : Result<DoctorInsightResponse>.Fail(ReportingErrors.NotFound);
         var computed = await ComputeAsync(null, scope.Value, ct);
         if (computed.IsFailure) return Result<DoctorInsightResponse>.Fail(computed.Errors);
         var match = computed.Value.SingleOrDefault(i => i.InsightId == id);
@@ -63,9 +64,11 @@ internal sealed class DoctorInsightService(WaslaDbContext db, IReportingAccessGu
     }
     public async Task<Result<DoctorInsightResponse>> TrackAsync(TrackDoctorInsightCommand c, CancellationToken ct)
     {
-        var access = await guard.AuthorizeAsync(ReportActor.Doctor, Phase18PermissionNames.InsightsTrack, null, null, ct);
+        var target = await DetailAsync(c.InsightId, ct);
+        if (target.IsFailure) return target;
+        var access = await guard.AuthorizeAsync(ReportActor.Doctor, Phase18PermissionNames.InsightsTrack, target.Value.PracticeId, null, ct);
         if (access.IsFailure) return Result<DoctorInsightResponse>.Fail(access.Errors);
-        var view = await guard.AuthorizeAsync(ReportActor.Doctor, Phase18PermissionNames.InsightsView, null, null, ct);
+        var view = await guard.AuthorizeAsync(ReportActor.Doctor, Phase18PermissionNames.InsightsView, target.Value.PracticeId, null, ct);
         if (view.IsFailure) return Result<DoctorInsightResponse>.Fail(view.Errors);
         if (string.IsNullOrWhiteSpace(c.IdempotencyKey) || c.IdempotencyKey.Length > 200) return Result<DoctorInsightResponse>.Fail(OperatingFinanceErrors.Invalid("Insight.IdempotencyKeyRequired"));
         await coordination.AcquireIdempotencyAsync(Guid.Empty, "DoctorInsight", c.InsightId.ToString("N"), ct);

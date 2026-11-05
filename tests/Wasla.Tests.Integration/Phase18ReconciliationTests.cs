@@ -20,6 +20,8 @@ public sealed class Phase18ReconciliationTests
         await app.WithDbAsync(async db =>
         {
             db.DoctorPractices.Add(DoctorPractice.Create(otherOwned, app.DoctorId, "عيادة ثانية", "Second practice", 1, 1, 1, "Address", 30, 31, app.DoctorUserId).Value);
+            var contract = await db.DoctorSubscriptions.Where(p => p.DoctorId == app.DoctorId).Select(p => p.SubscriptionContractId).SingleAsync();
+            db.PracticeSubscriptionAllocations.Add(new Wasla.Domain.Subscriptions.PracticeSubscriptionAllocation(otherOwned, contract, app.Clock.UtcNow, app.DoctorUserId));
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         });
         using var created = await PostAsync(doctor, Doctor + "/expenses", new

@@ -10,7 +10,7 @@ namespace Wasla.Application.Features.Subscriptions;
 
 public sealed record EnrollLegacyTransitionCommand : ICommand<LegacyTransitionEnrollmentBatch>, ITransactionalCommand<WaslaWritePersistence>;
 internal sealed class EnrollLegacyTransitionCommandHandler(ISubscriptionDataStore store, SubscriptionManager manager,
-    SubscriptionLifecycle lifecycle, IDateTimeProvider clock, IOptionsMonitor<SubscriptionCatalogOptions> options)
+    SubscriptionLifecycle lifecycle, IDateTimeProvider clock, IOptionsMonitor<SubscriptionCatalogOptions> options, IWaslaDataStore data)
     : ICommandHandler<EnrollLegacyTransitionCommand, LegacyTransitionEnrollmentBatch>
 {
     // One launch batch, stable across retries and process restarts.
@@ -40,7 +40,7 @@ internal sealed class EnrollLegacyTransitionCommandHandler(ISubscriptionDataStor
         foreach (var doctorId in ids)
         {
             await store.AcquireSubscriptionCapacityLockAsync(doctorId, cancellationToken);
-            if (await store.CurrentAsync(doctorId, cancellationToken) is not null || (await store.PendingAsync(doctorId, cancellationToken))?.SubscriptionKind == SubscriptionKind.Trial) continue;
+            if ((await store.PeriodsAsync(doctorId, cancellationToken)).Any(s => s.IsValidAt(clock.UtcNow))) continue;
             var usage = await store.UsageAsync(doctorId, cancellationToken);
             var features = (from e in catalog.Entitlements join f in catalog.Features on e.FeatureId equals f.Id
                             where e.PlanId == plan.Id select new SubscriptionFeatureTerms(f.Id, f.Code, e.AccessLevel)).ToArray();
@@ -50,6 +50,9 @@ internal sealed class EnrollLegacyTransitionCommandHandler(ISubscriptionDataStor
             var selection = lifecycle.Select(doctorId, terms);
             if (selection.IsFailure) return Result<LegacyTransitionEnrollmentBatch>.Fail(selection.Errors);
             selection.Value.Activate(batch.StartedAtUtc, actor.Value);
+            foreach (var practice in await data.ListDoctorPracticesAsync(doctorId, cancellationToken))
+                if (await store.AllocationAsync(practice.Practice.Id, cancellationToken) is null)
+                    store.Add(new PracticeSubscriptionAllocation(practice.Practice.Id, selection.Value.SubscriptionContractId, batch.StartedAtUtc, actor.Value));
             lifecycle.History(selection.Value, "LegacyEnrolled", SubscriptionStatus.Pending, actor, null,
                 "legacy-enrolled:" + doctorId, metadata: new { BatchId = batch.Id, EligibilityCutoffUtc = eligibilityCutoff });
         }
