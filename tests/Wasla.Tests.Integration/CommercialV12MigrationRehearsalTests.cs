@@ -16,6 +16,10 @@ public sealed class CommercialV12MigrationRehearsalTests
     public async Task Existing_overcapacity_data_and_proven_origins_survive_cutover_and_backup_restore_rollforward()
     {
         await using var app = await Phase13ApiFixture.CreateAsync(true);
+        // SqlConnection removes the password from ConnectionString after it is opened.
+        // Retain the original test configuration for both administrative connections.
+        var masterConnection = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("WASLA_SQLSERVER_CONNECTION_STRING"))
+            { InitialCatalog = "master" }.ConnectionString;
         app.Clock.UtcNow = DateTime.UtcNow;
         var periodId = await SubscriptionTestData.ReplaceAsync(app);
         Guid reservationId = default, ambiguousId = default; string[] accepted = []; int practices = 0; int payments = 0;
@@ -40,7 +44,7 @@ public sealed class CommercialV12MigrationRehearsalTests
             accepted = await db.DoctorSubscriptions.OrderBy(p => p.Id).Select(p => p.TermsSnapshotJson).ToArrayAsync();
             practices = await db.DoctorPractices.CountAsync(); payments = await db.SubscriptionPayments.CountAsync();
         });
-        string? backup = null; string? databaseName = null; string? masterConnection = null;
+        string? backup = null; string? databaseName = null;
         await app.WithDbAsync(async db =>
         {
             var migrator = db.Database.GetService<IMigrator>();
@@ -49,7 +53,6 @@ public sealed class CommercialV12MigrationRehearsalTests
             var connection = (SqlConnection)db.Database.GetDbConnection();
             databaseName = connection.Database;
             Assert.StartsWith("WaslaPhase13Tests_", databaseName);
-            masterConnection = new SqlConnectionStringBuilder(connection.ConnectionString) { InitialCatalog = "master" }.ConnectionString;
             await using var master = new SqlConnection(masterConnection); await master.OpenAsync(TestContext.Current.CancellationToken);
             await using var folderCommand = master.CreateCommand();
             folderCommand.CommandText = "SELECT CONVERT(nvarchar(4000), COALESCE(SERVERPROPERTY('InstanceDefaultBackupPath'), SERVERPROPERTY('InstanceDefaultDataPath')))";

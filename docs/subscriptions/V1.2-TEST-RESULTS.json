@@ -188,5 +188,101 @@
     "scriptSha256": "55dec0d8749bf513d47c280f019d9c2f3fa6f6c9308a5b79aaa388ef51563c5b"
   },
   "sqlConcurrencyLatestPassed": 66,
-  "sqlConcurrencyEvidence": "65 named SQL category tests passed in the full Release run; the added parallel-transfer SQL case passed in the final invariant rerun."
+  "sqlConcurrencyEvidence": "65 named SQL category tests passed in the full Release run; the added parallel-transfer SQL case passed in the final invariant rerun.",
+  "ciAuthenticationRegression": {
+    "failedGitHubRun": "https://github.com/LoaiSaberC4r/Wasla/actions/runs/42063378984",
+    "cause": "Reconstructing the master connection from an opened SqlConnection omitted its SQL password.",
+    "fix": "Build both master connections from the original WASLA_SQLSERVER_CONNECTION_STRING configuration; retain default credential-redaction behavior.",
+    "applicationChanged": false,
+    "workflowChecksChanged": false,
+    "runs": [
+      {
+        "provider": "Linux SQL Server 2022 container, SQL authentication, before fix",
+        "file": "artifacts/commercial-v1.2-ci-fix/v12-ci-auth-repro_net10.0_20261105185005.trx",
+        "sha256": "3bb5c1d7aa08ee5cacaef7656808b73ac3a75ecf104fda60e5d0f183afcaf8dc",
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "0",
+          "failed": "1",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "times": {
+          "creation": "2026-11-05T18:50:05.6645989+02:00",
+          "queuing": "2026-11-05T18:50:05.6645991+02:00",
+          "start": "2026-11-05T18:49:23.4184987+02:00",
+          "finish": "2026-11-05T18:50:05.7513933+02:00"
+        }
+      },
+      {
+        "provider": "Linux SQL Server 2022 container, SQL authentication, after fix",
+        "file": "artifacts/commercial-v1.2-ci-fix/v12-ci-auth-fixed_net10.0_20261105185243.trx",
+        "sha256": "95be9413dbb6ae173842c90f81cb3068b9982cc472e85599b163f9a48d7863bc",
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "times": {
+          "creation": "2026-11-05T18:52:43.4770712+02:00",
+          "queuing": "2026-11-05T18:52:43.4770715+02:00",
+          "start": "2026-11-05T18:51:49.8677938+02:00",
+          "finish": "2026-11-05T18:52:43.4851137+02:00"
+        }
+      },
+      {
+        "provider": "SQL Server LocalDB, Windows authentication, after fix",
+        "file": "artifacts/commercial-v1.2-ci-fix/v12-ci-integrated-fixed_net10.0_20261105185251.trx",
+        "sha256": "8d3658e6ee2b20c4291e2138c244cf108021a9037a87c6a82eff156cb626d29d",
+        "counters": {
+          "total": "1",
+          "executed": "1",
+          "passed": "1",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "times": {
+          "creation": "2026-11-05T18:52:51.8866953+02:00",
+          "queuing": "2026-11-05T18:52:51.8866960+02:00",
+          "start": "2026-11-05T18:52:01.4247975+02:00",
+          "finish": "2026-11-05T18:52:51.8960511+02:00"
+        }
+      }
+    ]
+  }
 }
