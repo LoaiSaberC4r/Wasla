@@ -88,7 +88,12 @@ internal sealed class PermissionAuthorizationHandler(
 
         if (effective.Contains(requirement.Permission, StringComparer.OrdinalIgnoreCase))
         {
-            if (await subscriptionGuard.AllowedAsync(snapshot, requirement.Permission, CancellationToken.None, ContinuityResource(context)))
+            // The handover read service hides missing/revoked practice delegation as 404.
+            // Keep middleware as commercial preflight so that scoped decision stays there.
+            var resource = requirement.Permission == Phase18PermissionNames.HandoverView
+                ? new Wasla.Application.Features.Subscriptions.SubscriptionResource(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.AuthorizationPreflight, Guid.Empty)
+                : ContinuityResource(context);
+            if (await subscriptionGuard.AllowedAsync(snapshot, requirement.Permission, CancellationToken.None, resource))
                 context.Succeed(requirement);
         }
         else if (requirement.Permission == PermissionNames.NotificationsDeliveriesRetry)
@@ -102,10 +107,12 @@ internal sealed class PermissionAuthorizationHandler(
         {
             ("reservationId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Reservation),
             ("ticketId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Ticket),
-            ("encounterId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Encounter)
+            ("encounterId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Encounter),
+            ("prescriptionId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Prescription),
+            ("practiceId", Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.Practice)
         })
             if (http.Request.RouteValues.TryGetValue(key, out var value) && Guid.TryParse(value?.ToString(), out var id)) return new(kind, id);
-        return null;
+        return new(Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.AuthorizationPreflight, Guid.Empty);
     }
 }
 

@@ -218,7 +218,7 @@ internal sealed class TicketAccessService(
     IReadRepository<Doctor, WaslaReadPersistence> doctors,
     IReadRepository<DoctorPractice, WaslaReadPersistence> practices,
     IReportingAccessGuard archiveGuard,
-    ISubscriptionPermissionGuard subscriptions)
+    ISubscriptionPermissionGuard subscriptions, ISubscriptionDataStore commercialStore)
 {
     public async Task<Result<TicketActor>> AuthorizeReceptionAsync(
         Guid practiceId,
@@ -235,10 +235,12 @@ internal sealed class TicketAccessService(
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         }
 
-        if (!deferSubscriptionCheck && !await subscriptions.AllowedForUserAsync(actorId, permission, cancellationToken, subscriptionResource))
+        if (!deferSubscriptionCheck && !await subscriptions.AllowedForUserAsync(actorId, permission, cancellationToken, subscriptionResource ?? new(SubscriptionResourceKind.Practice, practiceId)))
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         var authorized = await receptionAuthorization.AuthorizeAsync(
             practiceId, permission, cancellationToken);
+        if (authorized.IsSuccess && deferSubscriptionCheck && await practices.GetByIdAsync(practiceId, cancellationToken) is { } ownedPractice)
+            await commercialStore.AcquireCommercialReadLockAsync(ownedPractice.DoctorId, cancellationToken);
         return authorized.IsFailure
             ? Result<TicketActor>.Fail(TicketErrors.AccessDenied)
             : Result<TicketActor>.Ok(new TicketActor(actorId, false, true));
@@ -266,13 +268,15 @@ internal sealed class TicketAccessService(
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         }
 
-        if (!deferSubscriptionCheck && !await subscriptions.AllowedForUserAsync(actorId, permission, cancellationToken, subscriptionResource))
+        if (!deferSubscriptionCheck && !await subscriptions.AllowedForUserAsync(actorId, permission, cancellationToken, subscriptionResource ?? new(SubscriptionResourceKind.Practice, practiceId)))
             return Result<TicketActor>.Fail(TicketErrors.AccessDenied);
         var doctor = await doctors.GetByPropertyAsync(
             item => item.ApplicationUserId == actorId, cancellationToken);
         // The permission guard checks the current stored grant. Scope is proved below;
         // CallNext performs its deferred commercial check only after selecting the actual Ticket.
         var practice = await practices.GetByIdAsync(practiceId, cancellationToken);
+        if (deferSubscriptionCheck && doctor is not null && practice?.DoctorId == doctor.Id)
+            await commercialStore.AcquireCommercialReadLockAsync(doctor.Id, cancellationToken);
         return doctor is not null && doctor.ApprovalStatus == DoctorApprovalStatus.Approved &&
                practice is not null && practice.IsActive && practice.DoctorId == doctor.Id
             ? Result<TicketActor>.Ok(new TicketActor(actorId, true, false))

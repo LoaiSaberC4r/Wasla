@@ -689,7 +689,7 @@ internal sealed partial class ReservationApplicationService(
     Wasla.Application.Features.DoctorPatients.DoctorOwnHistoricalReadPolicy historicalReads,
     Wasla.Application.Features.DoctorPatients.IDoctorPatientReadService patientReads,
     Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptionEntitlements,
-    Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptionPermissions)
+    Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptionPermissions, ISubscriptionDataStore subscriptionStore)
 {
     public async Task<Result<IReadOnlyList<BookablePatientResponse>>> ListBookablePatientsAsync(
         CancellationToken cancellationToken)
@@ -742,7 +742,9 @@ internal sealed partial class ReservationApplicationService(
         }
 
         var (practice, doctor, configuration, segment, visitType, price) = context.Value;
-        var subscriptionAccess = await subscriptionEntitlements.EvaluateAsync(doctor.Id,
+        await subscriptionStore.AcquireSubscriptionCapacityLockAsync(doctor.Id, cancellationToken);
+        await subscriptionStore.ApplyDueSelectionsAsync(doctor.Id, clock.UtcNow, doctor.ApplicationUserId, cancellationToken);
+        var subscriptionAccess = await subscriptionEntitlements.EvaluateForPracticeAsync(doctor.Id, practice.Id,
             scope == ReservationOperationScope.Patient ? "ONLINE_BOOKING" : "RESERVATION_MANAGEMENT",
             Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
         if (subscriptionAccess.IsFailure) return Result<ReservationDetailsResponse>.Fail(subscriptionAccess.Errors);
@@ -857,6 +859,12 @@ internal sealed partial class ReservationApplicationService(
             if (claim.IsFailure) return Result<ReservationDetailsResponse>.Fail(claim.Errors);
         }
         identityAttestation?.Associate(created.Value.Id, null, clock.UtcNow);
+        var originalPeriod = await subscriptionStore.FindAsync(subscriptionAccess.Value.SubscriptionId, cancellationToken);
+        var originalAllocation = await subscriptionStore.AllocationAsync(practice.Id, cancellationToken);
+        if (originalPeriod is null || originalAllocation is null || !originalPeriod.IsValidAt(clock.UtcNow) || originalPeriod.SubscriptionContractId != originalAllocation.SubscriptionContractId)
+            return Result<ReservationDetailsResponse>.Fail(Wasla.Domain.Subscriptions.SubscriptionErrors.Denied("PracticeCommerciallyInactive"));
+        dataStore.Add(new Wasla.Domain.Subscriptions.ReservationCommercialProvenance(created.Value.Id, doctor.Id, practice.Id, originalAllocation.Id,
+            originalPeriod.SubscriptionContractId, originalPeriod.Id, clock.UtcNow, originalPeriod.Terms));
         dataStore.Add(created.Value);
         idempotency.Value.Record!.Complete(created.Value.Id, created.Value.ReservationReference, clock.UtcNow);
         await QueueNotificationAsync(created.Value, "created", cancellationToken);

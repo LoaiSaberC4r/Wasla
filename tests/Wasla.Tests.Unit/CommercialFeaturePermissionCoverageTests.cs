@@ -17,7 +17,7 @@ public sealed class CommercialFeaturePermissionCoverageTests
         var folder = new DirectoryInfo(AppContext.BaseDirectory);
         while (folder is not null && !File.Exists(Path.Combine(folder.FullName, "Wasla.sln"))) folder = folder.Parent;
         var inventory = File.ReadAllLines(Path.Combine(folder!.FullName, "docs", "subscriptions", "permission-coverage.csv"));
-        Assert.Equal(336, inventory.Length);
+        Assert.Equal(PermissionNames.All.Count + 1, inventory.Length);
         foreach (var row in inventory.Skip(1))
         {
             var cells = row.Split(',');
@@ -72,7 +72,7 @@ public sealed class CommercialFeaturePermissionCoverageTests
         var user = ApplicationUser.Create(Guid.NewGuid(), "doctor", "doctor@example.test", null, "hash", UserType.Doctor, false, DateTime.UtcNow).Value;
         var snapshot = new UserAccessSnapshot(user, [SystemRoleNames.Doctor], [permission], Guid.NewGuid(), DoctorApprovalStatus.Approved, null, null, null, false);
         var guard = new SubscriptionPermissionGuard(DispatchProxy.Create<ISubscriptionDataStore, NoCalls>(),
-            DispatchProxy.Create<IWaslaDataStore, NoCalls>(), DispatchProxy.Create<ISubscriptionEntitlementService, NoCalls>(),
+            DispatchProxy.Create<IWaslaDataStore, NoCalls>(),
             DispatchProxy.Create<ISubscriptionOperationalContinuityGuard, NoCalls>(), DispatchProxy.Create<IDateTimeProvider, NoCalls>());
         Assert.False(await guard.AllowedAsync(snapshot, permission, TestContext.Current.CancellationToken));
     }

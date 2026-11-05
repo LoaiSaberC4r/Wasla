@@ -45,17 +45,20 @@ public sealed class SubscriptionCatalogResolver(ISubscriptionDataStore store, IO
         }
         else
         {
-            if (selection.ProductCode != "ONLINE_BOOKING_ONLY" || trial || selection.BillingCycle != BillingCycle.Monthly || selection.PlanCode != o.BookingOnly.PlanCode || selection.SelectedPracticeCount is not > 0 || selection.SelectedPracticeCount > o.BookingOnly.MaximumSelectablePractices)
+            if (selection.ProductCode != "ONLINE_BOOKING_ONLY" || trial || selection.BillingCycle != BillingCycle.Monthly || selection.PlanCode != o.BookingOnly.PlanCode || selection.SelectedPracticeCount is not > 0)
                 return Result<SubscriptionTerms>.Fail(SubscriptionErrors.Invalid("InvalidSelection"));
-            var tier = o.BookingOnly.PricingTiers.SingleOrDefault(t => selection.SelectedPracticeCount >= t.MinPracticeCount && selection.SelectedPracticeCount <= t.MaxPracticeCount);
-            if (tier is null) return Result<SubscriptionTerms>.Fail(SubscriptionErrors.Invalid("BookingOnlyNotConfigured"));
-            price = tier.MonthlyPrice; practices = selection.SelectedPracticeCount.Value; reception = 0;
+            try { price = checked(o.BookingOnly.MonthlyUnitPrice * selection.SelectedPracticeCount.Value); }
+            catch (OverflowException) { return Result<SubscriptionTerms>.Fail(SubscriptionErrors.Invalid("PriceOverflow")); }
+            if (price <= 0 || price > 9999999999999999.99m || decimal.Round(price, 2) != price)
+                return Result<SubscriptionTerms>.Fail(SubscriptionErrors.Invalid("PriceOverflow"));
+            practices = selection.SelectedPracticeCount.Value; reception = 0;
         }
         var features = (from e in data.Entitlements join f in data.Features on e.FeatureId equals f.Id
                         where e.PlanId == plan.Id && f.IsActive select new SubscriptionFeatureTerms(f.Id, f.Code, e.AccessLevel)).ToArray();
         if (features.Length == 0) return Result<SubscriptionTerms>.Fail(SubscriptionErrors.Invalid("ConfigurationInvalid"));
         return Result<SubscriptionTerms>.Ok(new(product.Id, product.Code, plan.Id, plan.Code, trial ? SubscriptionKind.Trial : SubscriptionKind.Paid,
             selection.BillingCycle, selection.SelectedPracticeCount, price, o.Currency, practices, reception, o.CatalogVersion,
-            trial ? o.FullPlatform.Trial.DurationDays : null, trial ? [.. o.FullPlatform.Trial.ReminderDaysBeforeEnd] : [], features));
+            trial ? o.FullPlatform.Trial.DurationDays : null, trial ? [.. o.FullPlatform.Trial.ReminderDaysBeforeEnd] : [7, 3, 1, 0], features,
+            selection.ProductCode == "ONLINE_BOOKING_ONLY" ? o.BookingOnly.MonthlyUnitPrice : null));
     }
 }

@@ -31,6 +31,9 @@ public sealed class SubscriptionChangeRequest : Entity<Guid>
     public DateTime? EffectiveAtUtc { get; private set; }
     public string TargetTermsSnapshotJson { get; private set; } = "";
     public byte[] RowVersion { get; private set; } = [];
+    public string? RetainedAllocationsJson { get; private set; }
+    public IReadOnlyList<RetainedPracticeAllocation>? RetainedAllocations => RetainedAllocationsJson is null ? null : JsonSerializer.Deserialize<RetainedPracticeAllocation[]>(RetainedAllocationsJson);
+    public void SetRetainedAllocations(IReadOnlyList<RetainedPracticeAllocation>? selections) => RetainedAllocationsJson = selections is null ? null : JsonSerializer.Serialize(selections);
     public SubscriptionTerms TargetTerms => JsonSerializer.Deserialize<SubscriptionTerms>(TargetTermsSnapshotJson)!;
 
     public Result Review(bool approve, Guid actor, DateTime now, DateTime effective, string? reason)

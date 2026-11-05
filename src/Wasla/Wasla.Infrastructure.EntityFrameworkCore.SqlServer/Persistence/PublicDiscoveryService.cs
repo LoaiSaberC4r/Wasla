@@ -48,7 +48,7 @@ internal sealed class PublicDiscoveryService(
 
         if (request.GovernorateId.HasValue || request.CityId.HasValue || request.AreaId.HasValue)
         {
-            query = query.Where(doctor => dbContext.DoctorPractices.Any(practice =>
+            query = query.Where(doctor => dbContext.PubliclyCoveredPractices(clock.UtcNow).Any(practice =>
                 practice.DoctorId == doctor.Id && practice.IsActive &&
                 (!request.GovernorateId.HasValue || practice.GovernorateId == request.GovernorateId.Value) &&
                 (!request.CityId.HasValue || practice.CityId == request.CityId.Value) &&
@@ -76,7 +76,7 @@ internal sealed class PublicDiscoveryService(
                     slot.IsAvailable &&
                     slot.VisibleFromUtc <= nowUtc &&
                     slot.SlotStartUtc > nowUtc)
-                .Where(slot => dbContext.DoctorPractices.Any(practice =>
+                .Where(slot => dbContext.PubliclyCoveredPractices(clock.UtcNow).Any(practice =>
                     practice.Id == slot.DoctorPracticeId && practice.IsActive))
                 .Where(slot => dbContext.DoctorPracticeConfigurations.Any(configuration =>
                     configuration.DoctorPracticeId == slot.DoctorPracticeId &&
@@ -334,7 +334,7 @@ internal sealed class PublicDiscoveryService(
     public Task<string?> GetPracticeLogoKeyAsync(
         Guid practiceId,
         CancellationToken cancellationToken)
-        => (from practice in dbContext.DoctorPractices.AsNoTracking()
+        => (from practice in dbContext.PubliclyCoveredPractices(clock.UtcNow)
             join doctor in dbContext.Doctors.AsNoTracking() on practice.DoctorId equals doctor.Id
             join user in dbContext.ApplicationUsers.AsNoTracking() on doctor.ApplicationUserId equals user.Id
             join branding in dbContext.DoctorPracticeBrandings.AsNoTracking()
@@ -348,11 +348,7 @@ internal sealed class PublicDiscoveryService(
            join user in dbContext.ApplicationUsers.AsNoTracking()
                on doctor.ApplicationUserId equals user.Id
            where doctor.ApprovalStatus == DoctorApprovalStatus.Approved && user.IsActive &&
-                 dbContext.DoctorSubscriptions.Any(s => s.DoctorId == doctor.Id &&
-                     (s.Status == Wasla.Domain.Subscriptions.SubscriptionStatus.Active || s.Status == Wasla.Domain.Subscriptions.SubscriptionStatus.Scheduled) && s.StartsAtUtc <= clock.UtcNow && clock.UtcNow < s.EndsAtUtc &&
-                     dbContext.SubscriptionFeatureSnapshots.Any(f => f.SubscriptionId == s.Id && f.FeatureCodeSnapshot == "PUBLIC_DISCOVERY") &&
-                     dbContext.SubscriptionFeatureSnapshots.Any(f => f.SubscriptionId == s.Id && f.FeatureCodeSnapshot == "ONLINE_BOOKING")) &&
-                 dbContext.DoctorPractices.Any(practice =>
+                 dbContext.PubliclyCoveredPractices(clock.UtcNow).Any(practice =>
                      practice.DoctorId == doctor.Id && practice.IsActive && dbContext.DoctorPracticeConfigurations.Any(c => c.DoctorPracticeId == practice.Id && c.AllowOnlineBooking))
            select doctor;
 
@@ -363,7 +359,7 @@ internal sealed class PublicDiscoveryService(
         var doctors = await dbContext.Doctors.AsNoTracking()
             .Where(item => doctorIds.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, cancellationToken);
-        var practices = await (from practice in dbContext.DoctorPractices.AsNoTracking()
+        var practices = await (from practice in dbContext.PubliclyCoveredPractices(clock.UtcNow)
             join governorate in dbContext.Governorates.AsNoTracking()
                 on practice.GovernorateId equals governorate.Id
             join city in dbContext.Cities.AsNoTracking() on practice.CityId equals city.Id
@@ -453,7 +449,7 @@ internal sealed class PublicDiscoveryService(
         Guid practiceId,
         CancellationToken cancellationToken)
     {
-        var eligible = await (from practice in dbContext.DoctorPractices.AsNoTracking()
+        var eligible = await (from practice in dbContext.PubliclyCoveredPractices(clock.UtcNow)
             join doctor in dbContext.Doctors.AsNoTracking() on practice.DoctorId equals doctor.Id
             join user in dbContext.ApplicationUsers.AsNoTracking() on doctor.ApplicationUserId equals user.Id
             where practice.Id == practiceId && practice.IsActive &&

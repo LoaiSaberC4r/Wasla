@@ -45,8 +45,11 @@ internal sealed partial class ReportingQueryService(WaslaDbContext db, IReportin
         var scope = view.Value;
         if (actor == ReportActor.Doctor && code == "practice-comparison" && scope.DoctorId is { } ownerDoctor)
         {
-            var comparison = await subscriptionEntitlements.EvaluateAsync(ownerDoctor, "CROSS_PRACTICE_COMPARISON", Wasla.Domain.Subscriptions.FeatureAccessLevel.ReadOnly, ct);
-            if (comparison.IsFailure) return Result<ReportModel>.Fail(comparison.Errors);
+            var compared = new List<Guid>();
+            foreach (var practice in scope.PracticeIds)
+                if ((await subscriptionEntitlements.EvaluateForPracticeAsync(ownerDoctor, practice, "CROSS_PRACTICE_COMPARISON", Wasla.Domain.Subscriptions.FeatureAccessLevel.ReadOnly, ct)).IsSuccess) compared.Add(practice);
+            if (compared.Count == 0) return Result<ReportModel>.Fail(ReportingErrors.Denied);
+            scope = scope with { PracticeIds = compared };
         }
         if (export && scope.PracticeIds.Any(p => !access.Value.PracticeIds.Contains(p)))
             return Result<ReportModel>.Fail(ReportingErrors.Denied);

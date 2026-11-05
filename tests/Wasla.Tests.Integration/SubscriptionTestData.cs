@@ -11,13 +11,28 @@ namespace Wasla.Tests.Integration;
 
 internal static class SubscriptionTestData
 {
+    // Explicit commercial proof for healthcare fixtures that deliberately insert a valid
+    // confirmed reservation without exercising the booking API. Never used by product code.
+    internal static async Task CaptureKnownOriginAsync(WaslaDbContext db, Wasla.Domain.Reservations.Reservation reservation)
+    {
+        var at = reservation.CreatedOnUtc;
+        var candidates = await (from a in db.PracticeSubscriptionAllocations
+                                join p in db.DoctorSubscriptions on a.SubscriptionContractId equals p.SubscriptionContractId
+                                where a.DoctorPracticeId == reservation.DoctorPracticeId && a.AllocatedFromUtc <= at && (a.ReleasedAtUtc == null || at < a.ReleasedAtUtc) &&
+                                    p.DoctorId == reservation.DoctorId && p.StartsAtUtc <= at && at < p.EndsAtUtc && (p.Status == SubscriptionStatus.Active || p.Status == SubscriptionStatus.Scheduled)
+                                select new { Allocation = a, Period = p }).ToArrayAsync();
+        var proof = Assert.Single(candidates);
+        db.Add(new ReservationCommercialProvenance(reservation.Id, reservation.DoctorId, reservation.DoctorPracticeId, proof.Allocation.Id,
+            proof.Period.SubscriptionContractId, proof.Period.Id, at, proof.Period.Terms));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
     internal sealed class EntitledPermissions : ISubscriptionPermissionGuard
     {
         public Task<bool> AllowedForUserAsync(Guid userId, string permission, CancellationToken ct, SubscriptionResource? resource = null) => Task.FromResult(true);
         public Task<bool> AllowedAsync(Wasla.Application.Persistence.UserAccessSnapshot user, string permission, CancellationToken ct, SubscriptionResource? resource = null) => Task.FromResult(true);
         public Task<IReadOnlyDictionary<string, SubscriptionPermissionDecision>> EvaluateManyAsync(Wasla.Application.Persistence.UserAccessSnapshot user,
             IReadOnlyCollection<string> permissions, CancellationToken ct, SubscriptionResource? resource = null) =>
-            Task.FromResult<IReadOnlyDictionary<string, SubscriptionPermissionDecision>>(permissions.ToDictionary(p => p, _ => new SubscriptionPermissionDecision(true)));
+            Task.FromResult<IReadOnlyDictionary<string, SubscriptionPermissionDecision>>(permissions.ToDictionary(p => p, _ => new SubscriptionPermissionDecision(true, ReadScope: new(true, []))));
     }
     internal sealed class EntitledService : ISubscriptionEntitlementService
     {
@@ -45,6 +60,21 @@ internal static class SubscriptionTestData
             foreach (var feature in terms.Value.Features) db.Add(new SubscriptionFeatureSnapshot(Guid.NewGuid(), s.Id, feature.FeatureId, feature.Code, feature.AccessLevel, now));
         }
         await db.SaveChangesAsync(ct);
+        foreach (var practice in await db.DoctorPractices.ToArrayAsync(ct))
+        {
+            if (await db.PracticeSubscriptionAllocations.AnyAsync(a => a.DoctorPracticeId == practice.Id && a.ReleasedAtUtc == null, ct)) continue;
+            var period = await db.DoctorSubscriptions.SingleOrDefaultAsync(p => p.DoctorId == practice.DoctorId && p.Status == SubscriptionStatus.Active, ct);
+            if (period is not null) db.Add(new PracticeSubscriptionAllocation(practice.Id, period.SubscriptionContractId, period.StartsAtUtc!.Value, actor));
+        }
+        await db.SaveChangesAsync(ct);
+    }
+
+    internal static async Task<System.Text.Json.JsonElement> OwnPeriodAsync(HttpClient client, Phase13ApiFixture app, Guid periodId)
+    {
+        Guid contractId = default;
+        await app.WithDbAsync(async db => contractId = await db.DoctorSubscriptions.Where(p => p.Id == periodId).Select(p => p.SubscriptionContractId).SingleAsync());
+        var contracts = await Phase13ApiFixture.GetAsync(client, "/api/v1/doctors/me/subscriptions/" + contractId);
+        return contracts[0].GetProperty("periods").EnumerateArray().Single(p => p.GetProperty("subscription").GetProperty("id").GetGuid() == periodId).Clone();
     }
 
     internal static ISubscriptionEntitlementService Entitlements(WaslaDbContext db)
@@ -86,9 +116,16 @@ internal static class SubscriptionTestData
         var terms = await scope.ServiceProvider.GetRequiredService<ISubscriptionCatalogResolver>().ResolveAsync(selection ?? new("FULL_PLATFORM", plan,
             kind == SubscriptionKind.Trial ? null : cycle, kind == SubscriptionKind.Trial ? options.FullPlatform.Trial.OfferCode : null), ct);
         Assert.True(terms.IsSuccess); var lifecycle = scope.ServiceProvider.GetRequiredService<SubscriptionLifecycle>();
-        var selected = lifecycle.Select(app.DoctorId, terms.Value).Value;
+        var sameSeries = await db.DoctorSubscriptions.Where(p => p.DoctorId == app.DoctorId && p.SubscriptionKind == terms.Value.Kind && p.ProductId == terms.Value.ProductId)
+            .OrderByDescending(p => p.CreatedOnUtc).Select(p => (Guid?)p.SubscriptionContractId).FirstOrDefaultAsync(ct);
+        var selected = lifecycle.Select(app.DoctorId, terms.Value, sameSeries).Value;
         if (activate) selected.Activate(app.Clock.UtcNow, (await db.SuperAdmins.SingleAsync(a => a.IsRootSuperAdmin, ct)).ApplicationUserId);
         if (activate && kind == SubscriptionKind.Trial) await lifecycle.ScheduleRemindersAsync(selected, ct);
+        foreach (var allocation in await db.PracticeSubscriptionAllocations.Where(a => a.ReleasedAtUtc == null && db.DoctorPractices.Any(p => p.Id == a.DoctorPracticeId && p.DoctorId == app.DoctorId)).ToArrayAsync(ct))
+            allocation.Release(app.Clock.UtcNow, app.DoctorUserId, "Test fixture replacement");
+        await db.SaveChangesAsync(ct);
+        foreach (var practice in await db.DoctorPractices.Where(p => p.DoctorId == app.DoctorId).ToArrayAsync(ct))
+            db.Add(new PracticeSubscriptionAllocation(practice.Id, selected.SubscriptionContractId, app.Clock.UtcNow, app.DoctorUserId));
         await db.SaveChangesAsync(ct); return selected.Id;
     }
 }

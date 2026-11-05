@@ -438,9 +438,6 @@ public sealed class TrustAccessApiTests
         AddFile(content, "PersonalIdFrontImage", "front.png");
         AddFile(content, "PersonalIdBackImage", "back.png");
         AddFile(content, "SyndicateCardFrontImage", "syndicate.png");
-        content.Add(new StringContent("FULL_PLATFORM"), "Subscription.ProductCode");
-        content.Add(new StringContent("STARTER"), "Subscription.PlanCode");
-        content.Add(new StringContent("STARTER_FREE_TRIAL_20D"), "Subscription.OfferCode");
         return content;
     }
 

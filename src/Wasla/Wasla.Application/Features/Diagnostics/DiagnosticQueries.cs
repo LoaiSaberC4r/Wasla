@@ -72,7 +72,12 @@ internal sealed class ReadDiagnosticHandler(DiagnosticAccess access, IDiagnostic
     {
         var source = await reader.OwnReadSourceAsync(kind, resource, id, doctor, ct);
         if (source is null) return Result.Fail(DiagnosticErrors.NotFound(kind + "Request.NotFound"));
-        var scope = await historicalReads.AuthorizeOwnReadAsync(source.PracticeId, permission, source.PatientId, ct);
+        var resourceKind = kind == DiagnosticKind.Lab
+            ? resource is DiagnosticReadResource.Results or DiagnosticReadResource.Versions ? Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.LabResult
+                : resource == DiagnosticReadResource.Submissions ? Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.LabSubmission : Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.LabRequest
+            : resource is DiagnosticReadResource.Results or DiagnosticReadResource.Versions ? Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.RadiologyResult
+                : resource == DiagnosticReadResource.Submissions ? Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.RadiologySubmission : Wasla.Application.Features.Subscriptions.SubscriptionResourceKind.RadiologyRequest;
+        var scope = await historicalReads.AuthorizeOwnReadAsync(source.PracticeId, permission, source.PatientId, ct, new(resourceKind, id));
         return scope.IsSuccess ? Result.Ok() : Result.Fail(scope.Errors);
     }
 }

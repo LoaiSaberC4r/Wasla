@@ -119,7 +119,7 @@ internal sealed class GetDoctorPrescriptionHandler(MedicationAccess access, IMed
         if (state is null || r.CorrectionOnly && state.Draft?.PreviousVersionId is null) return Result<PrescriptionStateResponse>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
         var encounter = await work.WriteRepository<MedicalEncounter>().GetByIdAsync(state.MedicalEncounterId, ct);
         if (encounter is null || encounter.DoctorId != actor.Value.DoctorId) return Result<PrescriptionStateResponse>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
-        var scope = await historicalReads.AuthorizeOwnReadAsync(state.PracticeId, PermissionNames.PrescriptionsViewOwn, encounter.PatientId, ct);
+        var scope = await historicalReads.AuthorizeOwnReadAsync(state.PracticeId, PermissionNames.PrescriptionsViewOwn, encounter.PatientId, ct, new(SubscriptionResourceKind.Prescription, r.PrescriptionId));
         if (scope.IsFailure) return Result<PrescriptionStateResponse>.Fail(scope.Errors);
         if (scope.Value.ReadOnly && (r.CorrectionOnly || state.Current is null)) return Result<PrescriptionStateResponse>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
         await patientReads.AuditAsync(scope.Value.Actor, "OwnPrescriptionRead", r.PrescriptionId, ct);
@@ -141,7 +141,7 @@ internal sealed class ListPrescriptionVersionsHandler(MedicationAccess access, I
         var encounter = await work.WriteRepository<MedicalEncounter>().GetByIdAsync(state.MedicalEncounterId, ct);
         if (encounter is null || encounter.DoctorId != actor.Value.DoctorId) return Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(MedicationErrors.NotFound("Prescription.NotFound"));
         var versions = await reader.VersionsAsync(r.PrescriptionId, actor.Value.DoctorId.Value, r.VersionNumber, ct);
-        var scope = await historicalReads.AuthorizeOwnReadAsync(state.PracticeId, PermissionNames.PrescriptionsViewOwn, encounter.PatientId, ct);
+        var scope = await historicalReads.AuthorizeOwnReadAsync(state.PracticeId, PermissionNames.PrescriptionsViewOwn, encounter.PatientId, ct, new(SubscriptionResourceKind.Prescription, r.PrescriptionId));
         if (scope.IsFailure) return Result<IReadOnlyList<PrescriptionVersionResponse>>.Fail(scope.Errors);
         if (scope.Value.ReadOnly) versions = versions.Where(v => v.Status != PrescriptionVersionStatus.Draft).ToArray();
         if (versions.Count > 0) await patientReads.AuditAsync(scope.Value.Actor, "OwnPrescriptionVersionsRead", r.PrescriptionId, ct);

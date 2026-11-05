@@ -43,10 +43,12 @@ public static class DependencyInjection
         services.AddTransient<MediatR.IPipelineBehavior<Wasla.Application.Features.Patients.CreateReceptionPatientCommand, BuildingBlock.Domain.Results.Result<Wasla.Application.Features.Patients.CreateReceptionPatientResponse>>, PatientIdentityMediaBehavior<Wasla.Application.Features.Patients.CreateReceptionPatientCommand, Wasla.Application.Features.Patients.CreateReceptionPatientResponse>>();
         services.AddTransient<MediatR.IPipelineBehavior<Wasla.Application.Features.Patients.UpdateMyPatientProfileCommand, BuildingBlock.Domain.Results.Result<Wasla.Application.Features.Patients.PatientProfileResponse>>, PatientIdentityMediaBehavior<Wasla.Application.Features.Patients.UpdateMyPatientProfileCommand, Wasla.Application.Features.Patients.PatientProfileResponse>>();
         services.AddBuildingBlockApplicationBehaviors();
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Features.Subscriptions.PracticeCommercialAuthorizationBehavior<,>));
         services.AddScoped<DoctorLifecycleService>();
         services.AddScoped<Features.Subscriptions.ISubscriptionCatalogResolver, Features.Subscriptions.SubscriptionCatalogResolver>();
         services.AddScoped<Features.Subscriptions.SubscriptionLifecycle>();
         services.AddScoped<Features.Subscriptions.SubscriptionManager>();
+        services.AddScoped<Features.Subscriptions.PracticeSubscriptionAllocationService>();
         services.AddScoped<Features.Subscriptions.ISubscriptionOperationalContinuityGuard, Features.Subscriptions.SubscriptionOperationalContinuityGuard>();
         services.AddScoped<Features.Subscriptions.ISubscriptionEntitlementService, Features.Subscriptions.SubscriptionEntitlementService>();
         services.AddScoped<Features.Subscriptions.ISubscriptionPermissionGuard, Features.Subscriptions.SubscriptionPermissionGuard>();

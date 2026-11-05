@@ -19,15 +19,24 @@ public sealed class SubscriptionCapacityConcurrencyTests
             scenario == "extension" ? SubscriptionKind.Trial : SubscriptionKind.Paid, activate: scenario != "activation");
         using var admin1 = await app.ClientAsync("root"); using var admin2 = await app.ClientAsync("root");
         using var doctor1 = await app.ClientAsync("doctor"); using var doctor2 = await app.ClientAsync("doctor");
+        Guid contractId = default; var candidates = new List<Guid>();
+        await app.WithDbAsync(async db => contractId = await db.DoctorSubscriptions.Where(p => p.Id == id).Select(p => p.SubscriptionContractId).SingleAsync());
         if (scenario == "practice")
-            await app.WithDbAsync(async db => { db.Add(DoctorPractice.Create(Guid.NewGuid(), app.DoctorId, "عيادة غير نشطة", null, 1, 1, 1, "Address", 30, 31).Value); await db.SaveChangesAsync(); });
+            await app.WithDbAsync(async db =>
+            {
+                var practice = DoctorPractice.Create(Guid.NewGuid(), app.DoctorId, "عيادة غير نشطة", null, 1, 1, 1, "Address", 30, 31).Value;
+                db.Add(practice); db.Add(new PracticeSubscriptionAllocation(practice.Id, contractId, app.Clock.UtcNow, app.DoctorUserId)); await db.SaveChangesAsync();
+            });
         if (scenario == "reception")
             await app.WithDbAsync(async db =>
             {
-                for (var i = 0; i < 3; i++)
+                for (var i = 0; i < 5; i++)
                 {
                     var user = ApplicationUser.Create(Guid.NewGuid(), "seat-" + i, $"seat-{i}@example.test", null, "hash", UserType.Reception, false, app.Clock.UtcNow).Value;
-                    db.Add(user); db.Add(Reception.Create(Guid.NewGuid(), user.Id, app.DoctorId, "استقبال", null, app.DoctorUserId).Value);
+                    var reception = Reception.Create(Guid.NewGuid(), user.Id, app.DoctorId, "استقبال", null, app.DoctorUserId).Value;
+                    db.Add(user); db.Add(reception);
+                    if (i < 3) db.Add(ReceptionPracticeAssignment.Create(Guid.NewGuid(), reception.Id, app.PracticeId, app.DoctorUserId).Value);
+                    else candidates.Add(reception.Id);
                 }
                 await db.SaveChangesAsync();
             });
@@ -40,23 +49,23 @@ public sealed class SubscriptionCapacityConcurrencyTests
             var change = (await JsonAsync(requested)).GetProperty("changeRequests")[0]; changeId = change.GetProperty("id").GetGuid(); changeRow = change.GetProperty("rowVersion").GetString();
         }
         var details = await GetAsync(admin1, "/api/v1/admin/subscriptions/" + id); var row = details.GetProperty("rowVersion").GetString();
-        string url; object first; object second;
+        string url; string? secondUrl = null; object first; object second;
         switch (scenario)
         {
             case "practice":
                 url = "/api/v1/doctors/me/practices";
-                first = new { nameAr = "عيادة جديدة أ", governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 };
-                second = new { nameAr = "عيادة جديدة ب", governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 }; break;
+                first = new { nameAr = "عيادة جديدة أ", subscriptionContractId = contractId, governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 };
+                second = new { nameAr = "عيادة جديدة ب", subscriptionContractId = contractId, governorateId = 1, cityId = 1, areaId = 1, detailedAddress = "Address", latitude = 30, longitude = 31 }; break;
             case "reception":
-                url = "/api/v1/doctors/me/receptions";
-                first = new { userName = "new-seat-a", email = "new-seat-a@example.test", temporaryPassword = "SubscriptionTest123!", nameAr = "استقبال أ" };
-                second = new { userName = "new-seat-b", email = "new-seat-b@example.test", temporaryPassword = "SubscriptionTest123!", nameAr = "استقبال ب" }; break;
+                url = $"/api/v1/doctors/me/receptions/{candidates[0]}/assignments";
+                secondUrl = $"/api/v1/doctors/me/receptions/{candidates[1]}/assignments";
+                first = second = new { doctorPracticeId = app.PracticeId, permissionIds = new[] { SystemPermissionIds.For(PermissionNames.PracticeTicketsView) } }; break;
             case "extension": url = $"/api/v1/admin/subscriptions/{id}/trial-extend"; first = second = new { rowVersion = row, additionalDays = 5, reason = "Approved exception" }; break;
             case "upgrade": url = $"/api/v1/admin/subscriptions/{id}/change-requests/{changeId}/approve"; first = second = new { rowVersion = row, changeRowVersion = changeRow, paymentMethod = "Cash", amountReceived = 500 }; break;
             default: url = $"/api/v1/admin/subscriptions/{id}/" + (scenario == "activation" ? "activate" : "renew"); first = second = new { rowVersion = row, paymentMethod = "Cash", amountReceived = 499 }; break;
         }
         var clients = scenario is "practice" or "reception" ? new[] { doctor1, doctor2 } : [admin1, admin2];
-        var responses = await Task.WhenAll(PostAsync(clients[0], url, first), PostAsync(clients[1], url, second));
+        var responses = await Task.WhenAll(PostAsync(clients[0], url, first), PostAsync(clients[1], secondUrl ?? url, second));
         try
         {
             Assert.Equal(1, responses.Count(r => r.IsSuccessStatusCode));
@@ -64,7 +73,7 @@ public sealed class SubscriptionCapacityConcurrencyTests
             await app.WithDbAsync(async db =>
             {
                 if (scenario == "practice") Assert.Equal(3, await db.DoctorPractices.CountAsync(p => p.DoctorId == app.DoctorId));
-                if (scenario == "reception") Assert.Equal(5, await db.Receptions.CountAsync(r => r.OwnerDoctorId == app.DoctorId));
+                if (scenario == "reception") Assert.Equal(5, await db.ReceptionPracticeAssignments.CountAsync(a => a.DoctorPracticeId == app.PracticeId && a.IsActive));
                 if (scenario == "extension") Assert.Equal(1, (await db.DoctorSubscriptions.SingleAsync(s => s.Id == id)).TrialExtensionCount);
                 if (scenario is "activation" or "upgrade") Assert.Single(await db.SubscriptionPayments.Where(p => p.SubscriptionId == id).ToArrayAsync());
                 if (scenario == "renewal") Assert.Equal(1, await db.DoctorSubscriptions.CountAsync(s => s.DoctorId == app.DoctorId && s.Status == SubscriptionStatus.Scheduled));

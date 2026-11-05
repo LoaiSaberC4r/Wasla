@@ -11,6 +11,15 @@ public sealed class EmailOutbox(
     IDateTimeProvider clock)
     : IEmailOutbox
 {
+    public Task SuppressPaidRemindersAsync(Guid periodId, CancellationToken cancellationToken = default)
+    {
+        var prefix = $"subscription-paid-reminder:{periodId}:";
+        var expired = $"subscription-expired:{periodId}";
+        return dbContext.EmailOutboxMessages.Where(m => (m.IdempotencyKey.StartsWith(prefix) || m.IdempotencyKey == expired) &&
+                (m.Status == EmailOutboxStatus.Pending || m.Status == EmailOutboxStatus.Processing))
+            .ExecuteUpdateAsync(s => s.SetProperty(m => m.Status, EmailOutboxStatus.Suppressed).SetProperty(m => m.ProcessedOnUtc, clock.UtcNow)
+                .SetProperty(m => m.ProcessingToken, (Guid?)null).SetProperty(m => m.NextAttemptOnUtc, (DateTime?)null).SetProperty(m => m.LastError, "Subscription.PaidSuccessorConfirmed"), cancellationToken);
+    }
     public async Task QueueAsync(
         QueueEmailMessage message,
         CancellationToken cancellationToken = default)

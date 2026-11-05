@@ -39,7 +39,10 @@ public sealed record DoctorPracticeResponse(
     PracticeLocationResponse Location,
     bool IsActive,
     bool HasLogo,
-    string RowVersion);
+    string RowVersion,
+    PracticeCommercialSummary? Commercial = null);
+public sealed record PracticeCommercialSummary(Guid? SubscriptionContractId, Guid? PeriodId, Guid? AllocationId,
+    string? PlanCode, string EffectiveState, string NextAction, string? AllocationRowVersion);
 
 public sealed record CreateDoctorPracticeCommand(
     string NameAr,
@@ -49,9 +52,11 @@ public sealed record CreateDoctorPracticeCommand(
     int AreaId,
     string DetailedAddress,
     decimal Latitude,
-    decimal Longitude)
+    decimal Longitude,
+    Guid? SubscriptionContractId = null)
     : ICommand<DoctorPracticeResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPractices.ManageOwn")]
 public sealed record UpdateDoctorPracticeCommand(
     Guid PracticeId,
     string NameAr,
@@ -63,12 +68,14 @@ public sealed record UpdateDoctorPracticeCommand(
     decimal Latitude,
     decimal Longitude,
     string RowVersion)
-    : ICommand<DoctorPracticeResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 
 public sealed record ListMyDoctorPracticesQuery : IQuery<IReadOnlyList<DoctorPracticeResponse>>;
-public sealed record GetMyDoctorPracticeQuery(Guid PracticeId) : IQuery<DoctorPracticeResponse>;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPractices.ViewOwn")]
+public sealed record GetMyDoctorPracticeQuery(Guid PracticeId) : IQuery<DoctorPracticeResponse>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPractices.ActivateOwn")]
 public sealed record ActivateDoctorPracticeCommand(Guid PracticeId, string RowVersion)
-    : ICommand<DoctorPracticeResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 public sealed record DeactivateDoctorPracticeCommand(Guid PracticeId, string RowVersion)
     : ICommand<DoctorPracticeResponse>, ITransactionalCommand<WaslaWritePersistence>;
 
@@ -88,8 +95,10 @@ public sealed record DoctorPracticeConfigurationResponse(
     string TimeZoneId,
     string RowVersion);
 
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeConfiguration.ViewOwn")]
 public sealed record GetDoctorPracticeConfigurationQuery(Guid PracticeId)
-    : IQuery<DoctorPracticeConfigurationResponse>;
+    : IQuery<DoctorPracticeConfigurationResponse>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeConfiguration.ManageOwn")]
 public sealed record UpdateDoctorPracticeConfigurationCommand(
     Guid PracticeId,
     bool AllowOnlineBooking,
@@ -104,7 +113,7 @@ public sealed record UpdateDoctorPracticeConfigurationCommand(
     string RowVersion,
     int CheckInOpenBeforeMinutes = DoctorPracticePlatformDefaults.CheckInOpenBeforeMinutes,
     int TicketNoShowReturnFastTrackLimit = DoctorPracticePlatformDefaults.TicketNoShowReturnFastTrackLimit)
-    : ICommand<DoctorPracticeConfigurationResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeConfigurationResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 
 public sealed record DoctorPracticeBrandingResponse(
     Guid Id,
@@ -116,8 +125,11 @@ public sealed record DoctorPracticeBrandingResponse(
     string? TextColor,
     string RowVersion);
 
-public sealed record GetDoctorPracticeBrandingQuery(Guid PracticeId) : IQuery<DoctorPracticeBrandingResponse>;
-public sealed record GetDoctorPracticeLogoQuery(Guid PracticeId) : IQuery<PrivateMedia>;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeBranding.ViewOwn")]
+public sealed record GetDoctorPracticeBrandingQuery(Guid PracticeId) : IQuery<DoctorPracticeBrandingResponse>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeBranding.ViewOwn")]
+public sealed record GetDoctorPracticeLogoQuery(Guid PracticeId) : IQuery<PrivateMedia>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeBranding.ManageOwn")]
 public sealed record UpdateDoctorPracticeBrandingCommand(
     Guid PracticeId,
     string? PrimaryColor,
@@ -125,11 +137,13 @@ public sealed record UpdateDoctorPracticeBrandingCommand(
     string? BackgroundColor,
     string? TextColor,
     string RowVersion)
-    : ICommand<DoctorPracticeBrandingResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeBrandingResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeBranding.ManageOwn")]
 public sealed record ReplaceDoctorPracticeLogoCommand(Guid PracticeId, MediaUpload Logo, string RowVersion)
-    : ICommand<DoctorPracticeBrandingResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeBrandingResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeBranding.ManageOwn")]
 public sealed record RemoveDoctorPracticeLogoCommand(Guid PracticeId, string RowVersion)
-    : ICommand<DoctorPracticeBrandingResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeBrandingResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 
 internal sealed class CreateDoctorPracticeCommandValidator : AbstractValidator<CreateDoctorPracticeCommand>
 {
@@ -241,7 +255,7 @@ internal sealed class RemoveDoctorPracticeLogoCommandValidator
     }
 }
 
-internal sealed class ListMyDoctorPracticesQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class ListMyDoctorPracticesQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser, ISubscriptionDataStore subscriptions, IDateTimeProvider clock)
     : IQueryHandler<ListMyDoctorPracticesQuery, IReadOnlyList<DoctorPracticeResponse>>
 {
     public async Task<Result<IReadOnlyList<DoctorPracticeResponse>>> Handle(
@@ -259,14 +273,14 @@ internal sealed class ListMyDoctorPracticesQueryHandler(IWaslaDataStore dataStor
         foreach (var practice in practices)
         {
             var branding = await dataStore.FindDoctorPracticeBrandingAsync(practice.Practice.Id, cancellationToken);
-            responses.Add(DoctorPracticeMapper.Map(practice, branding?.LogoMediaKey is not null));
+            responses.Add(DoctorPracticeMapper.Map(practice, branding?.LogoMediaKey is not null) with { Commercial = await DoctorPracticeMapper.CommercialAsync(practice.Practice, subscriptions, clock.UtcNow, cancellationToken) });
         }
 
         return Result<IReadOnlyList<DoctorPracticeResponse>>.Ok(responses);
     }
 }
 
-internal sealed class GetMyDoctorPracticeQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
+internal sealed class GetMyDoctorPracticeQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser, ISubscriptionDataStore subscriptions, IDateTimeProvider clock)
     : IQueryHandler<GetMyDoctorPracticeQuery, DoctorPracticeResponse>
 {
     public async Task<Result<DoctorPracticeResponse>> Handle(
@@ -280,12 +294,14 @@ internal sealed class GetMyDoctorPracticeQueryHandler(IWaslaDataStore dataStore,
             return Result<DoctorPracticeResponse>.Fail(access.Errors);
         }
 
-        return await DoctorPracticeMapper.ReloadAsync(dataStore, request.PracticeId, cancellationToken);
+        var response = await DoctorPracticeMapper.ReloadAsync(dataStore, request.PracticeId, cancellationToken);
+        return response.IsFailure ? response : Result<DoctorPracticeResponse>.Ok(response.Value with { Commercial = await DoctorPracticeMapper.CommercialAsync(access.Value.Practice, subscriptions, clock.UtcNow, cancellationToken) });
     }
 }
 
 internal sealed class CreateDoctorPracticeCommandHandler(IWaslaDataStore dataStore, ICurrentUser currentUser,
-    Wasla.Application.Features.Subscriptions.ISubscriptionEntitlementService subscriptions)
+    Wasla.Application.Features.Subscriptions.PracticeSubscriptionAllocationService allocations, ISubscriptionDataStore subscriptionStore,
+    BuildingBlock.Application.Time.IDateTimeProvider clock)
     : ICommandHandler<CreateDoctorPracticeCommand, DoctorPracticeResponse>
 {
     public async Task<Result<DoctorPracticeResponse>> Handle(
@@ -298,8 +314,9 @@ internal sealed class CreateDoctorPracticeCommandHandler(IWaslaDataStore dataSto
             return Result<DoctorPracticeResponse>.Fail(doctor.Errors);
         }
 
-        var capacity = await subscriptions.ValidateCapacityAsync(doctor.Value.Doctor.Id, false, cancellationToken);
-        if (capacity.IsFailure) return Result<DoctorPracticeResponse>.Fail(capacity.Errors);
+        if (request.SubscriptionContractId is not { } contractId) return Result<DoctorPracticeResponse>.Fail(Wasla.Domain.Subscriptions.SubscriptionErrors.Invalid("ContractSelectionRequired"));
+        var target = await allocations.ValidateTargetAsync(doctor.Value.Doctor.Id, contractId, cancellationToken);
+        if (target.IsFailure) return Result<DoctorPracticeResponse>.Fail(target.Errors);
         var location = await DoctorPracticeAccess.ValidateLocationAsync(
             dataStore, request.GovernorateId, request.CityId, request.AreaId, cancellationToken);
         if (location.IsFailure)
@@ -326,10 +343,12 @@ internal sealed class CreateDoctorPracticeCommandHandler(IWaslaDataStore dataSto
         }
 
         dataStore.Add(practice.Value);
-        var walkIn = await subscriptions.EvaluateAsync(doctor.Value.Doctor.Id, "CHECKIN_WALKIN", Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
-        DoctorPracticeCreation.AddDefaults(dataStore, practiceId, doctor.Value.ActorId, walkIn.IsSuccess);
+        subscriptionStore.Add(new Wasla.Domain.Subscriptions.PracticeSubscriptionAllocation(practiceId, contractId, clock.UtcNow, doctor.Value.ActorId));
+        var walkIn = target.Value.Terms.Features.Any(f => f.Code == "CHECKIN_WALKIN" && f.AccessLevel == Wasla.Domain.Subscriptions.FeatureAccessLevel.Full);
+        DoctorPracticeCreation.AddDefaults(dataStore, practiceId, doctor.Value.ActorId, walkIn);
         await dataStore.SaveChangesAsync(cancellationToken);
-        return await DoctorPracticeMapper.ReloadAsync(dataStore, practiceId, cancellationToken);
+        var response = await DoctorPracticeMapper.ReloadAsync(dataStore, practiceId, cancellationToken);
+        return response.IsFailure ? response : Result<DoctorPracticeResponse>.Ok(response.Value with { Commercial = await DoctorPracticeMapper.CommercialAsync(practice.Value, subscriptionStore, clock.UtcNow, cancellationToken) });
     }
 }
 
@@ -531,7 +550,7 @@ internal sealed class UpdateDoctorPracticeConfigurationCommandHandler(
             return Result<DoctorPracticeConfigurationResponse>.Fail(supplied.Errors);
         }
 
-        var operationalAccess = await subscriptions.EvaluateAsync(access.Value.Practice.DoctorId, "CHECKIN_WALKIN",
+        var operationalAccess = await subscriptions.EvaluateForPracticeAsync(access.Value.Practice.DoctorId, access.Value.Practice.Id, "CHECKIN_WALKIN",
             Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
         if (operationalAccess.IsFailure && (request.AllowWalkIn || request.CheckInGracePeriodMinutes != configuration.CheckInGracePeriodMinutes ||
             request.MaximumTicketCallAttempts != configuration.MaximumTicketCallAttempts || request.NoShowAfterPassedPatientsCount != configuration.NoShowAfterPassedPatientsCount ||
@@ -799,6 +818,9 @@ internal static class DoctorPracticeAccess
                 "Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
         }
 
+        var snapshot = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
+        if (snapshot is not { User.UserType: UserType.Doctor, User.IsActive: true, User.IsFirstLogin: false })
+            return Result<(Doctor, Guid)>.Fail(DoctorPracticeErrors.NotOwned);
         var doctor = await dataStore.FindDoctorByUserIdAsync(actorId, cancellationToken);
         if (doctor is null)
         {
@@ -884,6 +906,15 @@ internal static class DoctorPracticeCreation
 
 internal static class DoctorPracticeMapper
 {
+    public static async Task<PracticeCommercialSummary> CommercialAsync(DoctorPractice practice, ISubscriptionDataStore store, DateTime now, CancellationToken ct)
+    {
+        var allocation = await store.AllocationAsync(practice.Id, ct);
+        var period = await store.EffectivePracticePeriodAsync(practice.DoctorId, practice.Id, now, ct);
+        var linked = period ?? (allocation is null ? null : (await store.PeriodsAsync(practice.DoctorId, ct)).FirstOrDefault(p => p.SubscriptionContractId == allocation.SubscriptionContractId));
+        var state = allocation is null ? "Unallocated" : period is null ? "CommerciallyUncovered" : practice.IsActive ? "Covered" : "InactiveManual";
+        return new(allocation?.SubscriptionContractId, linked?.Id, allocation?.Id, linked?.Terms.PlanCode, state,
+            allocation is null ? "Allocate" : period is null ? "RenewOrTransfer" : practice.IsActive ? "ManagePractice" : "CompleteReadinessAndActivate", allocation is null ? null : Convert.ToBase64String(allocation.RowVersion));
+    }
     public static DoctorPracticeResponse Map(DoctorPracticeViewRecord item, bool hasLogo)
         => new(
             item.Practice.Id,

@@ -39,9 +39,11 @@ public sealed class ExportBrowserSmokeTests
         Assert.Equal("NotMeasured", reports.Health.Status);
         foreach (var ar in new[] { true, false })
         {
-            var p = new ReportPresentation(model, ar, !ar, "د. أحمد / Test doctor", "عيادة وصلة / Practice");
+            var p = new ReportPresentation(model, ar, !ar, "د. أحمد / Test doctor", "عيادة وصلة / Practice <script>scope</script>");
             var html = await reports.RenderHtmlAsync(p, ct);
-            Assert.Contains(ar ? "dir=\"rtl\"" : "dir=\"ltr\"", html); Assert.Contains("&lt;script&gt;", html);
+            Assert.Contains(ar ? "dir=\"rtl\"" : "dir=\"ltr\"", html); Assert.Contains("&lt;script&gt;scope&lt;/script&gt;", html);
+            Assert.DoesNotContain("<script>", html, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("private", html, StringComparison.Ordinal); // Executive PDF excludes row-level references.
             var result = await reports.RenderPdfAsync(p, ct);
             // A slow first download can outlive the bounded request; subsequent requests join it.
             for (var retry = 0; retry < 3 && result.IsFailure && result.Errors.First().Code == "Report.RenderTimeout" && !runtime.BrowserDownloaded; ++retry)
@@ -54,6 +56,7 @@ public sealed class ExportBrowserSmokeTests
             using var workbook = new XLWorkbook(new MemoryStream(xlsx));
             Assert.Equal(7, workbook.Worksheets.Count); Assert.Equal(ar, workbook.Worksheet(1).RightToLeft);
             Assert.Equal(601, workbook.Worksheet("05 Details").LastRowUsed()!.RowNumber());
+            Assert.Equal("<script>private</script>", workbook.Worksheet("05 Details").Cell(2, 2).GetString());
             await SaveAsync(ar ? "report-ar.xlsx" : "report-en.xlsx", xlsx, ct);
         }
         foreach (var status in new[] { PrescriptionVersionStatus.Finalized, PrescriptionVersionStatus.Superseded, PrescriptionVersionStatus.Voided })

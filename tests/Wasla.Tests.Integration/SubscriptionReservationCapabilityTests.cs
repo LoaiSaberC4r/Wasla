@@ -52,7 +52,7 @@ public sealed class SubscriptionReservationCapabilityTests
         Guid receptionId = default; string receptionVersion = "";
         await app.WithDbAsync(async db => { var staff = await db.Receptions.SingleAsync(r => r.OwnerDoctorId == app.DoctorId); receptionId = staff.Id; receptionVersion = Convert.ToBase64String(staff.RowVersion); });
         using var accountState = await doctor.PutAsJsonAsync($"/api/v1/doctors/me/receptions/{receptionId}/account-state", new { isActive = false, rowVersion = receptionVersion }, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Forbidden, accountState.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, accountState.StatusCode); // Managing an owned identity is independent of operational practice assignments.
     }
 
     [Theory]

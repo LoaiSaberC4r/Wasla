@@ -8,6 +8,8 @@ public sealed class DoctorSubscription : AggregateRoot<Guid>
 {
     private DoctorSubscription() { }
     public Guid DoctorId { get; private set; }
+    public Guid SubscriptionContractId { get; private set; }
+    public SubscriptionContract? Contract { get; private set; }
     public Guid ProductId { get; private set; }
     public Guid PlanId { get; private set; }
     public SubscriptionKind SubscriptionKind { get; private set; }
@@ -33,7 +35,7 @@ public sealed class DoctorSubscription : AggregateRoot<Guid>
     public byte[] RowVersion { get; private set; } = [];
     public SubscriptionTerms Terms => JsonSerializer.Deserialize<SubscriptionTerms>(TermsSnapshotJson)!;
 
-    public static Result<DoctorSubscription> Select(Guid doctorId, SubscriptionTerms terms, DateTime now)
+    public static Result<DoctorSubscription> Select(Guid doctorId, SubscriptionTerms terms, DateTime now, Guid? contractId = null)
     {
         if (doctorId == Guid.Empty || terms.ProductId == Guid.Empty || terms.PlanId == Guid.Empty || !Enum.IsDefined(terms.Kind) ||
             terms.PracticeLimit <= 0 || terms.ReceptionLimit < 0 || terms.PriceAmount < 0 ||
@@ -44,8 +46,18 @@ public sealed class DoctorSubscription : AggregateRoot<Guid>
             return Result<DoctorSubscription>.Fail(SubscriptionErrors.Invalid("InvalidSelection"));
         var subscription = new DoctorSubscription { Id = Guid.NewGuid(), DoctorId = doctorId,
             Status = SubscriptionStatus.Pending, CreatedOnUtc = now };
+        subscription.SubscriptionContractId = contractId ?? Guid.NewGuid();
+        if (contractId is null) subscription.Contract = new SubscriptionContract(subscription.SubscriptionContractId, doctorId, terms.Kind, now);
         subscription.SetTerms(terms);
         return Result<DoctorSubscription>.Ok(subscription);
+    }
+
+    public Result StartUnusedTrial(SubscriptionTerms terms, DateTime start, Guid actor)
+    {
+        if (SubscriptionKind != SubscriptionKind.Trial || terms.Kind != SubscriptionKind.Trial || TrialStartedAtUtc is not null || StartsAtUtc is not null || Status is not (SubscriptionStatus.Pending or SubscriptionStatus.Cancelled))
+            return Result.Fail(SubscriptionErrors.Conflict("TrialAlreadyUsed"));
+        SetTerms(terms); Status = SubscriptionStatus.Pending;
+        return Activate(start, actor);
     }
 
     public bool IsValidAt(DateTime now) => Status is SubscriptionStatus.Active or SubscriptionStatus.Scheduled && StartsAtUtc <= now && now < EndsAtUtc;

@@ -79,10 +79,10 @@ internal sealed class AuditExplorer(WaslaDbContext db,IReportingAccessGuard guar
             var reservations = db.AllReservations.AsNoTracking();
             var scopes = scope.CommercialReadScopes;
             if (scopes?.GetValueOrDefault("TICKET_QUEUE") is { } ticketScope)
-                tickets = tickets.Where(ticketScope.Predicate<Wasla.Domain.Tickets.Ticket>(t => t.CreatedOnUtc));
+                tickets = tickets.CommerciallyReadable(db, ticketScope, ticket: true);
             else tickets = tickets.Where(_ => false);
             if (scopes?.GetValueOrDefault("RESERVATION_MANAGEMENT") is { } reservationScope)
-                reservations = reservations.Where(reservationScope.Predicate<Wasla.Domain.Reservations.Reservation>(r => r.CreatedOnUtc));
+                reservations = reservations.CommerciallyReadable(db, reservationScope, ticket: false);
             else reservations = reservations.Where(_ => false);
             for (var i = 0; i < list.Count; i++)
             {
@@ -102,7 +102,7 @@ internal sealed class AuditExplorer(WaslaDbContext db,IReportingAccessGuard guar
                 };
                 if (feature is not null)
                     query = scopes?.GetValueOrDefault(feature) is { } readScope
-                        ? query.Where(readScope.Predicate<Row>(r => r.Time)) : query.Where(_ => false);
+                        ? query.Where(readScope.Predicate<Row>(r => r.Time, r => r.Practice)) : query.Where(_ => false);
                 list[i] = source with { Query = query };
             }
         }

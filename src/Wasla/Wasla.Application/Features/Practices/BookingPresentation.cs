@@ -12,8 +12,9 @@ using Wasla.Domain.Subscriptions;
 namespace Wasla.Application.Features.Practices;
 
 // A narrow projection over the existing default segment/visit price, without operational segment controls.
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPractices.ManageOwn")]
 public sealed record SetBookingPresentationPriceCommand(Guid PracticeId, decimal NewConsultationPrice, string? RowVersion)
-    : ICommand<DoctorPracticePriceResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticePriceResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 internal sealed class SetBookingPresentationPriceCommandValidator : AbstractValidator<SetBookingPresentationPriceCommand>
 {
     public SetBookingPresentationPriceCommandValidator()
@@ -26,7 +27,7 @@ internal sealed class SetBookingPresentationPriceCommandHandler(IWaslaDataStore 
     {
         var owned = await DoctorPracticeAccess.LoadOwnedPracticeAsync(store, current, request.PracticeId, cancellationToken);
         if (owned.IsFailure) return Result<DoctorPracticePriceResponse>.Fail(owned.Errors);
-        var access = await entitlements.EvaluateAsync(owned.Value.Practice.DoctorId, "PRACTICE_MANAGEMENT", FeatureAccessLevel.Full, cancellationToken);
+        var access = await entitlements.EvaluateForPracticeAsync(owned.Value.Practice.DoctorId, owned.Value.Practice.Id, "PRACTICE_MANAGEMENT", FeatureAccessLevel.Full, cancellationToken);
         if (access.IsFailure) return Result<DoctorPracticePriceResponse>.Fail(access.Errors);
         await store.AcquireDoctorScheduleLockAsync(owned.Value.Practice.DoctorId, cancellationToken);
         var segment = (await store.ListDoctorPracticeSegmentsAsync(request.PracticeId, cancellationToken)).Single(s => s.IsDefault);

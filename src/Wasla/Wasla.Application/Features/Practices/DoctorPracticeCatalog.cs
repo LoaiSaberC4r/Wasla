@@ -35,8 +35,10 @@ public sealed record DoctorPracticePriceResponse(
     decimal Price,
     string RowVersion);
 
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSegments.ViewOwn")]
 public sealed record ListDoctorPracticeSegmentsQuery(Guid PracticeId)
-    : IQuery<IReadOnlyList<DoctorPracticeSegmentResponse>>;
+    : IQuery<IReadOnlyList<DoctorPracticeSegmentResponse>>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSegments.ManageOwn")]
 public sealed record CreateDoctorPracticeSegmentCommand(
     Guid PracticeId,
     string NameAr,
@@ -44,7 +46,8 @@ public sealed record CreateDoctorPracticeSegmentCommand(
     int Priority,
     int? ReservedDailyQuota,
     int? QuotaReleaseBeforeMinutes)
-    : ICommand<DoctorPracticeSegmentResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeSegmentResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSegments.ManageOwn")]
 public sealed record UpdateDoctorPracticeSegmentCommand(
     Guid PracticeId,
     Guid SegmentId,
@@ -55,10 +58,12 @@ public sealed record UpdateDoctorPracticeSegmentCommand(
     int? QuotaReleaseBeforeMinutes,
     bool IsActive,
     string RowVersion)
-    : ICommand<DoctorPracticeSegmentResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeSegmentResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticePricing.ViewOwn")]
 public sealed record ListDoctorPracticeVisitTypesQuery(Guid PracticeId)
-    : IQuery<IReadOnlyList<DoctorPracticeVisitTypeResponse>>;
+    : IQuery<IReadOnlyList<DoctorPracticeVisitTypeResponse>>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticePricing.ManageOwn")]
 public sealed record UpdateDoctorPracticeVisitTypeCommand(
     Guid PracticeId,
     Guid VisitTypeId,
@@ -66,22 +71,25 @@ public sealed record UpdateDoctorPracticeVisitTypeCommand(
     string? NameEn,
     bool IsActive,
     string RowVersion)
-    : ICommand<DoctorPracticeVisitTypeResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeVisitTypeResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticePricing.ViewOwn")]
 public sealed record ListDoctorPracticePricesQuery(Guid PracticeId)
-    : IQuery<IReadOnlyList<DoctorPracticePriceResponse>>;
+    : IQuery<IReadOnlyList<DoctorPracticePriceResponse>>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticePricing.ManageOwn")]
 public sealed record CreateDoctorPracticePriceCommand(
     Guid PracticeId,
     Guid SegmentId,
     Guid VisitTypeId,
     decimal Price)
-    : ICommand<DoctorPracticePriceResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticePriceResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticePricing.ManageOwn")]
 public sealed record UpdateDoctorPracticePriceCommand(
     Guid PracticeId,
     Guid PriceId,
     decimal Price,
     string RowVersion)
-    : ICommand<DoctorPracticePriceResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticePriceResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 public sealed record DeleteDoctorPracticePriceCommand(Guid PracticeId, Guid PriceId, string RowVersion)
     : ICommand, ITransactionalCommand<WaslaWritePersistence>;
 
@@ -212,7 +220,7 @@ internal sealed class CreateDoctorPracticeSegmentCommandHandler(IWaslaDataStore 
 
         if (request.Priority != 0 || request.ReservedDailyQuota.HasValue || request.QuotaReleaseBeforeMinutes.HasValue)
         {
-            var advanced = await subscriptions.EvaluateAsync(access.Value.Practice.DoctorId, "ADVANCED_SEGMENTS_PRIORITY_QUOTA",
+            var advanced = await subscriptions.EvaluateForPracticeAsync(access.Value.Practice.DoctorId, access.Value.Practice.Id, "ADVANCED_SEGMENTS_PRIORITY_QUOTA",
                 Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
             if (advanced.IsFailure) return Result<DoctorPracticeSegmentResponse>.Fail(advanced.Errors);
         }
@@ -260,7 +268,7 @@ internal sealed class UpdateDoctorPracticeSegmentCommandHandler(IWaslaDataStore 
 
         if (request.Priority != segment.Priority || request.ReservedDailyQuota != segment.ReservedDailyQuota || request.QuotaReleaseBeforeMinutes != segment.QuotaReleaseBeforeMinutes)
         {
-            var advanced = await subscriptions.EvaluateAsync(access.Value.Practice.DoctorId, "ADVANCED_SEGMENTS_PRIORITY_QUOTA",
+            var advanced = await subscriptions.EvaluateForPracticeAsync(access.Value.Practice.DoctorId, access.Value.Practice.Id, "ADVANCED_SEGMENTS_PRIORITY_QUOTA",
                 Wasla.Domain.Subscriptions.FeatureAccessLevel.Full, cancellationToken);
             if (advanced.IsFailure) return Result<DoctorPracticeSegmentResponse>.Fail(advanced.Errors);
         }

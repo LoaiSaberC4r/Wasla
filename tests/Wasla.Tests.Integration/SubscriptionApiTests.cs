@@ -36,7 +36,8 @@ public sealed class SubscriptionApiTests
         await using (var scope = app.Services.CreateAsyncScope()) await scope.ServiceProvider.GetRequiredService<SubscriptionCatalogSeeder>().SeedAsync(TestContext.Current.CancellationToken);
         using var client = app.CreateClient(); var catalog = await GetAsync(client, "/api/v1/public/commercial/catalog");
         Assert.Equal(2, catalog.GetProperty("products").GetArrayLength()); Assert.DoesNotContain("LEGACY_TRANSITION", catalog.GetRawText());
-        Assert.False(catalog.GetProperty("bookingOnly").GetProperty("enabled").GetBoolean());
+        Assert.True(catalog.GetProperty("bookingOnly").GetProperty("enabled").GetBoolean());
+        Assert.Equal(50m, catalog.GetProperty("bookingOnly").GetProperty("monthlyUnitPrice").GetDecimal());
         await app.WithDbAsync(async db => { Assert.Equal(28, await db.CommercialFeatures.CountAsync()); Assert.Equal(5, await db.CommercialPlans.CountAsync()); Assert.Equal(2, await db.CommercialProducts.CountAsync()); });
     }
     [Theory][InlineData(false)][InlineData(true)]
@@ -63,7 +64,7 @@ public sealed class SubscriptionApiTests
         await app.WithDbAsync(async db =>
         {
             var s = await db.DoctorSubscriptions.SingleAsync(s => s.Id == id); Assert.Equal(SubscriptionStatus.Active, s.Status);
-            Assert.Equal(499, s.PriceAmount); Assert.Equal(1, s.PracticeLimit); Assert.Equal("1.0.0", s.CatalogVersion);
+            Assert.Equal(499, s.PriceAmount); Assert.Equal(1, s.PracticeLimit); Assert.Equal("2026-11-05-v1.2", s.CatalogVersion);
             Assert.Equal(app.Clock.UtcNow, s.StartsAtUtc); Assert.Equal(app.Clock.UtcNow.AddMonths(1), s.EndsAtUtc);
             Assert.Single(await db.SubscriptionPayments.Where(p => p.SubscriptionId == id).ToArrayAsync());
             Assert.Single(await db.EmailOutboxMessages.Where(e => e.IdempotencyKey == "subscription-activated:" + id).ToArrayAsync());

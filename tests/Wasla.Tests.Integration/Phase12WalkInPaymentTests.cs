@@ -88,6 +88,12 @@ public sealed class Phase12WalkInPaymentTests
         context.DoctorPracticeVisitTypes.Add(visitType);
         context.DoctorPracticeSegmentVisitTypePrices.Add(price);
         context.Reservations.Add(reservation);
+        var accepted = Wasla.Domain.Subscriptions.DoctorSubscription.Select(doctor.Id, new Wasla.Domain.Subscriptions.SubscriptionTerms(
+            Guid.NewGuid(), "FULL_PLATFORM", Guid.NewGuid(), "STARTER", Wasla.Domain.Subscriptions.SubscriptionKind.Paid,
+            Wasla.Domain.Subscriptions.BillingCycle.Monthly, null, 499, "EGP", 1, 1, "component-license", null, [7, 3, 1, 0],
+            [new(Guid.NewGuid(), "CHECKIN_WALKIN", Wasla.Domain.Subscriptions.FeatureAccessLevel.Full)]), now).Value;
+        accepted.Activate(now.AddDays(-1), receptionActorId); context.Add(accepted);
+        context.Add(new Wasla.Domain.Subscriptions.PracticeSubscriptionAllocation(practice.Id, accepted.SubscriptionContractId, now.AddDays(-1), receptionActorId));
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var services = new ServiceCollection();

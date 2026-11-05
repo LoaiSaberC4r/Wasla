@@ -45,6 +45,8 @@ internal static class Phase16Fixture
             var e = start ? MedicalEncounter.Start(ticket, d.ApplicationUserId, app.Clock.UtcNow).Value : null;
             if (e is not null) db.MedicalEncounters.Add(e);
             await db.SaveChangesAsync(ct); result = (ticket.Id, e?.Id ?? Guid.Empty, d.Id, d.ApplicationUserId);
+            if (reservationId is { } knownReservation)
+                await SubscriptionTestData.CaptureKnownOriginAsync(db, await db.Reservations.SingleAsync(r => r.Id == knownReservation, ct));
         });
         return result;
     }

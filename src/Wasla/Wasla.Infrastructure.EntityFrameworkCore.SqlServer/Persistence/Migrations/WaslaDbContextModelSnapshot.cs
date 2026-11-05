@@ -10079,6 +10079,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("SubscriptionContractId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("SubscriptionKind")
                         .HasColumnType("int");
 
@@ -10110,15 +10113,17 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasIndex("Status", "EndsAtUtc");
 
-                    b.HasIndex(new[] { "DoctorId" }, "UX_OneActiveSubscriptionPerDoctor")
+                    b.HasIndex("SubscriptionContractId", "StartsAtUtc", "EndsAtUtc");
+
+                    b.HasIndex(new[] { "SubscriptionContractId" }, "UX_OneActivePeriodPerContract")
                         .IsUnique()
                         .HasFilter("[Status] = 2");
 
-                    b.HasIndex(new[] { "DoctorId" }, "UX_OnePendingSubscriptionPerDoctor")
+                    b.HasIndex(new[] { "SubscriptionContractId" }, "UX_OnePendingPeriodPerContract")
                         .IsUnique()
                         .HasFilter("[Status] = 1");
 
-                    b.HasIndex(new[] { "DoctorId" }, "UX_OneScheduledSubscriptionPerDoctor")
+                    b.HasIndex(new[] { "SubscriptionContractId" }, "UX_OneScheduledPeriodPerContract")
                         .IsUnique()
                         .HasFilter("[Status] = 6");
 
@@ -10128,6 +10133,8 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.ToTable("DoctorSubscriptions", null, t =>
                         {
+                            t.HasTrigger("TR_DoctorSubscriptions_NoPeriodOverlap");
+
                             t.HasCheckConstraint("CK_DoctorSubscriptions_Terms", "[PracticeLimit] > 0 AND [ReceptionLimit] >= 0 AND [PriceAmount] >= 0");
                         });
                 });
@@ -10230,6 +10237,143 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.ToTable("PlanFeatureEntitlements", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.PracticeSubscriptionAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AllocatedFromUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<Guid>("CreatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("LegacyGrandfathered")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReleaseReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("ReleasedAtUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<Guid?>("ReleasedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SubscriptionContractId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByApplicationUserId");
+
+                    b.HasIndex("DoctorPracticeId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_OneCurrentAllocationPerPractice")
+                        .HasFilter("[ReleasedAtUtc] IS NULL");
+
+                    b.HasIndex("ReleasedByApplicationUserId");
+
+                    b.HasIndex("SubscriptionContractId", "ReleasedAtUtc");
+
+                    b.ToTable("PracticeSubscriptionAllocations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PracticeSubscriptionAllocations_Time", "[ReleasedAtUtc] IS NULL OR [ReleasedAtUtc] >= [AllocatedFromUtc]");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.ReservationCommercialProvenance", b =>
+                {
+                    b.Property<int>("OriginKind")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AcceptedAtUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<Guid>("AllocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SubscriptionContractId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TermsSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllocationId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("SubscriptionContractId");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.HasIndex("DoctorPracticeId", "SubscriptionId");
+
+                    b.ToTable("ReservationCommercialProvenances", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionAllocationSelection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AppliedOnUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<Guid>("CreatedByApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SelectionJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByApplicationUserId");
+
+                    b.ToTable("SubscriptionAllocationSelections", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionChangeRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10255,6 +10399,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.Property<DateTime>("RequestedOnUtc")
                         .HasColumnType("datetime2(7)");
+
+                    b.Property<string>("RetainedAllocationsJson")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("ReviewedByApplicationUserId")
                         .HasColumnType("uniqueidentifier");
@@ -10306,6 +10453,34 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasIndex("SubscriptionId", "Status");
 
                     b.ToTable("SubscriptionChangeRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionContract", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId", "Kind");
+
+                    b.ToTable("SubscriptionContracts", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionFeatureSnapshot", b =>
@@ -10398,6 +10573,66 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasIndex("SubscriptionId", "OccurredOnUtc");
 
                     b.ToTable("SubscriptionHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionMigrationIssue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<string>("IssueCode")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceId", "IssueCode")
+                        .IsUnique();
+
+                    b.ToTable("SubscriptionMigrationIssues", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionMutationReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("ResultId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("SubscriptionMutationReceipts", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionPayment", b =>
@@ -10501,6 +10736,46 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .IsUnique();
 
                     b.ToTable("SubscriptionReminderSchedules", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionRetainedPractice", b =>
+                {
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AllocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("SubscriptionId", "DoctorPracticeId");
+
+                    b.HasIndex("AllocationId");
+
+                    b.HasIndex("DoctorPracticeId");
+
+                    b.ToTable("SubscriptionRetainedPractices", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionRetainedReception", b =>
+                {
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DoctorPracticeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ReceptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("SubscriptionId", "DoctorPracticeId", "ReceptionId");
+
+                    b.HasIndex("DoctorPracticeId");
+
+                    b.HasIndex("ReceptionId");
+
+                    b.ToTable("SubscriptionRetainedReceptions", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Tickets.Ticket", b =>
@@ -13775,6 +14050,14 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Subscriptions.SubscriptionContract", "Contract")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Subscriptions.FeaturePermissionMapping", b =>
@@ -13816,6 +14099,80 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.PracticeSubscriptionAllocation", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReleasedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Subscriptions.SubscriptionContract", null)
+                        .WithMany()
+                        .HasForeignKey("SubscriptionContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.ReservationCommercialProvenance", b =>
+                {
+                    b.HasOne("Wasla.Domain.Subscriptions.PracticeSubscriptionAllocation", null)
+                        .WithMany()
+                        .HasForeignKey("AllocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Subscriptions.SubscriptionContract", null)
+                        .WithMany()
+                        .HasForeignKey("SubscriptionContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Subscriptions.DoctorSubscription", null)
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionAllocationSelection", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByApplicationUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Subscriptions.DoctorSubscription", null)
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionChangeRequest", b =>
                 {
                     b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
@@ -13832,6 +14189,15 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasOne("Wasla.Domain.Subscriptions.DoctorSubscription", null)
                         .WithMany()
                         .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionContract", b =>
+                {
+                    b.HasOne("Wasla.Domain.Doctors.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -13865,6 +14231,15 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionMutationReceipt", b =>
+                {
+                    b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionPayment", b =>
                 {
                     b.HasOne("Wasla.Domain.Security.ApplicationUser", null)
@@ -13885,6 +14260,50 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasOne("Wasla.Domain.Subscriptions.DoctorSubscription", null)
                         .WithMany()
                         .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionRetainedPractice", b =>
+                {
+                    b.HasOne("Wasla.Domain.Subscriptions.PracticeSubscriptionAllocation", null)
+                        .WithMany()
+                        .HasForeignKey("AllocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Subscriptions.SubscriptionAllocationSelection", null)
+                        .WithMany("RetainedPractices")
+                        .HasForeignKey("SubscriptionId")
+                        .HasPrincipalKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionRetainedReception", b =>
+                {
+                    b.HasOne("Wasla.Domain.Practices.DoctorPractice", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorPracticeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Practices.Reception", null)
+                        .WithMany()
+                        .HasForeignKey("ReceptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Subscriptions.SubscriptionAllocationSelection", null)
+                        .WithMany("RetainedReceptions")
+                        .HasForeignKey("SubscriptionId")
+                        .HasPrincipalKey("SubscriptionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -14196,6 +14615,13 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
             modelBuilder.Entity("Wasla.Domain.Security.ApplicationUser", b =>
                 {
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Subscriptions.SubscriptionAllocationSelection", b =>
+                {
+                    b.Navigation("RetainedPractices");
+
+                    b.Navigation("RetainedReceptions");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Tickets.Ticket", b =>

@@ -74,12 +74,13 @@ internal sealed class ReportingAccessGuard(WaslaDbContext db, ICurrentUser curre
         IReadOnlyDictionary<string, SubscriptionReadScope>? readScopes = null;
         if (actor is ReportActor.Doctor or ReportActor.Reception)
         {
-            var evaluated = await subscriptions.EvaluateManyAsync(access, access.Permissions.ToArray(), cancellationToken);
+            var evaluated = await subscriptions.EvaluateManyAsync(access, access.Permissions.ToArray(), cancellationToken, practiceId.HasValue ? new(SubscriptionResourceKind.Practice, practiceId.Value) : null);
             var requested = evaluated[permission];
             if (resource is not null)
                 requested = (await subscriptions.EvaluateManyAsync(access, [permission], cancellationToken, resource))[permission];
             if (!requested.Allowed) return Result<ReportScope>.Fail(ReportingErrors.Denied);
             readScope = requested.ReadScope;
+            if (readScope is not null) practices = practices.Where(p => readScope.CurrentPracticeIds?.Contains(p) == true || readScope.Windows.Any(w => w.PracticeId == p)).ToArray();
             readScopes = evaluated.Where(p => p.Value.ReadScope?.HasAccess == true)
                 .GroupBy(p => CommercialFeatures.FeatureForPermission(p.Key)!, StringComparer.Ordinal)
                 .OrderBy(g => g.Key, StringComparer.Ordinal)

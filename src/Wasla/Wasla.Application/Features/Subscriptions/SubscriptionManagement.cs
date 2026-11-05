@@ -22,7 +22,8 @@ public sealed record SubscriptionMutationRequest(
     int? AdditionalDays = null, string? Reason = null, SubscriptionSelection? Selection = null,
     [property: System.Text.Json.Serialization.JsonConverter(typeof(SubscriptionChangeTypeInputConverter))]
     SubscriptionChangeType? ChangeType = null, string? ChangeRowVersion = null,
-    string? TargetPlanCode = null, int? TargetPracticeCount = null, BillingCycle? TargetBillingCycle = null);
+    string? TargetPlanCode = null, int? TargetPracticeCount = null, BillingCycle? TargetBillingCycle = null,
+    IReadOnlyList<RetainedPracticeAllocation>? RetainedAllocations = null);
 public sealed record SubscriptionCommand(SubscriptionOperation Operation, Guid? SubscriptionId,
     SubscriptionMutationRequest Request, string? IdempotencyKey = null, Guid? RequestId = null)
     : ICommand<SubscriptionDetails>, ITransactionalCommand<WaslaWritePersistence>;
@@ -49,7 +50,7 @@ internal sealed class SubscriptionCommandValidator : AbstractValidator<Subscript
         RuleFor(x => x.Operation).IsInEnum();
         RuleFor(x => x.Request).NotNull();
         RuleFor(x => x.Request.RowVersion).Must(value => value is not null && RowVersionCodec.IsValid(value)).When(x => x.Operation != SubscriptionOperation.SelectPaid && (x.Operation != SubscriptionOperation.RequestChange || x.Request.RowVersion is not null));
-        RuleFor(x => x.IdempotencyKey).NotEmpty().MaximumLength(150).When(x => x.Operation is SubscriptionOperation.Activate or SubscriptionOperation.Renew or SubscriptionOperation.ApproveChange);
+        RuleFor(x => x.IdempotencyKey).NotEmpty().MaximumLength(150).When(x => x.Operation is SubscriptionOperation.Activate or SubscriptionOperation.Renew or SubscriptionOperation.ApproveChange or SubscriptionOperation.SelectPaid);
         RuleFor(x => x.Request.Reason).NotEmpty().MaximumLength(2000).When(x => x.Operation is SubscriptionOperation.ExtendTrial or SubscriptionOperation.RejectChange);
         RuleFor(x => x.Request.AdditionalDays).GreaterThan(0).When(x => x.Operation == SubscriptionOperation.ExtendTrial);
         RuleFor(x => x.Request.Reference).MaximumLength(200);
@@ -104,7 +105,7 @@ internal sealed class CommercialCatalogQueryHandler(ISubscriptionDataStore store
     }
 }
 
-public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaDataStore doctors, ICurrentUser currentUser,
+public sealed partial class SubscriptionManager(ISubscriptionDataStore store, IWaslaDataStore doctors, ICurrentUser currentUser,
     IDateTimeProvider clock, IOptionsMonitor<SubscriptionCatalogOptions> options, ISubscriptionCatalogResolver resolver, SubscriptionLifecycle lifecycle)
 {
     public async Task<Guid?> AdminAsync(string permission, CancellationToken ct)
@@ -133,9 +134,10 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
         {
             var doctor = await OwnDoctorAsync(SubscriptionPermissionNames.ViewOwn, ct);
             if (doctor is null) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Denied());
-            s = await store.CurrentAsync(doctor.Value, ct) ?? await store.PendingAsync(doctor.Value, ct) ?? await store.LatestSelectionAsync(doctor.Value, ct);
-            var next = await store.ScheduledAsync(doctor.Value, ct);
-            if (next?.IsValidAt(clock.UtcNow) == true) s = next;
+            var periods = await store.PeriodsAsync(doctor.Value, ct);
+            if (periods.Select(p => p.SubscriptionContractId).Distinct().Skip(1).Any())
+                return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Conflict("MultipleContractsRequireSelection"));
+            s = periods.Where(p => p.IsValidAt(clock.UtcNow)).SingleOrDefault() ?? (periods.Count == 0 ? null : periods[0]);
         }
         return s is null ? Result<SubscriptionDetails>.Fail(SubscriptionErrors.NotFound) : Result<SubscriptionDetails>.Ok(await DetailsAsync(s, id.HasValue, ct));
     }
@@ -144,9 +146,10 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
         var doctor = (await doctors.FindDoctorByIdAsync(s.DoctorId, ct))!;
         var user = (await doctors.FindUserByIdAsync(doctor.ApplicationUserId, ct))!;
         return new(s,
-        await store.UsageAsync(s.DoctorId, ct), await store.FeaturesAsync(s.Id, ct), await store.ChangesAsync(s.Id, ct),
+        await store.ContractUsageAsync(s.SubscriptionContractId, ct), await store.FeaturesAsync(s.Id, ct), await store.ChangesAsync(s.Id, ct),
         admin ? await store.PaymentsAsync(s.Id, ct) : null, admin ? await store.HistoryAsync(s.Id, ct) : null,
-        Convert.ToBase64String(s.RowVersion), await store.PendingAsync(s.DoctorId, ct), await store.ScheduledAsync(s.DoctorId, ct), new(doctor.Id, doctor.NameAr, doctor.NameEn, user.Email, doctor.ApprovalStatus));
+        Convert.ToBase64String(s.RowVersion), (await store.PeriodsAsync(s.DoctorId, ct)).SingleOrDefault(p => p.SubscriptionContractId == s.SubscriptionContractId && p.Status == SubscriptionStatus.Pending),
+        (await store.PeriodsAsync(s.DoctorId, ct)).SingleOrDefault(p => p.SubscriptionContractId == s.SubscriptionContractId && p.Status == SubscriptionStatus.Scheduled), new(doctor.Id, doctor.NameAr, doctor.NameEn, user.Email, doctor.ApprovalStatus));
     }
 
     public async Task<Result<SubscriptionDetails>> ExecuteAsync(SubscriptionCommand command, CancellationToken ct)
@@ -164,10 +167,12 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
         Guid? owner = own ? await OwnDoctorAsync(permission, ct) : null;
         Guid? actor = own ? currentUser.UserId : await AdminAsync(permission, ct);
         if (actor is null || own && owner is null) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Denied());
-        if (command.Operation == SubscriptionOperation.SelectPaid) return await SelectPaidAsync(owner!.Value, command.Request, ct);
+        if (command.Operation == SubscriptionOperation.SelectPaid) return await SelectPaidAsync(owner!.Value, command, ct);
         var doctorId = command.SubscriptionId.HasValue ? await store.DoctorIdAsync(command.SubscriptionId.Value, ct) : owner;
         if (doctorId is null || own && doctorId != owner) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.NotFound);
         await store.AcquireSubscriptionCapacityLockAsync(doctorId.Value, ct);
+        if (!command.SubscriptionId.HasValue && (await store.PeriodsAsync(doctorId.Value, ct)).Select(p => p.SubscriptionContractId).Distinct().Skip(1).Any())
+            return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Conflict("MultipleContractsRequireSelection"));
         var s = command.SubscriptionId.HasValue ? await store.FindAsync(command.SubscriptionId.Value, ct) : await store.CurrentAsync(doctorId.Value, ct) ?? await store.LatestEndedAsync(doctorId.Value, ct);
         if (own && !command.SubscriptionId.HasValue && (await store.ScheduledAsync(doctorId.Value, ct)) is { } effectiveNext && effectiveNext.IsValidAt(clock.UtcNow)) s = effectiveNext;
         if (s is null) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.NotFound);
@@ -198,18 +203,11 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
                 if (s.SubscriptionKind != SubscriptionKind.Paid || s.Status != SubscriptionStatus.Pending) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid());
                 result = await ConfirmPaymentAsync(s, r, command.IdempotencyKey, actor.Value, SubscriptionPaymentType.Initial, s.PriceAmount, ct);
                 if (result.IsFailure) break;
-                var active = await store.CurrentAsync(s.DoctorId, ct);
-                if (active is not null)
-                {
-                    if (active.SubscriptionKind == SubscriptionKind.Paid && active.IsValidAt(now)) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid());
-                    active.Supersede(now);
-                    lifecycle.History(active, "Superseded", SubscriptionStatus.Active, actor, null, $"superseded:{active.Id}:{s.Id}");
-                    await store.SaveChangesAsync(ct); // Release filtered active index before activating the replacement, inside the same transaction.
-                }
                 result = s.Activate(now, actor.Value);
                 if (result.IsSuccess)
                 {
                     lifecycle.History(s, "Activated", SubscriptionStatus.Pending, actor, null, "activated:" + s.Id);
+                    await lifecycle.ScheduleRemindersAsync(s, ct);
                     await lifecycle.NotifyAsync(s, "Activated", "subscription-activated:" + s.Id, ct);
                 }
                 break;
@@ -250,7 +248,7 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
         var doctor = await doctors.FindDoctorByIdAsync(s.DoctorId, ct);
         if (doctor?.ApprovalStatus != DoctorApprovalStatus.Approved) return Result.Fail(SubscriptionErrors.Invalid("DoctorNotApproved"));
         var enabled = options.CurrentValue.PaymentMethods;
-        if (!(r.PaymentMethod switch { SubscriptionPaymentMethod.Cash => enabled.Cash, SubscriptionPaymentMethod.Card => enabled.Card, SubscriptionPaymentMethod.EWallet => enabled.EWallet, _ => false }))
+        if (r.PaymentMethod != SubscriptionPaymentMethod.Cash || !enabled.Cash)
             return Result.Fail(SubscriptionErrors.Invalid("PaymentMethodDisabled"));
         if (expected < 0 || expected == 0 && type != SubscriptionPaymentType.UpgradeDifference || r.AmountReceived != expected) return Result.Fail(SubscriptionErrors.Invalid("PaymentAmountMismatch"));
         if (string.IsNullOrWhiteSpace(key) || key.Trim().Length > 150) return Result.Fail(SubscriptionErrors.Invalid("PaymentRequired"));
@@ -259,17 +257,25 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
             r.PaidAtUtc ?? clock.UtcNow, actor, r.Reference, r.Notes, key.Trim(), clock.UtcNow));
         return Result.Ok();
     }
-    private async Task<Result<SubscriptionDetails>> SelectPaidAsync(Guid doctorId, SubscriptionMutationRequest request, CancellationToken ct)
+    private async Task<Result<SubscriptionDetails>> SelectPaidAsync(Guid doctorId, SubscriptionCommand command, CancellationToken ct)
     {
         await store.AcquireSubscriptionCapacityLockAsync(doctorId, ct);
-        if (await store.PendingAsync(doctorId, ct) is not null) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid("Pending"));
+        var request = command.Request;
+        var actor = currentUser.UserId!.Value;
+        if (string.IsNullOrWhiteSpace(command.IdempotencyKey)) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid("IdempotencyKeyRequired"));
+        var key = command.IdempotencyKey.Trim();
+        var fingerprint = MutationFingerprint(new { Operation = "SelectPaid", DoctorId = doctorId, Actor = actor, request.Selection });
+        var receipt = await store.ReceiptAsync(key, ct);
+        if (receipt is not null)
+            return receipt.ActorId == actor && receipt.Fingerprint == fingerprint
+                ? Result<SubscriptionDetails>.Ok(await DetailsAsync((await store.FindAsync(receipt.ResultId, ct))!, false, ct))
+                : Result<SubscriptionDetails>.Fail(SubscriptionErrors.Conflict("IdempotencyConflict"));
         var terms = await resolver.ResolveAsync(request.Selection, ct);
         if (terms.IsFailure) return Result<SubscriptionDetails>.Fail(terms.Errors);
-        var previous = await store.CurrentAsync(doctorId, ct) ?? await store.LatestSelectionAsync(doctorId, ct);
-        if (terms.Value.Kind != SubscriptionKind.Paid || previous is not null && (previous.SubscriptionKind != SubscriptionKind.LegacyTransition && previous.ProductId != terms.Value.ProductId || previous.SubscriptionKind == SubscriptionKind.Paid && previous.IsValidAt(clock.UtcNow)))
-            return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid("InvalidSelection"));
+        if (terms.Value.Kind != SubscriptionKind.Paid) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid("TrialRequiresSelfActivation"));
         var selected = lifecycle.Select(doctorId, terms.Value);
         if (selected.IsFailure) return Result<SubscriptionDetails>.Fail(selected.Errors);
+        store.Add(new SubscriptionMutationReceipt(key, actor, fingerprint, selected.Value.Id, clock.UtcNow));
         await store.SaveChangesAsync(ct);
         return Result<SubscriptionDetails>.Ok(await DetailsAsync(selected.Value, false, ct));
     }
@@ -295,9 +301,10 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
         {
             if (r.ChangeType == SubscriptionChangeType.Downgrade && (t.PracticeLimit > s.PracticeLimit || t.ReceptionLimit > s.ReceptionLimit || t.PlanId == s.PlanId && t.SelectedPracticeCount == s.SelectedPracticeCount) ||
                 r.ChangeType == SubscriptionChangeType.BillingCycle && (t.PlanId != s.PlanId || t.BillingCycle == s.BillingCycle)) return Result.Fail(SubscriptionErrors.Invalid("ChangeRequestInvalid"));
-            var fit = await UsageFitsAsync(s.DoctorId, t, ct); if (fit.IsFailure) return fit;
+            var fit = await ValidateRetainedAsync(s, t, r.RetainedAllocations, ct); if (fit.IsFailure) return fit;
         }
         var change = new SubscriptionChangeRequest(s.Id, actor, r.ChangeType.Value, t, Math.Max(0, t.PriceAmount - s.PriceAmount), clock.UtcNow);
+        change.SetRetainedAllocations(r.RetainedAllocations ?? (r.ChangeType == SubscriptionChangeType.Upgrade ? null : await SnapshotAllocationsAsync(s.SubscriptionContractId, ct)));
         store.Add(change);
         lifecycle.History(s, "ChangeRequested", s.Status, actor, r.Reason, "change-requested:" + change.Id, metadata: new { change.Id, change.ChangeType });
         return Result.Ok();
@@ -323,7 +330,7 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
         }
         else if (approve)
         {
-            var fit = await UsageFitsAsync(s.DoctorId, change.TargetTerms, ct); if (fit.IsFailure) return fit;
+            var fit = await ValidateRetainedAsync(s, change.TargetTerms, change.RetainedAllocations, ct); if (fit.IsFailure) return fit;
         }
         var result = change.Review(approve, actor, clock.UtcNow, change.ChangeType == SubscriptionChangeType.Upgrade ? clock.UtcNow : s.EndsAtUtc!.Value, command.Request.Reason);
         if (result.IsSuccess) lifecycle.History(s, approve ? "ChangeApproved" : "ChangeRejected", s.Status, actor, command.Request.Reason,
@@ -332,36 +339,35 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
             await lifecycle.NotifyAsync(s, "Activated", $"subscription-upgrade:{s.Id}:{change.Id}", ct);
         return result;
     }
-    private async Task<Result> UsageFitsAsync(Guid doctorId, SubscriptionTerms target, CancellationToken ct)
-    {
-        var usage = await store.UsageAsync(doctorId, ct);
-        return usage.PracticeCount > target.PracticeLimit || usage.ReceptionCount > target.ReceptionLimit
-            ? Result.Fail(BuildingBlock.Domain.Results.Error.Conflict("Subscription.DowngradeUsageExceedsLimit",
-                $"Usage practices={usage.PracticeCount}, reception={usage.ReceptionCount}; target practices={target.PracticeLimit}, reception={target.ReceptionLimit} / الاستخدام يتجاوز حدود الباقة المطلوبة",
-                System.Text.Json.JsonSerializer.Serialize(new { CurrentPracticeCount = usage.PracticeCount, CurrentReceptionCount = usage.ReceptionCount, TargetPracticeLimit = target.PracticeLimit, TargetReceptionLimit = target.ReceptionLimit }))) : Result.Ok();
-    }
     private async Task<Result<SubscriptionDetails>> RenewAsync(DoctorSubscription old, Guid actor, SubscriptionCommand command, CancellationToken ct)
     {
+        await store.AcquireReminderLockAsync(old.SubscriptionContractId, ct);
+        var periods = (await store.PeriodsAsync(old.DoctorId, ct)).Where(p => p.SubscriptionContractId == old.SubscriptionContractId).ToArray();
         if (old.SubscriptionKind != SubscriptionKind.Paid || old.Status is not (SubscriptionStatus.Active or SubscriptionStatus.Expired) ||
-            await store.ScheduledAsync(old.DoctorId, ct) is not null || await store.PendingAsync(old.DoctorId, ct) is not null)
+            periods.Any(p => p.Status is SubscriptionStatus.Scheduled or SubscriptionStatus.Pending || p.StartsAtUtc > old.StartsAtUtc))
             return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid());
-        var scheduled = (await store.ChangesAsync(old.Id, ct)).SingleOrDefault(c => c.Status == SubscriptionChangeStatus.Scheduled);
+        var scheduled = (await store.ChangesAsync(old.Id, ct)).SingleOrDefault(c => c.Status == SubscriptionChangeStatus.Scheduled || c.Status == SubscriptionChangeStatus.Pending && c.ChangeType == SubscriptionChangeType.Renewal);
         var selection = scheduled is not null
             ? new SubscriptionSelection(old.Terms.ProductCode, scheduled.TargetPlanCode!, scheduled.TargetBillingCycle, null, scheduled.TargetPracticeCount)
             : command.Request.Selection ?? TargetSelection(old, command.Request);
-        var terms = await resolver.ResolveAsync(selection, ct);
+        var terms = scheduled is null ? await resolver.ResolveAsync(selection, ct) : Result<SubscriptionTerms>.Ok(scheduled.TargetTerms);
         if (terms.IsFailure) return Result<SubscriptionDetails>.Fail(terms.Errors);
         if (terms.Value.Kind != SubscriptionKind.Paid || terms.Value.ProductId != old.ProductId) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Invalid("ChangeRequestInvalid"));
-        // Unchanged renewals preserve grandfathered usage; any reduced capacity must fit actual usage.
-        if (scheduled is not null || terms.Value.PracticeLimit < old.PracticeLimit || terms.Value.ReceptionLimit < old.ReceptionLimit)
-        {
-            var fit = await UsageFitsAsync(old.DoctorId, terms.Value, ct); if (fit.IsFailure) return Result<SubscriptionDetails>.Fail(fit.Errors);
-        }
-        var next = lifecycle.Select(old.DoctorId, terms.Value);
+        var retained = command.Request.RetainedAllocations ?? scheduled?.RetainedAllocations;
+        if (command.Request.RetainedAllocations is not null && (scheduled?.RetainedAllocations is null ||
+            MutationFingerprint(command.Request.RetainedAllocations) != MutationFingerprint(scheduled.RetainedAllocations)))
+            return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Conflict("AllocationConflict"));
+        if (scheduled is null && (terms.Value.PracticeLimit < old.PracticeLimit || terms.Value.ReceptionLimit < old.ReceptionLimit || terms.Value.BillingCycle != old.BillingCycle))
+            return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Conflict("RenewalSelectionRequired"));
+        var fit = await ValidateRetainedAsync(old, terms.Value, retained, ct);
+        if (fit.IsFailure) return Result<SubscriptionDetails>.Fail(fit.Errors);
+        var next = lifecycle.Select(old.DoctorId, terms.Value, old.SubscriptionContractId);
         if (next.IsFailure) return Result<SubscriptionDetails>.Fail(next.Errors);
         var payment = await ConfirmPaymentAsync(next.Value, command.Request, command.IdempotencyKey, actor, SubscriptionPaymentType.Renewal, terms.Value.PriceAmount, ct);
         if (payment.IsFailure) return Result<SubscriptionDetails>.Fail(payment.Errors);
         var start = old.EndsAtUtc > clock.UtcNow ? old.EndsAtUtc.Value : clock.UtcNow;
+        var end = terms.Value.BillingCycle == BillingCycle.Annual ? start.AddYears(1) : start.AddMonths(1);
+        if (!SubscriptionContract.PeriodFits(old.SubscriptionContractId, start, end, periods)) return Result<SubscriptionDetails>.Fail(SubscriptionErrors.Conflict("PeriodOverlap"));
         if (start > clock.UtcNow) next.Value.SchedulePaidPeriod(start, actor, clock.UtcNow);
         else
         {
@@ -369,6 +375,11 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
             await store.SaveChangesAsync(ct);
             next.Value.Activate(start, actor);
         }
+        var selections = retained ?? await SnapshotAllocationsAsync(old.SubscriptionContractId, ct);
+        store.Add(new SubscriptionAllocationSelection(next.Value.Id, selections, actor, clock.UtcNow));
+        await lifecycle.ScheduleRemindersAsync(next.Value, ct);
+        await lifecycle.SuppressPaidRemindersAsync(old, ct);
+        if (scheduled?.Status == SubscriptionChangeStatus.Pending) scheduled.Review(true, actor, clock.UtcNow, start, null);
         scheduled?.Apply();
         lifecycle.History(old, "RenewalRecorded", old.Status, actor, null, "renewal:" + command.IdempotencyKey!.Trim(), metadata: new { NextSubscriptionId = next.Value.Id });
         lifecycle.History(old, "PaymentRequest", old.Status, actor, null, "payment-request:" + command.IdempotencyKey.Trim(), metadata: new PaymentRequestMetadata(PaymentFingerprint(command, actor, old.Id)));
@@ -378,13 +389,22 @@ public sealed class SubscriptionManager(ISubscriptionDataStore store, IWaslaData
         return Result<SubscriptionDetails>.Ok(await DetailsAsync(next.Value, true, ct));
     }
     private sealed record PaymentRequestMetadata(string Fingerprint);
+    private async Task<IReadOnlyList<RetainedPracticeAllocation>> SnapshotAllocationsAsync(Guid contractId, CancellationToken ct)
+    {
+        var result = new List<RetainedPracticeAllocation>();
+        var active = (await store.ActiveReceptionIdsAsync(contractId, null, ct)).ToHashSet();
+        foreach (var allocation in await store.AllocationsAsync(contractId, ct))
+            result.Add(new(allocation.DoctorPracticeId, allocation.Id, (await store.AssignmentsAsync(allocation.DoctorPracticeId, ct))
+                .Where(a => a.IsActive && active.Contains(a.ReceptionId)).Select(a => a.ReceptionId).ToArray()));
+        return result;
+    }
     private static string PaymentFingerprint(SubscriptionCommand command, Guid actor, Guid subscriptionId)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
         {
             ActorId = actor, SubscriptionId = subscriptionId, command.Operation, command.RequestId,
             command.Request.PaymentMethod, command.Request.AmountReceived, command.Request.PaidAtUtc,
             command.Request.Reference, command.Request.Notes, command.Request.Selection,
-            command.Request.TargetPlanCode, command.Request.TargetPracticeCount, command.Request.TargetBillingCycle
+            command.Request.TargetPlanCode, command.Request.TargetPracticeCount, command.Request.TargetBillingCycle, command.Request.RetainedAllocations
         }))));
     private static SubscriptionSelection TargetSelection(DoctorSubscription current, SubscriptionMutationRequest request) =>
         new(current.Terms.ProductCode, request.TargetPlanCode ?? current.Terms.PlanCode,

@@ -38,16 +38,20 @@ public sealed record EffectivePracticePeriodResponse(
     int SlotDurationMinutes,
     IReadOnlyList<TimeOnly> SlotStarts);
 
-public sealed record ListDoctorPracticeScheduleQuery(Guid PracticeId) : IQuery<DoctorPracticeScheduleResponse>;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSchedule.ViewOwn")]
+public sealed record ListDoctorPracticeScheduleQuery(Guid PracticeId) : IQuery<DoctorPracticeScheduleResponse>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSchedule.ViewOwn")]
 public sealed record GetEffectiveDoctorPracticeScheduleQuery(Guid PracticeId, DateOnly Date)
-    : IQuery<IReadOnlyList<EffectivePracticePeriodResponse>>;
+    : IQuery<IReadOnlyList<EffectivePracticePeriodResponse>>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSchedule.ManageOwn")]
 public sealed record CreateDoctorPracticeSchedulePeriodCommand(
     Guid PracticeId,
     DayOfWeek DayOfWeek,
     TimeOnly StartTime,
     TimeOnly EndTime,
     int SlotDurationMinutes)
-    : ICommand<DoctorPracticeSchedulePeriodResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeSchedulePeriodResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSchedule.ManageOwn")]
 public sealed record UpdateDoctorPracticeSchedulePeriodCommand(
     Guid PracticeId,
     Guid PeriodId,
@@ -56,9 +60,10 @@ public sealed record UpdateDoctorPracticeSchedulePeriodCommand(
     TimeOnly EndTime,
     int SlotDurationMinutes,
     string RowVersion)
-    : ICommand<DoctorPracticeSchedulePeriodResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeSchedulePeriodResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 public sealed record DeleteDoctorPracticeSchedulePeriodCommand(Guid PracticeId, Guid PeriodId, string RowVersion)
     : ICommand, ITransactionalCommand<WaslaWritePersistence>;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSchedule.ManageOwn")]
 public sealed record CreateDoctorPracticeScheduleExceptionCommand(
     Guid PracticeId,
     DateOnly Date,
@@ -66,7 +71,8 @@ public sealed record CreateDoctorPracticeScheduleExceptionCommand(
     TimeOnly? StartTime,
     TimeOnly? EndTime,
     int? SlotDurationMinutes)
-    : ICommand<DoctorPracticeScheduleExceptionResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeScheduleExceptionResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
+[Wasla.Application.Features.Subscriptions.PracticeCommercialPermission("DoctorPracticeSchedule.ManageOwn")]
 public sealed record UpdateDoctorPracticeScheduleExceptionCommand(
     Guid PracticeId,
     Guid ExceptionId,
@@ -76,7 +82,7 @@ public sealed record UpdateDoctorPracticeScheduleExceptionCommand(
     TimeOnly? EndTime,
     int? SlotDurationMinutes,
     string RowVersion)
-    : ICommand<DoctorPracticeScheduleExceptionResponse>, ITransactionalCommand<WaslaWritePersistence>;
+    : ICommand<DoctorPracticeScheduleExceptionResponse>, ITransactionalCommand<WaslaWritePersistence>, Wasla.Application.Features.Subscriptions.IPracticeCommercialRequest;
 public sealed record DeleteDoctorPracticeScheduleExceptionCommand(
     Guid PracticeId,
     Guid ExceptionId,

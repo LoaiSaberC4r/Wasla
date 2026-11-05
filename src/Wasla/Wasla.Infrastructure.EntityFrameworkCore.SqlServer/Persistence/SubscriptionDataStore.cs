@@ -6,7 +6,7 @@ using Wasla.Application.Features.Subscriptions;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
-public sealed class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionDataStore
+public sealed partial class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionDataStore
 {
     public async Task<IReadOnlyList<SubscriptionPermissionRule>> PermissionRulesAsync(IReadOnlyCollection<string> permissions, CancellationToken ct) =>
         await (from mapping in db.FeaturePermissionMappings.AsNoTracking()
@@ -16,29 +16,36 @@ public sealed class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionData
                select new SubscriptionPermissionRule(permission.Name, feature.Code, mapping.RequiredAccessLevel)).ToArrayAsync(ct);
 
     public async Task<IReadOnlyList<SubscriptionReadWindow>> ReadWindowsAsync(Guid doctorId, DateTime now, CancellationToken ct) =>
-        await (from subscription in db.DoctorSubscriptions.AsNoTracking()
-               join feature in db.SubscriptionFeatureSnapshots.AsNoTracking() on subscription.Id equals feature.SubscriptionId
-               where subscription.DoctorId == doctorId && subscription.StartsAtUtc != null && subscription.StartsAtUtc <= now &&
-                   subscription.EndsAtUtc != null && subscription.Status != SubscriptionStatus.Pending && subscription.Status != SubscriptionStatus.Cancelled &&
-                   feature.AccessLevel >= FeatureAccessLevel.ReadOnly
-               orderby feature.FeatureCodeSnapshot, subscription.StartsAtUtc, subscription.Id
+        await (from period in db.DoctorSubscriptions.AsNoTracking()
+               join allocation in db.PracticeSubscriptionAllocations.AsNoTracking() on period.SubscriptionContractId equals allocation.SubscriptionContractId
+               join feature in db.SubscriptionFeatureSnapshots.AsNoTracking() on period.Id equals feature.SubscriptionId
+               where period.DoctorId == doctorId && period.StartsAtUtc != null && period.StartsAtUtc <= now && period.EndsAtUtc != null &&
+                   period.Status != SubscriptionStatus.Pending && period.Status != SubscriptionStatus.Cancelled && feature.AccessLevel >= FeatureAccessLevel.ReadOnly &&
+                   allocation.AllocatedFromUtc < period.EndsAtUtc && (allocation.ReleasedAtUtc == null || allocation.ReleasedAtUtc > period.StartsAtUtc)
                select new SubscriptionReadWindow(feature.FeatureCodeSnapshot,
-                   subscription.SubscriptionKind == SubscriptionKind.LegacyTransition ? null : subscription.StartsAtUtc,
-                   subscription.Status == SubscriptionStatus.Superseded && subscription.ModifiedOnUtc != null && subscription.ModifiedOnUtc < subscription.EndsAtUtc
-                        ? subscription.ModifiedOnUtc.Value : subscription.EndsAtUtc!.Value)).ToArrayAsync(ct);
+                   period.SubscriptionKind == SubscriptionKind.LegacyTransition ? null : allocation.AllocatedFromUtc > period.StartsAtUtc ? allocation.AllocatedFromUtc : period.StartsAtUtc,
+                   allocation.ReleasedAtUtc != null && allocation.ReleasedAtUtc < period.EndsAtUtc ? allocation.ReleasedAtUtc.Value :
+                   period.Status == SubscriptionStatus.Superseded && period.ModifiedOnUtc != null && period.ModifiedOnUtc < period.EndsAtUtc ? period.ModifiedOnUtc.Value : period.EndsAtUtc!.Value,
+                   allocation.DoctorPracticeId, period.Id,
+                   !db.SubscriptionAllocationSelections.Any(selection => selection.SubscriptionId == period.Id && selection.AppliedOnUtc == null &&
+                       db.SubscriptionRetainedPractices.Any(r => r.SubscriptionId == period.Id && !db.PracticeSubscriptionAllocations.Any(current => current.Id == r.AllocationId && current.ReleasedAtUtc == null && current.SubscriptionContractId == period.SubscriptionContractId))) &&
+                   allocation.ReleasedAtUtc == null && (period.Status == SubscriptionStatus.Active || period.Status == SubscriptionStatus.Scheduled) && now < period.EndsAtUtc &&
+                   (!db.SubscriptionAllocationSelections.Any(x => x.SubscriptionId == period.Id && x.AppliedOnUtc == null) || db.SubscriptionRetainedPractices.Any(x => x.SubscriptionId == period.Id && x.AllocationId == allocation.Id)), feature.AccessLevel)).ToArrayAsync(ct);
 
     public Task<SubscriptionCommitment?> ReadCommitmentAsync(SubscriptionResource resource, CancellationToken ct) => resource.Kind switch
     {
         SubscriptionResourceKind.Reservation => db.AllReservations.AsNoTracking().Where(r => r.Id == resource.Id)
-            .Select(r => new SubscriptionCommitment(r.DoctorId, r.CreatedOnUtc)).SingleOrDefaultAsync(ct),
+            .Select(r => new SubscriptionCommitment(r.DoctorId, r.CreatedOnUtc, r.DoctorPracticeId, r.Id, r.Status == Wasla.Domain.Reservations.ReservationStatus.Active || r.Status == Wasla.Domain.Reservations.ReservationStatus.ConvertedToTicket)).SingleOrDefaultAsync(ct),
         SubscriptionResourceKind.Ticket => db.AllTickets.AsNoTracking().Where(t => t.Id == resource.Id)
-            .Select(t => new SubscriptionCommitment(t.DoctorId, t.CreatedOnUtc)).SingleOrDefaultAsync(ct),
+            .Select(t => new SubscriptionCommitment(t.DoctorId, t.CreatedOnUtc, t.DoctorPracticeId, t.ReservationId, t.ReservationId == null && t.Status != Wasla.Domain.Tickets.TicketStatus.Cancelled, t.Id)).SingleOrDefaultAsync(ct),
         _ => CommitmentAsync(resource, ct)
     };
     public async Task<SubscriptionCommitment?> CommitmentAsync(SubscriptionResource resource, CancellationToken ct)
     {
+        if (resource.Kind == SubscriptionResourceKind.Practice)
+            return await db.DoctorPractices.Where(p => p.Id == resource.Id).Select(p => new SubscriptionCommitment(p.DoctorId, p.CreatedOnUtc, p.Id)).SingleOrDefaultAsync(ct);
         if (resource.Kind == SubscriptionResourceKind.Reservation)
-            return await db.AllReservations.AsNoTracking().Where(r => r.Id == resource.Id).Select(r => new SubscriptionCommitment(r.DoctorId, r.CreatedOnUtc)).SingleOrDefaultAsync(ct);
+            return await db.AllReservations.AsNoTracking().Where(r => r.Id == resource.Id).Select(r => new SubscriptionCommitment(r.DoctorId, r.CreatedOnUtc, r.DoctorPracticeId, r.Id, r.Status == Wasla.Domain.Reservations.ReservationStatus.Active || r.Status == Wasla.Domain.Reservations.ReservationStatus.ConvertedToTicket)).SingleOrDefaultAsync(ct);
         Guid? ticketId = resource.Kind == SubscriptionResourceKind.Ticket ? resource.Id : null;
         if (resource.Kind == SubscriptionResourceKind.Payment)
             ticketId = await db.Payments.Where(p => p.Id == resource.Id).Select(p => (Guid?)p.TicketId).SingleOrDefaultAsync(ct);
@@ -64,7 +71,7 @@ public sealed class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionData
             join r in db.AllReservations on t.ReservationId equals r.Id into reservations
             from r in reservations.DefaultIfEmpty()
             where t.Id == ticketId
-            select new SubscriptionCommitment(t.DoctorId, r == null ? t.CreatedOnUtc : r.CreatedOnUtc)).SingleOrDefaultAsync(ct);
+            select new SubscriptionCommitment(t.DoctorId, r == null ? t.CreatedOnUtc : r.CreatedOnUtc, t.DoctorPracticeId, t.ReservationId, r == null ? t.ReservationId == null && t.Status != Wasla.Domain.Tickets.TicketStatus.Cancelled : r.Status == Wasla.Domain.Reservations.ReservationStatus.Active || r.Status == Wasla.Domain.Reservations.ReservationStatus.ConvertedToTicket, t.Id)).SingleOrDefaultAsync(ct);
     }
     public async Task<SubscriptionCatalogData> CatalogAsync(CancellationToken ct) => new(
         await db.CommercialProducts.AsNoTracking().OrderBy(x => x.DisplayOrder).ToArrayAsync(ct),
@@ -105,6 +112,20 @@ public sealed class SubscriptionDataStore(WaslaDbContext db) : ISubscriptionData
             await entry.ReloadAsync(ct);
         foreach (var entry in db.ChangeTracker.Entries<Wasla.Domain.Doctors.Doctor>().Where(e => e.Entity.Id == doctorId && e.State == EntityState.Unchanged).ToArray())
             await entry.ReloadAsync(ct);
+        var practiceIds = await db.DoctorPractices.Where(p => p.DoctorId == doctorId).Select(p => p.Id).ToArrayAsync(ct);
+        foreach (var entry in db.ChangeTracker.Entries<PracticeSubscriptionAllocation>().Where(e => practiceIds.Contains(e.Entity.DoctorPracticeId) && e.State == EntityState.Unchanged).ToArray())
+            await entry.ReloadAsync(ct);
+        foreach (var entry in db.ChangeTracker.Entries<Wasla.Domain.Practices.ReceptionPracticeAssignment>().Where(e => practiceIds.Contains(e.Entity.DoctorPracticeId) && e.State == EntityState.Unchanged).ToArray())
+            await entry.ReloadAsync(ct);
+    }
+    public Task AcquireCommercialReadLockAsync(Guid doctorId, CancellationToken ct) => db.Database.CurrentTransaction is null
+        ? Task.CompletedTask : AcquireSubscriptionCapacityLockAsync(doctorId, ct);
+    public async Task AcquireReminderLockAsync(Guid contractId, CancellationToken ct)
+    {
+        if (!db.Database.IsSqlServer()) return;
+        if (db.Database.CurrentTransaction is null) throw new InvalidOperationException("Commercial reminder locks require a transaction.");
+        var resource = $"Wasla:Subscription:Reminder:{contractId:N}";
+        await db.Database.ExecuteSqlInterpolatedAsync($"DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource={resource},@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=15000; IF @r<0 THROW 51060,'Commercial reminder lock unavailable.',1;", ct);
     }
     public async Task<SubscriptionPayment?> PaymentByKeyAsync(string key, CancellationToken ct) =>
         db.SubscriptionPayments.Local.SingleOrDefault(x => x.IdempotencyKey == key) ?? await db.SubscriptionPayments.SingleOrDefaultAsync(x => x.IdempotencyKey == key, ct);
