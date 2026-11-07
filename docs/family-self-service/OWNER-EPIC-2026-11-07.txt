@@ -1,0 +1,966 @@
+# WASLA — COMPLETE CODEX IMPLEMENTATION EPIC
+## Parent/Child Family Self-Service + Secure Discovery + Child Onboarding + Operational/Clinical Dependent Management + Historical Medical Documents + Production Readiness
+
+TASK TYPE: One consolidated, self-contained Codex implementation brief; implement in ordered, reviewable PR slices.
+BUSINESS STATUS: OWNER APPROVED 2026-11-07 (scope and business outcomes); technical defaults are implementation proposals, not substituted legal policy.
+CODE STATUS: NOT IMPLEMENTED by this task; Codex must implement/test, not merely describe.
+REPO: https://github.com/LoaiSaberC4r/Wasla
+INSPECTED BRANCH: main
+INSPECTED COMMIT: feaa8c73f4f2eaed46d38e24e161893fae6909a3 (Nov 5 2026, merge PR #37).
+REFERENCES: Jira WAS-774 (parent child self-registration), WAS-773 (historical medical files), plus related reviewed family/queue/diagnostic/financial security and usability gaps.
+TARGET: .NET 10 / C# / EF Core / SQL Server / Clean Architecture / CQRS-MediatR / FluentValidation / BuildingBlock Result/Error / ITransactionalCommand / Private Media / Email Outbox / optimistic concurrency.
+
+IMPORTANT FOR CODEX: This is a directive to perform the implementation. Inspect current main first, then build complete functionality in the order below. Do not substitute a speculative architecture or copy QControl. Deliver code + generated EF Core migration + tests + contract documentation + deployment checklist + final evidence. Do not commit directly to main; use a branch and reviewable PRs. Never claim Production-Ready or release medical sharing without the explicit release gates specified here.
+
+================================================================================
+0. AUTHORITATIVE SOURCES, CHANGE CONTROL, BASELINE
+================================================================================
+SOURCE PRIORITY:
+1. Healthcare-Platform-Master-Source-of-Truth-v1.2-Updated.txt (authoritative owner-provided artifact; not necessarily committed in repo).
+2. Existing repository Source-of-Truth phase addenda, particularly SOURCE-OF-TRUTH-PHASE-5-FINAL-ADDENDUM.md (2026-10-18), SOURCE-OF-TRUTH-PHASE-10-ADDENDUM.md, SOURCE-OF-TRUTH-PHASE-16-FINAL-BUSINESS-ADDENDUM.md (2026-10-24), PHASE-16-ROLLOUT.md.
+3. Owner-approved 2026-11-07 decisions documented in the complete task and previously supplied approved addenda covering FD-02, FD-03, FAM, MED, dependent operations, and production configuration.
+4. BuildingBlockWithNET10 / existing BuildingBlock implementations.
+5. Reference QControl patterns only when relevant; no wholesale port.
+
+Repository may not include the master artifact. DO NOT pretend it does, do not change approved history, and do not skip this task because it is not in checkout. Add a versioned implementation decision addendum in repo docs identifying this signed-off owner task and referencing these approved requirements. If a conflict with an existing authoritative rule cannot be resolved using later explicit approval, fail closed, document it, and do not override policy silently.
+
+BEFORE CODING:
+- Verify branch/commit and inspect any commits after baseline; make an implementation delta list.
+- Run dotnet --info; dotnet restore, dotnet build, relevant xUnit baseline; record baseline failures separately.
+- Inspect solution/test project paths and all listed source files; paths below are guidance, not a command to create duplicates.
+- Capture an API inventory/OpenAPI snapshot and all existing deterministic permission GUIDs.
+- Inspect active SQL migrations/indexes and current production/staging flags; do not query or mutate live production credentials or DB.
+- Identify current secrets exposed in repository configuration, report exposure safely without printing them, and coordinate rotation/removal as a P0 release gate.
+- Implement across reviewable slices with migrations additive, permissions append-only, no existing data loss.
+
+SCOPE IN ONE SENTENCE:
+A verified parent can locate or register a child with no manually entered PatientId, establish exact reviewed parent-child authority, manage allowed child profile/contact/booking/queue/follow-up, read permitted child medical information, upload own or entitled child's historical medical files as unverified sources, submit doctor-requested diagnostic results for an entitled child, receive safe operational notifications and inspect independently authorized child receipts, while preserving global Patient identity, one active Family, medical privacy, age limits and production fail-closed controls.
+
+================================================================================
+1. NON-NEGOTIABLE BUSINESS INVARIANTS
+================================================================================
+BR-001 Each Patient is a PLATFORM-GLOBAL person. Never create doctor-owned copies. Existing historical PatientId is immutable; no fuzzy identity merge or reassignment of Encounter/Reservation/Ticket/Payment/Clinical artifacts.
+BR-002 ApplicationUser != Patient. Under 16 cannot have standalone login; 16–17 can claim an existing Basic Patient only via the existing reviewed identity process; adult self registration remains separate. Parent account never logs in as child and never receives a PatientAccountLink to child's Patient.
+BR-003 NameAr, DateOfBirth, Gender required for child. NameEn optional; child phone optional, but absent phone requires a usable primary guardian/contact phone. Shared phone/contact email is NOT proof of identity or parental right. Protect unique normalized Patient identity email (nullable), existing PatientAccountLink uniqueness and indexes.
+BR-004 One ACTIVE Family membership per Patient in V1. Exactly one ACTIVE Father and one ACTIVE Mother role per Family. Keep existing SQL filtered unique indexes. Different verified fathers/mothers each prove their exact relation to each specific child.
+BR-005 Family membership or CanManageFamily != general authority for every child. Require an exact adult-child proof for operational dependent access; do not infer from roles, contacts, shared phone, broad membership, or an adult-adult request.
+BR-006 Use an OPERATIONAL exact parent-child authority independent of approved/signed family clinical policy. It is necessary for under-18 booking and safe queue/follow-up/operational notifications. Medical policy OFF must not stop valid operational booking. Do not use disabled clinical proof to silently grant or deny operational authority.
+BR-007 Medical dependent read/write separately requires exact applicable proof, signed/configured FamilyMedicalPolicy, MedicalRecord:GuardianSharingEnabled flag, active Family, actor/subject, granular DB+token permissions, no effective restriction, under-16 cutoff in configured policy timezone. Parent (Father/Mother) automatic medical eligibility after exact approved medical proof; Guardian/LegalGuardian rules differ and require additional explicit approvals. Medical access is not created by operational proof or booking.
+BR-008 New dependent MEDICAL reads/listings/uploads/downloads must stop at beginning of the 16th birthday IN THE APPROVED POLICY TIMEZONE. Do not disable under-18 booking or delete relationships/history at age16. Under-18 operational authority stops at 18; do not grant 18+ dependent booking implicitly.
+BR-009 Relationship search FD-02 APPROVED: NameAr AND DateOfBirth AND Gender REQUIRED; phone OPTIONAL supplemental ranking/verification signal. Bounded masked results; no plaintext patient identifiers, external family details, contact data, clinic, health facts. A search match is not identity proof.
+BR-010 Candidate selection FD-03 APPROVED: short-lived high-entropy opaque actor/purpose-bound reference; evidence; SuperAdmin reviews; no binding/medical/operational grant at search or selection. Avoid guessing when multiple candidates.
+BR-011 Parent creates new child through a request with evidence; create/reuse the definitive Basic Patient only AFTER review and duplicate checks, transactionally with approved membership and operational authority. No orphan Patient on rejection. Never automatically merge a positive duplicate.
+BR-012 Second parent joining existing Family requires reviewed exact relationship and controlled targeting/invitation, no arbitrary FamilyId enumeration or automatic cross-Family transfer. Conflicts go to confidential review; existing one-Family constraints remain. A legally approved manual transfer model is not implicitly authorized by this task.
+BR-013 Historical files are PatientProvided/Unverified. Separate from official Doctor-authored Prescription, LabResult, RadiologyResult and Encounter. No fake Encounter/Doctor/LabRequest/Ticket. A provider name typed by the user is not verification. Never raise official counts from historical files.
+BR-014 Adult authenticated linked Patient can upload own historical prescription, lab, radiology, discharge/surgery and other medical reports without an in-platform doctor request; own-only visibility by default. New access for doctor/reception/SuperAdmin to these files is NOT approved.
+BR-015 Father/Mother uploading historical files for under16 child requires separate medical WRITE authorization, exact currently verified pair, signed policy, no effective restriction, audit with actor and subject distinct. It must not piggyback on MedicalRecords.ViewDependent alone. Guardian/LegalGuardian historical WRITE is not part of this approval.
+BR-016 Parent submission of Lab/Radiology result requested by Wasla doctor is distinct from historical upload: existing request must belong to child; preserve PendingReview and source Doctor Accept/Reject. Under16, exact medical writing authority and release gates required. No direct official result creation.
+BR-017 Family data management != unrestricted clinical management. Routine child contact/photo edit via explicit scoped permission; identity-critical NameAr/DOB/Gender changes require an evidence-based admin identity-correction review and must preserve history, identity restrictions and claim/age rules.
+BR-018 Parent financial child receipts are independently permissioned, minimally disclosed, read-only, exact operational pair, under18, no payment/refund mutation; do not expose staff/internal notes or other families.
+BR-019 Patient can see permitted child queue/active ticket and safe status; NO operator queue control, check-in override, ticket mutation, general practice queue, or implicit medical encounter access.
+BR-020 Parent may receive verified operational booking/queue notifications; no clinical PHI notification to proxy by default. Preserve email verification and opt-in/privacy restrictions, delivery outbox and idempotent processing.
+BR-021 Preserve Hidden encounter rules, legal hold/retention, clinical read audit, archive/read-only history and all current Phase 5/10/16/18 workflows. Account closure does not delete clinical records.
+BR-022 SuperAdmin identity/family authority does not convey generalized medical access. Do not produce raw document URLs, storage keys, medical payloads or applicant documents in generic logs.
+BR-023 For each intentionally forbidden scenario return safe ProblemDetails and meaningful localized reason/capabilities without PII leakage. Do not weaken security to remove a visible UI block.
+BR-024 Production readiness requires signed policy and operational gates. Owner's PRODUCT approval is not jurisdiction-specific legal consent, privacy/clinical sign-off or license to flip medical sharing flags.
+
+OUT OF SCOPE: OCR/AI extraction, DICOM/PACS and raw imaging archive, pharmacies, external provider verified status, clinical record merge, cross-Family automatic transfer, blanket Guardian write, doctor general access to uploaded historical files, emergency break-glass, patient identity account creation under16, changing archived clinical records, invoice/payment refund mutation for parents.
+
+================================================================================
+2. EXISTING CODE/REGRESSION TOUCHPOINT MAP (MUST INSPECT)
+================================================================================
+A. Domain:
+- src/Wasla/Wasla.Domain/Families/Family.cs — Father/Mother/Child/Guardian/LegalGuardian, unique role, CanManageFamily.
+- src/Wasla/Wasla.Domain/Families/FamilyRelationshipRequest.cs — CreateFamily=1, AddFamilyMember=2, VerifyParentChild=3, VerifyGuardianChild=4; Pending/ModificationRequested/Approved/Rejected; target PatientId required.
+- src/Wasla/Wasla.Domain/Families/PatientAccessPolicy.cs — currently family+role+age booking without exact pair.
+- src/Wasla/Wasla.Domain/Families/VerifiedParentChildRelationship.cs — signed medical proof, versioned and revocable.
+- src/Wasla/Wasla.Domain/Patients/Patient.cs, PatientContact.cs, PatientAccountLink.cs — identity, contact, links, rowversion.
+- src/Wasla/Wasla.Domain/Security/SystemSecurity.cs — PermissionNames.All -> deterministic GUID by INDEX. NEVER insert inside old order.
+B. Application:
+- Features/Families/FamilyRelationshipWorkflow.cs — direct targetId, /mine NotFound if no family, requester detail DTO leaks raw target before proof; approval and evidence.
+- Features/Families/FamilyMedicalContracts.cs and Features/Clinical/MedicalRecordAccessPolicy.cs — authorized dependent medical read.
+- Features/Patients/PatientManagement.cs — Reception registration, own-only profile/contact, name/DOB/gender validations.
+- Features/PatientOnboarding/PatientIdentityReads.cs and Features/PatientIdentityMatching... — existing Reception match paths, not parent search API.
+- Features/Reservations/ReservationManagement.cs — ResolvePatientActorAsync/ResolveAccessiblePatientsAsync/ListMine/AuthorizeExistingAsync, booking options, cancel/reschedule, age UTC usage.
+- Features/Clinical/ClinicalAccessService.cs and ClinicalQueries.cs — BookablePatientIdsAsync used for FollowUp; own encounters deliberately own-only.
+- Features/Tickets/GetMyActiveTickets/GetMyActiveTickets.cs; GetMyTicketDetails/GetMyTicketDetails.cs — only account linked Patient.
+- Features/Diagnostics/DiagnosticResultHandler.cs, DiagnosticAccess.cs, DiagnosticQueries.cs — Request.PatientId == actor.PatientId for existing self submissions.
+- Features/Clinical/MedicalRecordContracts.cs/MedicalRecordHandlers.cs — TimelineEntry polymorphism, resource whitelist, filters.
+- Features/Dashboards/PatientDashboard.cs — own-oriented capabilities and contents.
+- Features/Subscriptions/CommercialPermissionCatalog.cs and SubscriptionEntitlements.cs — Doctor/Reception commercial mapping vs universal Patient operations.
+C. Infrastructure:
+- Persistence/FamilyMedicalAccessPolicy.cs and FamilyRelationshipMedicalVerification.cs — signed Family policy, disabled by default, exact proof.
+- Persistence/PatientIdentityStore.cs — MatchAsync has softOr; do NOT reuse weak OR publicly.
+- Persistence/MedicalRecordReadService.cs — union timeline of official Encounter-backed events, cursor/version logic.
+- Persistence/FinanceReadService.cs — own receipts/transactions locked to own PatientId.
+- Notifications/NotificationEligibility.cs — operating recipient eligibility, medical emails intentionally self-only and gated.
+- Persistence/TicketQueueReader.cs and archive readers — safe ticket read and history.
+- Persistence/Configurations/{FamilyConfigurations,ProfileConfigurations,FamilyMedicalConfigurations,MedicalRecordConfigurations}.cs — restrictive FK, unique filtered indexes and concurrency.
+- Persistence/WaslaDbContext.cs and related partial DbContexts / migrations / WaslaSecuritySeeder.cs.
+- BuildingBlock Infrastructure/Media/MediaUploadValidator.cs; NoOpMalwareScanner.cs — NoOp is not actual scan; Production must fail closed with required scanner and only allow validated file types.
+D. API:
+- Api/Controllers/{FamiliesController,PatientsController,PatientsRegistrationController,ReservationsController,TicketsController,DependentMedicalRecordController,PatientMedicalRecordController,LabControllers,RadiologyControllers,ClinicalControllers,FinanceReadController,NotificationsController,PatientDashboardController}.cs
+- Api/Security/PermissionAuthorization.cs; Program.cs / DI and rate limiting/Options binding.
+- appsettings.json, appsettings.Staging.json, appsettings.Production.json, .env.example and deployment docs.
+E. Existing tests expected to remain green: Phase5PatientFamilyTests; Phase5FinalIdentity*; Phase16Family*; Phase16FinalGap*; Phase16MedicalRecord*; Phase10Reservation*; Phase11Ticket*; Phase12Finance*; Phase15Diagnostic*; Phase17Notification*; SubscriptionPermissionMappingTests; CommercialFeaturePermissionCoverageTests; architecture + migration tests.
+
+KNOWN BEHAVIOR TO PRESERVE:
+- GET /api/v1/families/mine returns NotFound without membership; don't silently change existing contract. New workspace endpoint handles empty family state.
+- GET /api/v1/reservations/bookable-patients, patient reservations/mine and child operations exist, but require hardening; leave externally visible reservation lifecycle, price/schedule/queue algorithms unchanged.
+- GET /api/v1/tickets/mine/active and /mine/{id} are own-only. Add dependent endpoints, no broadening of own.
+- GET /api/v1/families/mine/dependents/{id}/medical-record already applies medical scope; do not add bypass.
+- GET /api/v1/patients/me/medical-record/overview,timeline,items... exist and must retain safe clinical semantics.
+- GET /api/v1/patients/me/financial-transactions and receipt endpoints are own-only. Add scoped dependent endpoints.
+- Existing Lab/Radiology patient submissions require original in-platform request. Add dependent proxy endpoints without modifying own DTO semantics.
+- Base appsettings MedicalRecord:GuardianSharingEnabled=true but Production override=false. FamilyMedicalPolicy Approved=false / MasterSourceOfTruthAdopted=false by default. CrossDoctorSharingEnabled=false in Production. Do not flip flags to greenwash.
+
+================================================================================
+3. IMPLEMENTATION ORDER / PR SLICES / EXIT GATES
+================================================================================
+PR-0: Baseline, signed-off change addendum, credential remediation plan; no production change; baseline tests & API snapshots.
+PR-1: Exact operational authority and family privacy foundations, security seed/permissions + SQL migration + tests. This must land before dependents can use operational endpoints.
+PR-2: Family Workspace, safe candidate search/reference, existing child link, second parent join and conflict review, secure legacy routes.
+PR-3: Child onboarding, SuperAdmin review, duplicate-safe atomic Patient creation/reuse, dependent profile/contact/photo/correction.
+PR-4: Reservations/Follow-Up authorization integration, dependent queue read, safe operational notification and age-boundary tests.
+PR-5: Historical document own upload/read/version/withdraw with safe storage, scanner, timeline and clinical separation.
+PR-6: Dependent historical document read/write, dependent doctor-ordered Lab/Radiology submissions behind medical gates.
+PR-7: Independent dependent finance/receipts, family dashboard/capability map, existing API contract handoff.
+PR-8: Full migration and staging verification, security/rollout evidence and release documentation. Do not enable clinical flags without authorized signed policy and deployment approval.
+
+Each PR must build and pass focused tests; code after each slice must be usable and safe with DISABLED missing capabilities. Respect dependencies, don't merge partial authorization. If implementing in one branch, keep independently reviewable commits by slice and provide a complete handoff.
+
+================================================================================
+4. MODULE A — SHARED EXACT DEPENDENT AUTHORIZATION (P0 FIRST)
+================================================================================
+GOAL: One correct, reusable policy for exact adult-child relationship, but NOT a catch-all grant. This is the foundational dependency for queue, reservation, follow-up, finance, profile, clinical and diagnostics.
+
+4.1 Existing gap:
+FamilyMember.CanManageFamily (Father/Mother/Guardian/LegalGuardian) and PatientAccessPolicy.CanBookReservation check common family role/age; the existing VerifiedParentChildRelationship is created/validated under signed FamilyMedicalPolicy; Production policy is disabled. These are not interchangeable.
+
+4.2 Implement separate operational authority:
+Recommended Domain: ParentChildOperationalAuthority (or equivalent persisted exact-pair evidence derived transactionally from existing approved relationship requests). Required dimensions:
+- Id; FamilyId; ParentPatientId; ChildPatientId; ParentFamilyMemberId; ChildFamilyMemberId; ParentRole Father/Mother; ApprovedRelationshipRequestId; ApprovedRequestRevision; ReviewerUserId; ApprovedAtUtc; Status Active/Revoked; RevocationAtUtc/Reason; RowVersion; CreatedOnUtc.
+- Explicit provenance to reviewed, currently active, unretired evidence. No magic backfill for historical approvals. If existing proof can be safely reconstructed from approved historical requests, offer an explicitly reviewed reconciliation/report path with dry-run; do not automatically elevate everyone in migration.
+- For each approved CreateFamily/AddFamilyMember/OperationalVerify that attests exact parent-child, persist operational pair proof inside the same transaction after relationship/evidence validation.
+- When both members already exist and exact operational pair missing, provide a reviewed verification request; don't invoke clinical VerifyParentChild=3 when FamilyMedicalPolicy is disabled. Reuse Family request evidence/review infrastructure where possible; add a versioned operational request only if necessary to avoid changing semantics of 3/4.
+- Revocation/history and current revision checks ensure old proof cannot reauthorize new operations after evidence modification, restriction applicable to operation, family change, archived/revoked membership, or role change. No implicit family transfer.
+- If using existing FamilyRelationshipRequest for operational proof, preserve enum numeric values 1–4. New enum values must append, and older clients must not misinterpret them. Prefer provenance record that points to reviewed request with exact pair.
+
+4.3 Build explicit authorization service:
+`IDependentAccessPolicy.AuthorizeAsync(DependentAccessOperation operation, Guid childPatientId, CancellationToken)`
+- Resolve parent from authenticated active non-first-login UserType.Patient, live PatientAccountLink and current snapshot permissions; intersect JWT and DB permissions.
+- Load live active Family + exact parent and child FamilyMembers; check role, matching Family and PatientId, child DateOfBirth, proof revision/status, age bound for OPERATION, and any separate operation-specific gate.
+- Operations conceptual: ViewProfile, ManageDependentContact, RequestIdentityCorrection, BookReservation, ViewReservation, CancelReservation, RescheduleReservation, ViewQueue, ViewOperationalNotification, ViewFinancialTransaction, ViewFinancialReceipt, ViewMedicalRecord, ViewHistoricalDocument, UploadHistoricalDocument, WithdrawHistoricalDocument, SubmitDoctorOrderedDiagnostic. Keep result typed with ActorUserId, AdultPatientId, SubjectPatientId, FamilyId, proof ID and snapshot/version, permissions/capabilities; not a mutatable actor-supplied subject switch.
+- Distinguish `OperationalAuthority` from `MedicalAuthority`. For clinical reads use existing IFamilyMedicalAccessPolicy.ScopeAsync rather than reimplementing or weakening it. For new medical writes, implement independent WRITE check in same signed policy context, NOT infer from read scope alone.
+- Permission checks at endpoint AND inside handler for direct MediatR dispatch.
+- Reauthorize immediately before returning sensitive file bytes and at durable mutation commit boundaries; no stale in-memory rights.
+- Current family membership, role and evidence must be revalidated; failure returns indistinguishable 404 for unrelated subjects where appropriate, secure reason codes only to current legitimate actor.
+- Under18 operations must use documented effective local date; booking still based on existing practice timezone where appointment logic requires. Do not silently use a medical policy timezone to grant operational access if no signed policy exists. Set one independently configured, documented platform operational timezone (e.g. `DependentManagement:OperationalTimeZoneId`, with explicit validated default/owner choice and deterministic tests) and use it uniformly in Reservation/Queue/Notifications/Finance. Never infer policy from user's browser timezone.
+- Under16 medical uses signed `FamilyMedicalPolicy:TimeZoneId` exactly (already implemented). Test midnight boundary including DST and Feb 29.
+- Guardian/LegalGuardian: existing booking permission for LegalGuardian remains subject to its own exact reviewed authority, not father/mother proof; do not grant Guardian book rights if not allowed by existing policy. New parent-only medical write excludes Guardians by default.
+- One person's Contact.LinkedPatientId or matching shared phone is NOT entitlement. Refuse to authorize family API based solely on profile/contact.
+
+4.4 Reuse existing Medical scope rather than building parallel medical rules:
+- Keep `FamilyMedicalAccessPolicy.Configured` = signed policy configured and `SharingEnabled` = GuardianSharingEnabled && Configured.
+- For under16 father/mother clinical reads require active VerifiedParentChildRelationship with exact current revisioned proof, approved permitted evidence, no active restriction, permissions, audit; preexisting code as authority.
+- New parent operational authority is NOT equivalent to VerifiedParentChildRelationship; source it from reviewed identity evidence but keep distinct policy checks.
+- When medical policy is later signed/activated, reviewed administrative reconciliation or fresh VerifyParentChild can establish valid clinical proof; do not automatically upgrade with mere operational authority.
+- Preserve medical access `Unavailable` / `ParentChildVerificationRequired` / `Restricted` / `AgeNotEligible` reason codes. No medical bypass via family workspace.
+
+4.5 DB constraints:
+- Unique filtered index one Active operational proof per FamilyId + ParentPatientId + ChildPatientId + proof role/member pair as appropriate.
+- Unique active Family per Patient and unique Father/Mother role indexes unchanged.
+- Check ParentPatientId != ChildPatientId, correct role; restrictive FKs; concurrency rowversion; proof history immutable; no cascade hard delete.
+- Deterministic identity/family/pair locks; map SQL uniqueness to stable 409, not 500. Follow existing lock hierarchy and SQL Server transaction patterns; avoid cyclic locks with Reservation/Payment/Archive locks.
+- Idempotency keyed by actor+operation+key with content fingerprint and replay-safe stored response. Never retry approval by creating duplicate child/Family/proof.
+
+4.6 Tests:
+- valid father-child exact pair under18 can book even with FamilyMedicalPolicy=disabled and GuardianSharingEnabled=false.
+- mother has separate proof; one mother's proof cannot authorize father or another child.
+- same Family with role but missing exact proof -> deny all dependent operations that require it.
+- revoked parent proof/membership/Family disables future operations instantly; do not mutate existing history.
+- roles and child age 16/18 transitions independent; signed medical policy absent blocks medical only.
+- cross-Family IDs, orphan links, stale tokens/DB permission revoked, forged currentUser/payload -> deny.
+- SQL double-approval/concurrent revocation and permission ID stability.
+
+================================================================================
+5. MODULE B — SAFE FAMILY WORKSPACE / SEARCH / CANDIDATE SELECTION
+================================================================================
+5.1 No-Family bootstrap:
+- Add GET /api/v1/families/mine/workspace for authenticated verified Parent Patient.
+- It MUST return 200 with `hasFamily=false`, `family=null`, pending own requests and allowed operations when no active family; never require `GET /families/mine` to succeed first.
+- Existing GET /families/mine keeps historical NotFound behavior for compatibility.
+- If Family present, return its safe member roster and independently calculated per-child capabilities, not medical data by default.
+- Include `canStartExistingChildLink`, `canStartChildOnboarding`, `canJoinExistingFamily`, `pendingRequests`, `blockedReasonCode`, family-status info and appropriate `CanBook`, `CanViewQueue`, `CanViewMedical`, `CanUploadMedical`, `CanViewReceipts`. No unsupported routes labeled available.
+- UI flow: My Family -> Add Family Member -> [Find Existing Child | Register New Child | Join Existing Family]. Parent shouldn't enter PatientId/FamilyId manually.
+
+5.2 Secure parent candidate search FD-02:
+- POST /api/v1/families/patient-candidates/search; `PatientFamilyCandidates.Search` permission (append-only).
+- Request JSON: { "nameAr": "...", "dateOfBirth": "YYYY-MM-DD", "gender": "Male", "phoneNumber": null }.
+- NameAr required + DOB required + gender Male/Female required; phone optional, non-authoritative supplemental. No email-only/phone-only lookup allowed for patient-facing search; no OR-based match, no unbounded wildcard, no database-entity serialization.
+- Use existing normalized Arabic patient identity search indexes; match exact normalized NameAr AND DOB AND Gender, with optional contact/phone match only as confidence, NEVER to switch to broad OR or eliminate a legitimate child due to shared family number. Source data global, not practice-scoped; restrict access by purpose and throttle.
+- Only return eligible, very small bounded masked candidates; suggested configurable max 5, opaque `candidateReference` per returned candidate, masked display name/year/attribute(s) strictly necessary for selection. Do NOT expose PatientId, full DOB, unmasked phone/email, FamilyId, linkage/claim status, doctor names, medical documents or identifiers; do not return `isLinkedAccount`.
+- Search cannot be used for general Patient enumeration; per-user/IP rate limit, window/attempt limits, anti-scraping audit METADATA (actor id, operation, result bucket, UTC, correlation id), avoid query value/PHI in logs. Hard limit fields and normalize. Handle exact 0, 1, many and ambiguous results with neutral UX; if ambiguity cannot be safely resolved, route to confidential identity review without guessing.
+- Avoid exposing whether child belongs to another Family; report generic selected candidate status and restrict conflict reason to authorized reviewers/own request minimal code.
+- Use crypto-strength opaque tokens: bind actor user, linked parent patient, purpose, result, normalized criteria fingerprint, creation/expiration, one-use/consumption. Suggested TTL 10 minutes configurable, final validated technical setting. Store hashed HMAC/opaque id; token not simply base64/encoded PatientId, no raw PII inside it. Replay, tamper, expired, cross-account -> 404/409 without subject data.
+- Careful: existing search `PatientIdentityStore.MatchAsync(softOr=true)` is staff-only and broad. Do not expose to Parent; new AND query should be unit/integration-tested and indexed.
+
+5.3 Submit existing-child relationship from candidate FD-03:
+- POST /api/v1/family-relationship-requests/from-candidate, multipart/form-data.
+- Fields: `candidateReference`, `relationshipType` Father/Mother, `evidenceFiles[]`, `documentTypes[]`, optional `familyContext` resolved server-side, `Idempotency-Key` header; never raw TargetPatientId from client.
+- Validate candidate token, exact selected global child, live parent link, roles, evidence/type/count, historical duplicate/open request, active membership conflicts, anti-replay and no broad disclosure.
+- Determine case safely: parent without Family -> reviewed CreateFamily; parent already managing same Family and child outside -> AddFamilyMember; child in own Family but pair unverified -> reviewed operational pair verification; subject tied to another Family -> confidential ConflictReview rather than auto-create or auto-move; no candidate identity disclosure in rejection details.
+- Retain existing FamilyRelationshipRequest review/evidence/history and SuperAdmin approval as underlying workflow where domain shape allows. Add reviewed case provenance `Origin=CandidateSearch` and safe requester read contracts; do not clone approval workflow.
+- On selection/request return ONLY {requestId,status:"Pending",requestTypeSafe,createdAtUtc,capabilities} (no target patient id or unmasked private data).
+- Target relationship is not approved until SuperAdmin Review and current proof. No operational/medical reads before approval.
+
+5.4 Mandatory privacy-hardening of LEGACY family request routes:
+- Current POST /api/v1/family-relationship-requests accepts TargetPatientId, and GET /mine and GET /{requestId} project requester+target full IDs/name/DOB; `FamilyRequestAccess` authorizes requester/target before approval. A new masked Search alone does not solve that disclosure path.
+- For candidate-origin requests, NEVER show full TargetPatientId or target full demographic details to requester until safe authorization is verified. Protect ALL /mine, details, history, resubmit, attachment download and notifications, not just new endpoint.
+- For legacy self-service requests, evaluate how a supplied arbitrary TargetPatientId currently reveals fields. Harden preapproval requester outputs with safe DTOs/redaction, enforce purpose-bound selection/evidence where needed. Keep SuperAdmin detail/evidence authority separate; never grant requester admin read.
+- Maintain existing v1 paths; document necessary privacy contract redactions as explicit SECURITY BREAKING CHANGE in Frontend handoff, with before/after examples and API tests. Do NOT preserve unsafe detail for compatibility.
+- Before approval, parent should see request status, submitted date, own claimed relationship, modification reason, and only safe masked label. Deny direct `GetFamilyRelationshipRequestDetails` DTO serialization of unverified target person details.
+
+5.5 Family request review operations:
+- Existing Pending -> ModificationRequested -> resubmit Pending -> Approved or Rejected preserved. Evidence revisioning, immutable history, original rowversion and SuperAdmin permissions unchanged.
+- Admin may explicitly verify target Patient identity with proof; ensure candidate is correct, age at creation and current membership, exact relationship, doc validity, no revoked proof. Revalidate ALL identity indexes and ownership under transaction before approve.
+- During approval save approved member(s)+request+OperationalAuthority+audit+outbox together where applicable. Medical proof never auto-created without signed policy gates.
+- If target changed/claimed or Family status altered after application, fail safe with conflict/re-review; no partial Family creation.
+- Capture idempotency for submission/decision; stale rowversion -> 409.
+
+================================================================================
+6. MODULE C — SECOND PARENT JOINING / MULTI-CHILD FAMILY CONFLICTS
+================================================================================
+EXAMPLE: Mother and Youssef already belong to Family F; father Ahmed is not yet a member and should not need to know FamilyId. Both parents can manage same child only after separate independently approved proofs.
+
+- Provide a reviewed `JoinExistingFamilyRequest` or equivalent review flow integrated with FamilyRelationshipRequest history and admin tooling. Do not allow anonymous family lookup or arbitrary FamilyId entry.
+- Source of target Family should be a short-lived, one-use, bound invitation created by a currently authorized Family manager OR a confidential admin-mediated selected-child linkage case. Invitation is not acceptance/proof. Bind inviter, family, invited account/identity, expiry, nonce and revision. Require applicant identity proof and parent-child evidence. Do not reveal Family membership/contact list before approval.
+- Review may require present Family manager confirmation and SuperAdmin verification; protect against impersonation, manager coercion and old invitation replay. Manager consent alone never proves parenthood.
+- Approved joining must transactionally check only one active Father and Mother role, one active Family membership per Patient, exact parent-child pairs for specific children to be managed, and current Family status. Never treat parenthood to one child as authority to every sibling.
+- If joining adult is already an active member of another Family, or child belongs to another Family, enter `ConflictReview`/non-disclosing `ActionRequired` state; DO NOT auto-transfer or create duplicate memberships. There is no approved general family-transfer lifecycle in v1. Record need for authorized manual governance decision rather than inventing one; this case may remain non-completable pending separate policy. UI must not show a success it cannot achieve.
+- If a verified parent is in F with two children, proof for Youssef does not grant access to Mariam until Mariam's separate pair is verified. Distinguish family membership vs relationship per child in API.
+- Preserve exact unique indexes: UX_FamilyMembers_OneActiveFamilyPerPatient; unique active family Father/Mother; UX_FamilyMembers_FamilyId_PatientId; no reverse-migration that removes these.
+- Conflict cases have metadata-only applicant status; full identity/evidence only for authorized SuperAdmin. Prohibit requester seeing current other Family members/addresses.
+- If both parents already exist as active members of SAME Family but only one exact pair verified, provide explicit pair verification to close missing proof even when medical policy false.
+- Respect Parent/Mother and other Guardian role taxonomy. No blanket grant to Guardian/LegalGuardian from father/mother workflow.
+- Integration tests: mother owns Family, father joins; father with existing separate Family denied with documented conflict status; second father duplicate denied; two children, independent proofs; concurrent join race; revoked invitation; rejected proof; no hidden roster leak.
+
+================================================================================
+7. MODULE D — PARENT SELF-REGISTERS NEW CHILD (WAS-774)
+================================================================================
+7.1 New ChildOnboarding aggregate:
+- `ChildOnboardingRequest` PendingReview / ModificationRequested / Approved / Rejected (plus terminal Cancelled/Withdrawn if explicitly supported; do not change old enum). Store actorApplicationUserId, parentPatientId, parent claimed role, NameAr, NameEn optional, DOB, Gender, child optional phone, primary contact details, current revision, evidence revisions, created/updated timestamps, reviewer/decision, rowversion, idempotency and immutable history. Store sensitive intake data privately, never as a public Patient before approval.
+- Only active verified linked Patient account with allowed role can submit; no Reception required; no child ApplicationUser/PatientAccountLink when under16.
+- Input contract: NameAr (required <=200), NameEn optional, DateOfBirth <= current date and within under-18 new-child scope, Gender Male/Female, Phone optional, primary contact phone mandatory when child phone missing, relationship Father/Mother, evidence file(s), optional profile image. Validate using Phase5 patient validation concepts. Avoid assuming national ID mandatory for a child if policy doesn't require it; accepted document taxonomy policy-gated.
+- Use a provisional intake identity within the onboarding request. Do NOT create Patient/Family membership/PatientAccountLink/clinical source at Pending stage.
+- At submission do bounded duplicate classification: Exact normalized identity email collision (if provided), name+DOB+Gender and phone/contact soft signals; don't automatically merge; possible matches go to reviewer. Avoid any frontend leaking existing matches/IDs. Staff review may select an exact existing global Patient after independent evidence and permission.
+- Admin review operations: list/summary/detail/evidence/history, request modification, resubmit with fresh revision, approve, reject. Must align existing Family review audit standards, permissioned Admin not general clinical.
+- On approval re-run duplicate checks under existing Patient Identity SQL applock (and ordered Family/Pair locks), verify actor+proof unchanged, selected target identity current, one-Family constraints, role slots and primary contact. If exact Patient exists and proof is strong, reuse PatientId (no merge/reassignment) and link only if family policy permits; otherwise create one Basic global Patient. If conflict remains, leave request pending/modification rather than guessing.
+- Approval in ONE SQL transaction: Patient (only if new) + PatientContact primary when required + Family if needed + FamilyMember pair + exact OperationalAuthority + request Approved + evidence/history/audit + outbox. A retried approval returns same PatientId/FamilyId without duplicates. Compensate staged media safely on rollback/uncertain commit, no premature deletion of used files.
+- Confirm no existing or accidentally created `ApplicationUser` for minor. Account activation under16 prohibited. At 16–17 existing Basic Patient can use reviewed Claim path; no bypass through child registration.
+- Parent may view own onboarding progress and submit revised evidence after ModificationRequested; no PII or existing Patient candidate details in public status. One open request for equivalent parent+candidate demographics intent; concurrent duplicates rejected/resolved safely.
+- If no family yet, approval creates Family and appropriate initial membership(s). If family present, approved child added to that family; do not create second family. If parent is already in different Family/target already in another Family, ConflictReview.
+
+7.2 Example:
+Ahmed (linked Patient user) selects My Family -> Register New Child; Youssef, 2018-05-12, Male, no phone, parent's usable contact phone; BirthCertificate. Submit -> 202/Pending. Before approval DB has NO new Patient. SuperAdmin reviews, verifies no duplicate, approves -> one new Basic Patient, primary contact, Family (if needed), Youssef Child role, Ahmed Father role, operational exact pair, reviewed provenance. Ahmed can book Youssef if otherwise eligible. Medical read still disabled until signed medical policy + exact medical verification.
+
+7.3 No-duplicate guarantee:
+- deterministic identity transaction lock, normalized email unique, bounded demographic candidate re-read, rowversion, filtered unique member/proof indexes, actor+operation+idempotency.
+- If two parents simultaneously submit the same child, DO NOT create two Patient records by accident. If identity cannot be proven safely, move one or both to manual review. Never use fuzzy name-only auto-merge.
+- Existing child with clinical history must retain original PatientId; do not create a second Patient and move medical data.
+
+================================================================================
+8. MODULE E — DEPENDENT PROFILE, CONTACTS & IDENTITY CORRECTIONS
+================================================================================
+- Add GET /api/v1/families/mine/dependents/{childPatientId}/profile: safe profile for exact eligible parent + independent read permission. Return PatientId ONLY after approved relationship and only for own dependent, NameAr/NameEn/DOB/Gender as allowed, managed contacts, image capability, rowversion, management capability/reason. Do not expose child account email/claim secrets or national identity document keys.
+- Add GET /.../profile-image with private media, reauthorization and no-store/nosniff.
+- Add PATCH /.../profile for routine allowed fields only (photo/contact-related fields, not DOB/Gender/NameAr, role, global PatientId, linked account, clinical results). Explicit field allowlist. Require rowversion and actor/child audited change; preserve existing self-profile API.
+- Add GET/POST/PUT/DELETE /.../contacts operations in addition to existing own-only /patients/me/contacts. Subject PatientId server validated; parent-authorized granular permissions. Use `PatientContact` existing checks and ensure last usable primary guardian contact cannot be removed when child phone absent; shared parent phone is valid and nonunique. Contact.RelationshipType and optional LinkedPatientId cannot create parental entitlement or allow pointer to arbitrary unrelated Patient; validate target linkage against authorized relationship or omit LinkedPatientId when not verified.
+- Add POST /.../identity-corrections with proposed NameAr/DOB/Gender changes plus reason, proof, idempotency. Implement versioned `DependentIdentityCorrectionRequest` with Pending/ModificationRequested/Approved/Rejected, admin review and immutable evidence/history. Do not mutate Patient until approved with global duplicate recheck and age/identity account claim conflict review. Preserve old identity snapshot in history for audit; no silent identity rewrite or clinical ownership change.
+- If child 16–17 has own verified linked Patient account, avoid letting parent overwrite child credential-bound identity/email or creating an unintended account takeover. Keep parental operations scoped to explicitly approved operational data; self account ownership and consent rules take precedence. No authority to change email associated with another user's ApplicationUser.
+- Profile update on age16 transition must not be used to bypass medical access cutoff. Provide clear capabilities. Under18 contact-management policy must remain independent from clinical authorization; if a legally sensitive edit cannot be safely authorized in implementation, restrict it and document the release gate rather than grant by inference.
+- No direct hard delete, no resetting Profile RowVersion/contacts, no exposure of another child's photo by guessing GUID.
+
+
+================================================================================
+9. MODULE F — EXISTING RESERVATIONS / FOLLOW-UP / TICKET READ / OPERATIONAL NOTIFICATIONS
+================================================================================
+9.1 Reservations — integration, not a rewrite:
+- Existing `POST /api/v1/reservations`, GET /bookable-patients, GET /mine, GET /mine/{reservationId}, cancel/reschedule/available dates/slots/options MUST keep their public route and existing lifecycle, price snapshots and caps.
+- In ReservationManagement.ResolvePatientActorAsync and ResolveAccessiblePatientsAsync, require exact active OPERATIONAL adult-child relationship (including appropriate LegalGuardian verified authority) in addition to existing permission, Family/role/age/subject. Do not allow any Family manager to book all members by being in same Family.
+- Reuse one policy in create, read mine/filter, detail, cancel, reschedule, capabilities and booking-option/follow-up paths; no implementation loophole where list denies but direct mutation succeeds or vice versa.
+- Patient may still book own PatientId with existing own permissions; no introduction of exact dependent proof on self path. Reception creation unchanged and practice-assignment-scoped.
+- Reservation under18 parent capability persists when signed clinical policy OFF. No changed slot duration, capacity, segment quota, appointment restrictions, financial price snapshot, NoShow/Expired/ConvertedToTicket statuses, same-day restore, idempotency/locking rules.
+- Current `DateOnly.FromDateTime(clock.UtcNow)` in dependent reservation paths must be replaced for policy age checks with the documented operational timezone-local date; do NOT change stored appointment UTC/practice timezone calculations or browse timezone. Unit test age cutoff across UTC/Cairo date boundaries.
+- If approved parent proof revoked after a reservation is made: parent loses new read/cancel/reschedule rights unless authority restored; reservation remains historically intact; authorized child/reception rules continue independently. No auto cancellation merely because proof revoked unless a separate approved policy says so.
+- API errors: access denied or 404 for unrelated child; do not reveal child appointment if caller lacks exact relationship. No PII in audit/log.
+
+9.2 Follow-up:
+- `ClinicalAccessService.BookablePatientIdsAsync` and related GET /follow-up-eligibilities/mine, GET /follow-up booking-options/available-dates/slots should inherit hardened bookable patients exact authority and current validation.
+- A child follow-up eligible for Doctor's service is NOT sufficient to authorize a non-parent. Maintain existing FollowUp validity/price/schedule and doctor order rules.
+- Test direct id guessing cannot reveal follow-up evidence for unrelated child; parent authorized subject can book eligible FollowUp with medical sharing OFF (booking is operational).
+
+9.3 Dependent queue read:
+- Existing GET /api/v1/tickets/mine/active and /mine/{ticketId} remain SELF-ONLY; don't broaden them.
+- Add GET /api/v1/tickets/dependents/{childPatientId}/active and GET /api/v1/tickets/dependents/{childPatientId}/{ticketId}.
+- Explicit `DependentTickets.ViewAuthorized` permission, operational proof under18, valid account, subject+ticket exact match. No doctor/reception queue privileges. Use TicketQueueReader with explicit authorized child PatientId; filter output to safe operational fields: ticket ref/status, practice/doctor safe descriptors, queue position/waiting ahead if already exposed safely, scheduled business date, no private notes, staff actions, internal audit, medical diagnosis, payments, clinical IDs/notes.
+- Do not expose general `GET /practices/{practiceId}/queue`; do not enable parent to start/complete/cancel/force-check-in/recall other tickets. No new patient queue mutation.
+- Preserve archived ticket history and safe archive read branch if implemented, but do NOT use own-only `ResolveOwnPatientIdAsync` for dependent; implement per-child archived proof and archive policy correctly. Respect archive final status, read-only data, no forced unarchive or hidden clinical details.
+- Read must reauthorize after source fetch and immediately before private stream (if any); production flag for historical archive independent of dependent medical sharing.
+- Example: Ahmed books for Youssef, Reception checks in, Youssef Ticket Waiting -> Called -> InProgress -> Completed. Ahmed can view safe status until <18, never operate Queue or open Encounter through Ticket.
+
+9.4 Safe operational notifications:
+- Existing Notifications/NotificationEligibility.cs uses CanBookReservation for parent recipients and additional reviewed proof checks; align with new exact OperationalAuthority and operational age timezone. Do not preserve weak family-only recipient routing.
+- Operational events (Reservation Created/Cancelled/Rescheduled, safe CheckIn/Called if existing event categories support) may be sent to verified current parent with `Notifications.ViewOwn`, preference and verified trusted contact. Only minimum operational context; ensure child name/appointment details match approved recipient policy and no raw clinical PHI.
+- Preserve ClinicalAvailability channel restrictions: current medical notifications are self-only and separate release flags. DO NOT send medical prescription/lab/radiology availability to parent automatically merely because they can book or view Queue. Do not relax `NotificationPrivacy:ClinicalEmailReleaseApproved`/`ClinicalInAppReleaseApproved`.
+- Event capture and Email Outbox within same transaction as state changes; worker retries idempotently after commit; unavailable SMTP does not roll back business state. Handle linked/unlinked child account and shared verified parent contact without duplicate sends.
+- Confirm existing source-event idempotency keys, queue read role, notification preferences and cancellation after relationship revocation.
+
+================================================================================
+10. MODULE G — HISTORICAL MEDICAL DOCUMENTS, OWN UPLOAD (WAS-773)
+================================================================================
+10.1 Business distinction:
+The patient has a 2023 paper MRI, 2024 lab PDF, old prescription from an external doctor and operation discharge letter. They upload in Wasla without any existing Doctor/Practice/Encounter/Ticket/LabRequest/RadiologyRequest. Upload is NOT an official clinical result; source is PatientProvided, trust Unverified. The document can be visible to own authenticated Patient and (only when independently authorized) child under16 parent. Do not let TreatingDoctor/Reception/SuperAdmin browse this new source by default.
+
+10.2 Domain model:
+`PatientHistoricalDocument` aggregate proposal:
+- Id unique GUID; SubjectPatientId; Category enum {HistoricalPrescription, HistoricalLabReport, HistoricalRadiologyReport, SurgeryOrDischargeReport, OtherMedicalDocument}; Source=`PatientProvided`; VerificationStatus=`Unverified` (future fields reserved but don't build auto verification); State {PendingValidation, AvailableUnverified, Quarantined, RejectedUnsafe, Withdrawn}; DocumentDate nullable with DateUnknown true mutually consistent; ProviderName optional self-declared, Title optional, PatientNote optional safely bounded, CurrentVersionNumber; UploadedByApplicationUserId; UploaderPatientId; UploadedAtUtc; ModifiedAtUtc; RowVersion; private media origin metadata.
+`PatientHistoricalDocumentVersion`: Id, DocumentId, VersionNumber, metadata snapshot, CreatedByUserId, TimestampUtc, reason, state/withdrawal notes; original immutable.
+`PatientHistoricalDocumentAttachment`: Id, VersionId, private MediaKey (NEVER public DTO), original safe filename, MIME, extension, length, hash, content disposition metadata, scan status and timestamps.
+`PatientHistoricalDocumentHistory`: Append-only event (Submitted/Available/RejectedUnsafe/Quarantined/Revised/Withdrawn), actor, time, version and minimal reason without raw PHI.
+Potential `PatientHistoricalDocumentIdempotencyRecord` or existing safe idempotency pattern.
+
+10.3 Validation and security:
+- Own create only for active linked verified adult Patient with independent `MedicalDocuments.CreateOwn`; own view/list/detail/download permission separate. PatientId derived server-side from current verified PatientAccountLink, NEVER trust client SubjectPatientId for /me.
+- Supported new document types only PDFs and JPEG/PNG by default; use a dedicated validated `HistoricalDocuments` allowlist and the existing BuildingBlock media validator. GIF/MP4 remain allowed in other existing media features if configured; they should not automatically be allowed for sensitive historical documents. Additional formats require explicit validation design.
+- Check bounded file size/count/total quotas by configuration; suggested initial default = 10 MiB per file (align existing MediaStorage), max file count = 5 per document, all adjustable within hard absolute application safety caps. Do not infer unlimited storage. Enforce server HTTP request size as well as streamed file size; don't buffer huge contents in RAM.
+- MIME by content signature, extension checks, filename sanitize, active content rejection, decompression and PDF safety policies, explicit real scanner. Use temporary quarantine until successful scan; scanner ERROR or absent when configured required => fail closed, do NOT mark Available.
+- `IMalwareScanner` currently has a default NoOp fallback; install/configure real scanner adapter behind the same interface (service can be provisioned outside process). In Production set `MediaStorage:RequireMalwareScanner=true`; if scanner not configured/healthy startup or operation must fail securely. No possibility that NoOp is counted as a real scanner. Verify quarantined temporary media cannot be downloaded.
+- Store in private non-public directory or object store; no static public URL. Media keys generated server-side, not printable. Successful download requires fresh scoped authorization, matching subject/version/attachment, active status, exact original size/hash where supported, metadata audit persisted; send `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, safe attachment name and content disposition, disable unsafe inline script preview. No-cache and no permanent signed public URLs.
+- Upload storage and DB references consistency: use prevalidation/quarantine staging, DB transaction for metadata/history/idempotency/outbox, commit-aware media compensation (do not delete retained blob on ambiguous commit), orphan-file reconciliation/metrics; document worker/repair procedure and test storage failure & uncertain SQL commit.
+- Store exactly who uploaded (`UploadedByUserId`) and whose record (`SubjectPatientId`). If uploader is parent, preserve child's PatientId and parent's user id permanently even after relationship revoked or child's 16th birthday.
+- No PHI in generic HTTP tracing, errors, email body, logs or metrics labels. Only reference IDs and safe metadata for audit. Logs are not a source of clinical documents.
+
+10.4 Lifecycle and permissions:
+- Initial Submit -> PendingValidation (if asynchronous scan) -> AvailableUnverified only after successful scan; or RejectedUnsafe/Quarantined. If synchronous validation+scan, response may be 201 AvailableUnverified. In all cases never claim medically verified.
+- Version/revise: preserve old snapshot and original media; upload correction creates NEW version with its own scan/metadata, no in-place overwrite. Old version downloads by owner only if retention/privacy allow, not public timeline. New version must not become current until validated.
+- Withdraw: logical state and timestamp/reason, no permanent erase of legal/clinical/audit history, no reuse of filename as identity. In list/Timeline omit Withdrawn by default or mark explicitly, never let doctor use as official evidence. LegalHold prevents destructive purge; no invented retention duration.
+- Authorized patient can view own list/detail/versions, download allowed attachment, withdraw their own file, and edit metadata via safe revision. Recheck current patient link/permission on every call. Keep read side paged with index and stable cursor.
+
+10.5 Proposed API v1 — own:
+POST   /api/v1/patients/me/historical-documents               (multipart/form-data, Idempotency-Key)
+GET    /api/v1/patients/me/historical-documents               (category/status/date filter, cursor or paging)
+GET    /api/v1/patients/me/historical-documents/{documentId}
+GET    /api/v1/patients/me/historical-documents/{documentId}/versions
+POST   /api/v1/patients/me/historical-documents/{documentId}/versions (multipart/form-data, RowVersion, Idempotency-Key)
+POST   /api/v1/patients/me/historical-documents/{documentId}/withdraw (RowVersion, reason, Idempotency-Key)
+GET    /api/v1/patients/me/historical-documents/{documentId}/attachments/{attachmentId}/content
+OPTIONAL GET exact-version attachment route if version history downloads intentionally supported.
+
+Create form sample (metadata + files):
+  category=HistoricalRadiologyReport
+  documentDate=2023-06-14
+  dateUnknown=false
+  providerName=External Imaging Center (unverified user text)
+  title=MRI old report
+  files=[MRI-report.pdf]
+  Header Idempotency-Key: UUID
+Safe 201/202: {documentId,status:"AvailableUnverified"|"PendingValidation",category:"HistoricalRadiologyReport",source:"PatientProvided",verificationStatus:"Unverified",documentDate:"2023-06-14",uploadAtUtc:"...",currentVersion:1,rowVersion:"...",canDownload:true|false}.
+Never return storage key, verified clinician identity, official lab/result IDs, false verification flags or raw media.
+
+10.6 Clinical Medical Record Timeline projection:
+- Existing `MedicalRecordInput.ResourceTypes` and `Filters` know official resources only; existing `ClinicalTimelineEntry` assumes an EncounterId. Add a NEW explicit `HistoricalDocumentTimelineEntry : TimelineEntry` that does NOT fabricate EncounterId. Register in polymorphic JsonDerivedType serialization and OpenAPI as needed. Keep `HiddenTimelineEntry`/official subtype serialization intact and patient-safe.
+- Extend allowed filters with `historical-documents` as an ADDITIVE filter; existing `all`, `visits`, `diagnoses`, `prescriptions`, `labs`, `radiology` preserve semantics. Decide if existing `prescriptions`, `labs`, `radiology` implicitly include historical category; recommended NO in v1: only `all` and `historical-documents` include new entries, and historical entries clearly labeled. Explain in DTO docs/frontend handoff.
+- Extend MedicalRecordReadService ordered keyset timeline as union of permitted historical items and existing official timeline; preserve time desc + deterministic kind + key tie breaks, snapshot/invalidation watermarks and actor+PatientId scope. Do not pull all rows into memory. Ignore rows not AvailableUnverified, withdrawn/quarantined files; dateUnknown fallback to UploadedAtUtc while exposing `dateUnknown=true` (never invent document event date). Validate cursor invalidation on update/withdraw/file-scanning state changes, relationship revocation and age transition.
+- Patient-self Timeline includes own historical if permission active; dependent Timeline includes child's historical ONLY with independent `MedicalDocuments.ViewDependent` + current medical dependent read scope. Existing TreatingDoctor clinical Timeline must NOT include patient-provided files automatically, even if it currently shows completed Encounter outputs. No SuperAdmin/Reception accidental broad access.
+- Official `RecordSummary` counters for finalized prescriptions / lab results / radiology results remain exactly unchanged. Add optional backward-compatible separate historical summary fields, or distinct new summary endpoint/card; don't inflate official counts.
+- Existing clinicians' Private notes and Hidden encounter filtering remain unchanged. Historical document has no fake associated Encounter or source Doctor.
+- No access to unsigned patient uploads from Doctor hidden/access-grant logic; sharing with Doctor deferred.
+
+10.7 Example E2E:
+- Adult Ahmed logs in, POST MRI 2023 with PDF -> scan succeeds -> AvailableUnverified, GET self list/detail/attachment allowed, timeline displays HistoricalPatientDocument, source PatientProvided, Unverified.
+- OfficialLabResultCount / OfficialRadiologyResultCount unchanged; there was no Doctor request.
+- Another Patient, Doctor, Reception, SuperAdmin guessing document or attachment IDs receives 404/deny; no raw storage reference. Scanner down leaves unavailable/quarantined, bytes never downloadable.
+- Metadata correction keeps immutable earlier version. Withdraw -> no current timeline, history preserved. Archived/legal-hold data not erased by normal withdrawal.
+
+================================================================================
+11. MODULE H — DEPENDENT HISTORICAL DOCUMENTS AND DOCTOR-ORDERED DIAGNOSTIC PROXY
+================================================================================
+11.1 Dependent historical documents:
+- API rooted at `/api/v1/families/mine/dependents/{childPatientId}/historical-documents` for list/detail/create/version/withdraw/download; same private source aggregate as own upload. Avoid separate duplicated document tables.
+- READ: valid signed medical policy + existing dependent medical read scope + independent MedicalDocuments.ViewDependent permission + exact active Father/Mother pair + no restriction + child under16. Each download/Timeline re-evaluates these live at commit/response.
+- WRITE: independent `MedicalDocuments.CreateDependent` (or UploadDependent) / WithdrawDependent permission, exact currently reviewed parent-child medical authority, policy version, under16 local date, active account, active Family, no restriction. Do not infer from MedicalRecords.ViewDependent read permission or operational booking permission.
+- Uploader identity, subject and historical provenance distinct; never reassign uploaded files to parent Patient. Existing family medical read statuses only indicate read; add separate `canUploadHistoricalDocuments` capability based on write policy.
+- No Guardian/LegalGuardian write by implication. Policy flag FALSE -> these endpoints denied even though parent can still make bookings and view queue.
+- At start of 16th birthday in approved policy timezone: block new parent list/detail/download/upload/withdraw unless a separately approved exception; existing files preserved and later accessible to child through independently verified linked account/permission when eligible.
+- When a parent's proof revoked or restriction approved, downloads stop immediately; child can still access own medical record in the future. Active upload started before revocation but not committed afterwards must be rejected or quarantined.
+- For withdrawal, disallow revoking another parent's already stored files if owner policy would be violated; choose narrow author-owned withdrawal initially and record explicit capabilities. A child with own authorized account should preserve access to his record, not have it hidden because a parent loses access.
+
+11.2 Doctor-requested dependent Lab/Radiology submissions:
+- This feature is NOT a general historical upload. Must link to real existing LabRequest/RadiologyRequest created for the exact child by a Wasla Doctor and in a submission-eligible status.
+- New distinct proxy routes:
+  POST /api/v1/families/mine/dependents/{childPatientId}/lab-requests/{requestId}/submissions
+  POST /api/v1/families/mine/dependents/{childPatientId}/radiology-requests/{requestId}/submissions
+  GET  /api/v1/families/mine/dependents/{childPatientId}/lab-requests/{requestId}/submissions (or exact submitted id read)
+  GET  /api/v1/families/mine/dependents/{childPatientId}/radiology-requests/{requestId}/submissions
+  (withdraw limited to PendingReview if current source workflow supports it; separate child-targeted contract).
+- Reuse DiagnosticResultHandler / existing PatientLabResultSubmission & PatientRadiologyResultSubmission / Doctor review, current versioning, attachment scanner and approval; no parallel official result model.
+- Resolve actor parent separately from subject child; request.PatientId MUST equal childPatientId; require exact pair+current signed medical WRITE policy+independent `DependentLabSubmissions.Create` or `DependentRadiologySubmissions.Create`, child under16, no active restriction. Validate in transactional service and before media download, not only controller.
+- `Submission.UploadedByUserId=parent ApplicationUserId`; subject remains child PatientId and actual RequestId. PendingReview only; Doctor Accept/Reject follows existing ownership/scope and creates official result only after review. Parent cannot impersonate source Doctor, accept results or change doctor order.
+- If same attachment is an old unrelated external report, parent can alternatively use HistoricalDocument path but cannot claim it fulfills the doctor-requested LabRequest without correct RequestId and workflow.
+- Medical release policy false => denied; self existing Lab/Radiology endpoints must continue functioning and must NOT accept arbitrary child.PatientId by payload.
+- Test unknown source, mismatched request owner, two children, cross-Doctor, already accepted/rejected/withdrawn, race at 16th birthday, proof revocation during upload, malformed media, replay, doctor accept/reject and timeline official result after acceptance ONLY.
+
+================================================================================
+12. MODULE I — DEPENDENT FINANCIAL READS + FAMILY DASHBOARD
+================================================================================
+12.1 Dependent financial receipts/transactions:
+- Keep existing `GET /api/v1/patients/me/financial-transactions`, payment/refund receipt endpoints completely own-only; do NOT edit them to accept arbitrary patientId.
+- New:
+  GET /api/v1/families/mine/dependents/{childPatientId}/financial-transactions
+  GET /api/v1/families/mine/dependents/{childPatientId}/payments/{paymentId}/receipt
+  GET /api/v1/families/mine/dependents/{childPatientId}/refunds/{refundId}/receipt
+- Require explicit `DependentFinance.ViewTransactions` and `DependentFinance.ViewReceipts`, plus verified exact operational pair, under18 and approved financial disclosure conditions; this is FINANCIAL read, not clinical read, and medical sharing OFF must not accidentally block an otherwise authorized safe receipt.
+- Use a separate `DependentFinanceReadService`/scoped overload with subject patient validated server-side and SQL WHERE PatientId=approved child Id. Filtered read uses only own/target exact permission, safe doctor/practice/payment descriptors; no Reception staff names, internal notes, clinical diagnoses/attachments or refund controls. Existing source FinanceReadService may be reused carefully; do not depend on `ResolvePatientAsync` which resolves own link only.
+- No modifications to Payments, Refund, Revenue aggregates, historical accounting, price or archived rules; no power to issue refunds, mark paid, change amount, view unrelated patient's transaction.
+- Financial permission separate from `Reservations.ViewDependents`; viewing an appointment does not automatically grant receipt access unless independently permitted.
+- At age18 booking/operational authority for child stops, so default dependent finance access ends; existing stored transactions remain accessible by child through verified own account (subject to own permission). Do not erase any receipts.
+
+12.2 Unified Family dashboard:
+- Add GET `/api/v1/families/mine/dependents/{childPatientId}/dashboard` or include bounded summary in `/families/mine/workspace`; keep GET /patients/me/dashboard/overview and /capabilities own-only.
+- Return separate independent capability flags with reason codes and safe links: `canViewProfile`, `canManageContacts`, `canBook`, `canViewReservations`, `canViewQueue`, `canViewMedicalRecord`, `canUploadHistoricalDocument`, `canSubmitDoctorOrderedDiagnostic`, `canViewReceipts`, `canRequestVerification`, `canCorrectIdentity`.
+- Compute actual permission+membership+proof+age+policy results server-side, do not trust UI. No clinical/financial data fetched for unauthorized feature merely to hide its card later.
+- Empty Family workspace should still be 200 with `hasFamily=false`, and actions for creating/joining; Pending verification shows next action and safe status; medical disabled shows `MedicalPolicyUnavailable` without exposing clinical details.
+- Side effects to own Patient Dashboard must be minimal/additive. If including child cards, fetch independently authorized summaries only; keep existing top-level own Profile/FinancialHistory/RecordSummary unchanged. Avoid accidental aggregate counts of child's official record in parent's own counts.
+- Define localization keys Arabic + English for all new labels and error reason codes.
+
+================================================================================
+13. PERMISSIONS, SEEDING, RECEPTION CATALOG, DB ACCESS
+================================================================================
+13.1 PERMISSION ID SAFETY (P0):
+Existing `SystemPermissionIds.For(name)` uses the index of `PermissionNames.All` to construct stable GUID. DO NOT insert any new name in the middle of the list or inside preexisting expanded sublists. Append ALL new permission names after the existing last entry(s), in deterministic order. Preserve all existing IDs, role IDs and root-admin special rules; add snapshot tests for all previous ID-to-name pairs.
+
+13.2 Proposed granular permission catalog; normalize exact names once after inspecting established naming style:
+Patient/Family:
+  PatientFamilyCandidates.Search
+  PatientFamilyCandidates.Submit
+  FamilyWorkspace.ViewOwn
+  ChildOnboarding.CreateOwn
+  ChildOnboarding.ViewOwn
+  ChildOnboarding.ResubmitOwn
+  FamilyJoinRequests.CreateOwn
+  FamilyJoinRequests.ViewOwn
+  FamilyOperationalProofRequests.CreateOwn
+  FamilyOperationalProofRequests.ViewOwn
+  DependentPatientProfile.View
+  DependentPatientProfile.ManageContacts
+  DependentPatientProfile.ManagePhoto
+  DependentIdentityCorrection.RequestOwn
+  DependentTickets.ViewAuthorized
+Medical documents:
+  MedicalDocuments.CreateOwn
+  MedicalDocuments.ViewOwn
+  MedicalDocuments.ReviseOwn
+  MedicalDocuments.WithdrawOwn
+  MedicalDocuments.CreateDependent
+  MedicalDocuments.ViewDependent
+  MedicalDocuments.ReviseDependent
+  MedicalDocuments.WithdrawDependent
+Dependent diagnostics:
+  DependentLabSubmissions.Create
+  DependentLabSubmissions.View
+  DependentLabSubmissions.Withdraw
+  DependentRadiologySubmissions.Create
+  DependentRadiologySubmissions.View
+  DependentRadiologySubmissions.Withdraw
+Financial:
+  DependentFinance.ViewTransactions
+  DependentFinance.ViewReceipts
+Admin review:
+  ChildOnboarding.ViewAll
+  ChildOnboarding.ViewDetails
+  ChildOnboarding.ViewEvidence
+  ChildOnboarding.Decide
+  ChildOnboarding.RequestModification
+  FamilyJoinRequests.Review
+  FamilyJoinRequests.ViewEvidence
+  FamilyOperationalProofRequests.Review
+  DependentIdentityCorrection.Review
+  DependentIdentityCorrection.ViewEvidence
+  FamilyConflictCases.ViewAndResolveAuthorized
+  FamilyProofReconciliation.ExecuteAuthorized (only if reconciliation functionality actually added)
+
+This is an implementation permission set, not permission-name law. Avoid redundant permissions when existing named ones safely cover same semantics. Every final permission must have ONE stable constant, one `All` registry entry, one deterministic ID, explicit allowed roles, clearly documented authorization handler. No blanket bypass via SuperAdmin on clinical document access.
+
+13.3 Seeding and scope:
+- Patient role default gets own/family/authorized-dependent permissions needed for the approved experience (permission grants never bypass context checks). No dependent medical WRITE grant to Guardian by merely sharing role; enforce Father/Mother proof plus config in handler.
+- SuperAdmin gets review/governance/identity evidence permissions only; no general clinical media read permission. RootSuperAdmin exceptions restricted to existing RootOnly catalog (don't accidentally make every SuperAdmin root or able to manage other SuperAdmins).
+- Reception current registration/practice grants preserved. Do not grant cross-platform Parent search to Reception unless it has a separate justified business operation. Any newly added Reception-assisted family review must be assignment-scoped; otherwise don't create it.
+- Doctor gets no new patient-provided historical document access by default. Existing Doctor result-approval permission remains practice-scoped.
+- Add any new Doctor/Reception-facing permissions to `CommercialPermissionCatalog` with correct feature classification and appropriate seeding (`FeaturePermissionMappings`), not just roles. The subscription guard may deny unmapped Doctor/Reception permissions even if role granted. Patient universal feature behavior remains independent from Doctor subscription.
+- Modify `WaslaSecuritySeeder` in idempotent additive fashion; seeded role permission mapping should NOT erase custom assigned/delegated permissions. Migration must not silently reseed production on app startup.
+- Include integration assertions for 401/403/404/409/422/429, token/DB permission mismatch, revoked role, no linked Patient, first-login, suspended account, invalid family/reviewer access.
+
+13.4 Source-of-truth business permissions vs implementation capability:
+- No `Role=Father` claim in JWT by itself proves relationship. Family role lives in DB relation and reviewed proof.
+- `CanManageFamily` controls permissible membership workflows only, not medical record, parent authority or payment.
+- Patient IDs from path are only lookup keys; handler must prove exact subject scope. `Idempotency-Key` is not authorization.
+- `PatientContact.LinkedPatientId`, email/phone and shared devices do not prove parenthood or override an existing PatientAccountLink.
+
+
+================================================================================
+14. COMPLETE PROPOSED API CONTRACT MATRIX + VALIDATION
+================================================================================
+GENERAL CONTRACT RULES:
+- Prefix `/api/v1`, existing ApiVersioning, [Authorize], granular [Permission], handler-side authorization, FluentValidation, ProblemDetails Result mappings, localization and ResponseCache(NoStore=true) on all PII/PHI.
+- No new endpoint may accept a raw parent/child user ID to impersonate the actor. Caller identity is from current verified link, not request DTO. ChildPatientId in already AUTHORIZED dependent paths is only a subject selector; never acts as proof.
+- Command POST/PATCH/withdraw/approve require `Idempotency-Key` when side effects could replay; updates/decisions require RowVersion. Do not change existing APIs' idempotency conventions unexpectedly. Use Content-Type multipart/form-data for actual files with validated matching `EvidenceFiles`/`DocumentTypes`; arrays count equal.
+- Existing JSON enum serialization conventions, property names, paging and ProblemDetails style must be checked from controller/tests and reused. Examples below are conceptual and may use string labels for clarity; do not change global enum converter to accommodate examples.
+- No endpoint returns raw private MediaKey, encryption key, signed public medical URL or subject identity PII before verification.
+
+API GROUP F — FAMILY DISCOVERY / MANAGEMENT:
+F01 GET  /families/mine/workspace (new) [FamilyWorkspace.ViewOwn]
+  200 {hasFamily:false|true,family:{id,status}|null,members:[safeMember],myRequests:[{id,status,type,canResubmit}],actions:{canFindExistingChild,canRegisterChild,canJoinExistingFamily},reasonCodes:[]}.
+  401 unauthenticated; 403 no active linked Patient or explicit permission. No 404 solely because hasFamily=false.
+F02 POST /families/patient-candidates/search (new) [PatientFamilyCandidates.Search]
+  Body {nameAr,dateOfBirth,gender,phoneNumber?}; 200 {searchStatus:"PotentialMatches"|"NoPotentialMatch"|"ManualReviewRequired",candidates:[{candidateReference,displayNameMasked,birthYear?,gender?,expiresAtUtc?}],hasMore:false}.
+  400/422 invalid; 429 throttle; never raw PatientId. 0/many response must not allow unauthenticated probing.
+F03 POST /family-relationship-requests/from-candidate (new) [PatientFamilyCandidates.Submit]
+  Form candidateReference, relationshipType, EvidenceFiles[],DocumentTypes[], Idempotency-Key; 202 {requestId,status:"Pending",nextAction:"WaitForReview"}.
+  409 token replay, duplicate open request or membership conflict; protect private metadata. Persist request-origin to handle safe legacy reads.
+F04 GET /families/mine/link-requests (optional new safe projection) [FamilyRelationshipRequests.ViewOwn]
+  Show only applicant's own request status/current revision and generic next action; no target full identity before verification. Existing /family-relationship-requests/mine and /{id} MUST be made safe too.
+F05 POST /families/mine/join-invitations (new) [FamiliesManageOwn or granular]
+  Create bounded one-use invitation by current authorized Family manager; no exposing FamilyId or member data to recipient. Return protected reference only.
+F06 POST /families/mine/join-requests (new) [FamilyJoinRequests.CreateOwn]
+  Form invitationReference/approved candidate-caseRef, intended parentRole, evidenceFiles, documentTypes, idempotency; 202 pending; conflict -> `ConflictReview`/safe ActionRequired, no Family mutation.
+F07 GET /families/mine/join-requests (new) [FamilyJoinRequests.ViewOwn]; show own requests without other family member names before approval.
+F08 POST /families/mine/operational-pair-verifications (new if necessary) [FamilyOperationalProofRequests.CreateOwn]
+  Form bounded reference or already-authorized child id + evidence, role; 202 pending; for existing same-family but unproved pair. Must not auto-grant from currently common family member roles.
+
+API GROUP C — CHILD ONBOARDING / PROFILE:
+C01 POST /families/mine/child-onboarding (new) [ChildOnboarding.CreateOwn]
+  Form NameAr,NameEn?,DateOfBirth,Gender,PhoneNumber?,PrimaryContactNameAr?,PrimaryContactPhone,PrimaryContactRelationshipType,RelationToChild=Father|Mother,EvidenceFiles[],DocumentTypes[],Idempotency-Key.
+  202 {requestId,status:"PendingReview",rowVersion,canResubmit:false}; NO PatientId during pending, NO new Patient DB row.
+C02 GET /families/mine/child-onboarding-requests [ChildOnboarding.ViewOwn]
+C03 GET /families/mine/child-onboarding-requests/{requestId} [ChildOnboarding.ViewOwn]
+C04 POST /families/mine/child-onboarding-requests/{requestId}/resubmit [ChildOnboarding.ResubmitOwn] Form updated evidence/revision/rowVersion; Pending after modification.
+C05 GET /families/mine/dependents/{childPatientId}/profile [DependentPatientProfile.View]
+C06 GET /families/mine/dependents/{childPatientId}/profile-image [DependentPatientProfile.View]
+C07 PATCH /families/mine/dependents/{childPatientId}/profile [DependentPatientProfile.ManagePhoto] restricted routine metadata/photo only, rowVersion.
+C08 GET/POST/PUT/DELETE /families/mine/dependents/{childPatientId}/contacts[/{contactId}] [DependentPatientProfile.View/ManageContacts]; last-contact guard and scoped child.
+C09 POST /families/mine/dependents/{childPatientId}/identity-corrections [DependentIdentityCorrection.RequestOwn]
+  Body/Form proposed name/DOB/gender, reason, proof, idempotency; 202 pending; no Patient mutation until reviewed.
+
+API GROUP O — OPERATIONAL (MOST EXISTING):
+O01 EXISTING GET /reservations/bookable-patients: filter to exact operational pair; keep existing response schema.
+O02 EXISTING POST /reservations, /reservations/mine, /mine/{id}, cancel and reschedule + available dates/slots/options: same route/body with new exact pair scope under18.
+O03 EXISTING /follow-up-eligibilities/mine and follow-up booking routes: preserve routes but new proof policy.
+O04 GET /tickets/dependents/{childPatientId}/active [DependentTickets.ViewAuthorized]; safe list, no clinical payload.
+O05 GET /tickets/dependents/{childPatientId}/{ticketId} [DependentTickets.ViewAuthorized]; 200 safe status and queue fields, own-child equality enforced.
+O06 Existing `/tickets/mine/*` remains own only. No new parent ticket mutations.
+
+API GROUP H — HISTORICAL MEDICAL:
+H01 POST /patients/me/historical-documents [MedicalDocuments.CreateOwn]
+H02 GET /patients/me/historical-documents [MedicalDocuments.ViewOwn]
+H03 GET /patients/me/historical-documents/{documentId} [MedicalDocuments.ViewOwn]
+H04 GET /patients/me/historical-documents/{documentId}/versions [MedicalDocuments.ViewOwn]
+H05 POST /patients/me/historical-documents/{documentId}/versions [MedicalDocuments.ReviseOwn]
+H06 POST /patients/me/historical-documents/{documentId}/withdraw [MedicalDocuments.WithdrawOwn]
+H07 GET /patients/me/historical-documents/{documentId}/attachments/{attachmentId}/content [MedicalDocuments.ViewOwn]
+H08 POST /families/mine/dependents/{childPatientId}/historical-documents [MedicalDocuments.CreateDependent + signed WRITE scope]
+H09 GET /families/mine/dependents/{childPatientId}/historical-documents [MedicalDocuments.ViewDependent + signed READ scope]
+H10 GET /families/mine/dependents/{childPatientId}/historical-documents/{documentId} [MedicalDocuments.ViewDependent]
+H11 POST /families/mine/dependents/{childPatientId}/historical-documents/{documentId}/versions [MedicalDocuments.ReviseDependent]
+H12 POST /families/mine/dependents/{childPatientId}/historical-documents/{documentId}/withdraw [MedicalDocuments.WithdrawDependent]
+H13 GET /families/mine/dependents/{childPatientId}/historical-documents/{documentId}/attachments/{attachmentId}/content [MedicalDocuments.ViewDependent + signed READ scope]
+H14 EXISTING GET /patients/me/medical-record/overview,timeline: add historical entry under its own source and ensure independent permission.
+H15 EXISTING GET /families/mine/dependents/{childPatientId}/medical-record/overview,timeline: add only if signed medical policy and historical doc view permission; existing clinical read gate unchanged.
+
+API GROUP D — DOCTOR-REQUESTED CHILD LAB/RADIOLOGY:
+D01 POST /families/mine/dependents/{childPatientId}/lab-requests/{requestId}/submissions [DependentLabSubmissions.Create + signed write scope]
+D02 GET /families/mine/dependents/{childPatientId}/lab-requests/{requestId}/submissions [DependentLabSubmissions.View + signed read]
+D03 POST /families/mine/dependents/{childPatientId}/lab-requests/{requestId}/submissions/{submissionId}/withdraw [DependentLabSubmissions.Withdraw + current PendingReview]
+D04 corresponding `radiology-requests` paths/permissions; preserve Doctor Accept/Reject.
+D05 Existing own `/lab-requests/mine/{id}/submissions`, `/radiology-requests/mine/{id}/submissions` unchanged.
+
+API GROUP P — DEPENDENT PAYMENTS / DASHBOARD:
+P01 GET /families/mine/dependents/{childPatientId}/financial-transactions [DependentFinance.ViewTransactions]
+P02 GET /families/mine/dependents/{childPatientId}/payments/{paymentId}/receipt [DependentFinance.ViewReceipts]
+P03 GET /families/mine/dependents/{childPatientId}/refunds/{refundId}/receipt [DependentFinance.ViewReceipts]
+P04 GET /families/mine/dependents/{childPatientId}/dashboard [FamilyWorkspace.ViewOwn + required operation perms]
+P05 Existing /patients/me/dashboard and /patients/me/financial-transactions remain own only.
+
+API GROUP A — SUPERADMIN REVIEW:
+A01 GET /admin/child-onboarding-requests [ChildOnboarding.ViewAll]
+A02 GET /admin/child-onboarding-requests/{requestId} [ChildOnboarding.ViewDetails]
+A03 GET /admin/child-onboarding-requests/{requestId}/evidence/{docId}/content [ChildOnboarding.ViewEvidence]
+A04 POST /admin/child-onboarding-requests/{requestId}/approve [ChildOnboarding.Decide] RowVersion, Idempotency-Key, optional confirmed target match with approved proof; atomic approved transaction.
+A05 POST /admin/child-onboarding-requests/{requestId}/reject [ChildOnboarding.Decide] reason, RowVersion.
+A06 POST /admin/child-onboarding-requests/{requestId}/request-modification [ChildOnboarding.RequestModification] message, RowVersion.
+A07 Admin review queue/detail/evidence/approve/reject/modification for JoinRequests, operational pair verification and IdentityCorrection (can group in existing admin Family controllers while preserving route naming).
+A08 ConflictCase admin review returns safe claimant/target evidence; no forced auto family transfer; report `PendingGovernanceDecision` if beyond currently approved transfer model.
+A09 Admin never gets a generic endpoint to fetch historical clinical documents merely due to case review role.
+
+UNIFORM ERROR-CODE GUIDELINES (ADD LOCALIZATION):
+- `FamilyCandidate.SearchInvalid`, `FamilyCandidate.RateLimited`, `FamilyCandidate.ReferenceExpired`, `FamilyCandidate.ReferenceConsumed`, `FamilyCandidate.ReferenceInvalid`, `FamilyCandidate.Ambiguous`.
+- `FamilyRelationship.ProofRequired`, `.PendingReview`, `.PairNotVerified`, `.FamilyConflict`, `.RoleConflict`, `.AlreadyLinked`, `.ClosedRequest`, `.PermissionDenied`.
+- `ChildOnboarding.ContactRequired`, `.InvalidChildAge`, `.PossibleDuplicateReview`, `.IdentityConflict`, `.StaleRevision`, `.AlreadyApproved`.
+- `DependentAccess.OperationalProofRequired`, `.MedicalPolicyUnavailable`, `.MedicalProofRequired`, `.AgeNotEligible`, `.AccessRestricted`, `.PermissionUnavailable`.
+- `HistoricalDocument.UnsupportedType`, `.TooLarge`, `.ScannerUnavailable`, `.Quarantined`, `.Withdrawn`, `.VersionConflict`, `.NotFound`, `.LegalHold`.
+- `DependentDiagnostic.RequestMismatch`, `.RequestNotSubmittable`, `.ReviewPending`, `.Conflict`.
+- `DependentFinance.NotAuthorized`, `.ReceiptNotFound`.
+Map to existing Result/Error + RFC7807 status conventions; do not expose whether an unauthorized child/doc exists via different 403/404 bodies. All errors localized (at least AR and EN) and covered in API tests. Do not log raw PHI.
+
+================================================================================
+15. DATABASE / EF CORE / CONCURRENCY / MIGRATION BLUEPRINT
+================================================================================
+- New tables only where new business aggregate is justified; reuse existing FamilyRelationshipRequest and evidence/history where semantically safe. Avoid storing the same relationship approval in two conflicting state machines. No creating a new Fake Patient or Fake Encounter.
+
+MINIMUM PERSISTENCE GROUPS:
+A. `FamilyCandidateSelections` [or opaque reference registry] — hashed token/nonce, parent user/patient, target PatientId ONLY privately, purpose, criteria fingerprint, expiry/consumed timestamp, created/redeemed provenance; unique token hash, index expiry/parent; never expose object as API entity.
+B. `ParentChildOperationalAuthorities` + immutable history (and optional reviewed request source) — exact active pair, approved request/revision, role, revocation, rowversion, filtered unique live pair, restrictive FKs; ensure historical proof reconstruction explicit reviewed process, NOT migration backfill.
+C. `ChildOnboardingRequests`, `ChildOnboardingEvidence`, `ChildOnboardingHistories` and optional operation idempotency — versioned applicant profile snapshot, duplicate review reference and statuses, owned private evidence and one open reviewed case logic.
+D. `FamilyJoinRequests`/`FamilyJoinInvitations`/`FamilyConflictCases` only if cannot safely model via existing FamilyRequest+provenance. Unique pending join, one-use invite, immutable history and no public member enumeration. Avoid premature general family-transfer model.
+E. `DependentIdentityCorrectionRequests`+Evidence+History — reviewed identity-critical corrections, rowversion, preserved old values.
+F. `PatientHistoricalDocuments`, `PatientHistoricalDocumentVersions`, `PatientHistoricalDocumentAttachments`, `PatientHistoricalDocumentHistories`, idempotency and media reconciliation metadata — source PatientId, uploader id, category, original declared date, state/provenance, immutable event history, optional legal hold FK or existing Legal Hold abstraction if applicable; active version and scan state.
+
+DATABASE RULES:
+- FKs delete Restricted/NoAction for Patient, Family, proof, clinical source, PatientAccountLink; no cascading hard-delete of medical/relationship history.
+- Preserve existing UX_FamilyMembers_OneActiveFamilyPerPatient and Father/Mother unique active. Preserve UX_Patients_NormalizedEmail, UX_PatientAccountLinks_ApplicationUserId/PatientId, existing Patient name/DOB/gender and phone indexes.
+- New unique filtered indexes for active proof pair, active request per applicant+subject+type/context, nonce/hash, one current document version per document (unless modeled aggregate current version field), document/version uniqueness; use actual EF migrations not SQL manual-only scripts.
+- Patient scan index for exact normalized NameAr+DOB+Gender already exists; verify actual execution plan/estimated cost. Add only necessary indexes, test seekability and avoid broad OR query.
+- CHECK constraints for statuses/roles and age validity at application layer, parent != child, valid version numbering, read-only history and usable contact with child phone absent. Some constraints require transactional service, not simplistic SQL CHECK.
+- Use SQL Server native `rowversion` for mutable requests/profiles/document current state and exact proof. Immutable histories append only. Concurrency update collision -> 409; never catch generic exception and treat as success.
+- Lock order must follow existing Patient Identity / Family / Reservation / Ticket / Finance order. Since approval can touch Identity+Family, inspect current SQL application lock implementation and avoid deadlocks; use existing global identity lock for identity writers. Do not take booking lock then identity lock in reverse. Make approval/duplication tests use parallel SQL connections.
+- Media staged writes are not SQL transactional; design compensation/reconciliation without deleting referenced files after uncertain commit. Outbox within SQL transaction, worker sends later.
+- Preserve existing Archive and Phase18 reporting read models. If new document source appears in reporting, do not count as official or leak without explicit source mapping.
+- Migration plan: additive `Up` (tables, constraints, index, optional security columns) and safe non-destructive `Down` / documented forward-only if histories/medical files would be lost. NO reset, truncate, seed sample real patients, automatic old case promotion, changing old ids, dropping filtered indexes or rewriting live clinical data.
+- Migration validation on populated older schema with multiple Families, child no account, archived bookings, historical claims and existing auth roles; dry run SQL script, backup/recovery and deploy order specified.
+- `WaslaDbContext`/partial contexts, configurations, snapshots, read services, entity mappings and DI registrations updated consistently. No tracking needed for read-only bulk queries; use pagination/cursors and minimal projections.
+
+================================================================================
+16. PRODUCTION CONFIGURATION — APPSETTINGS-BASED WITHOUT UNSAFE SECRETS
+================================================================================
+USER DECISION: Retain ASP.NET Core appsettings.json + appsettings.Production.json + standard environment/secret-provider overrides (same keys). Do not invent a new Settings database or unrelated configuration subsystem. Never hardcode secret values into Git, documentation, tests, generated examples, migration scripts or logs.
+
+CURRENT INSPECTED BEHAVIOR:
+- appsettings.json FamilyMedicalPolicy Approved=false, MasterSourceOfTruthAdopted=false, incomplete policy identifiers; MedicalRecord GuardianSharingEnabled=true in base.
+- appsettings.Production.json GuardianSharingEnabled=false, CrossDoctorSharingEnabled=false, Archive.Enabled=false. KEEP disabled unless separately authorized.
+- DatabaseInitialization ApplyMigrationsOnStartup=false and ApplySeedingOnStartup=false; preserve controlled release practice.
+- EmailOutbox.Enabled=false in base; Notifications/Privacy have separate dispatch/release flags. Enabling production workers requires real delivery configuration/observability and separate release verification.
+- MediaStorage MaxFileSizeBytes defaults currently 10MiB, allowed extensions limited in base; RequireMalwareScanner not currently explicitly enabled in prod. Set it true only with real scanner provisioned; if absent document upload stays disabled/fail-closed.
+- Existing tracked appsettings.json contains apparently usable secret material. Treat as compromised: identify keys and maintainers privately, rotate/revoke outside git, remove values and all future plaintext, use environment or trusted production secrets with same key paths. Review Git history; no plain values in Codex report.
+
+Suggested NEW typed options sections (validate on startup, no invented legal values):
+`DependentManagement`:
+  Enabled=true [operational only after migrations/security review]; OperationalTimeZoneId="Africa/Cairo" [reviewed business/technical deployment default; do not use medical policy timezone as implicit fallback]; CandidateReferenceTtlMinutes=10; SearchMaxCandidates=5; SearchRateLimits per actor/IP; MaxOpenRequestsPerParent; InviteTtlMinutes; MaxEvidenceFiles; ReviewFeatureFlags; SecurityAuditEnabled=true.
+`HistoricalDocuments`:
+  Enabled=false until scanner/storage/security ready; SelfUploadEnabled?; DependentUploadEnabled=false until signed medical policy; AllowedExtensions=[".pdf",".jpg",".jpeg",".png"]; AllowedMimeTypes corresponding; MaxFileBytes=10485760; MaxFilesPerDocument=5; MaxTotalBytesPerPatient and rate limits configurable; RequireMalwareScanner=true; QuarantineStoragePath/private, retention policy reference (no guessed clinical retention time); AuditRequired=true.
+`DependentDiagnostics`:
+  Enabled=false until signed medical policy/release; parent proxy only; no blanket guardian access.
+`DependentFinance`:
+  Enabled=false until independent financial disclosure review and tests; read-only, separate permissions.
+`FamilyJoin`:
+  Enabled for invite/review if reviewed operational policy approved; conflict transfer not auto-enabled.
+
+DO NOT treat these proposed field names/values as final legal policy. Codex may adapt names to existing options and use minimal sections, but all runtime-switchable behavior and limits must be documented. Avoid ambiguous flags where Enabled=true accidentally overrides disabled medical release.
+
+EXAMPLE SAFE PRODUCTION CONFIG FRAGMENT (not replacement for current appsettings, no secrets):
+{
+  "DatabaseInitialization": {
+    "ApplyMigrationsOnStartup": false,
+    "ApplySeedingOnStartup": false
+  },
+  "MedicalRecord": {
+    "CrossDoctorSharingEnabled": false,
+    "GuardianSharingEnabled": false
+  },
+  "FamilyMedicalPolicy": {
+    "Approved": false,
+    "MasterSourceOfTruthAdopted": false
+  },
+  "MediaStorage": { "RequireMalwareScanner": true },
+  "HistoricalDocuments": {
+    "Enabled": false,
+    "AllowedExtensions": [".pdf", ".jpg", ".jpeg", ".png"],
+    "MaxFileBytes": 10485760,
+    "MaxFilesPerDocument": 5,
+    "RequireMalwareScanner": true
+  },
+  "DependentDiagnostics": { "Enabled": false },
+  "DependentFinance": { "Enabled": false },
+  "NotificationPrivacy": {
+    "ClinicalEmailReleaseApproved": false,
+    "ClinicalInAppReleaseApproved": false
+  }
+}
+
+If operations later provide a signed FamilyMedicalPolicy with required Approved, MasterSourceOfTruthAdopted, PolicyVersion, ApprovalReference, Jurisdiction, TimeZoneId, BasisReferences, AllowedDocumentTypes etc., activation must be controlled and audited; owner verbal product approval does NOT populate or sign those values. Do not fabricate a legal jurisdiction/evidence list and turn all flags true. Production readiness means READY TO ENABLE after gates, not bypass controls.
+
+OTHER PRODUCTION CONTROLS:
+- Real malware scanner implementation, startup health/readiness and fail-closed upload; staging test positive/negative files safely and scanner outage.
+- Stable ASP.NET Core Data Protection key ring shared across instances, protected at rest; opaque medical entry signing secret stable and secure; HMAC pepper/token secrets from environment/secret provider; key rotation plan; no hardcoded defaults.
+- Private media path outside wwwroot; backup/restore and storage permissions; multi-node consistency.
+- SMTP/EmailOutbox working with enabled worker only after approved operations, idempotent notifications and dead-letter/observability; no synchronous external sends inside transaction.
+- `Cors`, HTTPS/HSTS, secure headers, reverse proxy configuration and trusted proxies, RateLimiting per user/IP, content upload limits, DB connection pooling, logging redaction, request-body suppression, errors no stack trace or PHI.
+- Controlled migration/seed apply separate from app startup and audited; verify `ApplicationUser` link indexes and permission mappings.
+- Logging/tracing/metrics for candidate search throttles, approval conflicts, duplicate reviews, upload scan failures, pending outbox, download-denials and SQL conflicts WITHOUT PHI tags.
+- Archive/Retention/legal-hold rules preserved. Do not introduce automated permanent delete of medical files or evidence based on arbitrary durations.
+- Smoke tests all runtime flag combinations, especially medical flag OFF + dependent booking ON; scanner absent + upload ON -> fail startup/disabled, not accept unscanned bytes.
+
+
+================================================================================
+17. TEST STRATEGY — MANDATORY UNIT / INTEGRATION / REAL SQL / CONTRACT / SECURITY
+================================================================================
+NOT OPTIONAL. Every mutation must have success, unauthorized, stale rowversion, duplicate/idempotent replay, concurrency, storage failure, policy OFF and relevant age-boundary tests. Use existing xUnit patterns and test fixtures with .NET 10. Use REAL SQL Server for locking/unique constraint behavior; EF InMemory is insufficient for race verification. Use temporary private media root, controlled clock/timezone and fake scanner for automated tests; do not represent fake scanner as production malware defense. Add regression tests for permission IDs/API/OpenAPI and production gating.
+
+A. IDENTITY + FAMILY + SEARCH:
+T001 Parent with verified account but no Family opens /families/mine/workspace -> 200 hasFamily=false and Add Child actions; existing GET /families/mine 404 contract unchanged.
+T002 Staff /patients/search remains Reception scoped; Patient cannot call it simply because new family search permission exists.
+T003 FD-02 valid NameAr + DOB + Gender AND returns only bounded masked candidate refs; phone optional; same phone cannot override required fields. DOB, name, gender missing -> validation; no OR search.
+T004 Search Arabic normalization, diacritics, Alef variants etc reuses existing normalized identity columns safely; same name two DOBs not conflated, same DOB multiple names not conflated. Unsupported characters/oversized fields rejected.
+T005 0/1/many matching patients; ambiguous results do not trigger auto-binding; no target ID/FamilyId/phone/email/account-linked flag in JSON.
+T006 Guessed PatientId not accepted by new candidate route; malformed, forged, expired, tampered and consumed candidateReference rejected; token bound to parent actor/purpose; token cannot be redeemed from another account.
+T007 Rate limiter per-actor AND IP, safe 429, no broad enumeration, audit metadata excludes search PHI.
+T008 New candidate-origin relationship pending request: old GET /family-relationship-requests/mine/details/resubmit/audit cannot leak unmasked target identity; legacy self-service guessed targetId can't bypass.
+T009 Parent chooses valid candidate and uploads proof -> pending request, zero child operational/medical/finance permissions before review.
+T010 Approved existing-child linkage keeps original PatientId & Encounter/Prescription/Lab/Reservation data; no duplicate.
+T011 Request modification -> parent resubmit new revision -> approve; only currently approved evidence usable for proof; stale documents cannot authorize.
+T012 Reject leaves no Family linkage; own status clear but target identity safe.
+T013 Parent with no Family approved CreateFamily -> member roles and exact operational proof; parent with active Family approved AddFamilyMember -> no second Family.
+T014 Same Family two children: proof for one child cannot manage second; two parents: each requires exact pair independently.
+T015 Father/Mother role uniqueness, second father attempt -> safe conflict; one active Family per Patient; DB filtered indexes hold under concurrent requests.
+T016 Parent B not current member joins existing Family via invitation/current review proof, receives appropriate role and explicit per-child pair; no family roster leak before approval.
+T017 Parent B belongs to different active Family -> confidential ConflictReview, no auto transfer, no second membership, no false 201 linked success; frontend receives actionable (review) status.
+T018 Invitation expired/replayed/wrong target/forged manager -> denied; no relationship created.
+T019 Family inactive, parent account disabled, first-login active, DB permission revoked, missing PatientAccountLink -> deny; no clinical escalation.
+T020 Simultaneous identical Family approvals, retry after SQL transient error, stale rowversion, competing idempotency -> exactly one proof and history; graceful 409 or exact replay response.
+
+B. CHILD ONBOARDING / PROFILE:
+T021 Parent without Family submits new-child intake, no Patient row or Family member before approval; rejection leaves no real Patient, no child login.
+T022 Parent with existing Family submits, approval creates ONE Basic Patient, contact if child phone absent, Family child member and operational proof; no extra Family.
+T023 Parent supplies child optional phone, no primary guardian phone: valid if child phone usable. Without both -> 422 ContactRequired.
+T024 Shared guardian phone across three children allowed; matches never auto-merge; nullable Patient.Email remains unique normalized when supplied.
+T025 Preexisting child discovered during approval -> reviewer selects verified existing global Patient, never creates duplicate, preserves clinical history; weak matches remain unresolved instead of merge.
+T026 Two parent requests for same brand-new child approved concurrently -> one identity or explicit manual duplicate conflict, never duplicate auto-created Patient.
+T027 Under16 child no ApplicationUser/PatientAccountLink; at age16–17 separate reviewed Claim existing Basic works, new standalone account still not permitted; at 18 normal adult path unaffected.
+T028 Parent contacts update/photo with proper proof and permissions; cannot update child outside Family, cannot overwrite NameAr/DOB/Gender directly.
+T029 Without child phone, delete/disable last usable primary contact denied; supplied valid replacement and RowVersion succeeds; contact email/LinkedPatientId is not proof.
+T030 Identity correction request pending doesn't mutate Patient, admin approved correction rechecks duplicate/age/account link, preserves old identity history, rowversion invalidates stale writes.
+T031 At age16–17 with child claimed account, parent cannot hijack linked email/login; parent operations respect documented permitted nonmedical scope.
+
+C. OPERATIONAL PERMISSIONS / RESERVATION / QUEUE:
+T032 Same-Family adult-child WITHOUT exact operational proof -> cannot create/list/view/cancel/reschedule child's reservations or follow-up despite CanManageFamily; no access via arbitrary reservationId.
+T033 Exact approved operational proof + signed medical policy false -> parent can book child under18, get bookable-patients, cancel/reschedule with usual cutoff, view safe queue; medical access/upload denied.
+T034 Existing self Patient booking and Reception scoped bookings unchanged; Doctor cannot create on behalf of Patient through new parent flow.
+T035 One pending Reservation per existing daily/overlap/quota rules; snapshot price/segment/timezone, NoShow restore, ticket check-in still use existing algorithm. New policy must not bypass quota or create extra ticket.
+T036 Follow-up child eligibility list/booking uses same exact operational authority; nonexistent/cross-child eligibilityId denied.
+T037 Child Ticket Waiting/Called/InProgress/Completed -> parent sees safe queue read; parent's `/tickets/mine` still own only; queue operator mutations never unlocked.
+T038 Ticket archived/legacy with PatientId=child -> dependent safe view if currently authorized and archival rules permit, no attached diagnosis/payment raw fields, no unarchive.
+T039 Operational right revoked after booking/check-in -> future parent list/read denied, underlying reservation/ticket history remains untouched; Reception/child independent paths unaffected.
+T040 Under18 booking stops at local 18th birthday, under16 medical stops at local 16th birthday; test exactly 23:59:59 previous day and 00:00:00 birthday in policy timezone; avoid UTC time drift.
+T041 Leap-day DOB and DST/invalidation; difference between operational timezone and Doctor Practice appointment timezone handled independently.
+
+D. MEDICAL / DOCUMENTS / DIAGNOSTICS:
+T042 Adult linked Patient uploads old Prescription PDF, CBC JPG, MRI PDF and discharge summary, WITHOUT a current Doctor/Ticket/Encounter/Request. Each stored as PatientProvided/Unverified, not in official source table.
+T043 Missing or malformed Date, DateUnknown=true without date, absent provider, optional title/notes, provider text unverified; invalid conflicting DateUnknown+DocumentDate rejected.
+T044 Official lab/radiology/prescription counts and source models unchanged; no fabricated Doctor or EncounterId in historical TimelineEntry.
+T045 Own historical doc list/detail/download returns only own Patient documents; other Patient, Doctor, Reception, SuperAdmin guessing IDs denied. Storage keys never returned.
+T046 Upload .exe/.html/.svg or signature mismatch, empty/oversized/unsupported MIME, wrong declared type and malicious test file -> fail; no Available doc and no downloadable bytes.
+T047 Scanner missing/crashed/timed out with RequireMalwareScanner true -> fail closed/quarantine, never mark Available; staging/startup gate verifies real adapter exists.
+T048 Successful scan but DB commit failure -> no leaked orphan or lost retained blob; ambiguous commit/retry reconciles; duplicate Idempotency-Key with SAME payload replays same doc, different payload conflicts.
+T049 Version update creates new immutable version/attachment and invalidates Timeline cursor; original preserved. Withdrawal removes current visibility but preserves history/legal hold.
+T050 Timeline `all` includes historical source with clear unverified label; `historical-documents` filters only those; old `labs`/`radiology` official semantics unchanged unless explicitly documented. Stable keyset pagination under concurrent updates.
+T051 Doctor TreatingPatient MedicalRecord list NEVER automatically includes historical Patient-provided source (own-only default). No Hidden clinical or external provider text leakage in doctor route.
+T052 Child signed-policy OFF -> parent dependent historical upload/view/download denied even though operational proof permits reservations.
+T053 Child signed-policy ON with currently valid exact medical pair and `MedicalDocuments.CreateDependent`, under16 -> parent uploads subject=child; uploader=parent; no source doctor auto-verified. Separate read permission required.
+T054 Parent cannot upload for sibling without exact proof, unrelated Family, past age16, revoked proof, active restriction, no signed policy, or Guardian/LegalGuardian without separately approved write authority.
+T055 Two parents upload docs for same child: both attributed correctly; withdrawal other parent's document is denied where provenance policy requires own uploader; neither can erase child's longitudinal record.
+T056 Old doctor-ordered child LabRequest/RadiologyRequest -> parent with valid proxy write scope submits PendingReview; source Doctor accepts/rejects in old workflow, official result only upon acceptance.
+T057 Child Diagnostic RequestId mismatches childPatientId, another Doctor's scope, Draft/Cancelled/Not submittable, already-accepted submission -> denied safely; no cross-child submission.
+T058 Under16 child age transition during long upload/DB transaction -> recheck before commit; no post-cutoff medical WRITE. New downloads after revocation/16 cutoff deny. Existing data retained.
+T059 Under16 patient login creation is not introduced by proxy workflows; at 16–17 Claim route remains independent.
+T060 MedicalRecord serialization `JsonDerivedType` new entry + existing Hidden/Clinical subtypes must deserialize correctly; no new `EncounterId` required for HistoricalDocumentTimelineEntry; safe filters and cursor invalidation.
+T061 Media download secure headers, audit must persist before streaming; after audit DB failure no file content; no external path or storage key leakage.
+
+E. NOTIFICATIONS / FINANCE / DASHBOARD:
+T062 Verified operational parent receives safe reservation event through outbox and respects trusted contact/preference; no duplicate to same recipient; unlinked child has no unsafe email path.
+T063 Revoked/not-parent/another child parent does not receive operational event; signed clinical flags still deny parent clinical availability notifications.
+T064 Disable SMTP/EmailOutbox: business transaction commits, outbox waits/retries; no synchronous email delivery inside transaction.
+T065 Dependent financial list and exact receipt read authorized under18 with separate permission; unrelated child/paymentId denied, own-only existing finance unaffected.
+T066 Parent cannot refund/record/correct payment, Doctor revenue/dashboard unchanged; no staff notes/clinical PHI exposed in dependent financial response.
+T067 Family dashboard with no Family, pending request, active verified child, age16 medical restricted, age18 booking restricted, feature-off medical, missing permission; all flags accurate.
+T068 Dashboard never fetches protected medical/financial data before authorization, no broad sibling count or data leakage, no PII in warnings.
+
+F. SECURITY / MIGRATIONS / CONTRACT / PRODUCTION:
+T069 All old deterministic Permission GUID values unchanged, old role assignments unaffected, new Patient/SuperAdmin grants idempotent; Doctor/Reception commercial mappings classified if applicable.
+T070 Guest, wrong user type, token-only permission without DB grant, stale JWT, suspended account, unverified Claim, inactive Family, stale rowversion, idempotency collision, missing approved exact proof and changed policy version fail closed.
+T071 Existing `FamilyRelationshipRequest` legacy list/detail safe before proof; necessary security response changes listed in API diff with regression tests.
+T072 All new endpoints covered in Swagger/OpenAPI with request/response/status/permissions/headers/form-data examples, Arabic+English localized errors and unchanged existing API examples.
+T073 EF Core migration from populated baseline SQL Server (old Patient, Family, claims, archived Tickets, clinical sources, payments) preserves counts, IDs, history, unique constraints, referential integrity; no data loss. Roll forward/backup/restore rehearsal.
+T074 Production flag matrix: Base config true does not bypass Production false; FamilyMedicalPolicy unsigned cannot authorize dependent medical; scanner missing cannot accept uploads; feature flags reflect actual safe capabilities.
+T075 Deploy behind flags, start with nonmedical operational pilot; staging multi-instance key ring, private media, scanner, outbox, clocks, locks, backup restore, logs redaction, alerts and rollback drill.
+T076 Security secret scanning finds no committed plaintext production credentials in final new config; rotate compromised historic ones operationally and document done/not-done without publishing values.
+T077 Existing Phase5/10/11/12/15/16/17/18 integration and architecture tests PASS; any unavoidable privacy contract change documented and test-adjusted rather than silently weakening assertion.
+
+TEST IMPLEMENTATION EVIDENCE:
+- `dotnet restore`; `dotnet build --no-restore` (or solution build); `dotnet test` with per-project commands, command outputs, test count PASS/FAIL/SKIPPED and SQL dependency info.
+- Add named unit suites for Authorization/Family Candidate/ChildOnboarding/Historical Documents; integration suites for API/dependent scopes/clinical safety/media/finance; concurrency suites using real SQL Server; architecture and permission map tests.
+- Provide test fixture seed: Father Ahmed active linked Patient; Mother Mariam active linked Patient; Child Youssef Basic no account age8; sibling Salma; unrelated child and unrelated Family; adult age18; 15y364d, 16th birthday, 17 and 18 birthdays; doctor practices, official results, historical external docs, previous Family proof; idempotency and concurrency cases.
+- Assert no accessible historical docs with medical policy disabled; self uploaded docs don't need FamilyMedicalPolicy. Check both positive AND negative.
+
+================================================================================
+18. FRONTEND/CLIENT HANDOFF (MUST DELIVER EVEN THOUGH CODEX BACKEND ONLY)
+================================================================================
+Create `docs/handoffs/parent-child-family-historical-documents-api.md` and an explicit short CHANGELOG. For EACH endpoint, document:
+- URL, HTTP method, auth role, PermissionName, required persisted relationship and policy context.
+- Headers (`Authorization`, `Idempotency-Key`, `If-Match`/RowVersion as project convention, Content-Type).
+- Request DTO and field validation, DateOnly/gender enum shape, form-data multiple files pairing.
+- 200/201/202 response shape including capability flags; paging/cursor; file streaming and content dispositions.
+- 400/401/403/404/409/422/429 ProblemDetails error codes, Arabic/English text, relevant CTA and no-PHI detail.
+- UI conditionality: own Patient vs child, signed Medical OFF, MissingProof, Under16/Under18, request Pending/ModificationRequested, FamilyConflict, empty Family, ChildClaim.
+- Old vs new: existing /patients/me unchanged, /tickets/mine unchanged, /reservations existing route same body but stricter dependent scope, /family-relationship-requests/mine/details preapproval privacy redaction explicitly marked as potential SECURITY BREAKING CHANGE; exact before/after JSON examples.
+- `My Family` screens: empty Family, Find Existing, Candidate Selection, Proof Upload, Pending Review, Register New Child, Join Invited Family, Child Profile, Identity Correction, Book/View Reservation, Queue Read, Medical Documents + statuses and trust labels, doctor-requested child diagnostic submission, Receipt, Family Dashboard.
+- No raw PatientId typed by parent during discovery. It may appear in parent-authorized approved `MyFamily` roster and child-specific read paths AFTER authorization; not in unverified Search.
+- `FamilyMedicalAccessStatus` accurately displays policy OFF; don't promise medical view or upload until approved policy configured. Hide or disable unsupported operations with safe explanation.
+- Timeline source `PatientProvided / Unverified`, no `EncounterId` on historical entry; official timeline clients must support additive discriminator with tests/feature flags.
+- API-side frontend integration scenarios and sample curl/http requests using fake ids/tokens and no secrets/PHI. Define expected status transitions and refresh concurrency versions.
+
+================================================================================
+19. ARCHITECTURE / PERFORMANCE / AUDIT / OBSERVABILITY CHECKS
+================================================================================
+ARCHITECTURE:
+- Use Clean Architecture. Domain must not depend on ASP.NET Core/EF Core/file storage/SMTP/DateTime.Now. Application contains commands/queries/validators/scoped authorizers. Infrastructure implements EF Core repositories/private media/scanner/reviewer. API controller thin.
+- Implement with MediatR CQRS handlers, existing Result/Error pattern, FluentValidation, TransactionalCommand/UnitOfWork, rowversion, idempotency, SQL applocks, private media, Email Outbox; use Domain Events for in-process reactions only and Outbox for durable external effects.
+- Consider bounded Specification/Query objects for search and scoped reads; avoid copying old QControl modules.
+- No arbitrary cross-module repository direct DB access without tested `IWaslaDataStore`/service boundary; prefer established injection and persistence patterns.
+- Reuse current exact signed medical scope; do not fork or duplicate it and risk policy drift.
+
+PERFORMANCE:
+- Candidate search normalized bounded indexed AND query, no SQL query plan falling back to full table scans in the common case. No arbitrary broad LIKE or all-patient enumeration.
+- Family member capability list avoids N+1 repeated SQL per child; implement batch snapshots/status where possible, cap roster/paging.
+- Patient/child medical Timeline uses ordered server-side SQL union with index/keyset and bounded Take; no concatenating massive sets in application memory, all previous clinical Hidden protections retained.
+- Historical document index `(PatientId, DocumentDate?, UploadedAtUtc, DocumentId)` and on status/category/current version as needed; separate large blobs from SQL read models and store private file bytes in media backend, not base64 in database responses.
+- SQL locks coarse enough for identity correctness but ordered to avoid deadlock; measure contention and latency with tests; do not hold a transaction open while making external SMTP/scanner network calls longer than necessary. For scan+storage use staged transaction coordination.
+- Rate limit upload/search/download independently; never build a large multi-file buffer in RAM.
+
+AUDIT:
+- Immutable actor/subject/source metadata for child onboarding, ParentChildOperationalAuthority, relationship proof, family invitation/conflict, dependent profile correction, medical document upload/read/download/withdraw and proxy diagnostic submission.
+- For medical audit fail-closed if persistence unavailable before PHI disclosure. Preserve Phase16 four-field patient-safe access-log projection; don't expand public access-log with raw actor IDs without approval. Internal audit may store IDs securely but must not leak to generic logs.
+- Audit events must not be replaceable by client `ActorId`/`PatientId`; take server snapshot. No raw certificate scans, notes, clinical text, phone, DOB or filenames in tracing labels/logging.
+
+OBSERVABILITY:
+- Metrics for parent search rate-limit, token redemption failure, candidate ambiguity (aggregate only), pending review age, duplicate conflicts, approval SQL retries, operational proof denied, medical gate denied, scanner failures and quarantine backlog, file upload/download latency, Email Outbox dispatch, request conflicts, total authorized Timeline queries.
+- Structured logs with safe correlation IDs, no PII or secrets. Alert if scanner disabled/unhealthy in production, archive/recovery or audit persistence fails, permission seeder drift, outbox backlog, unusual search spikes.
+- Preserve existing localization and ProblemDetails, Swagger docs and SQL migration controls.
+
+================================================================================
+20. DEPLOYMENT, BACKWARD COMPATIBILITY, ROLLBACK
+================================================================================
+DEPLOYMENT PREREQUISITES:
+D01 Reviewer signoff on final API contract changes and new PermissionNames IDs; verify old IDs unchanged.
+D02 Live environments backup and restore rehearsal; schema migration SQL reviewed; no prod seed/migration on startup.
+D03 Secret exposure resolved: rotate active DB/SMTP/JWT/etc credential material identified in tracked config and git history, switch to secure key overrides and remove plaintext from repo. This must be an operational remediation, not a silent value swap that breaks running instances.
+D04 Actual malware scanning adapter provisioned and health checked; private media storage and cleanup/reconciliation tested.
+D05 Signed medical privacy/legal policy available and configured ONLY if child medical access is to be enabled. Otherwise leave MedicalRecord:GuardianSharingEnabled=false, FamilyMedicalPolicy Approved=false/Adopted=false, Dependent medical uploads/diagnostics disabled, and show reason to user. Product functionality still supports nonmedical family, booking and queue.
+D06 Production Data Protection key ring persistence, encryption/access, HMAC protection/key rotation and cross-instance consistency.
+D07 Email Outbox/notification template validated with privacy and opt-in; no clinical PHI proxy notification.
+D08 API contract handoff and Frontend update coordinated for security redactions, new timeline subtype and capability flags; old clients don't mistakenly treat unknown types as verified official results.
+D09 Staging tests against representative copied SANITIZED data with operational flags ON / medical flags OFF first; then clinical signed-policy fixture tests in isolated nonproduction. Verify production flags not overridden by base config.
+D10 Observability/alerts, rollback flag test, SQL scripts and cloud/IIS process rights verified; document environment-specific activation not automatic.
+
+SAFE ROLLOUT:
+- Deploy additive migration + reviewed append-only seeding first through controlled pipeline (no runtime auto-run), while features disabled.
+- Deploy API supporting both old and new request paths, enforce preapproval privacy redaction in all cases; coordinate frontend release.
+- Enable nonmedical Family Discovery/Child Onboarding/OperationalAuthority/Reservation/Queue in controlled pilot after E2E. Existing operational bookings unaffected when signed medical policy false.
+- Enable Self Historical Upload only AFTER actual scanner, private storage, audit and quota verified. Enable child medical read/write and proxy diagnostics only with signed policy + explicit approval. Independently authorize financial dependent reads.
+- Monitor errors and ability to disable features via appsettings/environment without corrupting stored Patient/Family/Document data. Treat already-created records as durable even if feature is disabled.
+
+ROLLBACK:
+- Flip feature flags OFF for risky new read/write paths, preserve DB schema and histories, stop new uploads/search if necessary. Never run destructive Down migrations deleting medical docs/proofs. Restore application version only if it understands current schema/authorization constraints; beware old code that lacks new operational proof might authorize too broadly, so do not blindly rollback to unsafe old app while public APIs remain open. Use staged schema/application rollback plan and security containment.
+- Relationship proof revocation/medical policy disabling must deny future access immediately without deleting source artifacts. Do not rely on cache invalidation alone.
+
+================================================================================
+21. DEFINITION OF DONE / REQUIRED CODEX FINAL DELIVERABLES
+================================================================================
+This EPIC is NOT DONE if only ChildOnboarding POST succeeds or only historical upload succeeds. It is DONE only when each approved parent-child action functions end-to-end with correct authorization and cannot reach a silent dead end; any intentionally unresolved case (e.g., currently prohibited cross-Family transfer, missing signed medical policy) must have a safe ActionRequired state and documented governance path, not a bypass.
+
+ACCEPTANCE CRITERIA (ALL):
+[ ] Code builds on current .NET 10; no unrelated architecture regressions or source drift.
+[ ] Approval addendum versioned in repo and all tests backed by current Source of Truth; policy conflict surfaced, not silently overridden.
+[ ] Verified Parent without Family can discover/register existing/new Child from My Family without typing PatientId; no PII leakage; exact evidence review.
+[ ] New child approved creates one Basic global Patient after review; no under16 ApplicationUser, no duplicate merge; child contacts maintained.
+[ ] Mother/father each have independently reviewed exact pair; Family roles and one active Family constraints preserved; second parent join supported where constraints permit; conflict review safe.
+[ ] Operational proof independent from signed medical policy; bookings/cancel/reschedule/follow-up/queue/operational notifications work for permitted under18 child with medical policy OFF.
+[ ] Parent cannot view medical record or upload child files unless separate signed medical proof/write+read scopes, under16 age and policy flags; existing Hidden, consent, guardian eligibility and restrictions unchanged.
+[ ] Parent and child own profile updates do not permit identity hijack, unauthorized DOB/gender edits, last contact deletion or medical ownership changes.
+[ ] Adult self historical Prescription/Lab/Radiology/Discharge uploads work without doctor request, source=PatientProvided/Unverified, own private read, versioning, withdrawal and distinct timeline.
+[ ] Historical docs NEVER become official results automatically, NEVER increment official counters and NEVER appear in Doctor/Reception/Admin general routes by default.
+[ ] Actual malware scanner integrated/configurable; Production fail closed on missing scanner, private media + audit + signed response rules tested.
+[ ] Parent can submit a doctor-requested child Lab/Radiology result PendingReview under separately authorized signed medical write, without forging official result or bypassing source Doctor review.
+[ ] Dependent financial receipts/transactions available under independent operationally scoped read and do not permit financial mutations or staff/internal data leak.
+[ ] Existing endpoints/DTOs retained except expressly documented necessary preapproval privacy redaction; all Swagger/Frontend contracts updated.
+[ ] Old PermissionNames.All order and deterministic IDs preserved; new permission roles/seedings/subscription mapping and JWT+DB checks correct.
+[ ] Additive EF Core migration, indexes, constraints, SQL rowversion, idempotency and real SQL concurrency tested; no automatic migrations/seeding in Production.
+[ ] Operational appsettings controls, secrets rotation remediation plan, real scanner, key ring, backup/restore, outbox, release flag matrix and smoke tests documented.
+[ ] Existing relevant xUnit/Integration/Architecture/Contract tests green, detailed command outputs and explicit failures/blocks documented; no unsupported “fully tested” statements.
+[ ] Production medical release remains disabled unless separate signed authorization and staging evidence; no feature flagged live merely to pass tests.
+
+FINAL CODEX RESPONSE MUST INCLUDE (IN THIS ORDER):
+1. Baseline SHA, branch, PR links/commits and list of implemented slices; any changes from inspected `feaa8c73...` baseline.
+2. Explicit Business Decisions followed, with reference to ID labels in this task; any unresolved governance/release gate clearly separated.
+3. Changed/new files list grouped Domain/Application/Infrastructure/API/Tests/Docs/Config (with brief reason).
+4. New/modified entities, DB tables, unique indexes, concurrency and migration filenames. Explain if any proposed conceptual entity was merged into an existing aggregate and why.
+5. API contract matrix (Method, route, actor, permissions, scope, request/response/status, breaking/security changes).
+6. Permission/Seeder/CommercialCatalog additions in exact stable append order and verification of OLD permission GUID identity.
+7. Detailed authorization map for each dependent operation (operational vs clinical vs finance) and age/policy/offline flags.
+8. Tests run: dotnet commands, SQL tests, pass/fail/skip counts, API security cases and known gaps. Never claim executed test if not run.
+9. Production config examples with NO secrets, flag matrix including MedicalPolicy OFF operational ON and scanner missing. Deployment/rollback scripts/runbook; clear signed policy and secret-rotation readiness checklist.
+10. Frontend handoff path with before/after privacy contract, Timeline discriminator, forms and localized reason codes.
+11. Risks/Remaining Open Policies and a numbered list of truly blocked scenarios; don't declare 100% done with gaps hidden.
+12. Final explicit status: IMPLEMENTED/TESTED, IMPLEMENTED_NOT_RELEASED, BLOCKED_POLICY, or NOT_IMPLEMENTED per sub-feature; never conflate code completion with Production approval.
+
+================================================================================
+22. CHANGE CONTROL / EXACTLY WHAT CODEX MUST NOT DO
+================================================================================
+- DO NOT change one active Family per Patient to multi-family.
+- DO NOT introduce an auto family transfer, auto patient merge, auto claim or auto medical verification from membership.
+- DO NOT open all documents to treating doctors, admin or reception; do not create fake medical Encounter/Ticket/Result.
+- DO NOT interpret owner approval as signed medical/guardian/legal/privacy consent; do not configure fake policy values.
+- DO NOT change PatientId, UserType, existing role numeric/permission GUID values, old DTO ownership boundaries, existing Patient/Doctor/Reception scopes or archived clinical history.
+- DO NOT widen GET /patients/me, GET /tickets/mine, GET /financial-transactions own, GET /encounters/mine or old diagnostic Patient endpoints to accept arbitrary child Id.
+- DO NOT disable scanner, audit, rowversion, RateLimiter, identity review or medical policies to make flow green.
+- DO NOT store or print secrets from current appsettings, log PHI, generate public file URLs, or deliver malware scanning via NoOp in Production.
+- DO NOT call SMTP/HTTP webhooks inside DB transaction; use transactional outbox.
+- DO NOT copy QControl internal models verbatim or introduce unapproved Window/Kiosk/ServiceTree/MultiTenancy.
+- DO NOT change price/capacity/queue/NoShow/Visit/Prescription/Official Lab/Radiology algorithms outside the scoped auth/read additions.
+- DO NOT silently suppress failing tests, remove old assertions or mark blocked conflict as approved success.
+- DO NOT create new user-facing feature that requires manual insertion of PatientId/FamilyId by parents.
+
+================================================================================
+23. BUSINESS E2E USER STORIES (THE IMPLEMENTATION SHOULD FEEL LIKE THIS)
+================================================================================
+STORY-01 (New Patient Parent / No Family): Ahmed logs in -> My Family works even if empty -> Add Child -> Enter name/DOB/Gender -> candidate search may find existing -> submit proof -> Pending, track review -> SuperAdmin approves -> Ahmed can book Youssef immediately if under18 and authorized; medical files remain gated by signed policy.
+STORY-02 (New Child No Existing Patient): Ahmed logs in -> Register New Child -> Date of birth, gender, no child phone but parent phone/contact -> upload birth certificate -> Pending; no orphan Patient -> Admin approval creates one Basic Patient in global registry + Family membership and exact operational pair -> open profile -> book/check queue.
+STORY-03 (Mother & Father Same Child): Mother has child in Family; Father receives valid invite/secure review link, submits independent proof -> approved Father membership and per-child exact pair; both can book same child subject to reservation rules; one Child PatientId, one Family; neither automatically gains rights over unverified siblings or another parent's previously uploaded files.
+STORY-04 (Parent Already In Different Family): Father tries to join child in mother's Family -> ConflictReview (privacy-safe) and human governance path; do not create duplicate Family membership or auto transfer; existing child identity/history remain untouched.
+STORY-05 (One Child, Two Siblings): Approved Father has exact proof only to Youssef, not Mariam -> can book Youssef only; can submit request to verify Mariam separately. Family member list alone not sufficient.
+STORY-06 (Child Appointment): Approved Ahmed selects Youssef -> book appointment -> Reception CheckIn creates Ticket -> Ahmed sees safe Queue status in child's section, receives permitted operational notifications; cannot operate Queue or access doctor's notes through Ticket.
+STORY-07 (Historical MRI): Ahmed uploads 2023 MRI report for himself, no doctor request -> scanner -> private PatientProvided/Unverified source -> appears in own Historical Documents/Medical Timeline; not counted as official radiology result, no doctor automatic sharing.
+STORY-08 (Old Prescription for Child): With signed policy ON + approved exact medical proof + explicit write permission, Ahmed uploads Youssef's previous prescription -> owned by Youssef Patient, uploaded by Ahmed; only authorized parents/child can view; no doctor access by default. When Youssef turns16, father read/write stops at local midnight, preserved for patient future.
+STORY-09 (Doctor-Ordered Child Lab): Doctor issues LabRequest for Youssef; approved authorized father uses dependent specific result submission -> PendingReview; issuing doctor approves/rejects through existing workflow; only then official LabResult can appear; no fabricated LabRequest.
+STORY-10 (Child Receipts): Ahmed has independent financial permission and exact operational pair -> sees safe paid receipt for Youssef, not unrelated child; cannot make refunds, inspect staff notes or view doctor's revenue.
+STORY-11 (Medical Gates OFF in Production): Parent can register/search/book/track child; `/families/.../medical-record` and dependent historical medical write return PolicyUnavailable until signed release; no accidental broadening because `appsettings.json` base flag true.
+STORY-12 (Relationship Revoked / Child Birthday): Parent can't read future files or queue/finance when applicable authorization ceases; no data deleted, no canceled historical visits; child identity/account claim preserved.
+
+================================================================================
+24. REQUIRED REVIEW & RELEASE DECISION REGISTER
+================================================================================
+APPROVED PRODUCT (implement): FD-02 secure AND search; FD-03 opaque candidate/evidence/admin review; WAS-774 child self-onboarding; second parent approved joining where one-Family constraints allow; exact operational proof; dependent profile management; operational reservation/queue/follow-up; self historical prescriptions/labs/radiology/other; distinct Timeline source unverified; under16 parent historical write; under16 doctor-requested diagnostic proxy; safe operational notifications; independently permitted dependent finance; family dashboard; production configuration structure.
+CONFIRMED EXISTING (do not change): global Patient; one active Family per Patient; one active father/mother role; reviewed exact clinical parent proof; parent clinical stop at 16; booking under18 independently; no child login under16; 16–17 existing Basic Claim review; no blanket SuperAdmin clinical data; Hidden clinical record privacy; retained immutable histories; existing production flags false; controlled EF migration/seeding.
+IMPLEMENTATION DEFAULTS (can refine with code/tests, not a change of business): candidate TTL ~10min, max candidates ~5, safe JSON names, patient document PDF/JPG/PNG and 10MiB per file with independent quotas, document lifecycle names, distinct permissions, API route names, operational timezone configurable. Record final values in handoff and appsettings typed options.
+EXTERNAL SIGN-OFF GATES (do not pretend approved): real jurisdiction and signed family medical policy values, treatment/minor privacy, clinical retention/Legal Hold periods, acceptable evidence type taxonomy, Guardian medical-write authority, permanent family transfer/deactivation model, production secret rotation, live scanner provisioning, environment deployment authorization.
+ESCALATION RULE: If implementation cannot satisfy a scenario without modifying a CONFIRMED rule (e.g., parent already in another Family and human transfer needed), preserve rule, return safe review-block state, log an explicit owner decision request in completion report. DO NOT block implementation of independent approved scenarios or invent an automatic policy.
+
+END OF COMPLETE CODEX TASK.

@@ -1,0 +1,1687 @@
+[
+  {
+    "index": 0,
+    "name": "Doctors.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000001"
+  },
+  {
+    "index": 1,
+    "name": "Doctors.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000002"
+  },
+  {
+    "index": 2,
+    "name": "Doctors.Approve",
+    "id": "20000000-0000-0000-0000-000000000003"
+  },
+  {
+    "index": 3,
+    "name": "Doctors.Reject",
+    "id": "20000000-0000-0000-0000-000000000004"
+  },
+  {
+    "index": 4,
+    "name": "Doctors.Suspend",
+    "id": "20000000-0000-0000-0000-000000000005"
+  },
+  {
+    "index": 5,
+    "name": "Doctors.Reactivate",
+    "id": "20000000-0000-0000-0000-000000000006"
+  },
+  {
+    "index": 6,
+    "name": "Roles.View",
+    "id": "20000000-0000-0000-0000-000000000007"
+  },
+  {
+    "index": 7,
+    "name": "Permissions.View",
+    "id": "20000000-0000-0000-0000-000000000008"
+  },
+  {
+    "index": 8,
+    "name": "RolePermissions.Manage",
+    "id": "20000000-0000-0000-0000-000000000009"
+  },
+  {
+    "index": 9,
+    "name": "DoctorOnboarding.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000010"
+  },
+  {
+    "index": 10,
+    "name": "PatientProfile.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000011"
+  },
+  {
+    "index": 11,
+    "name": "SuperAdmins.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000012"
+  },
+  {
+    "index": 12,
+    "name": "SuperAdmins.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000013"
+  },
+  {
+    "index": 13,
+    "name": "SuperAdmins.Create",
+    "id": "20000000-0000-0000-0000-000000000014"
+  },
+  {
+    "index": 14,
+    "name": "SuperAdmins.Update",
+    "id": "20000000-0000-0000-0000-000000000015"
+  },
+  {
+    "index": 15,
+    "name": "SuperAdmins.Activate",
+    "id": "20000000-0000-0000-0000-000000000016"
+  },
+  {
+    "index": 16,
+    "name": "SuperAdmins.Deactivate",
+    "id": "20000000-0000-0000-0000-000000000017"
+  },
+  {
+    "index": 17,
+    "name": "SuperAdmins.Delete",
+    "id": "20000000-0000-0000-0000-000000000018"
+  },
+  {
+    "index": 18,
+    "name": "SuperAdmins.Restore",
+    "id": "20000000-0000-0000-0000-000000000019"
+  },
+  {
+    "index": 19,
+    "name": "Specializations.View",
+    "id": "20000000-0000-0000-0000-000000000020"
+  },
+  {
+    "index": 20,
+    "name": "Specializations.Create",
+    "id": "20000000-0000-0000-0000-000000000021"
+  },
+  {
+    "index": 21,
+    "name": "Specializations.Update",
+    "id": "20000000-0000-0000-0000-000000000022"
+  },
+  {
+    "index": 22,
+    "name": "Specializations.Activate",
+    "id": "20000000-0000-0000-0000-000000000023"
+  },
+  {
+    "index": 23,
+    "name": "Specializations.Deactivate",
+    "id": "20000000-0000-0000-0000-000000000024"
+  },
+  {
+    "index": 24,
+    "name": "Specializations.Delete",
+    "id": "20000000-0000-0000-0000-000000000025"
+  },
+  {
+    "index": 25,
+    "name": "Specializations.Restore",
+    "id": "20000000-0000-0000-0000-000000000026"
+  },
+  {
+    "index": 26,
+    "name": "DoctorSpecializations.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000027"
+  },
+  {
+    "index": 27,
+    "name": "DoctorSpecializations.SubmitOwn",
+    "id": "20000000-0000-0000-0000-000000000028"
+  },
+  {
+    "index": 28,
+    "name": "DoctorSpecializations.ResubmitOwn",
+    "id": "20000000-0000-0000-0000-000000000029"
+  },
+  {
+    "index": 29,
+    "name": "DoctorSpecializationRequests.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000030"
+  },
+  {
+    "index": 30,
+    "name": "DoctorSpecializationRequests.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000031"
+  },
+  {
+    "index": 31,
+    "name": "DoctorSpecializationRequests.Adjust",
+    "id": "20000000-0000-0000-0000-000000000032"
+  },
+  {
+    "index": 32,
+    "name": "DoctorSpecializationRequests.Approve",
+    "id": "20000000-0000-0000-0000-000000000033"
+  },
+  {
+    "index": 33,
+    "name": "DoctorSpecializationRequests.Reject",
+    "id": "20000000-0000-0000-0000-000000000034"
+  },
+  {
+    "index": 34,
+    "name": "DoctorSpecializationRequests.RequestModification",
+    "id": "20000000-0000-0000-0000-000000000035"
+  },
+  {
+    "index": 35,
+    "name": "DoctorPracticeLocation.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000036"
+  },
+  {
+    "index": 36,
+    "name": "DoctorPracticeLocation.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000037"
+  },
+  {
+    "index": 37,
+    "name": "Patients.SearchBasic",
+    "id": "20000000-0000-0000-0000-000000000038"
+  },
+  {
+    "index": 38,
+    "name": "Patients.Register",
+    "id": "20000000-0000-0000-0000-000000000039"
+  },
+  {
+    "index": 39,
+    "name": "PatientProfile.UpdateOwn",
+    "id": "20000000-0000-0000-0000-000000000040"
+  },
+  {
+    "index": 40,
+    "name": "PatientContacts.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000041"
+  },
+  {
+    "index": 41,
+    "name": "PatientContacts.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000042"
+  },
+  {
+    "index": 42,
+    "name": "Families.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000043"
+  },
+  {
+    "index": 43,
+    "name": "Families.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000044"
+  },
+  {
+    "index": 44,
+    "name": "FamilyRelationshipRequests.Create",
+    "id": "20000000-0000-0000-0000-000000000045"
+  },
+  {
+    "index": 45,
+    "name": "FamilyRelationshipRequests.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000046"
+  },
+  {
+    "index": 46,
+    "name": "FamilyRelationshipRequests.ResubmitOwn",
+    "id": "20000000-0000-0000-0000-000000000047"
+  },
+  {
+    "index": 47,
+    "name": "FamilyRelationshipRequests.CreateAssisted",
+    "id": "20000000-0000-0000-0000-000000000048"
+  },
+  {
+    "index": 48,
+    "name": "FamilyRelationshipRequests.ViewAssisted",
+    "id": "20000000-0000-0000-0000-000000000049"
+  },
+  {
+    "index": 49,
+    "name": "FamilyRelationshipRequests.ResubmitAssisted",
+    "id": "20000000-0000-0000-0000-000000000050"
+  },
+  {
+    "index": 50,
+    "name": "FamilyRelationshipRequests.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000051"
+  },
+  {
+    "index": 51,
+    "name": "FamilyRelationshipRequests.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000052"
+  },
+  {
+    "index": 52,
+    "name": "FamilyRelationshipRequests.Approve",
+    "id": "20000000-0000-0000-0000-000000000053"
+  },
+  {
+    "index": 53,
+    "name": "FamilyRelationshipRequests.Reject",
+    "id": "20000000-0000-0000-0000-000000000054"
+  },
+  {
+    "index": 54,
+    "name": "FamilyRelationshipRequests.RequestModification",
+    "id": "20000000-0000-0000-0000-000000000055"
+  },
+  {
+    "index": 55,
+    "name": "DoctorPractices.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000056"
+  },
+  {
+    "index": 56,
+    "name": "DoctorPractices.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000057"
+  },
+  {
+    "index": 57,
+    "name": "DoctorPractices.ActivateOwn",
+    "id": "20000000-0000-0000-0000-000000000058"
+  },
+  {
+    "index": 58,
+    "name": "DoctorPracticeConfiguration.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000059"
+  },
+  {
+    "index": 59,
+    "name": "DoctorPracticeConfiguration.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000060"
+  },
+  {
+    "index": 60,
+    "name": "DoctorPracticeBranding.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000061"
+  },
+  {
+    "index": 61,
+    "name": "DoctorPracticeBranding.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000062"
+  },
+  {
+    "index": 62,
+    "name": "DoctorPracticeSchedule.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000063"
+  },
+  {
+    "index": 63,
+    "name": "DoctorPracticeSchedule.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000064"
+  },
+  {
+    "index": 64,
+    "name": "DoctorPracticeSegments.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000065"
+  },
+  {
+    "index": 65,
+    "name": "DoctorPracticeSegments.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000066"
+  },
+  {
+    "index": 66,
+    "name": "DoctorPracticePricing.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000067"
+  },
+  {
+    "index": 67,
+    "name": "DoctorPracticePricing.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000068"
+  },
+  {
+    "index": 68,
+    "name": "ReceptionUsers.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000069"
+  },
+  {
+    "index": 69,
+    "name": "ReceptionUsers.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000070"
+  },
+  {
+    "index": 70,
+    "name": "ReceptionAssignments.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000071"
+  },
+  {
+    "index": 71,
+    "name": "ReceptionAssignments.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000072"
+  },
+  {
+    "index": 72,
+    "name": "PracticeReservations.Manage",
+    "id": "20000000-0000-0000-0000-000000000073"
+  },
+  {
+    "index": 73,
+    "name": "PracticeQueue.Manage",
+    "id": "20000000-0000-0000-0000-000000000074"
+  },
+  {
+    "index": 74,
+    "name": "PracticePayments.Record",
+    "id": "20000000-0000-0000-0000-000000000075"
+  },
+  {
+    "index": 75,
+    "name": "PracticeWalkIns.Create",
+    "id": "20000000-0000-0000-0000-000000000076"
+  },
+  {
+    "index": 76,
+    "name": "DoctorProfile.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000077"
+  },
+  {
+    "index": 77,
+    "name": "DoctorProfile.UpdateOwn",
+    "id": "20000000-0000-0000-0000-000000000078"
+  },
+  {
+    "index": 78,
+    "name": "Reservations.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000079"
+  },
+  {
+    "index": 79,
+    "name": "Reservations.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000080"
+  },
+  {
+    "index": 80,
+    "name": "Reservations.CancelOwn",
+    "id": "20000000-0000-0000-0000-000000000081"
+  },
+  {
+    "index": 81,
+    "name": "Reservations.RescheduleOwn",
+    "id": "20000000-0000-0000-0000-000000000082"
+  },
+  {
+    "index": 82,
+    "name": "Reservations.ViewDependents",
+    "id": "20000000-0000-0000-0000-000000000083"
+  },
+  {
+    "index": 83,
+    "name": "Reservations.CreateDependents",
+    "id": "20000000-0000-0000-0000-000000000084"
+  },
+  {
+    "index": 84,
+    "name": "Reservations.CancelDependents",
+    "id": "20000000-0000-0000-0000-000000000085"
+  },
+  {
+    "index": 85,
+    "name": "Reservations.RescheduleDependents",
+    "id": "20000000-0000-0000-0000-000000000086"
+  },
+  {
+    "index": 86,
+    "name": "DoctorPracticeReservations.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000087"
+  },
+  {
+    "index": 87,
+    "name": "DoctorPracticeReservations.CancelOwn",
+    "id": "20000000-0000-0000-0000-000000000088"
+  },
+  {
+    "index": 88,
+    "name": "DoctorPracticeReservations.RescheduleOwn",
+    "id": "20000000-0000-0000-0000-000000000089"
+  },
+  {
+    "index": 89,
+    "name": "PracticeReservations.View",
+    "id": "20000000-0000-0000-0000-000000000090"
+  },
+  {
+    "index": 90,
+    "name": "PracticeReservations.Create",
+    "id": "20000000-0000-0000-0000-000000000091"
+  },
+  {
+    "index": 91,
+    "name": "PracticeReservations.Cancel",
+    "id": "20000000-0000-0000-0000-000000000092"
+  },
+  {
+    "index": 92,
+    "name": "PracticeReservations.Reschedule",
+    "id": "20000000-0000-0000-0000-000000000093"
+  },
+  {
+    "index": 93,
+    "name": "PracticeReservations.RestoreNoShow",
+    "id": "20000000-0000-0000-0000-000000000094"
+  },
+  {
+    "index": 94,
+    "name": "Reservations.ViewAdministrative",
+    "id": "20000000-0000-0000-0000-000000000095"
+  },
+  {
+    "index": 95,
+    "name": "PracticeTickets.View",
+    "id": "20000000-0000-0000-0000-000000000096"
+  },
+  {
+    "index": 96,
+    "name": "PracticeTickets.CheckIn",
+    "id": "20000000-0000-0000-0000-000000000097"
+  },
+  {
+    "index": 97,
+    "name": "PracticeTickets.ForceCheckIn",
+    "id": "20000000-0000-0000-0000-000000000098"
+  },
+  {
+    "index": 98,
+    "name": "PracticeTickets.CreateWalkIn",
+    "id": "20000000-0000-0000-0000-000000000099"
+  },
+  {
+    "index": 99,
+    "name": "PracticeTickets.RecordPayment",
+    "id": "20000000-0000-0000-0000-000000000100"
+  },
+  {
+    "index": 100,
+    "name": "PracticeTickets.Call",
+    "id": "20000000-0000-0000-0000-000000000101"
+  },
+  {
+    "index": 101,
+    "name": "PracticeTickets.ManualCall",
+    "id": "20000000-0000-0000-0000-000000000102"
+  },
+  {
+    "index": 102,
+    "name": "PracticeTickets.RestoreNoShow",
+    "id": "20000000-0000-0000-0000-000000000103"
+  },
+  {
+    "index": 103,
+    "name": "PracticeTickets.Cancel",
+    "id": "20000000-0000-0000-0000-000000000104"
+  },
+  {
+    "index": 104,
+    "name": "DoctorPracticeTickets.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000105"
+  },
+  {
+    "index": 105,
+    "name": "DoctorPracticeTickets.CallOwn",
+    "id": "20000000-0000-0000-0000-000000000106"
+  },
+  {
+    "index": 106,
+    "name": "DoctorPracticeTickets.ConfirmNoResponseOwn",
+    "id": "20000000-0000-0000-0000-000000000107"
+  },
+  {
+    "index": 107,
+    "name": "DoctorPracticeTickets.ManualCallOwn",
+    "id": "20000000-0000-0000-0000-000000000108"
+  },
+  {
+    "index": 108,
+    "name": "DoctorPracticeTickets.RestoreNoShowOwn",
+    "id": "20000000-0000-0000-0000-000000000109"
+  },
+  {
+    "index": 109,
+    "name": "DoctorPracticeTickets.CancelOwn",
+    "id": "20000000-0000-0000-0000-000000000110"
+  },
+  {
+    "index": 110,
+    "name": "DoctorPracticeTickets.StartOwn",
+    "id": "20000000-0000-0000-0000-000000000111"
+  },
+  {
+    "index": 111,
+    "name": "DoctorPracticeTickets.CompleteOwn",
+    "id": "20000000-0000-0000-0000-000000000112"
+  },
+  {
+    "index": 112,
+    "name": "Tickets.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000113"
+  },
+  {
+    "index": 113,
+    "name": "PracticePayments.View",
+    "id": "20000000-0000-0000-0000-000000000114"
+  },
+  {
+    "index": 114,
+    "name": "PracticePayments.Correct",
+    "id": "20000000-0000-0000-0000-000000000115"
+  },
+  {
+    "index": 115,
+    "name": "PracticePayments.Refund",
+    "id": "20000000-0000-0000-0000-000000000116"
+  },
+  {
+    "index": 116,
+    "name": "DoctorPracticePayments.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000117"
+  },
+  {
+    "index": 117,
+    "name": "DoctorPracticePayments.CorrectOwn",
+    "id": "20000000-0000-0000-0000-000000000118"
+  },
+  {
+    "index": 118,
+    "name": "DoctorPracticePayments.RefundOwn",
+    "id": "20000000-0000-0000-0000-000000000119"
+  },
+  {
+    "index": 119,
+    "name": "DoctorRevenue.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000120"
+  },
+  {
+    "index": 120,
+    "name": "Payments.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000121"
+  },
+  {
+    "index": 121,
+    "name": "PlatformRevenue.ViewAggregates",
+    "id": "20000000-0000-0000-0000-000000000122"
+  },
+  {
+    "index": 122,
+    "name": "MedicalEncounters.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000123"
+  },
+  {
+    "index": 123,
+    "name": "MedicalEncounters.StartOwn",
+    "id": "20000000-0000-0000-0000-000000000124"
+  },
+  {
+    "index": 124,
+    "name": "MedicalEncounters.UpdateOwn",
+    "id": "20000000-0000-0000-0000-000000000125"
+  },
+  {
+    "index": 125,
+    "name": "MedicalEncounters.CompleteOwn",
+    "id": "20000000-0000-0000-0000-000000000126"
+  },
+  {
+    "index": 126,
+    "name": "MedicalEncounters.AmendOwn",
+    "id": "20000000-0000-0000-0000-000000000127"
+  },
+  {
+    "index": 127,
+    "name": "Diagnoses.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000128"
+  },
+  {
+    "index": 128,
+    "name": "Diagnoses.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000129"
+  },
+  {
+    "index": 129,
+    "name": "FollowUpEligibility.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000130"
+  },
+  {
+    "index": 130,
+    "name": "FollowUpEligibility.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000131"
+  },
+  {
+    "index": 131,
+    "name": "FollowUpEligibility.ViewBookingEligibility",
+    "id": "20000000-0000-0000-0000-000000000132"
+  },
+  {
+    "index": 132,
+    "name": "MedicalEncounters.ViewOwnCompleted",
+    "id": "20000000-0000-0000-0000-000000000133"
+  },
+  {
+    "index": 133,
+    "name": "Diagnoses.ViewOwnCompleted",
+    "id": "20000000-0000-0000-0000-000000000134"
+  },
+  {
+    "index": 134,
+    "name": "DrugCatalog.View",
+    "id": "20000000-0000-0000-0000-000000000135"
+  },
+  {
+    "index": 135,
+    "name": "DrugCatalog.Create",
+    "id": "20000000-0000-0000-0000-000000000136"
+  },
+  {
+    "index": 136,
+    "name": "DrugCatalog.Update",
+    "id": "20000000-0000-0000-0000-000000000137"
+  },
+  {
+    "index": 137,
+    "name": "DrugCatalog.Activate",
+    "id": "20000000-0000-0000-0000-000000000138"
+  },
+  {
+    "index": 138,
+    "name": "DrugCatalog.Deactivate",
+    "id": "20000000-0000-0000-0000-000000000139"
+  },
+  {
+    "index": 139,
+    "name": "DrugCatalog.Merge",
+    "id": "20000000-0000-0000-0000-000000000140"
+  },
+  {
+    "index": 140,
+    "name": "DrugCatalog.Import",
+    "id": "20000000-0000-0000-0000-000000000141"
+  },
+  {
+    "index": 141,
+    "name": "DrugCatalog.ImportHistory",
+    "id": "20000000-0000-0000-0000-000000000142"
+  },
+  {
+    "index": 142,
+    "name": "DrugCatalogRequests.View",
+    "id": "20000000-0000-0000-0000-000000000143"
+  },
+  {
+    "index": 143,
+    "name": "DrugCatalogRequests.Review",
+    "id": "20000000-0000-0000-0000-000000000144"
+  },
+  {
+    "index": 144,
+    "name": "DrugCatalog.SearchActive",
+    "id": "20000000-0000-0000-0000-000000000145"
+  },
+  {
+    "index": 145,
+    "name": "DrugCatalogRequests.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000146"
+  },
+  {
+    "index": 146,
+    "name": "DrugCatalogRequests.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000147"
+  },
+  {
+    "index": 147,
+    "name": "DrugCatalogRequests.UpdateOwn",
+    "id": "20000000-0000-0000-0000-000000000148"
+  },
+  {
+    "index": 148,
+    "name": "Prescriptions.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000149"
+  },
+  {
+    "index": 149,
+    "name": "Prescriptions.ManageOwnDraft",
+    "id": "20000000-0000-0000-0000-000000000150"
+  },
+  {
+    "index": 150,
+    "name": "Prescriptions.CorrectOwn",
+    "id": "20000000-0000-0000-0000-000000000151"
+  },
+  {
+    "index": 151,
+    "name": "Prescriptions.VoidOwn",
+    "id": "20000000-0000-0000-0000-000000000152"
+  },
+  {
+    "index": 152,
+    "name": "Prescriptions.ViewOwnCompleted",
+    "id": "20000000-0000-0000-0000-000000000153"
+  },
+  {
+    "index": 153,
+    "name": "DrugCatalogManagers.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000154"
+  },
+  {
+    "index": 154,
+    "name": "DrugCatalogManagers.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000155"
+  },
+  {
+    "index": 155,
+    "name": "DrugCatalogManagers.Create",
+    "id": "20000000-0000-0000-0000-000000000156"
+  },
+  {
+    "index": 156,
+    "name": "DrugCatalogManagers.Update",
+    "id": "20000000-0000-0000-0000-000000000157"
+  },
+  {
+    "index": 157,
+    "name": "DrugCatalogManagers.Activate",
+    "id": "20000000-0000-0000-0000-000000000158"
+  },
+  {
+    "index": 158,
+    "name": "DrugCatalogManagers.Deactivate",
+    "id": "20000000-0000-0000-0000-000000000159"
+  },
+  {
+    "index": 159,
+    "name": "LabCatalog.View",
+    "id": "20000000-0000-0000-0000-000000000160"
+  },
+  {
+    "index": 160,
+    "name": "LabCatalog.Create",
+    "id": "20000000-0000-0000-0000-000000000161"
+  },
+  {
+    "index": 161,
+    "name": "LabCatalog.Update",
+    "id": "20000000-0000-0000-0000-000000000162"
+  },
+  {
+    "index": 162,
+    "name": "LabCatalog.Activate",
+    "id": "20000000-0000-0000-0000-000000000163"
+  },
+  {
+    "index": 163,
+    "name": "LabCatalog.Deactivate",
+    "id": "20000000-0000-0000-0000-000000000164"
+  },
+  {
+    "index": 164,
+    "name": "LabCatalog.Merge",
+    "id": "20000000-0000-0000-0000-000000000165"
+  },
+  {
+    "index": 165,
+    "name": "LabCatalog.Import",
+    "id": "20000000-0000-0000-0000-000000000166"
+  },
+  {
+    "index": 166,
+    "name": "LabCatalog.ImportHistory",
+    "id": "20000000-0000-0000-0000-000000000167"
+  },
+  {
+    "index": 167,
+    "name": "LabCatalogRequests.View",
+    "id": "20000000-0000-0000-0000-000000000168"
+  },
+  {
+    "index": 168,
+    "name": "LabCatalogRequests.Review",
+    "id": "20000000-0000-0000-0000-000000000169"
+  },
+  {
+    "index": 169,
+    "name": "RadiologyCatalog.View",
+    "id": "20000000-0000-0000-0000-000000000170"
+  },
+  {
+    "index": 170,
+    "name": "RadiologyCatalog.Create",
+    "id": "20000000-0000-0000-0000-000000000171"
+  },
+  {
+    "index": 171,
+    "name": "RadiologyCatalog.Update",
+    "id": "20000000-0000-0000-0000-000000000172"
+  },
+  {
+    "index": 172,
+    "name": "RadiologyCatalog.Activate",
+    "id": "20000000-0000-0000-0000-000000000173"
+  },
+  {
+    "index": 173,
+    "name": "RadiologyCatalog.Deactivate",
+    "id": "20000000-0000-0000-0000-000000000174"
+  },
+  {
+    "index": 174,
+    "name": "RadiologyCatalog.Merge",
+    "id": "20000000-0000-0000-0000-000000000175"
+  },
+  {
+    "index": 175,
+    "name": "RadiologyCatalog.Import",
+    "id": "20000000-0000-0000-0000-000000000176"
+  },
+  {
+    "index": 176,
+    "name": "RadiologyCatalog.ImportHistory",
+    "id": "20000000-0000-0000-0000-000000000177"
+  },
+  {
+    "index": 177,
+    "name": "RadiologyCatalogRequests.View",
+    "id": "20000000-0000-0000-0000-000000000178"
+  },
+  {
+    "index": 178,
+    "name": "RadiologyCatalogRequests.Review",
+    "id": "20000000-0000-0000-0000-000000000179"
+  },
+  {
+    "index": 179,
+    "name": "LabCatalog.SearchActive",
+    "id": "20000000-0000-0000-0000-000000000180"
+  },
+  {
+    "index": 180,
+    "name": "LabCatalogRequests.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000181"
+  },
+  {
+    "index": 181,
+    "name": "LabCatalogRequests.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000182"
+  },
+  {
+    "index": 182,
+    "name": "LabCatalogRequests.UpdateOwn",
+    "id": "20000000-0000-0000-0000-000000000183"
+  },
+  {
+    "index": 183,
+    "name": "LabRequests.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000184"
+  },
+  {
+    "index": 184,
+    "name": "LabRequests.ManageOwnDraft",
+    "id": "20000000-0000-0000-0000-000000000185"
+  },
+  {
+    "index": 185,
+    "name": "LabRequests.CreatePostVisitOwn",
+    "id": "20000000-0000-0000-0000-000000000186"
+  },
+  {
+    "index": 186,
+    "name": "LabRequests.CancelOwn",
+    "id": "20000000-0000-0000-0000-000000000187"
+  },
+  {
+    "index": 187,
+    "name": "LabResults.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000188"
+  },
+  {
+    "index": 188,
+    "name": "LabResults.UploadOwn",
+    "id": "20000000-0000-0000-0000-000000000189"
+  },
+  {
+    "index": 189,
+    "name": "LabResults.CorrectOwn",
+    "id": "20000000-0000-0000-0000-000000000190"
+  },
+  {
+    "index": 190,
+    "name": "LabResults.VoidOwn",
+    "id": "20000000-0000-0000-0000-000000000191"
+  },
+  {
+    "index": 191,
+    "name": "LabResultSubmissions.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000192"
+  },
+  {
+    "index": 192,
+    "name": "LabResultSubmissions.ReviewOwn",
+    "id": "20000000-0000-0000-0000-000000000193"
+  },
+  {
+    "index": 193,
+    "name": "RadiologyCatalog.SearchActive",
+    "id": "20000000-0000-0000-0000-000000000194"
+  },
+  {
+    "index": 194,
+    "name": "RadiologyCatalogRequests.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000195"
+  },
+  {
+    "index": 195,
+    "name": "RadiologyCatalogRequests.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000196"
+  },
+  {
+    "index": 196,
+    "name": "RadiologyCatalogRequests.UpdateOwn",
+    "id": "20000000-0000-0000-0000-000000000197"
+  },
+  {
+    "index": 197,
+    "name": "RadiologyRequests.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000198"
+  },
+  {
+    "index": 198,
+    "name": "RadiologyRequests.ManageOwnDraft",
+    "id": "20000000-0000-0000-0000-000000000199"
+  },
+  {
+    "index": 199,
+    "name": "RadiologyRequests.CreatePostVisitOwn",
+    "id": "20000000-0000-0000-0000-000000000200"
+  },
+  {
+    "index": 200,
+    "name": "RadiologyRequests.CancelOwn",
+    "id": "20000000-0000-0000-0000-000000000201"
+  },
+  {
+    "index": 201,
+    "name": "RadiologyResults.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000202"
+  },
+  {
+    "index": 202,
+    "name": "RadiologyResults.UploadOwn",
+    "id": "20000000-0000-0000-0000-000000000203"
+  },
+  {
+    "index": 203,
+    "name": "RadiologyResults.CorrectOwn",
+    "id": "20000000-0000-0000-0000-000000000204"
+  },
+  {
+    "index": 204,
+    "name": "RadiologyResults.VoidOwn",
+    "id": "20000000-0000-0000-0000-000000000205"
+  },
+  {
+    "index": 205,
+    "name": "RadiologyResultSubmissions.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000206"
+  },
+  {
+    "index": 206,
+    "name": "RadiologyResultSubmissions.ReviewOwn",
+    "id": "20000000-0000-0000-0000-000000000207"
+  },
+  {
+    "index": 207,
+    "name": "LabRequests.ViewOwnIssued",
+    "id": "20000000-0000-0000-0000-000000000208"
+  },
+  {
+    "index": 208,
+    "name": "LabResults.ViewOwnCurrent",
+    "id": "20000000-0000-0000-0000-000000000209"
+  },
+  {
+    "index": 209,
+    "name": "LabResultSubmissions.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000210"
+  },
+  {
+    "index": 210,
+    "name": "LabResultSubmissions.WithdrawOwn",
+    "id": "20000000-0000-0000-0000-000000000211"
+  },
+  {
+    "index": 211,
+    "name": "RadiologyRequests.ViewOwnIssued",
+    "id": "20000000-0000-0000-0000-000000000212"
+  },
+  {
+    "index": 212,
+    "name": "RadiologyResults.ViewOwnCurrent",
+    "id": "20000000-0000-0000-0000-000000000213"
+  },
+  {
+    "index": 213,
+    "name": "RadiologyResultSubmissions.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000214"
+  },
+  {
+    "index": 214,
+    "name": "RadiologyResultSubmissions.WithdrawOwn",
+    "id": "20000000-0000-0000-0000-000000000215"
+  },
+  {
+    "index": 215,
+    "name": "MedicalCatalogManagers.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000216"
+  },
+  {
+    "index": 216,
+    "name": "MedicalCatalogManagers.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000217"
+  },
+  {
+    "index": 217,
+    "name": "MedicalCatalogManagers.Create",
+    "id": "20000000-0000-0000-0000-000000000218"
+  },
+  {
+    "index": 218,
+    "name": "MedicalCatalogManagers.Update",
+    "id": "20000000-0000-0000-0000-000000000219"
+  },
+  {
+    "index": 219,
+    "name": "MedicalCatalogManagers.Activate",
+    "id": "20000000-0000-0000-0000-000000000220"
+  },
+  {
+    "index": 220,
+    "name": "MedicalCatalogManagers.Deactivate",
+    "id": "20000000-0000-0000-0000-000000000221"
+  },
+  {
+    "index": 221,
+    "name": "MedicalRecords.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000222"
+  },
+  {
+    "index": 222,
+    "name": "MedicalRecords.ViewTreatingPatient",
+    "id": "20000000-0000-0000-0000-000000000223"
+  },
+  {
+    "index": 223,
+    "name": "MedicalRecords.ViewDependent",
+    "id": "20000000-0000-0000-0000-000000000224"
+  },
+  {
+    "index": 224,
+    "name": "MedicalRecords.ViewOwnAccessLog",
+    "id": "20000000-0000-0000-0000-000000000225"
+  },
+  {
+    "index": 225,
+    "name": "MedicalEncounterVisibility.UpdateOwn",
+    "id": "20000000-0000-0000-0000-000000000226"
+  },
+  {
+    "index": 226,
+    "name": "MedicalEncounterVisibility.ViewHistoryOwn",
+    "id": "20000000-0000-0000-0000-000000000227"
+  },
+  {
+    "index": 227,
+    "name": "HiddenEncounterAccessRequests.Create",
+    "id": "20000000-0000-0000-0000-000000000228"
+  },
+  {
+    "index": 228,
+    "name": "HiddenEncounterAccessRequests.ViewSent",
+    "id": "20000000-0000-0000-0000-000000000229"
+  },
+  {
+    "index": 229,
+    "name": "HiddenEncounterAccessRequests.ViewIncoming",
+    "id": "20000000-0000-0000-0000-000000000230"
+  },
+  {
+    "index": 230,
+    "name": "HiddenEncounterAccessRequests.DecideOwn",
+    "id": "20000000-0000-0000-0000-000000000231"
+  },
+  {
+    "index": 231,
+    "name": "HiddenEncounterAccessRequests.RevokeOwn",
+    "id": "20000000-0000-0000-0000-000000000232"
+  },
+  {
+    "index": 232,
+    "name": "HiddenEncounterAccessRequests.ViewHistoryOwn",
+    "id": "20000000-0000-0000-0000-000000000233"
+  },
+  {
+    "index": 233,
+    "name": "FamilyMedicalAccessRequests.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000234"
+  },
+  {
+    "index": 234,
+    "name": "FamilyMedicalAccessRequests.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000235"
+  },
+  {
+    "index": 235,
+    "name": "FamilyMedicalAccessRequests.WithdrawOwn",
+    "id": "20000000-0000-0000-0000-000000000236"
+  },
+  {
+    "index": 236,
+    "name": "FamilyMedicalAccessRequests.ResubmitOwn",
+    "id": "20000000-0000-0000-0000-000000000237"
+  },
+  {
+    "index": 237,
+    "name": "FamilyMedicalAccessRequests.ViewOwnDocuments",
+    "id": "20000000-0000-0000-0000-000000000238"
+  },
+  {
+    "index": 238,
+    "name": "FamilyMedicalAccessRequests.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000239"
+  },
+  {
+    "index": 239,
+    "name": "FamilyMedicalAccessRequests.ViewAdminDetails",
+    "id": "20000000-0000-0000-0000-000000000240"
+  },
+  {
+    "index": 240,
+    "name": "FamilyMedicalAccessRequests.Decide",
+    "id": "20000000-0000-0000-0000-000000000241"
+  },
+  {
+    "index": 241,
+    "name": "FamilyMedicalAccessRequests.RequestModification",
+    "id": "20000000-0000-0000-0000-000000000242"
+  },
+  {
+    "index": 242,
+    "name": "FamilyMedicalAccessRequests.ViewAdminDocuments",
+    "id": "20000000-0000-0000-0000-000000000243"
+  },
+  {
+    "index": 243,
+    "name": "FamilyMedicalAccessEligibility.Review",
+    "id": "20000000-0000-0000-0000-000000000244"
+  },
+  {
+    "index": 244,
+    "name": "FamilyMedicalAccessEligibility.Decide",
+    "id": "20000000-0000-0000-0000-000000000245"
+  },
+  {
+    "index": 245,
+    "name": "FamilyMedicalAccessEligibility.Revoke",
+    "id": "20000000-0000-0000-0000-000000000246"
+  },
+  {
+    "index": 246,
+    "name": "Dashboards.Doctor.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000247"
+  },
+  {
+    "index": 247,
+    "name": "Reports.Doctor.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000248"
+  },
+  {
+    "index": 248,
+    "name": "Reports.Doctor.ExportOperational",
+    "id": "20000000-0000-0000-0000-000000000249"
+  },
+  {
+    "index": 249,
+    "name": "Reports.Doctor.ExportFinancial",
+    "id": "20000000-0000-0000-0000-000000000250"
+  },
+  {
+    "index": 250,
+    "name": "FinancialExpenses.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000251"
+  },
+  {
+    "index": 251,
+    "name": "FinancialExpenses.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000252"
+  },
+  {
+    "index": 252,
+    "name": "FinancialExpenses.SettleOwn",
+    "id": "20000000-0000-0000-0000-000000000253"
+  },
+  {
+    "index": 253,
+    "name": "FinancialExpenses.ReverseOwn",
+    "id": "20000000-0000-0000-0000-000000000254"
+  },
+  {
+    "index": 254,
+    "name": "SalaryPlans.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000255"
+  },
+  {
+    "index": 255,
+    "name": "SalaryPlans.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000256"
+  },
+  {
+    "index": 256,
+    "name": "SalaryObligations.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000257"
+  },
+  {
+    "index": 257,
+    "name": "SalarySettlements.RecordOwn",
+    "id": "20000000-0000-0000-0000-000000000258"
+  },
+  {
+    "index": 258,
+    "name": "SalarySettlements.ReverseOwn",
+    "id": "20000000-0000-0000-0000-000000000259"
+  },
+  {
+    "index": 259,
+    "name": "Handovers.Doctor.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000260"
+  },
+  {
+    "index": 260,
+    "name": "Handovers.Doctor.ManageOwn",
+    "id": "20000000-0000-0000-0000-000000000261"
+  },
+  {
+    "index": 261,
+    "name": "Insights.Doctor.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000262"
+  },
+  {
+    "index": 262,
+    "name": "Insights.Doctor.TrackOwn",
+    "id": "20000000-0000-0000-0000-000000000263"
+  },
+  {
+    "index": 263,
+    "name": "Dashboards.Reception.ViewAssigned",
+    "id": "20000000-0000-0000-0000-000000000264"
+  },
+  {
+    "index": 264,
+    "name": "Reports.Reception.ViewAssigned",
+    "id": "20000000-0000-0000-0000-000000000265"
+  },
+  {
+    "index": 265,
+    "name": "Reports.Reception.ExportOperational",
+    "id": "20000000-0000-0000-0000-000000000266"
+  },
+  {
+    "index": 266,
+    "name": "Handovers.CreateAssigned",
+    "id": "20000000-0000-0000-0000-000000000267"
+  },
+  {
+    "index": 267,
+    "name": "Handovers.ViewAssigned",
+    "id": "20000000-0000-0000-0000-000000000268"
+  },
+  {
+    "index": 268,
+    "name": "Handovers.AcknowledgeAssigned",
+    "id": "20000000-0000-0000-0000-000000000269"
+  },
+  {
+    "index": 269,
+    "name": "Handovers.CloseAssigned",
+    "id": "20000000-0000-0000-0000-000000000270"
+  },
+  {
+    "index": 270,
+    "name": "Handovers.AnnotateAssigned",
+    "id": "20000000-0000-0000-0000-000000000271"
+  },
+  {
+    "index": 271,
+    "name": "Dashboards.Platform.View",
+    "id": "20000000-0000-0000-0000-000000000272"
+  },
+  {
+    "index": 272,
+    "name": "Reports.Platform.View",
+    "id": "20000000-0000-0000-0000-000000000273"
+  },
+  {
+    "index": 273,
+    "name": "Reports.Platform.Export",
+    "id": "20000000-0000-0000-0000-000000000274"
+  },
+  {
+    "index": 274,
+    "name": "Investigations.View",
+    "id": "20000000-0000-0000-0000-000000000275"
+  },
+  {
+    "index": 275,
+    "name": "Investigations.Create",
+    "id": "20000000-0000-0000-0000-000000000276"
+  },
+  {
+    "index": 276,
+    "name": "Investigations.Assign",
+    "id": "20000000-0000-0000-0000-000000000277"
+  },
+  {
+    "index": 277,
+    "name": "Investigations.StartReview",
+    "id": "20000000-0000-0000-0000-000000000278"
+  },
+  {
+    "index": 278,
+    "name": "Investigations.Resolve",
+    "id": "20000000-0000-0000-0000-000000000279"
+  },
+  {
+    "index": 279,
+    "name": "Investigations.Close",
+    "id": "20000000-0000-0000-0000-000000000280"
+  },
+  {
+    "index": 280,
+    "name": "Investigations.Reopen",
+    "id": "20000000-0000-0000-0000-000000000281"
+  },
+  {
+    "index": 281,
+    "name": "PlatformJobs.ViewHealth",
+    "id": "20000000-0000-0000-0000-000000000282"
+  },
+  {
+    "index": 282,
+    "name": "PlatformDataQuality.View",
+    "id": "20000000-0000-0000-0000-000000000283"
+  },
+  {
+    "index": 283,
+    "name": "PlatformSecurityMetadata.View",
+    "id": "20000000-0000-0000-0000-000000000284"
+  },
+  {
+    "index": 284,
+    "name": "Dashboards.Patient.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000285"
+  },
+  {
+    "index": 285,
+    "name": "Archives.Tickets.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000286"
+  },
+  {
+    "index": 286,
+    "name": "Archives.Reservations.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000287"
+  },
+  {
+    "index": 287,
+    "name": "Archives.Tickets.ViewPractice",
+    "id": "20000000-0000-0000-0000-000000000288"
+  },
+  {
+    "index": 288,
+    "name": "Archives.Reservations.ViewPractice",
+    "id": "20000000-0000-0000-0000-000000000289"
+  },
+  {
+    "index": 289,
+    "name": "Archives.Tickets.ViewAssigned",
+    "id": "20000000-0000-0000-0000-000000000290"
+  },
+  {
+    "index": 290,
+    "name": "Archives.Reservations.ViewAssigned",
+    "id": "20000000-0000-0000-0000-000000000291"
+  },
+  {
+    "index": 291,
+    "name": "Archives.Tickets.ViewPlatformMetadata",
+    "id": "20000000-0000-0000-0000-000000000292"
+  },
+  {
+    "index": 292,
+    "name": "Archives.Reservations.ViewPlatformMetadata",
+    "id": "20000000-0000-0000-0000-000000000293"
+  },
+  {
+    "index": 293,
+    "name": "Archives.Operations.ViewHealth",
+    "id": "20000000-0000-0000-0000-000000000294"
+  },
+  {
+    "index": 294,
+    "name": "Archives.Operations.ViewFailures",
+    "id": "20000000-0000-0000-0000-000000000295"
+  },
+  {
+    "index": 295,
+    "name": "Archives.Operations.ViewRuns",
+    "id": "20000000-0000-0000-0000-000000000296"
+  },
+  {
+    "index": 296,
+    "name": "Archives.Operations.Pause",
+    "id": "20000000-0000-0000-0000-000000000297"
+  },
+  {
+    "index": 297,
+    "name": "Archives.Operations.Resume",
+    "id": "20000000-0000-0000-0000-000000000298"
+  },
+  {
+    "index": 298,
+    "name": "Audit.Events.ViewPlatform",
+    "id": "20000000-0000-0000-0000-000000000299"
+  },
+  {
+    "index": 299,
+    "name": "Audit.Events.ViewPractice",
+    "id": "20000000-0000-0000-0000-000000000300"
+  },
+  {
+    "index": 300,
+    "name": "Audit.Events.ViewOwnActivity",
+    "id": "20000000-0000-0000-0000-000000000301"
+  },
+  {
+    "index": 301,
+    "name": "Audit.SensitiveAccess.ViewPracticeMetadata",
+    "id": "20000000-0000-0000-0000-000000000302"
+  },
+  {
+    "index": 302,
+    "name": "Audit.SensitiveAccess.ViewRestrictedMetadata",
+    "id": "20000000-0000-0000-0000-000000000303"
+  },
+  {
+    "index": 303,
+    "name": "Patients.RegisterFull",
+    "id": "20000000-0000-0000-0000-000000000304"
+  },
+  {
+    "index": 304,
+    "name": "Patients.RegistrationMatch",
+    "id": "20000000-0000-0000-0000-000000000305"
+  },
+  {
+    "index": 305,
+    "name": "PatientClaims.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000306"
+  },
+  {
+    "index": 306,
+    "name": "PatientClaims.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000307"
+  },
+  {
+    "index": 307,
+    "name": "PatientClaims.ViewEvidence",
+    "id": "20000000-0000-0000-0000-000000000308"
+  },
+  {
+    "index": 308,
+    "name": "PatientClaims.Approve",
+    "id": "20000000-0000-0000-0000-000000000309"
+  },
+  {
+    "index": 309,
+    "name": "PatientClaims.Reject",
+    "id": "20000000-0000-0000-0000-000000000310"
+  },
+  {
+    "index": 310,
+    "name": "PatientClaims.RequestModification",
+    "id": "20000000-0000-0000-0000-000000000311"
+  },
+  {
+    "index": 311,
+    "name": "PatientDuplicates.View",
+    "id": "20000000-0000-0000-0000-000000000312"
+  },
+  {
+    "index": 312,
+    "name": "PatientDuplicates.Resolve",
+    "id": "20000000-0000-0000-0000-000000000313"
+  },
+  {
+    "index": 313,
+    "name": "Notifications.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000314"
+  },
+  {
+    "index": 314,
+    "name": "Notifications.MarkReadOwn",
+    "id": "20000000-0000-0000-0000-000000000315"
+  },
+  {
+    "index": 315,
+    "name": "Notifications.PreferencesViewOwn",
+    "id": "20000000-0000-0000-0000-000000000316"
+  },
+  {
+    "index": 316,
+    "name": "Notifications.PreferencesManageOwn",
+    "id": "20000000-0000-0000-0000-000000000317"
+  },
+  {
+    "index": 317,
+    "name": "Notifications.SettingsView",
+    "id": "20000000-0000-0000-0000-000000000318"
+  },
+  {
+    "index": 318,
+    "name": "Notifications.SettingsManage",
+    "id": "20000000-0000-0000-0000-000000000319"
+  },
+  {
+    "index": 319,
+    "name": "Notifications.DeliveriesView",
+    "id": "20000000-0000-0000-0000-000000000320"
+  },
+  {
+    "index": 320,
+    "name": "Notifications.DeliveriesRetry",
+    "id": "20000000-0000-0000-0000-000000000321"
+  },
+  {
+    "index": 321,
+    "name": "DoctorPatients.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000322"
+  },
+  {
+    "index": 322,
+    "name": "DoctorPatients.ViewHistoricalOwn",
+    "id": "20000000-0000-0000-0000-000000000323"
+  },
+  {
+    "index": 323,
+    "name": "Prescriptions.ExportOwn",
+    "id": "20000000-0000-0000-0000-000000000324"
+  },
+  {
+    "index": 324,
+    "name": "Subscriptions.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000325"
+  },
+  {
+    "index": 325,
+    "name": "Subscriptions.RequestChangeOwn",
+    "id": "20000000-0000-0000-0000-000000000326"
+  },
+  {
+    "index": 326,
+    "name": "Subscriptions.CancelAtPeriodEndOwn",
+    "id": "20000000-0000-0000-0000-000000000327"
+  },
+  {
+    "index": 327,
+    "name": "ReceptionUsers.ManageAccountStateOwn",
+    "id": "20000000-0000-0000-0000-000000000328"
+  },
+  {
+    "index": 328,
+    "name": "Subscriptions.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000329"
+  },
+  {
+    "index": 329,
+    "name": "Subscriptions.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000330"
+  },
+  {
+    "index": 330,
+    "name": "Subscriptions.Activate",
+    "id": "20000000-0000-0000-0000-000000000331"
+  },
+  {
+    "index": 331,
+    "name": "Subscriptions.ExtendTrial",
+    "id": "20000000-0000-0000-0000-000000000332"
+  },
+  {
+    "index": 332,
+    "name": "Subscriptions.Renew",
+    "id": "20000000-0000-0000-0000-000000000333"
+  },
+  {
+    "index": 333,
+    "name": "Subscriptions.ReviewChangeRequests",
+    "id": "20000000-0000-0000-0000-000000000334"
+  },
+  {
+    "index": 334,
+    "name": "Subscriptions.EnrollLegacyTransition",
+    "id": "20000000-0000-0000-0000-000000000335"
+  },
+  {
+    "index": 335,
+    "name": "Subscriptions.ActivateTrialOwn",
+    "id": "20000000-0000-0000-0000-000000000336"
+  },
+  {
+    "index": 336,
+    "name": "Subscriptions.AllocationsManageOwn",
+    "id": "20000000-0000-0000-0000-000000000337"
+  }
+]

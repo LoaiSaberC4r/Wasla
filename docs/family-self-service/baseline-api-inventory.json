@@ -1,0 +1,3572 @@
+[
+  {
+    "file": "AdminNotificationsController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin\")]"
+  },
+  {
+    "file": "AdminNotificationsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet(\"notification-settings\")]"
+  },
+  {
+    "file": "AdminNotificationsController.cs",
+    "line": 23,
+    "attribute": "[HttpPut(\"notification-settings\")]"
+  },
+  {
+    "file": "AdminNotificationsController.cs",
+    "line": 27,
+    "attribute": "[HttpGet(\"notification-deliveries\")]"
+  },
+  {
+    "file": "AdminNotificationsController.cs",
+    "line": 31,
+    "attribute": "[HttpGet(\"notification-deliveries/{deliveryId:guid}\")]"
+  },
+  {
+    "file": "AdminNotificationsController.cs",
+    "line": 35,
+    "attribute": "[HttpPost(\"notification-deliveries/{deliveryId:guid}/retry\")]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 16,
+    "attribute": "[HttpGet, Permission(SubscriptionPermissionNames.ViewAll)]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet(\"{subscriptionId:guid}\"), Permission(SubscriptionPermissionNames.ViewDetails)]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 22,
+    "attribute": "[HttpPost(\"{subscriptionId:guid}/activate\"), Permission(SubscriptionPermissionNames.Activate)]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 25,
+    "attribute": "[HttpPost(\"{subscriptionId:guid}/trial-extend\"), Permission(SubscriptionPermissionNames.ExtendTrial)]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 28,
+    "attribute": "[HttpPost(\"{subscriptionId:guid}/renew\"), Permission(SubscriptionPermissionNames.Renew)]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 31,
+    "attribute": "[HttpPost(\"{subscriptionId:guid}/change-requests/{requestId:guid}/approve\"), Permission(SubscriptionPermissionNames.ReviewChangeRequests)]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 34,
+    "attribute": "[HttpPost(\"{subscriptionId:guid}/change-requests/{requestId:guid}/reject\"), Permission(SubscriptionPermissionNames.ReviewChangeRequests)]"
+  },
+  {
+    "file": "AdminSubscriptionsController.cs",
+    "line": 37,
+    "attribute": "[HttpPost(\"legacy-transition/enroll\"), Permission(SubscriptionPermissionNames.EnrollLegacyTransition)]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 16,
+    "attribute": "[Route(\"api/v{version:apiVersion}/auth\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 19,
+    "attribute": "[HttpPost(\"login\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"me\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 30,
+    "attribute": "[HttpPost(\"change-password\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 37,
+    "attribute": "[HttpPost(\"doctors/register\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 64,
+    "attribute": "[HttpPost(\"patients/register\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 91,
+    "attribute": "[HttpPost(\"forgot-password/request-otp\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 99,
+    "attribute": "[HttpPost(\"forgot-password/verify-otp\")]"
+  },
+  {
+    "file": "AuthController.cs",
+    "line": 107,
+    "attribute": "[HttpPost(\"forgot-password/reset\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 16,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/practices/{practiceId:guid}\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 19,
+    "attribute": "[HttpGet(\"encounters\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 25,
+    "attribute": "[HttpGet(\"encounters/{encounterId:guid}\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"tickets/{ticketId:guid}/encounter\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 33,
+    "attribute": "[HttpPatch(\"encounters/{encounterId:guid}/clinical-notes\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 36,
+    "attribute": "[HttpPost(\"encounters/{encounterId:guid}/diagnoses\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 43,
+    "attribute": "[HttpPut(\"encounters/{encounterId:guid}/diagnoses/{diagnosisId:guid}\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 47,
+    "attribute": "[HttpDelete(\"encounters/{encounterId:guid}/diagnoses/{diagnosisId:guid}\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 51,
+    "attribute": "[HttpPost(\"encounters/{encounterId:guid}/amendments\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 58,
+    "attribute": "[HttpGet(\"encounters/{encounterId:guid}/amendments\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 61,
+    "attribute": "[HttpPost(\"encounters/{encounterId:guid}/follow-up-eligibility\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 72,
+    "attribute": "[Route(\"api/v{version:apiVersion}/encounters/mine\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 75,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 78,
+    "attribute": "[HttpGet(\"{encounterId:guid}\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 86,
+    "attribute": "[Route(\"api/v{version:apiVersion}/follow-up-eligibilities/mine\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 89,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 93,
+    "attribute": "[HttpGet(\"{eligibilityId:guid}\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 101,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reception/practices/{practiceId:guid}/patients/{patientId:guid}/follow-up-eligibilities\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 104,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 112,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reservations/follow-up-eligibilities/{eligibilityId:guid}\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 115,
+    "attribute": "[HttpGet(\"available-dates\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 123,
+    "attribute": "[HttpGet(\"available-slots\")]"
+  },
+  {
+    "file": "ClinicalControllers.cs",
+    "line": 131,
+    "attribute": "[HttpGet(\"booking-options\")]"
+  },
+  {
+    "file": "CommercialCatalogController.cs",
+    "line": 13,
+    "attribute": "[HttpGet, AllowAnonymous]"
+  },
+  {
+    "file": "DependentMedicalRecordController.cs",
+    "line": 21,
+    "attribute": "[Route(\"api/v{version:apiVersion}/families/mine/dependents/{dependentPatientId:guid}/medical-record\")]"
+  },
+  {
+    "file": "DependentMedicalRecordController.cs",
+    "line": 25,
+    "attribute": "[HttpGet(\"overview\"), ProducesResponseType<PatientSafeMedicalRecordOverviewResponse>(200)]"
+  },
+  {
+    "file": "DependentMedicalRecordController.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"timeline\"), ProducesResponseType<RecordPage<TimelineEntry>>(200)]"
+  },
+  {
+    "file": "DependentMedicalRecordController.cs",
+    "line": 33,
+    "attribute": "[HttpGet(\"encounters/{encounterId:guid}\"), ProducesResponseType<PatientSafeMedicalRecordEncounterResponse>(200)]"
+  },
+  {
+    "file": "DependentMedicalRecordController.cs",
+    "line": 37,
+    "attribute": "[HttpGet(\"items/{resourceType}/{sourceId:guid}\"), ProducesResponseType<PatientSafeMedicalRecordItemResponse>(200)]"
+  },
+  {
+    "file": "DependentMedicalRecordController.cs",
+    "line": 41,
+    "attribute": "[HttpGet(\"items/{resourceType}/{sourceId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "DoctorInsightsController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/insights\")]"
+  },
+  {
+    "file": "DoctorInsightsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorInsightsController.cs",
+    "line": 25,
+    "attribute": "[HttpGet(\"{insightId:guid}\")]"
+  },
+  {
+    "file": "DoctorInsightsController.cs",
+    "line": 30,
+    "attribute": "[HttpGet(\"{insightId:guid}/history\")]"
+  },
+  {
+    "file": "DoctorInsightsController.cs",
+    "line": 36,
+    "attribute": "[HttpPost(\"{insightId:guid}/acknowledge\")]"
+  },
+  {
+    "file": "DoctorInsightsController.cs",
+    "line": 42,
+    "attribute": "[HttpPost(\"{insightId:guid}/resolve\")]"
+  },
+  {
+    "file": "DoctorInsightsController.cs",
+    "line": 48,
+    "attribute": "[HttpPost(\"{insightId:guid}/dismiss\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/medical-specializations\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 19,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 31,
+    "attribute": "[HttpGet(\"{id:guid}\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 36,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 41,
+    "attribute": "[HttpPut(\"{id:guid}\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 56,
+    "attribute": "[HttpPost(\"{id:guid}/activate\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 61,
+    "attribute": "[HttpPost(\"{id:guid}/deactivate\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 66,
+    "attribute": "[HttpDelete(\"{id:guid}\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 71,
+    "attribute": "[HttpPost(\"{id:guid}/restore\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 87,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 91,
+    "attribute": "[HttpGet(\"specializations/options\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 96,
+    "attribute": "[HttpGet(\"specializations\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 101,
+    "attribute": "[HttpGet(\"specialization-request\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 106,
+    "attribute": "[HttpPost(\"specialization-request\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 114,
+    "attribute": "[HttpPost(\"specialization-request/resubmit\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 122,
+    "attribute": "[HttpGet(\"specialization-request/history\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 127,
+    "attribute": "[HttpGet(\"practice-location\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 132,
+    "attribute": "[HttpPut(\"practice-location\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 142,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/doctor-specialization-requests\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 146,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 158,
+    "attribute": "[HttpGet(\"{requestId:guid}\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 164,
+    "attribute": "[HttpGet(\"{requestId:guid}/history\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 170,
+    "attribute": "[HttpPut(\"{requestId:guid}/specializations\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 180,
+    "attribute": "[HttpPost(\"{requestId:guid}/approve\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 186,
+    "attribute": "[HttpPost(\"{requestId:guid}/request-modification\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 195,
+    "attribute": "[HttpPost(\"{requestId:guid}/reject\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 207,
+    "attribute": "[Route(\"api/v{version:apiVersion}/public\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 211,
+    "attribute": "[HttpGet(\"governorates\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 215,
+    "attribute": "[HttpGet(\"governorates/{governorateId:int}/cities\")]"
+  },
+  {
+    "file": "DoctorOnboardingController.cs",
+    "line": 219,
+    "attribute": "[HttpGet(\"cities/{cityId:int}/areas\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 16,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/patients\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 23,
+    "attribute": "[HttpGet(\"{patientId:guid}\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 27,
+    "attribute": "[HttpGet(\"{patientId:guid}/attendances\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 33,
+    "attribute": "[HttpGet(\"{patientId:guid}/diagnoses\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 39,
+    "attribute": "[HttpGet(\"{patientId:guid}/prescriptions\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 45,
+    "attribute": "[HttpGet(\"{patientId:guid}/appointments\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 51,
+    "attribute": "[HttpGet(\"{patientId:guid}/follow-ups\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 64,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/prescriptions\")]"
+  },
+  {
+    "file": "DoctorPatientsController.cs",
+    "line": 67,
+    "attribute": "[HttpGet(\"{prescriptionId:guid}/versions/{versionNumber:int}/pdf\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 17,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/practices\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 21,
+    "attribute": "[HttpPut(\"{practiceId:guid}/booking-presentation/price\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 25,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 31,
+    "attribute": "[HttpGet(\"{practiceId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 37,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 55,
+    "attribute": "[HttpPut(\"{practiceId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 73,
+    "attribute": "[HttpPost(\"{practiceId:guid}/activate\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 83,
+    "attribute": "[HttpPost(\"{practiceId:guid}/deactivate\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 97,
+    "attribute": "[HttpGet(\"{practiceId:guid}/configuration\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 103,
+    "attribute": "[HttpPut(\"{practiceId:guid}/configuration\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 124,
+    "attribute": "[HttpGet(\"{practiceId:guid}/branding\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 130,
+    "attribute": "[HttpGet(\"{practiceId:guid}/branding/logo\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 140,
+    "attribute": "[HttpPut(\"{practiceId:guid}/branding\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 154,
+    "attribute": "[HttpPost(\"{practiceId:guid}/branding/logo\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 167,
+    "attribute": "[HttpDelete(\"{practiceId:guid}/branding/logo\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 177,
+    "attribute": "[HttpGet(\"{practiceId:guid}/schedule\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 183,
+    "attribute": "[HttpGet(\"{practiceId:guid}/schedule/effective\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 192,
+    "attribute": "[HttpPost(\"{practiceId:guid}/schedule/periods\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 207,
+    "attribute": "[HttpPut(\"{practiceId:guid}/schedule/periods/{periodId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 221,
+    "attribute": "[HttpDelete(\"{practiceId:guid}/schedule/periods/{periodId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 234,
+    "attribute": "[HttpPost(\"{practiceId:guid}/schedule/exceptions\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 249,
+    "attribute": "[HttpPut(\"{practiceId:guid}/schedule/exceptions/{exceptionId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 263,
+    "attribute": "[HttpDelete(\"{practiceId:guid}/schedule/exceptions/{exceptionId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 276,
+    "attribute": "[HttpGet(\"{practiceId:guid}/segments\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 282,
+    "attribute": "[HttpPost(\"{practiceId:guid}/segments\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 297,
+    "attribute": "[HttpPut(\"{practiceId:guid}/segments/{segmentId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 309,
+    "attribute": "[HttpGet(\"{practiceId:guid}/visit-types\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 315,
+    "attribute": "[HttpPut(\"{practiceId:guid}/visit-types/{visitTypeId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 326,
+    "attribute": "[HttpGet(\"{practiceId:guid}/prices\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 332,
+    "attribute": "[HttpPost(\"{practiceId:guid}/prices\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 346,
+    "attribute": "[HttpPut(\"{practiceId:guid}/prices/{priceId:guid}\")]"
+  },
+  {
+    "file": "DoctorPracticesController.cs",
+    "line": 357,
+    "attribute": "[HttpDelete(\"{practiceId:guid}/prices/{priceId:guid}\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 14,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/receptions\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 18,
+    "attribute": "[HttpPut(\"{receptionId:guid}/account-state\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 22,
+    "attribute": "[HttpGet(\"assignable-permissions\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 28,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 34,
+    "attribute": "[HttpGet(\"{receptionId:guid}\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 40,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 58,
+    "attribute": "[HttpPost(\"{receptionId:guid}/assignments\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 72,
+    "attribute": "[HttpPut(\"{receptionId:guid}/assignments/{assignmentId:guid}\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 83,
+    "attribute": "[HttpPost(\"{receptionId:guid}/assignments/{assignmentId:guid}/activate\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 94,
+    "attribute": "[HttpPost(\"{receptionId:guid}/assignments/{assignmentId:guid}/deactivate\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 124,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reception/practices\")]"
+  },
+  {
+    "file": "DoctorReceptionsController.cs",
+    "line": 128,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 13,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 17,
+    "attribute": "[HttpGet(\"dashboard/overview\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 22,
+    "attribute": "[HttpGet(\"dashboard/filter-options\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 26,
+    "attribute": "[HttpGet(\"reports/catalog\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 31,
+    "attribute": "[HttpGet(\"reports/reservations\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 36,
+    "attribute": "[HttpGet(\"reports/queue\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 41,
+    "attribute": "[HttpGet(\"reports/patients\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 46,
+    "attribute": "[HttpGet(\"reports/practice-comparison\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 51,
+    "attribute": "[HttpGet(\"reports/{reportCode}/drilldown\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 56,
+    "attribute": "[HttpGet(\"reports/{reportCode}\")]"
+  },
+  {
+    "file": "DoctorReportingController.cs",
+    "line": 61,
+    "attribute": "[HttpGet(\"expenses/dashboard\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/doctors\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 31,
+    "attribute": "[HttpGet(\"{doctorId:guid}\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 37,
+    "attribute": "[HttpGet(\"{doctorId:guid}/media/{mediaType}\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 50,
+    "attribute": "[HttpPost(\"{doctorId:guid}/approve\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 60,
+    "attribute": "[HttpPost(\"{doctorId:guid}/reject\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 70,
+    "attribute": "[HttpPost(\"{doctorId:guid}/suspend\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 80,
+    "attribute": "[HttpGet(\"{doctorId:guid}/suspension-impact\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 88,
+    "attribute": "[HttpPost(\"{doctorId:guid}/reactivate\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 101,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 105,
+    "attribute": "[HttpGet(\"onboarding\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 111,
+    "attribute": "[HttpGet(\"profile\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 117,
+    "attribute": "[HttpPut(\"profile/bio\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 126,
+    "attribute": "[HttpGet(\"qualifications\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 132,
+    "attribute": "[HttpPost(\"qualifications\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 145,
+    "attribute": "[HttpPut(\"qualifications/{qualificationId:guid}\")]"
+  },
+  {
+    "file": "DoctorsController.cs",
+    "line": 155,
+    "attribute": "[HttpDelete(\"qualifications/{qualificationId:guid}\")]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 15,
+    "attribute": "[HttpGet, Permission(SubscriptionPermissionNames.ViewOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 17,
+    "attribute": "[HttpGet(\"{contractId:guid}\"), Permission(SubscriptionPermissionNames.ViewOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet(\"trial/eligibility\"), Permission(SubscriptionPermissionNames.ViewOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 21,
+    "attribute": "[HttpPost(\"trial/activate\"), Permission(SubscriptionPermissionNames.ActivateTrialOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 24,
+    "attribute": "[HttpPost(\"selection\"), Permission(SubscriptionPermissionNames.RequestChangeOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 27,
+    "attribute": "[HttpPost(\"{contractId:guid}/change-requests\"), Permission(SubscriptionPermissionNames.RequestChangeOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 30,
+    "attribute": "[HttpGet(\"{contractId:guid}/renewal-preview\"), Permission(SubscriptionPermissionNames.ViewOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 33,
+    "attribute": "[HttpPost(\"{contractId:guid}/renewal-selection\"), Permission(SubscriptionPermissionNames.RequestChangeOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionContractsController.cs",
+    "line": 36,
+    "attribute": "[HttpPost(\"{contractId:guid}/cancel-at-period-end\"), Permission(SubscriptionPermissionNames.CancelAtPeriodEndOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionsController.cs",
+    "line": 16,
+    "attribute": "[HttpGet, Permission(SubscriptionPermissionNames.ViewOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionsController.cs",
+    "line": 18,
+    "attribute": "[HttpPost(\"selection\"), Permission(SubscriptionPermissionNames.RequestChangeOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionsController.cs",
+    "line": 21,
+    "attribute": "[HttpPost(\"change-requests\"), Permission(SubscriptionPermissionNames.RequestChangeOwn)]"
+  },
+  {
+    "file": "DoctorSubscriptionsController.cs",
+    "line": 24,
+    "attribute": "[HttpPost(\"cancel-at-period-end\"), Permission(SubscriptionPermissionNames.CancelAtPeriodEndOwn)]"
+  },
+  {
+    "file": "EncounterVisibilityController.cs",
+    "line": 22,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/practices/{practiceId:guid}/encounters/{encounterId:guid}/visibility\")]"
+  },
+  {
+    "file": "EncounterVisibilityController.cs",
+    "line": 26,
+    "attribute": "[HttpPatch, ProducesResponseType<EncounterVisibilityResponse>(200)]"
+  },
+  {
+    "file": "EncounterVisibilityController.cs",
+    "line": 30,
+    "attribute": "[HttpGet(\"history\"), ProducesResponseType<RecordPage<VisibilityHistoryResponse>>(200)]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 16,
+    "attribute": "[Route(\"api/v{version:apiVersion}/families\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 20,
+    "attribute": "[HttpGet(\"mine\"), ProducesResponseType<MyFamilyResponse>(200)]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 28,
+    "attribute": "[Route(\"api/v{version:apiVersion}/family-relationship-requests\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 32,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 43,
+    "attribute": "[HttpGet(\"mine\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 50,
+    "attribute": "[HttpGet(\"{requestId:guid}\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 55,
+    "attribute": "[HttpGet(\"{requestId:guid}/documents/{documentId:guid}\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 60,
+    "attribute": "[HttpPost(\"{requestId:guid}/resubmit\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 81,
+    "attribute": "[Route(\"api/v{version:apiVersion}/family-relationship-requests/assisted\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 85,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 97,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 104,
+    "attribute": "[HttpGet(\"{requestId:guid}\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 109,
+    "attribute": "[HttpGet(\"{requestId:guid}/documents/{documentId:guid}\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 117,
+    "attribute": "[HttpPost(\"{requestId:guid}/resubmit\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 127,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/family-relationship-requests\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 131,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 138,
+    "attribute": "[HttpGet(\"{requestId:guid}\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 143,
+    "attribute": "[HttpGet(\"{requestId:guid}/documents/{documentId:guid}\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 151,
+    "attribute": "[HttpPost(\"{requestId:guid}/approve\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 156,
+    "attribute": "[HttpPost(\"{requestId:guid}/reject\")]"
+  },
+  {
+    "file": "FamiliesController.cs",
+    "line": 161,
+    "attribute": "[HttpPost(\"{requestId:guid}/request-modification\")]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 18,
+    "attribute": "[Route(\"api/v{version:apiVersion}/families/mine/medical-access-requests\")]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 21,
+    "attribute": "[HttpPost, Consumes(\"multipart/form-data\"), ProducesResponseType<FamilyMedicalCaseResponse>(201)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 31,
+    "attribute": "[HttpGet(\"mine\"), ProducesResponseType<FamilyMedicalPage<FamilyMedicalQueueResponse>>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsViewOwn)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 35,
+    "attribute": "[HttpGet(\"{requestId:guid}\"), ProducesResponseType<FamilyMedicalCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsViewOwn)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 38,
+    "attribute": "[HttpGet(\"{requestId:guid}/history\"), ProducesResponseType<FamilyMedicalPage<FamilyMedicalHistoryResponse>>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsViewOwn)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 41,
+    "attribute": "[HttpGet(\"{requestId:guid}/documents/{documentId:guid}/content\"), Produces(\"application/octet-stream\"), ProducesResponseType(200),"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 49,
+    "attribute": "[HttpPost(\"{requestId:guid}/withdraw\"), ProducesResponseType<FamilyMedicalCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsWithdrawOwn)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 52,
+    "attribute": "[HttpPost(\"{requestId:guid}/resubmit\"), Consumes(\"multipart/form-data\"), ProducesResponseType<FamilyMedicalCaseResponse>(200),"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 65,
+    "attribute": "[Route(\"api/v{version:apiVersion}/families/mine/dependents/{childPatientId:guid}/medical-access\")]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 68,
+    "attribute": "[HttpGet, ProducesResponseType<FamilyMedicalAccessStatusResponse>(200), Permission(PermissionNames.FamiliesViewOwn)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 77,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/family-medical-access-requests\")]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 80,
+    "attribute": "[HttpGet(\"summary\"), ProducesResponseType<FamilyMedicalSummaryResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsViewAll)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 82,
+    "attribute": "[HttpGet, ProducesResponseType<FamilyMedicalPage<FamilyMedicalQueueResponse>>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsViewAll)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 86,
+    "attribute": "[HttpGet(\"{requestId:guid}\"), ProducesResponseType<FamilyMedicalAdminCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsViewAdminDetails)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 88,
+    "attribute": "[HttpGet(\"{requestId:guid}/history\"), ProducesResponseType<FamilyMedicalPage<FamilyMedicalAdminHistoryResponse>>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsViewAdminDetails)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 91,
+    "attribute": "[HttpGet(\"{requestId:guid}/documents/{documentId:guid}/content\"), Produces(\"application/octet-stream\"), ProducesResponseType(200),"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 98,
+    "attribute": "[HttpPost(\"{requestId:guid}/approve\"), ProducesResponseType<FamilyMedicalCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsDecide)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 101,
+    "attribute": "[HttpPost(\"{requestId:guid}/reject\"), ProducesResponseType<FamilyMedicalCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsDecide)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 104,
+    "attribute": "[HttpPost(\"{requestId:guid}/request-modification\"), ProducesResponseType<FamilyMedicalCaseResponse>(200), Permission(PermissionNames.FamilyMedicalAccessRequestsRequestModification)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 113,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/family-medical-eligibilities\")]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 116,
+    "attribute": "[HttpGet(\"reviews\"), ProducesResponseType<FamilyMedicalPage<FamilyMedicalEligibilityQueueResponse>>(200), Permission(PermissionNames.FamilyMedicalAccessEligibilityReview)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 120,
+    "attribute": "[HttpGet(\"{reviewId:guid}\"), ProducesResponseType<FamilyMedicalEligibilityResponse>(200), Permission(PermissionNames.FamilyMedicalAccessEligibilityReview)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 122,
+    "attribute": "[HttpPost(\"{reviewId:guid}/approve\"), ProducesResponseType<FamilyMedicalEligibilityResponse>(200), Permission(PermissionNames.FamilyMedicalAccessEligibilityDecide)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 125,
+    "attribute": "[HttpPost(\"{reviewId:guid}/reject\"), ProducesResponseType<FamilyMedicalEligibilityResponse>(200), Permission(PermissionNames.FamilyMedicalAccessEligibilityDecide)]"
+  },
+  {
+    "file": "FamilyMedicalAccessControllers.cs",
+    "line": 128,
+    "attribute": "[HttpPost(\"{reviewId:guid}/revoke\"), ProducesResponseType<FamilyMedicalEligibilityResponse>(200), Permission(PermissionNames.FamilyMedicalAccessEligibilityRevoke)]"
+  },
+  {
+    "file": "FinanceMutationsController.cs",
+    "line": 14,
+    "attribute": "[Route(\"api/v{version:apiVersion}/practices/{practiceId:guid}\")]"
+  },
+  {
+    "file": "FinanceMutationsController.cs",
+    "line": 18,
+    "attribute": "[HttpPost(\"payments/{paymentId:guid}/refund\")]"
+  },
+  {
+    "file": "FinanceMutationsController.cs",
+    "line": 30,
+    "attribute": "[HttpPost(\"payments/{paymentId:guid}/correct\")]"
+  },
+  {
+    "file": "FinanceMutationsController.cs",
+    "line": 42,
+    "attribute": "[HttpPost(\"refunds/{refundId:guid}/correct\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 13,
+    "attribute": "[Route(\"api/v{version:apiVersion}/practices/{practiceId:guid}\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 17,
+    "attribute": "[HttpGet(\"financial-transactions\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 23,
+    "attribute": "[HttpGet(\"payments/{paymentId:guid}\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"payments/{paymentId:guid}/receipt\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 35,
+    "attribute": "[HttpGet(\"refunds/{refundId:guid}/receipt\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 44,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 48,
+    "attribute": "[HttpGet(\"financial-transactions\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 55,
+    "attribute": "[HttpGet(\"revenue/dashboard\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 66,
+    "attribute": "[Route(\"api/v{version:apiVersion}/patients/me\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 71,
+    "attribute": "[HttpGet(\"financial-transactions\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 77,
+    "attribute": "[HttpGet(\"payments/{paymentId:guid}/receipt\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 82,
+    "attribute": "[HttpGet(\"refunds/{refundId:guid}/receipt\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 90,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/revenue\")]"
+  },
+  {
+    "file": "FinanceReadController.cs",
+    "line": 95,
+    "attribute": "[HttpGet(\"aggregates\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 14,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/superadmins\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 18,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 30,
+    "attribute": "[HttpGet(\"{superAdminId:guid}\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 35,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 45,
+    "attribute": "[HttpPut(\"{superAdminId:guid}\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 58,
+    "attribute": "[HttpPost(\"{superAdminId:guid}/activate\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 63,
+    "attribute": "[HttpPost(\"{superAdminId:guid}/deactivate\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 68,
+    "attribute": "[HttpDelete(\"{superAdminId:guid}\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 73,
+    "attribute": "[HttpPost(\"{superAdminId:guid}/restore\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 81,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 85,
+    "attribute": "[HttpGet(\"roles\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 90,
+    "attribute": "[HttpGet(\"roles/{roleId:guid}\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 95,
+    "attribute": "[HttpGet(\"permissions\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 100,
+    "attribute": "[HttpGet(\"roles/{roleId:guid}/permissions\")]"
+  },
+  {
+    "file": "GovernanceController.cs",
+    "line": 105,
+    "attribute": "[HttpPut(\"roles/{roleId:guid}/permissions\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reception/practices/{practiceId:guid}/handovers\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 19,
+    "attribute": "[HttpGet()]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"{handoverId:guid}\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"{handoverId:guid}/history\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 35,
+    "attribute": "[HttpPost()]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 41,
+    "attribute": "[HttpPost(\"{handoverId:guid}/acknowledge\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 47,
+    "attribute": "[HttpPost(\"{handoverId:guid}/close\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 53,
+    "attribute": "[HttpPost(\"{handoverId:guid}/annotations\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 63,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 67,
+    "attribute": "[HttpGet(\"handovers\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 72,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/handovers/{handoverId:guid}\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 77,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/handovers/{handoverId:guid}/history\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 83,
+    "attribute": "[HttpPost(\"practices/{practiceId:guid}/handovers\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 89,
+    "attribute": "[HttpPost(\"practices/{practiceId:guid}/handovers/{handoverId:guid}/acknowledge\")]"
+  },
+  {
+    "file": "HandoversControllers.cs",
+    "line": 95,
+    "attribute": "[HttpPost(\"practices/{practiceId:guid}/handovers/{handoverId:guid}/close\")]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 22,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/practices/{practiceId:guid}/tickets/{ticketId:guid}/medical-record/access-requests\")]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 26,
+    "attribute": "[HttpGet, ProducesResponseType<RecordPage<HiddenAccessResponse>>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 30,
+    "attribute": "[HttpGet(\"{requestId:guid}\"), ProducesResponseType<HiddenAccessResponse>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 34,
+    "attribute": "[HttpPost, EnableRateLimiting(\"medical-record-request\"), ProducesResponseType<HiddenAccessResponse>(201)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 51,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/medical-record-access-requests\")]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 55,
+    "attribute": "[HttpGet(\"inbox/summary\"), ProducesResponseType<AccessInboxSummary>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 58,
+    "attribute": "[HttpGet(\"inbox\"), ProducesResponseType<RecordPage<HiddenAccessResponse>>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 62,
+    "attribute": "[HttpGet(\"{requestId:guid}\"), ProducesResponseType<HiddenAccessResponse>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 65,
+    "attribute": "[HttpPost(\"{requestId:guid}/approve\"), ProducesResponseType<HiddenAccessResponse>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 69,
+    "attribute": "[HttpPost(\"{requestId:guid}/reject\"), ProducesResponseType<HiddenAccessResponse>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 73,
+    "attribute": "[HttpPost(\"{requestId:guid}/revoke\"), ProducesResponseType<HiddenAccessResponse>(200)]"
+  },
+  {
+    "file": "HiddenAccessControllers.cs",
+    "line": 77,
+    "attribute": "[HttpGet(\"{requestId:guid}/history\"), ProducesResponseType<IReadOnlyList<RequestHistoryResponse>>(200)]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/investigation-cases\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"filter-options\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"{caseId:guid}\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 34,
+    "attribute": "[HttpGet(\"{caseId:guid}/history\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 39,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 44,
+    "attribute": "[HttpPost(\"{caseId:guid}/assign\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 49,
+    "attribute": "[HttpPost(\"{caseId:guid}/start-review\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 54,
+    "attribute": "[HttpPost(\"{caseId:guid}/resolve\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 59,
+    "attribute": "[HttpPost(\"{caseId:guid}/close\")]"
+  },
+  {
+    "file": "InvestigationsController.cs",
+    "line": 64,
+    "attribute": "[HttpPost(\"{caseId:guid}/reopen\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 75,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/lab-catalog\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 79,
+    "attribute": "[HttpGet, ProducesResponseType<ClinicalPage<MedicalCatalogResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 83,
+    "attribute": "[HttpGet(\"{id:guid}\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 89,
+    "attribute": "[HttpPost, ProducesResponseType<MedicalCatalogResponse>(StatusCodes.Status201Created)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 95,
+    "attribute": "[HttpPut(\"{id:guid}\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 98,
+    "attribute": "[HttpPost(\"{id:guid}/activate\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 101,
+    "attribute": "[HttpPost(\"{id:guid}/deactivate\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 104,
+    "attribute": "[HttpPost(\"{id:guid}/merge\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 107,
+    "attribute": "[HttpPost(\"imports/preview\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(220L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 210L * 1024 * 1024)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 116,
+    "attribute": "[HttpGet(\"imports\"), ProducesResponseType<ClinicalPage<DiagnosticImportBatchResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 119,
+    "attribute": "[HttpGet(\"imports/{batchId:guid}\"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 122,
+    "attribute": "[HttpGet(\"imports/{batchId:guid}/changes\"), ProducesResponseType<ClinicalPage<DiagnosticImportRecordResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 125,
+    "attribute": "[HttpPost(\"imports/{batchId:guid}/apply\"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 128,
+    "attribute": "[HttpPost(\"imports/{batchId:guid}/discard\"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 134,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/lab-catalog-requests\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 138,
+    "attribute": "[HttpGet, ProducesResponseType<ClinicalPage<MedicalCatalogRequestResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 141,
+    "attribute": "[HttpGet(\"{requestId:guid}\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 147,
+    "attribute": "[HttpPost(\"{requestId:guid}/request-more-info\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 150,
+    "attribute": "[HttpPost(\"{requestId:guid}/approve\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 153,
+    "attribute": "[HttpPost(\"{requestId:guid}/reject\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 159,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 163,
+    "attribute": "[HttpGet(\"lab-catalog\"), ProducesResponseType<ClinicalPage<MedicalCatalogResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 166,
+    "attribute": "[HttpGet(\"lab-catalog-requests\"), ProducesResponseType<ClinicalPage<MedicalCatalogRequestResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 169,
+    "attribute": "[HttpGet(\"lab-catalog-requests/{requestId:guid}\"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 175,
+    "attribute": "[HttpPost(\"lab-catalog-requests\"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 178,
+    "attribute": "[HttpPut(\"lab-catalog-requests/{requestId:guid}\"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 181,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 184,
+    "attribute": "[HttpPost(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request/items\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 187,
+    "attribute": "[HttpPut(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request/items/{itemId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 190,
+    "attribute": "[HttpDelete(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-request/items/{itemId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 193,
+    "attribute": "[HttpPost(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/lab-requests/post-visit\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 196,
+    "attribute": "[HttpGet(\"lab-requests\"), ProducesResponseType<ClinicalPage<DiagnosticRequestSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 199,
+    "attribute": "[HttpGet(\"lab-requests/{requestId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 202,
+    "attribute": "[HttpGet(\"lab-requests/{requestId:guid}/history\"), ProducesResponseType<IReadOnlyList<DiagnosticHistoryResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 205,
+    "attribute": "[HttpPost(\"lab-requests/{requestId:guid}/items/{itemId:guid}/cancel\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 208,
+    "attribute": "[HttpPost(\"lab-requests/{requestId:guid}/cancel-remaining\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 211,
+    "attribute": "[HttpPost(\"lab-requests/{requestId:guid}/results\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 215,
+    "attribute": "[HttpGet(\"lab-results\"), ProducesResponseType<ClinicalPage<DiagnosticResultResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 218,
+    "attribute": "[HttpGet(\"lab-results/{resultId:guid}\"), ProducesResponseType<DiagnosticResultResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 221,
+    "attribute": "[HttpGet(\"lab-results/{resultId:guid}/versions\"), ProducesResponseType<IReadOnlyList<DiagnosticVersionResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 224,
+    "attribute": "[HttpGet(\"lab-results/{resultId:guid}/versions/{versionNumber:int}\"), ProducesResponseType<DiagnosticVersionResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 227,
+    "attribute": "[HttpPost(\"lab-results/{resultId:guid}/corrections\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 231,
+    "attribute": "[HttpPost(\"lab-results/{resultId:guid}/void\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 234,
+    "attribute": "[HttpGet(\"lab-result-submissions\"), ProducesResponseType<ClinicalPage<DiagnosticSubmissionSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 237,
+    "attribute": "[HttpGet(\"lab-result-submissions/{submissionId:guid}\"), ProducesResponseType<DiagnosticSubmissionResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 240,
+    "attribute": "[HttpPost(\"lab-result-submissions/{submissionId:guid}/accept\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 243,
+    "attribute": "[HttpPost(\"lab-result-submissions/{submissionId:guid}/reject\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 246,
+    "attribute": "[HttpGet(\"lab-results/{resultId:guid}/versions/{versionNumber:int}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 252,
+    "attribute": "[HttpGet(\"lab-result-submissions/{submissionId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 261,
+    "attribute": "[Route(\"api/v{version:apiVersion}\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 265,
+    "attribute": "[HttpGet(\"lab-requests/mine\"), ProducesResponseType<ClinicalPage<DiagnosticRequestSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 268,
+    "attribute": "[HttpGet(\"lab-requests/mine/{requestId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 271,
+    "attribute": "[HttpGet(\"lab-results/mine\"), ProducesResponseType<ClinicalPage<DiagnosticResultResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 274,
+    "attribute": "[HttpGet(\"lab-results/mine/{resultId:guid}\"), ProducesResponseType<DiagnosticResultResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 277,
+    "attribute": "[HttpPost(\"lab-requests/mine/{requestId:guid}/submissions\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 284,
+    "attribute": "[HttpGet(\"lab-requests/mine/{requestId:guid}/submissions\"), ProducesResponseType<ClinicalPage<DiagnosticSubmissionSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 287,
+    "attribute": "[HttpGet(\"lab-result-submissions/mine/{submissionId:guid}\"), ProducesResponseType<DiagnosticSubmissionResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 290,
+    "attribute": "[HttpPost(\"lab-result-submissions/mine/{submissionId:guid}/withdraw\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 293,
+    "attribute": "[HttpGet(\"lab-result-submissions/mine/{submissionId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "LabControllers.cs",
+    "line": 299,
+    "attribute": "[HttpGet(\"lab-results/mine/{resultId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "MedicalCatalogManagersController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/medical-catalog-managers\")]"
+  },
+  {
+    "file": "MedicalCatalogManagersController.cs",
+    "line": 19,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "MedicalCatalogManagersController.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"{id:guid}\")]"
+  },
+  {
+    "file": "MedicalCatalogManagersController.cs",
+    "line": 26,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "MedicalCatalogManagersController.cs",
+    "line": 33,
+    "attribute": "[HttpPut(\"{id:guid}\")]"
+  },
+  {
+    "file": "MedicalCatalogManagersController.cs",
+    "line": 36,
+    "attribute": "[HttpPost(\"{id:guid}/activate\")]"
+  },
+  {
+    "file": "MedicalCatalogManagersController.cs",
+    "line": 38,
+    "attribute": "[HttpPost(\"{id:guid}/deactivate\")]"
+  },
+  {
+    "file": "MedicalRecordDependentsController.cs",
+    "line": 20,
+    "attribute": "[Route(\"api/v{version:apiVersion}/families/mine/medical-record-dependents\")]"
+  },
+  {
+    "file": "MedicalRecordDependentsController.cs",
+    "line": 24,
+    "attribute": "[HttpGet, ProducesResponseType<RecordPage<Wasla.Application.Features.Families.FamilyMedicalDependent>>(200)]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/drug-catalog-managers\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 19,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"{id:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 26,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 33,
+    "attribute": "[HttpPut(\"{id:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 36,
+    "attribute": "[HttpPost(\"{id:guid}/activate\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 38,
+    "attribute": "[HttpPost(\"{id:guid}/deactivate\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 48,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/drug-catalog\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 52,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 57,
+    "attribute": "[HttpGet(\"{drugId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 59,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 66,
+    "attribute": "[HttpPut(\"{drugId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 69,
+    "attribute": "[HttpPost(\"{drugId:guid}/activate\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 72,
+    "attribute": "[HttpPost(\"{drugId:guid}/deactivate\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 75,
+    "attribute": "[HttpPost(\"{sourceDrugId:guid}/merge\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 78,
+    "attribute": "[HttpPost(\"imports/preview\"), RequestSizeLimit(DrugImportParser.MaximumFileBytes + 1024 * 1024)]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 88,
+    "attribute": "[HttpGet(\"imports\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 92,
+    "attribute": "[HttpGet(\"imports/{batchId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 99,
+    "attribute": "[HttpGet(\"imports/{batchId:guid}/changes\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 104,
+    "attribute": "[HttpPost(\"imports/{batchId:guid}/apply\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 117,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 121,
+    "attribute": "[HttpGet(\"drug-catalog\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 126,
+    "attribute": "[HttpGet(\"drug-catalog-requests\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 131,
+    "attribute": "[HttpGet(\"drug-catalog-requests/{requestId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 137,
+    "attribute": "[HttpPost(\"drug-catalog-requests\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 144,
+    "attribute": "[HttpPut(\"drug-catalog-requests/{requestId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 150,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/drug-catalog-requests\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 154,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 159,
+    "attribute": "[HttpGet(\"{requestId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 165,
+    "attribute": "[HttpPost(\"{requestId:guid}/request-more-info\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 168,
+    "attribute": "[HttpPost(\"{requestId:guid}/approve\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 171,
+    "attribute": "[HttpPost(\"{requestId:guid}/reject\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 177,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/practices/{practiceId:guid}/encounters/{encounterId:guid}/prescription/items\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 181,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 185,
+    "attribute": "[HttpPut(\"{itemId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 188,
+    "attribute": "[HttpDelete(\"{itemId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 194,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/prescriptions/{prescriptionId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 198,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 200,
+    "attribute": "[HttpGet(\"versions\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 203,
+    "attribute": "[HttpGet(\"versions/{versionNumber:int}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 210,
+    "attribute": "[HttpGet(\"correction-draft\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 212,
+    "attribute": "[HttpPost(\"correction-draft\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 215,
+    "attribute": "[HttpPost(\"correction-draft/items\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 218,
+    "attribute": "[HttpPut(\"correction-draft/items/{itemId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 221,
+    "attribute": "[HttpDelete(\"correction-draft/items/{itemId:guid}\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 224,
+    "attribute": "[HttpPost(\"correction-draft/finalize\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 227,
+    "attribute": "[HttpPost(\"correction-draft/discard\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 230,
+    "attribute": "[HttpPost(\"void\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 236,
+    "attribute": "[Route(\"api/v{version:apiVersion}/prescriptions/mine\")]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 240,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "MedicationControllers.cs",
+    "line": 244,
+    "attribute": "[HttpGet(\"{prescriptionId:guid}\")]"
+  },
+  {
+    "file": "NotificationsController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/notifications\")]"
+  },
+  {
+    "file": "NotificationsController.cs",
+    "line": 19,
+    "attribute": "[HttpGet(\"mine\")]"
+  },
+  {
+    "file": "NotificationsController.cs",
+    "line": 23,
+    "attribute": "[HttpGet(\"mine/unread-count\")]"
+  },
+  {
+    "file": "NotificationsController.cs",
+    "line": 27,
+    "attribute": "[HttpPost(\"mine/{notificationId:guid}/read\")]"
+  },
+  {
+    "file": "NotificationsController.cs",
+    "line": 31,
+    "attribute": "[HttpPost(\"mine/read-all\")]"
+  },
+  {
+    "file": "NotificationsController.cs",
+    "line": 35,
+    "attribute": "[HttpGet(\"me/preferences\")]"
+  },
+  {
+    "file": "NotificationsController.cs",
+    "line": 39,
+    "attribute": "[HttpPut(\"me/preferences\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 16,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 20,
+    "attribute": "[HttpGet(\"finance/filter-options\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 25,
+    "attribute": "[HttpGet(\"expenses/categories\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 34,
+    "attribute": "[HttpGet(\"reception-salary-plans\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 40,
+    "attribute": "[HttpGet(\"reception-salary-plans/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 46,
+    "attribute": "[HttpGet(\"reception-salary-plans/{id:guid}/history\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 52,
+    "attribute": "[HttpPost(\"reception-salary-plans\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 60,
+    "attribute": "[HttpPut(\"reception-salary-plans/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 68,
+    "attribute": "[HttpPost(\"reception-salary-plans/{id:guid}/end\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 76,
+    "attribute": "[HttpGet(\"recurring-expense-plans\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 82,
+    "attribute": "[HttpGet(\"recurring-expense-plans/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 88,
+    "attribute": "[HttpGet(\"recurring-expense-plans/{id:guid}/history\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 94,
+    "attribute": "[HttpPost(\"recurring-expense-plans\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 102,
+    "attribute": "[HttpPut(\"recurring-expense-plans/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 110,
+    "attribute": "[HttpPost(\"recurring-expense-plans/{id:guid}/end\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 118,
+    "attribute": "[HttpPost(\"recurring-expense-plans/{id:guid}/pause\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 126,
+    "attribute": "[HttpPost(\"recurring-expense-plans/{id:guid}/resume\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 134,
+    "attribute": "[HttpGet(\"recurring-expense-plans/{id:guid}/obligations\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 140,
+    "attribute": "[HttpPost(\"expenses\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 148,
+    "attribute": "[HttpGet(\"expenses\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 154,
+    "attribute": "[HttpGet(\"expenses/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 160,
+    "attribute": "[HttpGet(\"expenses/{id:guid}/history\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 166,
+    "attribute": "[HttpGet(\"expenses/transactions\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 172,
+    "attribute": "[HttpGet(\"salary-obligations\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 178,
+    "attribute": "[HttpGet(\"salary-obligations/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 184,
+    "attribute": "[HttpGet(\"salary-obligations/{id:guid}/history\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 190,
+    "attribute": "[HttpPost(\"salary-obligations/{id:guid}/settle\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 198,
+    "attribute": "[HttpPatch(\"salary-obligations/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 206,
+    "attribute": "[HttpPost(\"salary-obligations/{id:guid}/cancel\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 214,
+    "attribute": "[HttpGet(\"expenses/obligations\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 220,
+    "attribute": "[HttpGet(\"expenses/obligations/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 226,
+    "attribute": "[HttpGet(\"expenses/obligations/{id:guid}/history\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 232,
+    "attribute": "[HttpPost(\"expenses/obligations/{id:guid}/settle\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 240,
+    "attribute": "[HttpPatch(\"expenses/obligations/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 248,
+    "attribute": "[HttpPost(\"expenses/obligations/{id:guid}/cancel\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 256,
+    "attribute": "[HttpPost(\"expenses/obligations/{id:guid}/confirm-actual\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 264,
+    "attribute": "[HttpGet(\"salary-settlements/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 270,
+    "attribute": "[HttpGet(\"salary-settlements/{id:guid}/receipt\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 276,
+    "attribute": "[HttpGet(\"salary-settlements/{id:guid}/history\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 282,
+    "attribute": "[HttpPost(\"salary-settlements/{id:guid}/reverse\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 290,
+    "attribute": "[HttpGet(\"expense-settlements/{id:guid}\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 296,
+    "attribute": "[HttpGet(\"expense-settlements/{id:guid}/receipt\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 302,
+    "attribute": "[HttpGet(\"expense-settlements/{id:guid}/history\")]"
+  },
+  {
+    "file": "OperatingFinanceController.cs",
+    "line": 308,
+    "attribute": "[HttpPost(\"expense-settlements/{id:guid}/reverse\")]"
+  },
+  {
+    "file": "PatientClaimsAdminController.cs",
+    "line": 19,
+    "attribute": "[HttpGet, Permission(PermissionNames.PatientClaimsViewAll)]"
+  },
+  {
+    "file": "PatientClaimsAdminController.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"{id:guid}\"), Permission(PermissionNames.PatientClaimsViewDetails)]"
+  },
+  {
+    "file": "PatientClaimsAdminController.cs",
+    "line": 27,
+    "attribute": "[HttpGet(\"{id:guid}/evidence/{evidenceId:guid}\"), Permission(PermissionNames.PatientClaimsViewEvidence)]"
+  },
+  {
+    "file": "PatientClaimsAdminController.cs",
+    "line": 34,
+    "attribute": "[HttpPost(\"{id:guid}/approve\"), Permission(PermissionNames.PatientClaimsApprove)]"
+  },
+  {
+    "file": "PatientClaimsAdminController.cs",
+    "line": 38,
+    "attribute": "[HttpPost(\"{id:guid}/reject\"), Permission(PermissionNames.PatientClaimsReject)]"
+  },
+  {
+    "file": "PatientClaimsAdminController.cs",
+    "line": 41,
+    "attribute": "[HttpPost(\"{id:guid}/request-modification\"), Permission(PermissionNames.PatientClaimsRequestModification)]"
+  },
+  {
+    "file": "PatientClaimsAdminController.cs",
+    "line": 44,
+    "attribute": "[HttpGet(\"{id:guid}/history\"), Permission(PermissionNames.PatientClaimsViewDetails)]"
+  },
+  {
+    "file": "PatientDashboardController.cs",
+    "line": 16,
+    "attribute": "[Route(\"api/v{version:apiVersion}/patients/me/dashboard\")]"
+  },
+  {
+    "file": "PatientDashboardController.cs",
+    "line": 21,
+    "attribute": "[HttpGet(\"overview\")]"
+  },
+  {
+    "file": "PatientDashboardController.cs",
+    "line": 26,
+    "attribute": "[HttpGet(\"capabilities\")]"
+  },
+  {
+    "file": "PatientDuplicatesAdminController.cs",
+    "line": 18,
+    "attribute": "[HttpGet, Permission(PermissionNames.PatientDuplicatesView)]"
+  },
+  {
+    "file": "PatientDuplicatesAdminController.cs",
+    "line": 22,
+    "attribute": "[HttpGet(\"{id:guid}\"), Permission(PermissionNames.PatientDuplicatesView)]"
+  },
+  {
+    "file": "PatientDuplicatesAdminController.cs",
+    "line": 25,
+    "attribute": "[HttpPost(\"{id:guid}/resolve\"), Permission(PermissionNames.PatientDuplicatesResolve)]"
+  },
+  {
+    "file": "PatientMedicalRecordController.cs",
+    "line": 21,
+    "attribute": "[Route(\"api/v{version:apiVersion}/patients/me/medical-record\")]"
+  },
+  {
+    "file": "PatientMedicalRecordController.cs",
+    "line": 25,
+    "attribute": "[HttpGet(\"overview\"), ProducesResponseType<PatientSafeMedicalRecordOverviewResponse>(200)]"
+  },
+  {
+    "file": "PatientMedicalRecordController.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"timeline\"), ProducesResponseType<RecordPage<TimelineEntry>>(200)]"
+  },
+  {
+    "file": "PatientMedicalRecordController.cs",
+    "line": 33,
+    "attribute": "[HttpGet(\"encounters/{encounterId:guid}\"), ProducesResponseType<PatientSafeMedicalRecordEncounterResponse>(200)]"
+  },
+  {
+    "file": "PatientMedicalRecordController.cs",
+    "line": 37,
+    "attribute": "[HttpGet(\"items/{resourceType}/{sourceId:guid}\"), ProducesResponseType<PatientSafeMedicalRecordItemResponse>(200)]"
+  },
+  {
+    "file": "PatientMedicalRecordController.cs",
+    "line": 41,
+    "attribute": "[HttpGet(\"items/{resourceType}/{sourceId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "PatientMedicalRecordController.cs",
+    "line": 52,
+    "attribute": "[HttpGet(\"access-log\"), ProducesResponseType<RecordPage<PatientSafeAccessLog>>(200)]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 20,
+    "attribute": "[HttpPost(\"start\")]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 24,
+    "attribute": "[HttpPost(\"verify-email\")]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 27,
+    "attribute": "[HttpPost(\"register\"), Consumes(\"multipart/form-data\")]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 30,
+    "attribute": "[HttpPost(\"claims\"), Consumes(\"multipart/form-data\")]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 33,
+    "attribute": "[HttpGet(\"claims/{id:guid}\")]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 36,
+    "attribute": "[HttpPost(\"claims/{id:guid}/resubmit\"), Consumes(\"multipart/form-data\")]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 39,
+    "attribute": "[HttpPost(\"activate\")]"
+  },
+  {
+    "file": "PatientOnboardingController.cs",
+    "line": 43,
+    "attribute": "[HttpPost(\"activation/resend\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 19,
+    "attribute": "[Route(\"api/v{version:apiVersion}/patients\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 23,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 40,
+    "attribute": "[HttpGet(\"search\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 51,
+    "attribute": "[HttpGet(\"me\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 57,
+    "attribute": "[HttpGet(\"me/profile-image\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 67,
+    "attribute": "[HttpPut(\"me\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 75,
+    "attribute": "[HttpGet(\"me/contacts\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 80,
+    "attribute": "[HttpPost(\"me/contacts\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 88,
+    "attribute": "[HttpPut(\"me/contacts/{contactId:guid}\")]"
+  },
+  {
+    "file": "PatientsController.cs",
+    "line": 93,
+    "attribute": "[HttpDelete(\"me/contacts/{contactId:guid}\")]"
+  },
+  {
+    "file": "PatientsRegistrationController.cs",
+    "line": 19,
+    "attribute": "[HttpPost(\"full\"), Consumes(\"multipart/form-data\"), Permission(PermissionNames.PatientsRegisterFull)]"
+  },
+  {
+    "file": "PatientsRegistrationController.cs",
+    "line": 31,
+    "attribute": "[HttpPost(\"registration-matches\"), Permission(PermissionNames.PatientsRegistrationMatch)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}\")]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"reservations/mine/archived/patients/options\"), Authorize(Roles = SystemRoleNames.Patient), ProducesResponseType<OptionsPage<ArchivePatientOption>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"reception/archives/practices/options\"), Authorize(Roles = SystemRoleNames.Reception), ProducesResponseType<OptionsPage<PracticeOption>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 33,
+    "attribute": "[HttpGet(\"doctors/me/practices/{practiceId:guid}/archives/tickets\"), ProducesResponseType<ArchivePage<ArchivedTicketItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 39,
+    "attribute": "[HttpGet(\"doctors/me/practices/{practiceId:guid}/archives/reservations\"), ProducesResponseType<ArchivePage<ArchivedReservationItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 45,
+    "attribute": "[HttpGet(\"reception/practices/{practiceId:guid}/archives/tickets\"), ProducesResponseType<ArchivePage<ArchivedTicketItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 51,
+    "attribute": "[HttpGet(\"reception/practices/{practiceId:guid}/archives/reservations\"), ProducesResponseType<ArchivePage<ArchivedReservationItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 57,
+    "attribute": "[HttpGet(\"tickets/mine/archived\"), ProducesResponseType<ArchivePage<ArchivedTicketItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 63,
+    "attribute": "[HttpGet(\"reservations/mine/archived\"), ProducesResponseType<ArchivePage<ArchivedReservationItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 69,
+    "attribute": "[HttpGet(\"admin/archives/tickets\"), ProducesResponseType<ArchivePage<PlatformTicketMetadata>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 75,
+    "attribute": "[HttpGet(\"admin/archives/reservations\"), ProducesResponseType<ArchivePage<PlatformReservationMetadata>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 81,
+    "attribute": "[HttpGet(\"admin/archives/tickets/{ticketId:guid}\"), ProducesResponseType<PlatformTicketMetadata>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 87,
+    "attribute": "[HttpGet(\"admin/archives/operations/health\"), ProducesResponseType<ArchiveHealth>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 93,
+    "attribute": "[HttpGet(\"admin/archives/operations/runs\"), ProducesResponseType<ArchivePage<ArchiveRunItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 99,
+    "attribute": "[HttpGet(\"admin/archives/operations/runs/{runId:guid}\"), ProducesResponseType<ArchiveRunItem>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 105,
+    "attribute": "[HttpGet(\"admin/archives/operations/exceptions\"), ProducesResponseType<ArchivePage<ArchiveExceptionItem>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 111,
+    "attribute": "[HttpGet(\"admin/archives/operations/exceptions/{exceptionId:guid}\"), ProducesResponseType<ArchiveExceptionItem>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 117,
+    "attribute": "[HttpPost(\"admin/archives/operations/pause\"), ProducesResponseType<ArchiveControlResponse>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 123,
+    "attribute": "[HttpPost(\"admin/archives/operations/resume\"), ProducesResponseType<ArchiveControlResponse>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 129,
+    "attribute": "[HttpGet(\"doctors/me/practices/{practiceId:guid}/audit/events\"), ProducesResponseType<ArchivePage<SafeAuditEvent>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 135,
+    "attribute": "[HttpGet(\"doctors/me/practices/{practiceId:guid}/audit/sensitive-access\"), ProducesResponseType<ArchivePage<SafeAuditEvent>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 141,
+    "attribute": "[HttpGet(\"reception/practices/{practiceId:guid}/audit/my-activity\"), ProducesResponseType<ArchivePage<SafeAuditEvent>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 147,
+    "attribute": "[HttpGet(\"admin/audit/events\"), ProducesResponseType<ArchivePage<SafeAuditEvent>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 153,
+    "attribute": "[HttpGet(\"doctors/me/practices/{practiceId:guid}/audit/events/{eventKey}\"), ProducesResponseType<SafeAuditEvent>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 159,
+    "attribute": "[HttpGet(\"reception/practices/{practiceId:guid}/audit/my-activity/{eventKey}\"), ProducesResponseType<SafeAuditEvent>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 165,
+    "attribute": "[HttpGet(\"admin/audit/events/{eventKey}\"), ProducesResponseType<SafeAuditEvent>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 171,
+    "attribute": "[HttpPost(\"admin/audit/sensitive-access/search\"), ProducesResponseType<ArchivePage<SafeAuditEvent>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 177,
+    "attribute": "[HttpGet(\"admin/archives/reservations/{reservationId:guid}\"), ProducesResponseType<PlatformReservationMetadata>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 183,
+    "attribute": "[HttpGet(\"archives/metadata\"), ProducesResponseType<ArchiveMetadata>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 192,
+    "attribute": "[HttpGet(\"doctors/me/archives/practices/options\"), ProducesResponseType<OptionsPage<PracticeOption>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 198,
+    "attribute": "[HttpGet(\"admin/archives/practices/options\"), ProducesResponseType<OptionsPage<PracticeOption>>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 204,
+    "attribute": "[HttpGet(\"admin/archives/operations/filter-options\"), ProducesResponseType<ArchiveOperationsOptions>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 210,
+    "attribute": "[HttpGet(\"doctors/me/practices/{practiceId:guid}/audit/filter-options\"), ProducesResponseType<AuditOptions>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 216,
+    "attribute": "[HttpGet(\"reception/practices/{practiceId:guid}/audit/filter-options\"), ProducesResponseType<AuditOptions>(200)]"
+  },
+  {
+    "file": "Phase18PartTwoController.cs",
+    "line": 222,
+    "attribute": "[HttpGet(\"admin/audit/filter-options\"), ProducesResponseType<AuditOptions>(200)]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 14,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 18,
+    "attribute": "[HttpGet(\"dashboard/overview\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 23,
+    "attribute": "[HttpGet(\"dashboard/filter-options\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 27,
+    "attribute": "[HttpGet(\"reports/catalog\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 32,
+    "attribute": "[HttpGet(\"reports/doctor-lifecycle\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 37,
+    "attribute": "[HttpGet(\"reports/adoption\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 42,
+    "attribute": "[HttpGet(\"reports/operations\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 47,
+    "attribute": "[HttpGet(\"reports/geography\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 52,
+    "attribute": "[HttpGet(\"reports/security-metadata\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 57,
+    "attribute": "[HttpGet(\"reports/{reportCode}/drilldown\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 62,
+    "attribute": "[HttpGet(\"data-quality/summary\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 67,
+    "attribute": "[HttpGet(\"operations/jobs/health\")]"
+  },
+  {
+    "file": "PlatformReportingController.cs",
+    "line": 72,
+    "attribute": "[HttpGet(\"attention\")]"
+  },
+  {
+    "file": "PracticeSubscriptionAllocationsController.cs",
+    "line": 17,
+    "attribute": "[HttpGet, Permission(SubscriptionPermissionNames.ViewOwn)]"
+  },
+  {
+    "file": "PracticeSubscriptionAllocationsController.cs",
+    "line": 19,
+    "attribute": "[HttpPost(\"move\"), Permission(SubscriptionPermissionNames.AllocationsManageOwn)]"
+  },
+  {
+    "file": "PracticeSubscriptionAllocationsController.cs",
+    "line": 22,
+    "attribute": "[HttpPost(\"release\"), Permission(SubscriptionPermissionNames.AllocationsManageOwn)]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 17,
+    "attribute": "[Route(\"api/v{version:apiVersion}/public\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 21,
+    "attribute": "[HttpGet(\"specializations\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 27,
+    "attribute": "[HttpGet(\"doctors\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 47,
+    "attribute": "[HttpGet(\"doctors/{doctorId:guid}\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 54,
+    "attribute": "[HttpGet(\"doctors/{doctorId:guid}/profile-image\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 66,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/logo\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 79,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/available-dates\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 91,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/available-slots\")]"
+  },
+  {
+    "file": "PublicDiscoveryController.cs",
+    "line": 104,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/booking-options\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 49,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/radiology-catalog\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 53,
+    "attribute": "[HttpGet, ProducesResponseType<ClinicalPage<MedicalCatalogResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 57,
+    "attribute": "[HttpGet(\"{id:guid}\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 63,
+    "attribute": "[HttpPost, ProducesResponseType<MedicalCatalogResponse>(StatusCodes.Status201Created)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 69,
+    "attribute": "[HttpPut(\"{id:guid}\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 72,
+    "attribute": "[HttpPost(\"{id:guid}/activate\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 75,
+    "attribute": "[HttpPost(\"{id:guid}/deactivate\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 78,
+    "attribute": "[HttpPost(\"{id:guid}/merge\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 81,
+    "attribute": "[HttpPost(\"imports/preview\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(220L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 210L * 1024 * 1024)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 90,
+    "attribute": "[HttpGet(\"imports\"), ProducesResponseType<ClinicalPage<DiagnosticImportBatchResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 93,
+    "attribute": "[HttpGet(\"imports/{batchId:guid}\"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 96,
+    "attribute": "[HttpGet(\"imports/{batchId:guid}/changes\"), ProducesResponseType<ClinicalPage<DiagnosticImportRecordResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 99,
+    "attribute": "[HttpPost(\"imports/{batchId:guid}/apply\"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 102,
+    "attribute": "[HttpPost(\"imports/{batchId:guid}/discard\"), ProducesResponseType<DiagnosticImportBatchResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 108,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/radiology-catalog-requests\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 112,
+    "attribute": "[HttpGet, ProducesResponseType<ClinicalPage<MedicalCatalogRequestResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 115,
+    "attribute": "[HttpGet(\"{requestId:guid}\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 121,
+    "attribute": "[HttpPost(\"{requestId:guid}/request-more-info\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 124,
+    "attribute": "[HttpPost(\"{requestId:guid}/approve\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 127,
+    "attribute": "[HttpPost(\"{requestId:guid}/reject\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 133,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 137,
+    "attribute": "[HttpGet(\"radiology-catalog\"), ProducesResponseType<ClinicalPage<MedicalCatalogResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 140,
+    "attribute": "[HttpGet(\"radiology-catalog-requests\"), ProducesResponseType<ClinicalPage<MedicalCatalogRequestResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 143,
+    "attribute": "[HttpGet(\"radiology-catalog-requests/{requestId:guid}\"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 149,
+    "attribute": "[HttpPost(\"radiology-catalog-requests\"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 152,
+    "attribute": "[HttpPut(\"radiology-catalog-requests/{requestId:guid}\"), ProducesResponseType<MedicalCatalogRequestResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 155,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/radiology-request\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 158,
+    "attribute": "[HttpPost(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/radiology-request/items\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 161,
+    "attribute": "[HttpPut(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/radiology-request/items/{itemId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 164,
+    "attribute": "[HttpDelete(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/radiology-request/items/{itemId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 167,
+    "attribute": "[HttpPost(\"practices/{practiceId:guid}/encounters/{encounterId:guid}/radiology-requests/post-visit\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 170,
+    "attribute": "[HttpGet(\"radiology-requests\"), ProducesResponseType<ClinicalPage<DiagnosticRequestSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 173,
+    "attribute": "[HttpGet(\"radiology-requests/{requestId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 176,
+    "attribute": "[HttpGet(\"radiology-requests/{requestId:guid}/history\"), ProducesResponseType<IReadOnlyList<DiagnosticHistoryResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 179,
+    "attribute": "[HttpPost(\"radiology-requests/{requestId:guid}/items/{itemId:guid}/cancel\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 182,
+    "attribute": "[HttpPost(\"radiology-requests/{requestId:guid}/cancel-remaining\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 185,
+    "attribute": "[HttpPost(\"radiology-requests/{requestId:guid}/results\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 189,
+    "attribute": "[HttpGet(\"radiology-results\"), ProducesResponseType<ClinicalPage<DiagnosticResultResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 192,
+    "attribute": "[HttpGet(\"radiology-results/{resultId:guid}\"), ProducesResponseType<DiagnosticResultResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 195,
+    "attribute": "[HttpGet(\"radiology-results/{resultId:guid}/versions\"), ProducesResponseType<IReadOnlyList<DiagnosticVersionResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 198,
+    "attribute": "[HttpGet(\"radiology-results/{resultId:guid}/versions/{versionNumber:int}\"), ProducesResponseType<DiagnosticVersionResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 201,
+    "attribute": "[HttpPost(\"radiology-results/{resultId:guid}/corrections\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 205,
+    "attribute": "[HttpPost(\"radiology-results/{resultId:guid}/void\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 208,
+    "attribute": "[HttpGet(\"radiology-result-submissions\"), ProducesResponseType<ClinicalPage<DiagnosticSubmissionSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 211,
+    "attribute": "[HttpGet(\"radiology-result-submissions/{submissionId:guid}\"), ProducesResponseType<DiagnosticSubmissionResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 214,
+    "attribute": "[HttpPost(\"radiology-result-submissions/{submissionId:guid}/accept\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 217,
+    "attribute": "[HttpPost(\"radiology-result-submissions/{submissionId:guid}/reject\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 220,
+    "attribute": "[HttpGet(\"radiology-results/{resultId:guid}/versions/{versionNumber:int}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 226,
+    "attribute": "[HttpGet(\"radiology-result-submissions/{submissionId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 235,
+    "attribute": "[Route(\"api/v{version:apiVersion}\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 239,
+    "attribute": "[HttpGet(\"radiology-requests/mine\"), ProducesResponseType<ClinicalPage<DiagnosticRequestSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 242,
+    "attribute": "[HttpGet(\"radiology-requests/mine/{requestId:guid}\"), ProducesResponseType<DiagnosticRequestStateResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 245,
+    "attribute": "[HttpGet(\"radiology-results/mine\"), ProducesResponseType<ClinicalPage<DiagnosticResultResponse>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 248,
+    "attribute": "[HttpGet(\"radiology-results/mine/{resultId:guid}\"), ProducesResponseType<DiagnosticResultResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 251,
+    "attribute": "[HttpPost(\"radiology-requests/mine/{requestId:guid}/submissions\"), Consumes(\"multipart/form-data\"), RequestSizeLimit(110L * 1024 * 1024), RequestFormLimits(MultipartBodyLengthLimit = 105L * 1024 * 1024)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 258,
+    "attribute": "[HttpGet(\"radiology-requests/mine/{requestId:guid}/submissions\"), ProducesResponseType<ClinicalPage<DiagnosticSubmissionSummary>>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 261,
+    "attribute": "[HttpGet(\"radiology-result-submissions/mine/{submissionId:guid}\"), ProducesResponseType<DiagnosticSubmissionResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 264,
+    "attribute": "[HttpPost(\"radiology-result-submissions/mine/{submissionId:guid}/withdraw\"), ProducesResponseType<DiagnosticResultMutationResponse>(StatusCodes.Status200OK)]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 267,
+    "attribute": "[HttpGet(\"radiology-result-submissions/mine/{submissionId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "RadiologyControllers.cs",
+    "line": 273,
+    "attribute": "[HttpGet(\"radiology-results/mine/{resultId:guid}/attachments/{attachmentId:guid}/content\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 15,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reception\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 19,
+    "attribute": "[HttpGet(\"dashboard/overview\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 24,
+    "attribute": "[HttpGet(\"dashboard/filter-options\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 28,
+    "attribute": "[HttpGet(\"reports/catalog\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 33,
+    "attribute": "[HttpGet(\"reports/reservations\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 38,
+    "attribute": "[HttpGet(\"reports/queue\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 43,
+    "attribute": "[HttpGet(\"reports/activity\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 48,
+    "attribute": "[HttpGet(\"reports/{reportCode}/drilldown\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 53,
+    "attribute": "[HttpGet(\"attention\")]"
+  },
+  {
+    "file": "ReceptionReportingController.cs",
+    "line": 58,
+    "attribute": "[HttpGet(\"practices/{practiceId:guid}/worklist\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 12,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/reports\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 16,
+    "attribute": "[HttpGet(\"{reportCode}/export\"), EnableRateLimiting(\"reports-export\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 32,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reception/reports\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 36,
+    "attribute": "[HttpGet(\"{reportCode}/export\"), EnableRateLimiting(\"reports-export\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 52,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/reports\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 56,
+    "attribute": "[HttpGet(\"{reportCode}/export\"), EnableRateLimiting(\"reports-export\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 72,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/operations/exports/health\")]"
+  },
+  {
+    "file": "ReportExportsControllers.cs",
+    "line": 76,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 18,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reservations\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 22,
+    "attribute": "[HttpGet(\"bookable-patients\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 27,
+    "attribute": "[HttpPost]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 47,
+    "attribute": "[HttpGet(\"mine\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 61,
+    "attribute": "[HttpGet(\"mine/{reservationId:guid}\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 69,
+    "attribute": "[HttpPost(\"mine/{reservationId:guid}/cancel\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 82,
+    "attribute": "[HttpGet(\"mine/{reservationId:guid}/reschedule/available-dates\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 96,
+    "attribute": "[HttpGet(\"mine/{reservationId:guid}/reschedule/available-slots\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 112,
+    "attribute": "[HttpPost(\"mine/{reservationId:guid}/reschedule\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 128,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reservations/metadata\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 132,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 140,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reception/practices/{practiceId:guid}\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 144,
+    "attribute": "[HttpGet(\"booking/available-dates\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 150,
+    "attribute": "[HttpGet(\"booking/available-slots\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 161,
+    "attribute": "[HttpGet(\"booking/options\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 173,
+    "attribute": "[HttpPost(\"reservations\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 194,
+    "attribute": "[HttpGet(\"reservations\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 211,
+    "attribute": "[HttpGet(\"reservations/filter-options\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 216,
+    "attribute": "[HttpGet(\"reservations/{reservationId:guid}\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 227,
+    "attribute": "[HttpPost(\"reservations/{reservationId:guid}/cancel\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 238,
+    "attribute": "[HttpGet(\"reservations/{reservationId:guid}/reschedule/available-dates\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 247,
+    "attribute": "[HttpGet(\"reservations/{reservationId:guid}/reschedule/available-slots\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 257,
+    "attribute": "[HttpPost(\"reservations/{reservationId:guid}/reschedule\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 269,
+    "attribute": "[HttpPost(\"reservations/{reservationId:guid}/restore-no-show\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 283,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/practices/{practiceId:guid}/reservations\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 287,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 305,
+    "attribute": "[HttpGet(\"filter-options\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 311,
+    "attribute": "[HttpGet(\"{reservationId:guid}\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 319,
+    "attribute": "[HttpPost(\"{reservationId:guid}/cancel\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 331,
+    "attribute": "[HttpGet(\"{reservationId:guid}/reschedule/available-dates\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 341,
+    "attribute": "[HttpGet(\"{reservationId:guid}/reschedule/available-slots\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 352,
+    "attribute": "[HttpPost(\"{reservationId:guid}/reschedule\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 368,
+    "attribute": "[Route(\"api/v{version:apiVersion}/admin/reservations\")]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 373,
+    "attribute": "[HttpGet]"
+  },
+  {
+    "file": "ReservationsController.cs",
+    "line": 389,
+    "attribute": "[HttpGet(\"{reservationId:guid}\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 32,
+    "attribute": "[Route(\"api/v{version:apiVersion}/practices/{practiceId:guid}\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 36,
+    "attribute": "[HttpPost(\"reservations/{reservationId:guid}/check-in\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 53,
+    "attribute": "[HttpPost(\"reservations/{reservationId:guid}/force-check-in\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 70,
+    "attribute": "[HttpPost(\"tickets/walk-in\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 90,
+    "attribute": "[HttpGet(\"queue\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 95,
+    "attribute": "[HttpGet(\"tickets/{ticketId:guid}\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 106,
+    "attribute": "[HttpPost(\"queue/call-next\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 115,
+    "attribute": "[HttpPost(\"tickets/{ticketId:guid}/manual-call\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 126,
+    "attribute": "[HttpPost(\"tickets/{ticketId:guid}/recall\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 137,
+    "attribute": "[HttpPost(\"tickets/{ticketId:guid}/confirm-no-response\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 148,
+    "attribute": "[HttpPost(\"tickets/{ticketId:guid}/restore-no-show\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 159,
+    "attribute": "[HttpPost(\"tickets/{ticketId:guid}/start\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 170,
+    "attribute": "[HttpPost(\"tickets/{ticketId:guid}/complete\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 182,
+    "attribute": "[HttpPost(\"tickets/{ticketId:guid}/cancel\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 196,
+    "attribute": "[Route(\"api/v{version:apiVersion}/reception/practices/{practiceId:guid}\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 200,
+    "attribute": "[HttpGet(\"walk-in/options\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 208,
+    "attribute": "[Route(\"api/v{version:apiVersion}/tickets\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 212,
+    "attribute": "[HttpGet(\"mine/active\")]"
+  },
+  {
+    "file": "TicketsController.cs",
+    "line": 217,
+    "attribute": "[HttpGet(\"mine/{ticketId:guid}\")]"
+  },
+  {
+    "file": "TreatingMedicalRecordController.cs",
+    "line": 21,
+    "attribute": "[Route(\"api/v{version:apiVersion}/doctors/me/practices/{practiceId:guid}/tickets/{ticketId:guid}/medical-record\")]"
+  },
+  {
+    "file": "TreatingMedicalRecordController.cs",
+    "line": 25,
+    "attribute": "[HttpGet(\"overview\"), ProducesResponseType<DoctorSharedMedicalRecordOverviewResponse>(200)]"
+  },
+  {
+    "file": "TreatingMedicalRecordController.cs",
+    "line": 29,
+    "attribute": "[HttpGet(\"timeline\"), ProducesResponseType<RecordPage<TimelineEntry>>(200)]"
+  },
+  {
+    "file": "TreatingMedicalRecordController.cs",
+    "line": 33,
+    "attribute": "[HttpGet(\"encounters/{encounterId:guid}\"), ProducesResponseType<DoctorSharedMedicalRecordEncounterResponse>(200)]"
+  },
+  {
+    "file": "TreatingMedicalRecordController.cs",
+    "line": 37,
+    "attribute": "[HttpGet(\"items/{resourceType}/{sourceId:guid}\"), ProducesResponseType<DoctorSharedMedicalRecordItemResponse>(200)]"
+  },
+  {
+    "file": "TreatingMedicalRecordController.cs",
+    "line": 41,
+    "attribute": "[HttpGet(\"items/{resourceType}/{sourceId:guid}/attachments/{attachmentId:guid}/content\")]"
+  }
+]
