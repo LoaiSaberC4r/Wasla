@@ -386,3 +386,349 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE TABLE [DependentProfileChanges] (
+        [Id] uniqueidentifier NOT NULL,
+        [ActorUserId] uniqueidentifier NOT NULL,
+        [ParentPatientId] uniqueidentifier NOT NULL,
+        [ChildPatientId] uniqueidentifier NOT NULL,
+        [Operation] nvarchar(30) NOT NULL,
+        [IdempotencyKey] nvarchar(100) NOT NULL,
+        [Fingerprint] nvarchar(64) NOT NULL,
+        [ContactId] uniqueidentifier NULL,
+        [OccurredAtUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_DependentProfileChanges] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_DependentProfileChanges_ApplicationUsers_ActorUserId] FOREIGN KEY ([ActorUserId]) REFERENCES [ApplicationUsers] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_DependentProfileChanges_PatientContacts_ContactId] FOREIGN KEY ([ContactId]) REFERENCES [PatientContacts] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_DependentProfileChanges_Patients_ChildPatientId] FOREIGN KEY ([ChildPatientId]) REFERENCES [Patients] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_DependentProfileChanges_Patients_ParentPatientId] FOREIGN KEY ([ParentPatientId]) REFERENCES [Patients] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE TABLE [PatientHistoricalDocuments] (
+        [Id] uniqueidentifier NOT NULL,
+        [SubjectPatientId] uniqueidentifier NOT NULL,
+        [UploadedByApplicationUserId] uniqueidentifier NOT NULL,
+        [UploaderPatientId] uniqueidentifier NOT NULL,
+        [UploadedAtUtc] datetime2 NOT NULL,
+        [ModifiedAtUtc] datetime2 NOT NULL,
+        [CurrentVersionNumber] int NOT NULL,
+        [State] int NOT NULL,
+        [LegalHold] bit NOT NULL,
+        [RowVersion] rowversion NOT NULL,
+        CONSTRAINT [PK_PatientHistoricalDocuments] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_HistoricalDocument_State] CHECK ([State] IN (1,2,3,4,5)),
+        CONSTRAINT [CK_HistoricalDocument_Version] CHECK ([CurrentVersionNumber] >= 0),
+        CONSTRAINT [FK_PatientHistoricalDocuments_ApplicationUsers_UploadedByApplicationUserId] FOREIGN KEY ([UploadedByApplicationUserId]) REFERENCES [ApplicationUsers] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_PatientHistoricalDocuments_Patients_SubjectPatientId] FOREIGN KEY ([SubjectPatientId]) REFERENCES [Patients] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_PatientHistoricalDocuments_Patients_UploaderPatientId] FOREIGN KEY ([UploaderPatientId]) REFERENCES [Patients] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE TABLE [HistoricalDocumentOperations] (
+        [Id] uniqueidentifier NOT NULL,
+        [ActorUserId] uniqueidentifier NOT NULL,
+        [SubjectPatientId] uniqueidentifier NOT NULL,
+        [Operation] nvarchar(20) NOT NULL,
+        [IdempotencyKey] nvarchar(100) NOT NULL,
+        [Fingerprint] nvarchar(64) NOT NULL,
+        [DocumentId] uniqueidentifier NOT NULL,
+        [VersionNumber] int NOT NULL,
+        [CreatedAtUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_HistoricalDocumentOperations] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_HistoricalDocumentOperations_ApplicationUsers_ActorUserId] FOREIGN KEY ([ActorUserId]) REFERENCES [ApplicationUsers] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_HistoricalDocumentOperations_PatientHistoricalDocuments_DocumentId] FOREIGN KEY ([DocumentId]) REFERENCES [PatientHistoricalDocuments] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_HistoricalDocumentOperations_Patients_SubjectPatientId] FOREIGN KEY ([SubjectPatientId]) REFERENCES [Patients] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE TABLE [PatientHistoricalDocumentHistories] (
+        [Id] uniqueidentifier NOT NULL,
+        [DocumentId] uniqueidentifier NOT NULL,
+        [VersionNumber] int NOT NULL,
+        [ActorUserId] uniqueidentifier NOT NULL,
+        [Action] nvarchar(40) NOT NULL,
+        [OccurredAtUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_PatientHistoricalDocumentHistories] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_PatientHistoricalDocumentHistories_ApplicationUsers_ActorUserId] FOREIGN KEY ([ActorUserId]) REFERENCES [ApplicationUsers] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_PatientHistoricalDocumentHistories_PatientHistoricalDocuments_DocumentId] FOREIGN KEY ([DocumentId]) REFERENCES [PatientHistoricalDocuments] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE TABLE [PatientHistoricalDocumentVersions] (
+        [Id] uniqueidentifier NOT NULL,
+        [DocumentId] uniqueidentifier NOT NULL,
+        [VersionNumber] int NOT NULL,
+        [Category] int NOT NULL,
+        [DocumentDate] date NULL,
+        [DateUnknown] bit NOT NULL,
+        [ProviderName] nvarchar(200) NULL,
+        [Title] nvarchar(200) NULL,
+        [PatientNote] nvarchar(2000) NULL,
+        [CreatedByUserId] uniqueidentifier NOT NULL,
+        [CreatedAtUtc] datetime2 NOT NULL,
+        [Reason] nvarchar(1000) NULL,
+        CONSTRAINT [PK_PatientHistoricalDocumentVersions] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_HistoricalVersion_Category] CHECK ([Category] IN (1,2,3,4,5)),
+        CONSTRAINT [CK_HistoricalVersion_Date] CHECK (([DateUnknown] = 1 AND [DocumentDate] IS NULL) OR ([DateUnknown] = 0 AND [DocumentDate] IS NOT NULL)),
+        CONSTRAINT [CK_HistoricalVersion_Number] CHECK ([VersionNumber] > 0),
+        CONSTRAINT [FK_PatientHistoricalDocumentVersions_ApplicationUsers_CreatedByUserId] FOREIGN KEY ([CreatedByUserId]) REFERENCES [ApplicationUsers] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_PatientHistoricalDocumentVersions_PatientHistoricalDocuments_DocumentId] FOREIGN KEY ([DocumentId]) REFERENCES [PatientHistoricalDocuments] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE TABLE [PatientHistoricalDocumentAttachments] (
+        [Id] uniqueidentifier NOT NULL,
+        [VersionId] uniqueidentifier NOT NULL,
+        [MediaKey] nvarchar(1000) NOT NULL,
+        [FileName] nvarchar(500) NOT NULL,
+        [ContentType] nvarchar(100) NOT NULL,
+        [Length] bigint NOT NULL,
+        [Sha256] nvarchar(64) NOT NULL,
+        [ScannedAtUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_PatientHistoricalDocumentAttachments] PRIMARY KEY ([Id]),
+        CONSTRAINT [CK_HistoricalAttachment_Length] CHECK ([Length] > 0 AND [Length] <= 10485760),
+        CONSTRAINT [FK_PatientHistoricalDocumentAttachments_PatientHistoricalDocumentVersions_VersionId] FOREIGN KEY ([VersionId]) REFERENCES [PatientHistoricalDocumentVersions] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_DependentProfileChanges_ActorUserId_Operation_IdempotencyKey] ON [DependentProfileChanges] ([ActorUserId], [Operation], [IdempotencyKey]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_DependentProfileChanges_ChildPatientId] ON [DependentProfileChanges] ([ChildPatientId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_DependentProfileChanges_ContactId] ON [DependentProfileChanges] ([ContactId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_DependentProfileChanges_ParentPatientId] ON [DependentProfileChanges] ([ParentPatientId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_HistoricalDocumentOperations_ActorUserId_CreatedAtUtc] ON [HistoricalDocumentOperations] ([ActorUserId], [CreatedAtUtc]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_HistoricalDocumentOperations_ActorUserId_Operation_IdempotencyKey] ON [HistoricalDocumentOperations] ([ActorUserId], [Operation], [IdempotencyKey]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_HistoricalDocumentOperations_DocumentId] ON [HistoricalDocumentOperations] ([DocumentId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_HistoricalDocumentOperations_SubjectPatientId] ON [HistoricalDocumentOperations] ([SubjectPatientId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_PatientHistoricalDocumentAttachments_VersionId] ON [PatientHistoricalDocumentAttachments] ([VersionId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_PatientHistoricalDocumentHistories_ActorUserId] ON [PatientHistoricalDocumentHistories] ([ActorUserId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_PatientHistoricalDocumentHistories_DocumentId_OccurredAtUtc_Id] ON [PatientHistoricalDocumentHistories] ([DocumentId], [OccurredAtUtc], [Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_PatientHistoricalDocuments_SubjectPatientId_State_UploadedAtUtc_Id] ON [PatientHistoricalDocuments] ([SubjectPatientId], [State], [UploadedAtUtc], [Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_PatientHistoricalDocuments_UploadedByApplicationUserId] ON [PatientHistoricalDocuments] ([UploadedByApplicationUserId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_PatientHistoricalDocuments_UploaderPatientId] ON [PatientHistoricalDocuments] ([UploaderPatientId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE INDEX [IX_PatientHistoricalDocumentVersions_CreatedByUserId] ON [PatientHistoricalDocumentVersions] ([CreatedByUserId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_PatientHistoricalDocumentVersions_DocumentId_VersionNumber] ON [PatientHistoricalDocumentVersions] ([DocumentId], [VersionNumber]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108003144_FamilyDocumentsAndDependentProfile'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261108003144_FamilyDocumentsAndDependentProfile', N'10.0.10');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108004756_HistoricalTimelineAndIntakeRevisions'
+)
+BEGIN
+    ALTER TABLE [PatientHistoricalDocumentVersions] ADD [TimelineAtUtc] datetime2 NOT NULL DEFAULT '0001-01-01T00:00:00.0000000';
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108004756_HistoricalTimelineAndIntakeRevisions'
+)
+BEGIN
+    UPDATE v SET [TimelineAtUtc] = CASE WHEN v.[DateUnknown] = 0 AND v.[DocumentDate] IS NOT NULL THEN CONVERT(datetime2, v.[DocumentDate]) ELSE d.[UploadedAtUtc] END FROM [PatientHistoricalDocumentVersions] v INNER JOIN [PatientHistoricalDocuments] d ON d.[Id] = v.[DocumentId];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108004756_HistoricalTimelineAndIntakeRevisions'
+)
+BEGIN
+    CREATE TABLE [ChildOnboardingRevisions] (
+        [Id] uniqueidentifier NOT NULL,
+        [RequestId] uniqueidentifier NOT NULL,
+        [Revision] int NOT NULL,
+        [NameAr] nvarchar(200) NOT NULL,
+        [NameEn] nvarchar(200) NULL,
+        [DateOfBirth] date NOT NULL,
+        [Gender] int NOT NULL,
+        [PhoneNumber] nvarchar(30) NULL,
+        [ContactNameAr] nvarchar(200) NOT NULL,
+        [ContactPhone] nvarchar(30) NOT NULL,
+        [CreatedAtUtc] datetime2 NOT NULL,
+        [ResubmitIdempotencyKey] nvarchar(100) NULL,
+        [ResubmitFingerprint] nvarchar(64) NULL,
+        [ResultRowVersion] nvarchar(40) NOT NULL,
+        CONSTRAINT [PK_ChildOnboardingRevisions] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_ChildOnboardingRevisions_ChildOnboardingRequests_RequestId] FOREIGN KEY ([RequestId]) REFERENCES [ChildOnboardingRequests] ([Id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108004756_HistoricalTimelineAndIntakeRevisions'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_ChildOnboardingRevisions_RequestId_ResubmitIdempotencyKey] ON [ChildOnboardingRevisions] ([RequestId], [ResubmitIdempotencyKey]) WHERE [ResubmitIdempotencyKey] IS NOT NULL');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108004756_HistoricalTimelineAndIntakeRevisions'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_ChildOnboardingRevisions_RequestId_Revision] ON [ChildOnboardingRevisions] ([RequestId], [Revision]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261108004756_HistoricalTimelineAndIntakeRevisions'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261108004756_HistoricalTimelineAndIntakeRevisions', N'10.0.10');
+END;
+
+COMMIT;
+GO
+

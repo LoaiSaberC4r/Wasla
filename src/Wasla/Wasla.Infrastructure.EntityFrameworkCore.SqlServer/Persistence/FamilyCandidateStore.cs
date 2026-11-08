@@ -54,10 +54,16 @@ internal sealed class FamilyCandidateStore(WaslaDbContext db, ITicketQueueLock l
         if (await db.Set<FamilyCandidateSelection>().AnyAsync(s => s.ActorApplicationUserId == actor && s.IdempotencyKey == key && s.Id != row.Id, ct))
             return Result<CandidateRedemption>.Fail(Error.Conflict("FamilyCandidate.ReferenceConsumed", Wasla.Domain.Resources.FamilySelfServiceText.Get("FamilyCandidate_ReferenceConsumed")));
         if (row.ConsumedAtUtc is not null)
-            return row.IdempotencyKey == key && row.SubmissionFingerprint == fingerprint && row.RelationshipRequestId is not null ?
-                Result<CandidateRedemption>.Ok(new(row.TargetPatientId, row.RelationshipRequestId)) :
+            return row.IdempotencyKey == key && row.SubmissionFingerprint == fingerprint && (row.RelationshipRequestId is not null || row.GovernanceCaseId is not null) ?
+                Result<CandidateRedemption>.Ok(new(row.TargetPatientId, row.RelationshipRequestId, row.GovernanceCaseId)) :
                 Result<CandidateRedemption>.Fail(Error.Conflict("FamilyCandidate.ReferenceConsumed", Wasla.Domain.Resources.FamilySelfServiceText.Get("FamilyCandidate_ReferenceConsumed")));
         return row.ExpiresAtUtc <= clock.UtcNow ? Result<CandidateRedemption>.Fail(Unavailable) : Result<CandidateRedemption>.Ok(new(row.TargetPatientId, null));
+    }
+    public async Task CompleteConflictAsync(Guid actor, string reference, string key, string fingerprint, Guid caseId, CancellationToken ct)
+    {
+        var hash = Hash(reference);
+        var row = await db.Set<FamilyCandidateSelection>().SingleAsync(s => s.TokenHash == hash && s.ActorApplicationUserId == actor, ct);
+        row.ConsumeConflict(key, fingerprint, caseId, clock.UtcNow);
     }
     public async Task CompleteAsync(Guid actor, string reference, string key, string fingerprint, Guid request, CancellationToken ct)
     {

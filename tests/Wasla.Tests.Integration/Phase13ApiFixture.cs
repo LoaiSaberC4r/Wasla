@@ -30,7 +30,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
     private const string Password = "Phase13TestPass123!";
     private readonly SqliteConnection? _sqlite;
     private readonly string? _sqlConnection;
-    private readonly Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor? _commands;
+    private readonly Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor? _commands;
     private readonly string _medicalMediaRoot = Path.Combine(Path.GetTempPath(), "WaslaClinicalTests_" + Guid.NewGuid().ToString("N"));
     internal string MedicalMediaRoot => _medicalMediaRoot;
     public Guid PracticeId { get; } = Guid.NewGuid();
@@ -48,7 +48,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
     public string TicketUrl(Guid id) => $"/api/v1/practices/{PracticeId}/tickets/{id}";
     public string EncounterUrl(Guid id) => $"/api/v1/doctors/me/practices/{PracticeId}/encounters/{id}";
 
-    private Phase13ApiFixture(string? sqlConnection, Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor? commands = null)
+    private Phase13ApiFixture(string? sqlConnection, Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor? commands = null)
     {
         _commands = commands;
         if (sqlConnection is null) _sqlite = new SqliteConnection("Data Source=:memory:");
@@ -60,7 +60,7 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
         }
     }
 
-    public static async Task<Phase13ApiFixture> CreateAsync(bool sqlServer = false, Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor? commands = null)
+    public static async Task<Phase13ApiFixture> CreateAsync(bool sqlServer = false, Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor? commands = null)
     {
         var connection = sqlServer ? Environment.GetEnvironmentVariable("WASLA_SQLSERVER_CONNECTION_STRING") : null;
         if (sqlServer) Assert.SkipWhen(string.IsNullOrWhiteSpace(connection), "WASLA_SQLSERVER_CONNECTION_STRING is required.");

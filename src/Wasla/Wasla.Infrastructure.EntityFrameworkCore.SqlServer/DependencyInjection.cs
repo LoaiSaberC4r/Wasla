@@ -1,3 +1,4 @@
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Media;
 using Wasla.Application.Features.PatientOnboarding;
 using Microsoft.AspNetCore.DataProtection;
 using Wasla.Application.Email;
@@ -118,6 +119,8 @@ public static class DependencyInjection
         services.AddScoped<ArchiveEngine>();
         services.AddScoped<IWalkInOptionsReader, WalkInOptionsReader>();
         services.AddScoped<IFinanceReadService, FinanceReadService>();
+        services.AddScoped<IDependentFinanceReadService, FinanceReadService>();
+        services.AddScoped<IDependentProfileManagement, DependentProfileManagement>();
         services.AddOptions<Phase18Options>().Bind(configuration.GetSection("Phase18"))
             .Validate(o => !string.IsNullOrWhiteSpace(o.DefaultReportTimeZoneId) &&
                 TimeZoneInfo.TryFindSystemTimeZoneById(o.DefaultReportTimeZoneId, out _) &&
@@ -161,6 +164,12 @@ public static class DependencyInjection
         services.AddScoped<IDependentAccessPolicy, DependentAccessPolicy>();
         services.AddScoped<IFamilyOperationalVerification, FamilyOperationalVerification>();
         services.AddScoped<IFamilyCandidateStore, FamilyCandidateStore>();
+        services.AddScoped<IFamilyGovernanceWorkflow, FamilyGovernanceWorkflow>();
+        services.AddScoped<IFamilyJoinInvitations, FamilyJoinInvitations>();
+        services.AddOptions<PrivateMediaReconciliationOptions>().Bind(configuration.GetSection("PrivateMediaReconciliation"))
+            .Validate(o => o.IsValid, "Private media reconciliation limits are invalid.").ValidateOnStart();
+        services.AddScoped<Wasla.Application.Media.IPrivateMediaReconciliation, PrivateMediaReconciliation>();
+        services.AddHostedService<PrivateMediaReconciliationWorker>();
         services.AddOptions<Media.ClamAvMalwareScannerOptions>().Bind(configuration.GetSection("MalwareScanner"))
             .Validate(o => o.IsValid, "Invalid local malware scanner configuration.").ValidateOnStart();
         if (configuration.GetValue<bool>("MalwareScanner:Enabled"))
@@ -168,6 +177,11 @@ public static class DependencyInjection
         services.AddScoped<IChildOnboardingWorkflow, ChildOnboardingWorkflow>();
         services.AddScoped<FamilyMedicalAccessPolicy>();
         services.AddScoped<IFamilyMedicalAccessPolicy>(p => p.GetRequiredService<FamilyMedicalAccessPolicy>());
+        services.AddScoped<IFamilyMedicalOperationPolicy>(p => p.GetRequiredService<FamilyMedicalAccessPolicy>());
+        services.AddOptions<HistoricalDocumentOptions>().Bind(configuration.GetSection("HistoricalDocuments")).Validate(o => o.IsValid(), "Invalid historical document limits.").ValidateOnStart();
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<HistoricalDocumentOptions>, Media.HistoricalDocumentOptionsValidator>();
+        services.AddScoped<HistoricalDocumentService>();
+        services.AddScoped<IHistoricalDocumentService>(p => p.GetRequiredService<HistoricalDocumentService>());
         services.AddScoped<IFamilyMedicalWorkflow, FamilyMedicalWorkflow>();
         services.AddScoped<IFamilyRelationshipMedicalVerification, FamilyRelationshipMedicalVerification>();
         services.AddScoped<IFamilyProofReconciler, FamilyProofReconciler>();

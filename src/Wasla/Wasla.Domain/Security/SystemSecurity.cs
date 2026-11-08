@@ -598,6 +598,10 @@ public static class PermissionNames
         .. DoctorPatientDefaults,
         .. Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All,
         .. FamilySelfServicePermissionNames.All,
+        .. FamilyExtensionPermissionNames.All,
+        .. MedicalDocumentPermissionNames.All,
+        .. DependentDiagnosticPermissionNames.All,
+        .. FamilyGovernancePermissionNames.All,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

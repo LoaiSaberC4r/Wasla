@@ -10,6 +10,8 @@ using Wasla.Domain.Diagnostics;
 using Wasla.Domain.Medications;
 using Wasla.Domain.Resources;
 using Wasla.Domain.Tickets;
+using Wasla.Domain.Patients;
+using Wasla.Domain.Security;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
@@ -23,6 +25,9 @@ internal sealed record TimelineCandidate
     public Guid EncounterId { get; init; }
     public string Status { get; init; } = string.Empty;
     public bool HasAttachments { get; init; }
+    public HistoricalDocumentCategory? HistoricalCategory { get; init; }
+    public DateOnly? DocumentDate { get; init; }
+    public bool DateUnknown { get; init; }
 }
 internal sealed record HiddenCandidate
 {
@@ -36,7 +41,8 @@ internal sealed record HiddenCandidate
 internal sealed record MediaReference(Guid EncounterId, string Key, string FileName, string ContentType, long SizeBytes);
 
 internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedicalRecordTokens tokens, IMedicalRecordAccessPolicy policy,
-    IDateTimeProvider clock, MedicalRecordAuditWriter audit, IMedicationReadService medications, IPrivateMediaReader media)
+    IDateTimeProvider clock, MedicalRecordAuditWriter audit, IMedicationReadService medications, IPrivateMediaReader media,
+    HistoricalDocumentService historical)
     : IMedicalRecordReadService, IMedicalRecordMediaReader
 {
     private IQueryable<MedicalEncounter> Completed(MedicalRecordScope s) => db.MedicalEncounters.AsNoTracking()
@@ -89,6 +95,18 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
         if (q.Read == MedicalRecordRead.Encounter && !await Authorized(s).AnyAsync(e => e.Id == q.EncounterId, ct)) return null;
         if (value is MedicalRecordItemDetailsResponse item && !await Authorized(s).AnyAsync(e => e.Id == item.EncounterId, ct)) return null;
         await audit.WriteAsync(s, q.Read.ToString(), q.ResourceType ?? "medical-record", q.SourceId, q.EncounterId, ct);
+        var historicalEntries = value switch
+        {
+            MedicalRecordOverviewResponse o => o.Timeline.Items.OfType<HistoricalDocumentTimelineEntry>().ToArray(),
+            RecordPage<TimelineEntry> page => page.Items.OfType<HistoricalDocumentTimelineEntry>().ToArray(),
+            _ => []
+        };
+        if (historicalEntries.Length > 0)
+        {
+            if (!await HistoricalAllowedAsync(s, ct)) return null;
+            var ids = historicalEntries.Select(h => h.DocumentId).ToArray();
+            if (await db.Set<PatientHistoricalDocument>().CountAsync(d => ids.Contains(d.Id) && d.SubjectPatientId == s.PatientId && d.State == HistoricalDocumentState.AvailableUnverified, ct) != ids.Length) return null;
+        }
         return await RecheckAsync(s, q.Read == MedicalRecordRead.AccessLog, ct) ? value : null;
     }
     private async Task<MedicalRecordOverviewResponse?> OverviewAsync(MedicalRecordScope s, MedicalRecordFilter f, CancellationToken ct)
@@ -116,35 +134,41 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
         var rr = await db.RadiologyResults.Where(p => p.PatientId == s.PatientId).SumAsync(p => (long?)p.Revision + 1, ct) ?? 0;
         var grants = s.TicketId.HasValue ? await db.Set<HiddenEncounterAccessRequest>().Where(r => r.RequestingTicketId == s.TicketId)
             .SumAsync(r => (long?)r.Status + 1, ct) ?? 0 : 0;
-        return $"{e}:{p}:{l}:{lr}:{r}:{rr}:{grants}:{s.AccessVersion}";
+        var historicalAllowed = await HistoricalAllowedAsync(s, ct);
+        var h = historicalAllowed ? await db.Set<PatientHistoricalDocument>().Where(d => d.SubjectPatientId == s.PatientId)
+            .SumAsync(d => (long?)d.CurrentVersionNumber + (int)d.State, ct) ?? 0 : 0;
+        return $"{e}:{p}:{l}:{lr}:{r}:{rr}:{grants}:{s.AccessVersion}:{historicalAllowed}:{h}";
     }
+    private async Task<bool> HistoricalAllowedAsync(MedicalRecordScope scope, CancellationToken ct)
+        => scope.Mode != MedicalRecordMode.TreatingDoctor && await historical.ScopeAsync(scope.Mode == MedicalRecordMode.Dependent ? scope.PatientId : null,
+            MedicalDocumentPermissionNames.ViewOwn, MedicalDocumentPermissionNames.ViewDependent, false, ct) is { } s && s.ActorId == scope.ActorId && s.PatientId == scope.PatientId;
     private IQueryable<TimelineCandidate> Candidates(IQueryable<MedicalEncounter> sources)
     {
-        var visits = sources.Select(e => new TimelineCandidate { Time = e.CompletedAtUtc!.Value, Kind = 1, Key = e.Id.ToString().ToLower(), SourceId = e.Id, EncounterId = e.Id, Status = "Current", HasAttachments = false });
+        var visits = sources.Select(e => new TimelineCandidate { Time = e.CompletedAtUtc!.Value, Kind = 1, Key = e.Id.ToString().ToLower(), SourceId = e.Id, EncounterId = e.Id, Status = "Current", HasAttachments = false, HistoricalCategory = null, DocumentDate = null, DateUnknown = false });
         var diagnoses = from e in sources join d in db.Diagnoses on e.Id equals d.MedicalEncounterId where !d.IsVoided
-            select new TimelineCandidate { Time = d.ModifiedOnUtc ?? e.CompletedAtUtc!.Value, Kind = 2, Key = d.Id.ToString().ToLower(), SourceId = d.Id, EncounterId = e.Id, Status = "Current", HasAttachments = false };
+            select new TimelineCandidate { Time = d.ModifiedOnUtc ?? e.CompletedAtUtc!.Value, Kind = 2, Key = d.Id.ToString().ToLower(), SourceId = d.Id, EncounterId = e.Id, Status = "Current", HasAttachments = false, HistoricalCategory = null, DocumentDate = null, DateUnknown = false };
         var prescriptions = from e in sources join p in db.Prescriptions on e.Id equals p.MedicalEncounterId
             join v in db.PrescriptionVersions on p.Id equals v.PrescriptionId
             where p.PatientId == e.PatientId && p.DoctorId == e.DoctorId && v.Status == PrescriptionVersionStatus.Finalized
-            select new TimelineCandidate { Time = v.FinalizedAtUtc!.Value, Kind = 3, Key = p.Id.ToString().ToLower(), SourceId = p.Id, EncounterId = e.Id, Status = v.VersionNumber > 1 ? "Corrected" : "Current", HasAttachments = false };
+            select new TimelineCandidate { Time = v.FinalizedAtUtc!.Value, Kind = 3, Key = p.Id.ToString().ToLower(), SourceId = p.Id, EncounterId = e.Id, Status = v.VersionNumber > 1 ? "Corrected" : "Current", HasAttachments = false, HistoricalCategory = null, DocumentDate = null, DateUnknown = false };
         var labs = from e in sources join r in db.LabRequests on e.Id equals r.MedicalEncounterId
             where r.PatientId == e.PatientId && r.DoctorId == e.DoctorId && r.DoctorPracticeId == e.DoctorPracticeId && r.Status != DiagnosticRequestStatus.Draft && r.RequestedAtUtc != null
-            select new TimelineCandidate { Time = r.RequestedAtUtc!.Value, Kind = 4, Key = r.Id.ToString().ToLower(), SourceId = r.Id, EncounterId = e.Id, Status = "Issued", HasAttachments = false };
+            select new TimelineCandidate { Time = r.RequestedAtUtc!.Value, Kind = 4, Key = r.Id.ToString().ToLower(), SourceId = r.Id, EncounterId = e.Id, Status = "Issued", HasAttachments = false, HistoricalCategory = null, DocumentDate = null, DateUnknown = false };
         var labResults = from e in sources join r in db.LabRequests on e.Id equals r.MedicalEncounterId
             join x in db.LabResults on r.Id equals x.RequestId join v in db.LabResultVersions on x.Id equals v.ResultId
             where r.PatientId == e.PatientId && r.DoctorId == e.DoctorId && r.DoctorPracticeId == e.DoctorPracticeId && r.Status != DiagnosticRequestStatus.Draft &&
                 x.PatientId == e.PatientId && x.DoctorId == e.DoctorId && x.DoctorPracticeId == e.DoctorPracticeId &&
                 v.VersionNumber == x.CurrentVersionNumber && v.Status == DiagnosticVersionStatus.Finalized && v.ReviewedByDoctorId == e.DoctorId
-            select new TimelineCandidate { Time = v.ReviewedAtUtc, Kind = 5, Key = x.Id.ToString().ToLower(), SourceId = x.Id, EncounterId = e.Id, Status = v.VersionNumber > 1 ? "Corrected" : "Official", HasAttachments = true };
+            select new TimelineCandidate { Time = v.ReviewedAtUtc, Kind = 5, Key = x.Id.ToString().ToLower(), SourceId = x.Id, EncounterId = e.Id, Status = v.VersionNumber > 1 ? "Corrected" : "Official", HasAttachments = true, HistoricalCategory = null, DocumentDate = null, DateUnknown = false };
         var radiology = from e in sources join r in db.RadiologyRequests on e.Id equals r.MedicalEncounterId
             where r.PatientId == e.PatientId && r.DoctorId == e.DoctorId && r.DoctorPracticeId == e.DoctorPracticeId && r.Status != DiagnosticRequestStatus.Draft && r.RequestedAtUtc != null
-            select new TimelineCandidate { Time = r.RequestedAtUtc!.Value, Kind = 6, Key = r.Id.ToString().ToLower(), SourceId = r.Id, EncounterId = e.Id, Status = "Issued", HasAttachments = false };
+            select new TimelineCandidate { Time = r.RequestedAtUtc!.Value, Kind = 6, Key = r.Id.ToString().ToLower(), SourceId = r.Id, EncounterId = e.Id, Status = "Issued", HasAttachments = false, HistoricalCategory = null, DocumentDate = null, DateUnknown = false };
         var radioResults = from e in sources join r in db.RadiologyRequests on e.Id equals r.MedicalEncounterId
             join x in db.RadiologyResults on r.Id equals x.RequestId join v in db.RadiologyResultVersions on x.Id equals v.ResultId
             where r.PatientId == e.PatientId && r.DoctorId == e.DoctorId && r.DoctorPracticeId == e.DoctorPracticeId && r.Status != DiagnosticRequestStatus.Draft &&
                 x.PatientId == e.PatientId && x.DoctorId == e.DoctorId && x.DoctorPracticeId == e.DoctorPracticeId &&
                 v.VersionNumber == x.CurrentVersionNumber && v.Status == DiagnosticVersionStatus.Finalized && v.ReviewedByDoctorId == e.DoctorId
-            select new TimelineCandidate { Time = v.ReviewedAtUtc, Kind = 7, Key = x.Id.ToString().ToLower(), SourceId = x.Id, EncounterId = e.Id, Status = v.VersionNumber > 1 ? "Corrected" : "Official", HasAttachments = true };
+            select new TimelineCandidate { Time = v.ReviewedAtUtc, Kind = 7, Key = x.Id.ToString().ToLower(), SourceId = x.Id, EncounterId = e.Id, Status = v.VersionNumber > 1 ? "Corrected" : "Official", HasAttachments = true, HistoricalCategory = null, DocumentDate = null, DateUnknown = false };
         return visits.Concat(diagnoses).Concat(prescriptions).Concat(labs).Concat(labResults).Concat(radiology).Concat(radioResults);
     }
     private async Task<RecordPage<TimelineEntry>> TimelineAsync(MedicalRecordScope s, MedicalRecordFilter f, CancellationToken ct)
@@ -156,11 +180,21 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
             throw new ArgumentException("Invalid or stale cursor.", nameof(f));
         var snapshot = key?.Snapshot ?? clock.UtcNow;
         var sources = Authorized(s); if (f.EncounterId.HasValue) sources = sources.Where(e => e.Id == f.EncounterId);
-        var query = Candidates(sources).Where(e => e.Time <= snapshot);
+        var query = Candidates(sources);
+        if (!f.EncounterId.HasValue && await HistoricalAllowedAsync(s, ct))
+        {
+            var documents = from d in db.Set<PatientHistoricalDocument>().AsNoTracking() join v in db.Set<PatientHistoricalDocumentVersion>() on d.Id equals v.DocumentId
+                where d.SubjectPatientId == s.PatientId && d.State == HistoricalDocumentState.AvailableUnverified && v.VersionNumber == d.CurrentVersionNumber && d.UploadedAtUtc <= snapshot
+                select new TimelineCandidate { Time = v.TimelineAtUtc,
+                    Kind = 8, Key = d.Id.ToString().ToLower(), SourceId = d.Id, EncounterId = Guid.Empty, Status = "Unverified", HasAttachments = true,
+                    HistoricalCategory = v.Category, DocumentDate = v.DocumentDate, DateUnknown = v.DateUnknown };
+            query = query.Concat(documents);
+        }
+        query = query.Where(e => e.Time <= snapshot);
         var types = (f.Types ?? "all").Split(',').Select(x => x.Trim()).ToArray();
         if (!types.Contains("all", StringComparer.Ordinal)) query = query.Where(e => types.Contains("visits") && e.Kind == 1 ||
             types.Contains("diagnoses") && e.Kind == 2 || types.Contains("prescriptions") && e.Kind == 3 ||
-            types.Contains("labs") && (e.Kind == 4 || e.Kind == 5) || types.Contains("radiology") && (e.Kind == 6 || e.Kind == 7));
+            types.Contains("labs") && (e.Kind == 4 || e.Kind == 5) || types.Contains("radiology") && (e.Kind == 6 || e.Kind == 7) || types.Contains("historical-documents") && e.Kind == 8);
         if (f.FromDate.HasValue) { var from = f.FromDate.Value.ToDateTime(TimeOnly.MinValue); query = query.Where(e => e.Time >= from); }
         if (f.ToDate.HasValue) { var through = f.ToDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue); query = query.Where(e => e.Time < through); }
         if (key is not null) query = query.Where(e => e.Time < key.Time || e.Time == key.Time && (e.Kind > key.Kind || e.Kind == key.Kind && string.Compare(e.Key, key.Key) > 0));
@@ -189,8 +223,9 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
         if (await VersionAsync(s, ct) != version) throw new ArgumentException("Record changed while paging.", nameof(f));
         return new(page.Select(e => e.Entry).ToArray(), more ? tokens.Protect("Timeline", new RecordCursor(scope, version, snapshot, page[^1].Item1, page[^1].Item2, page[^1].Key)) : null, more);
     }
-    private static ClinicalTimelineEntry Map(TimelineCandidate e)
+    private static TimelineEntry Map(TimelineCandidate e)
     {
+        if (e.Kind == 8) return new HistoricalDocumentTimelineEntry($"8:{e.Key}", e.SourceId, DateTime.SpecifyKind(e.Time, DateTimeKind.Utc), e.HistoricalCategory!.Value, e.DocumentDate, e.DateUnknown);
         var (type, resource, title) = e.Kind switch
         {
             1 => ("EncounterCompleted", "encounter", "MedicalRecord.VisitTitle"), 2 => ("DiagnosisCurrent", "diagnosis", "MedicalRecord.DiagnosisTitle"),
@@ -198,7 +233,7 @@ internal sealed partial class MedicalRecordReadService(WaslaDbContext db, IMedic
             5 => ("LabResultPublished", "lab-result", "MedicalRecord.LabResultTitle"), 6 => ("RadiologyRequestIssued", "radiology-request", "MedicalRecord.RadiologyOrderTitle"),
             _ => ("RadiologyResultPublished", "radiology-result", "MedicalRecord.RadiologyResultTitle")
         };
-        return new(type, $"{e.Kind}:{e.Key}", DateTime.SpecifyKind(e.Time, DateTimeKind.Utc), e.SourceId, e.EncounterId, resource, e.Status, ErrorMessage.GetString(title), new(true, e.HasAttachments));
+        return new ClinicalTimelineEntry(type, $"{e.Kind}:{e.Key}", DateTime.SpecifyKind(e.Time, DateTimeKind.Utc), e.SourceId, e.EncounterId, resource, e.Status, ErrorMessage.GetString(title), new(true, e.HasAttachments));
     }
     private HiddenTimelineEntry MapHidden(HiddenCandidate e, MedicalRecordScope s)
     {

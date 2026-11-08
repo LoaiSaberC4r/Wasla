@@ -30,7 +30,8 @@ internal sealed class GetDependentProfileHandler(IDependentAccessPolicy access, 
     }
 }
 public sealed record DependentTicketResponse(Guid TicketId, int TicketNumber, TicketStatus Status, DateOnly BusinessDate,
-    string PracticeNameAr, string? PracticeNameEn, string DoctorNameAr, string? DoctorNameEn, int PatientsAheadNow, DateTime LastUpdatedOnUtc);
+    string PracticeNameAr, string? PracticeNameEn, string DoctorNameAr, string? DoctorNameEn, int PatientsAheadNow, DateTime LastUpdatedOnUtc,
+    bool IsArchived = false, DateTime? ArchivedAtUtc = null, bool PatientsAheadNowIsCurrent = true);
 public sealed record GetDependentActiveTicketsQuery(Guid ChildPatientId) : IQuery<IReadOnlyList<MyActiveTicketResponse>>;
 public sealed record GetDependentTicketQuery(Guid ChildPatientId, Guid TicketId) : IQuery<DependentTicketResponse>;
 internal sealed class GetDependentActiveTicketsHandler(IDependentAccessPolicy access, ITicketQueueReader queue)
@@ -45,7 +46,9 @@ internal sealed class GetDependentActiveTicketsHandler(IDependentAccessPolicy ac
             Result<IReadOnlyList<MyActiveTicketResponse>>.Fail(DependentAccessErrors.Unavailable) : Result<IReadOnlyList<MyActiveTicketResponse>>.Ok(tickets);
     }
 }
-internal sealed class GetDependentTicketHandler(IDependentAccessPolicy access, ITicketQueueReader queue)
+internal sealed class GetDependentTicketHandler(IDependentAccessPolicy access, ITicketQueueReader queue,
+    Wasla.Application.Features.Archives.IArchiveLocationResolver archives,
+    Wasla.Application.Features.Reporting.IReportingAccessGuard archiveGuard, BuildingBlock.Application.Abstraction.Security.ICurrentUser current)
     : IQueryHandler<GetDependentTicketQuery, DependentTicketResponse>
 {
     public async Task<Result<DependentTicketResponse>> Handle(GetDependentTicketQuery request, CancellationToken ct)
@@ -53,10 +56,23 @@ internal sealed class GetDependentTicketHandler(IDependentAccessPolicy access, I
         var scope = await access.AuthorizeAsync(request.ChildPatientId, FamilySelfServicePermissionNames.Tickets, ct);
         if (scope.IsFailure) return Result<DependentTicketResponse>.Fail(scope.Errors);
         var ticket = await queue.GetDetailsAsync(request.TicketId, ct);
-        if (ticket is null || ticket.PatientId != request.ChildPatientId || ticket.IsArchived ||
+        var location = await archives.TicketAsync(request.TicketId, ct);
+        var archived = ticket?.IsArchived == true || location?.IsArchived == true;
+        if (archived)
+        {
+            if (ticket?.Status is not (TicketStatus.Completed or TicketStatus.Cancelled or TicketStatus.NoShow) || !current.Permissions.Contains(Phase18PartTwoPermissionNames.TicketsOwn) || location?.PatientId != request.ChildPatientId)
+                return Result<DependentTicketResponse>.Fail(DependentAccessErrors.Unavailable);
+            var historical = await archiveGuard.AuthorizeAsync(Wasla.Application.Features.Reporting.ReportActor.Patient, Phase18PartTwoPermissionNames.TicketsOwn, null, null, ct);
+            if (historical.IsFailure || historical.Value.PatientId != scope.Value.AdultPatientId)
+                return Result<DependentTicketResponse>.Fail(DependentAccessErrors.Unavailable);
+        }
+        if (ticket is null || ticket.PatientId != request.ChildPatientId ||
             (await access.AuthorizeAsync(request.ChildPatientId, FamilySelfServicePermissionNames.Tickets, ct)).IsFailure)
             return Result<DependentTicketResponse>.Fail(DependentAccessErrors.Unavailable);
+        if (archived && (await archiveGuard.AuthorizeAsync(Wasla.Application.Features.Reporting.ReportActor.Patient, Phase18PartTwoPermissionNames.TicketsOwn, null, null, ct)).IsFailure)
+            return Result<DependentTicketResponse>.Fail(DependentAccessErrors.Unavailable);
         return Result<DependentTicketResponse>.Ok(new(ticket.TicketId, ticket.TicketNumber, ticket.Status, ticket.BusinessDate,
-            ticket.PracticeNameAr, ticket.PracticeNameEn, ticket.DoctorNameAr, ticket.DoctorNameEn, ticket.PatientsAheadNow, ticket.LastUpdatedOnUtc));
+            ticket.PracticeNameAr, ticket.PracticeNameEn, ticket.DoctorNameAr, ticket.DoctorNameEn, archived ? 0 : ticket.PatientsAheadNow, ticket.LastUpdatedOnUtc,
+            archived, location?.ArchivedAtUtc ?? ticket.ArchivedAtUtc, !archived));
     }
 }

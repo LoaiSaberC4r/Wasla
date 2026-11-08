@@ -498,7 +498,8 @@ public static class CommercialPermissionCatalog
         [
             FamilySelfServicePermissionNames.Workspace, FamilySelfServicePermissionNames.Search, FamilySelfServicePermissionNames.Submit,
             FamilySelfServicePermissionNames.Profile, FamilySelfServicePermissionNames.Tickets, FamilySelfServicePermissionNames.Onboard,
-            FamilySelfServicePermissionNames.OnboardingOwn, FamilySelfServicePermissionNames.OnboardingResubmit
+            FamilySelfServicePermissionNames.OnboardingOwn, FamilySelfServicePermissionNames.OnboardingResubmit,
+            .. FamilyExtensionPermissionNames.All, .. MedicalDocumentPermissionNames.All, .. DependentDiagnosticPermissionNames.All, .. FamilyGovernancePermissionNames.All
         ]);
         Add(result, new(SubscriptionPermissionCategory.SuperAdminGovernance),
         [

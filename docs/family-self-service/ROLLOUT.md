@@ -37,6 +37,21 @@ Safe deployment settings (standard ASP.NET Core appsettings/environment override
     "Approved": false,
     "MasterSourceOfTruthAdopted": false
   },
+  "HistoricalDocuments": {
+    "Enabled": false,
+    "RequireRealScanner": true,
+    "MaxFiles": 5,
+    "MaxFileBytes": 10485760,
+    "MaxDocumentsPerSubject": 500,
+    "MaxBytesPerSubject": 1073741824,
+    "MaxWritesPerDay": 20
+  },
+  "PrivateMediaReconciliation": {
+    "Enabled": false,
+    "IntervalHours": 24,
+    "StaleStagingHours": 24,
+    "MaxFilesPerModule": 10000
+  },
   "MediaStorage": { "RequireMalwareScanner": true },
   "MalwareScanner": {
     "Enabled": false,
@@ -72,10 +87,7 @@ same key names; then remove tracked values in a coordinated rollout. This branch
 does not assert external rotation or history remediation. Do not deploy relying
 on a silent secret substitution. Do not print values in tickets or evidence.
 
-Enable only implemented operational features after E2E and SQL checks. Keep
-medical flags off. Contact/photo writes, identity correction review, historical
-documents/timeline, dependent proxy diagnostics and independent finance require
-their remaining slices; no setting in this document implements them.
+The branch now includes contact/photo writes, historical documents and Timeline, dependent proxy diagnostics and finance. Governance review, invitations and reconciliation are in a separate validation checkpoint. Read the extension/governance checkpoint and TEST-EVIDENCE.json for the exact tested revision; a running, skipped or failed check is not a release gate pass. Enable only validated features after the remaining SQL, staging and operator checks. Keep child medical flags off without signed policy. HistoricalDocuments.Enabled controls the own/dependent historical module independently; child writes additionally require the signed medical policy and their own write permission.
 
 Rollback: disable DependentManagement, retain additive schema, evidence, requests
 and histories. Do not drop history/proof tables or run a destructive Down. Do not
@@ -84,8 +96,10 @@ alone. Maintain containment until the older application has equivalent scope
 checks. Proof revocation denies future use without cancelling historical bookings
 or deleting Patients/clinical/financial records.
 
-Media reconciliation: uncertain transaction outcomes retain staged files. An
-operator must first establish transaction outcome and verify all onboarding and
-family evidence references before treating a blob as orphaned. Never delete a
-retained evidence blob on an ambiguous SQL commit. Automated reconciliation and
-operational orphan metrics are not represented as complete by this slice.
+Media reconciliation is disabled by default. The count-only worker checks HistoricalDocuments, FamilyGovernance and ChildOnboarding private folders against immutable database references. It skips filesystem links, bounds work, reports an incomplete scan explicitly, and emits no file keys, paths, PatientIds or names. Stale staging age is a discrepancy-detection threshold, not an approved retention duration. It never deletes or changes files or medical metadata.
+
+Enable the worker only after verifying the configured private storage root and database permissions in staging. Observe wasla.private_media.reconciliation.runs/failures, stale_unreferenced_candidates and missing_references on the Wasla.PrivateMedia meter. Alert on failures, missing files and incomplete scans; incomplete scans require an operator to increase the bound or investigate the storage inventory. Logs contain aggregate counts only.
+
+For a stale candidate, an authorized operator must establish the transaction outcome and search all retained/versioned evidence references using a private maintenance session before any repair. Keep unknown outcomes quarantined privately; never delete a retained blob, a legal-hold item or an uncertain-commit file. For a missing reference, restore the exact bytes from protected backup and verify recorded size/hash where available; do not fabricate replacement document content or change ownership. Rerun inspection and record the authorized repair outside generic logs. No purge schedule or general medical access is approved here.
+
+Invitation replays rely on ASP.NET Core Data Protection. Persist and protect a shared key ring across application nodes, restrict storage ACLs and retain keys for live invitations. Loss of the key ring fails replay closed. Private references expire after 30 minutes and may be revoked by their issuer; no invitation email is sent automatically.

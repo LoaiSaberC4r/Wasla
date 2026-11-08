@@ -189,16 +189,35 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
     {
         var actor = await ActorAsync(FamilySelfServicePermissionNames.OnboardingResubmit, false, ct);
         if (actor is null) return Result<ChildOnboardingResponse>.Fail(DependentAccessErrors.Unavailable);
-        var fingerprint = await EvidenceFingerprintAsync(request.RequestId.ToString(), request.Evidence, ct);
+        var fingerprint = await EvidenceFingerprintAsync(JsonSerializer.Serialize(new { request.RequestId, request.Intake }), request.Evidence, ct);
         if (!Key(request.IdempotencyKey) || fingerprint is null) return Result<ChildOnboardingResponse>.Fail(Invalid);
         await identity.LockAsync(ct);
         var row = await db.Set<ChildOnboardingRequest>().SingleOrDefaultAsync(r => r.Id == request.RequestId && r.ActorApplicationUserId == actor.User.Id, ct);
         if (row is null) return Result<ChildOnboardingResponse>.Fail(DependentAccessErrors.Unavailable);
+        var savedRevision = await db.Set<ChildOnboardingRevision>().AsNoTracking().SingleOrDefaultAsync(v => v.RequestId == row.Id && v.ResubmitIdempotencyKey == request.IdempotencyKey, ct);
+        if (savedRevision is not null) return savedRevision.ResubmitFingerprint == fingerprint ? Result<ChildOnboardingResponse>.Ok(
+            new(row.Id, ChildOnboardingStatus.PendingReview, savedRevision.Revision, row.CreatedAtUtc, savedRevision.ResultRowVersion, null, false)) : Result<ChildOnboardingResponse>.Fail(Conflict);
         if (row.ResubmitIdempotencyKey == request.IdempotencyKey) return row.ResubmitFingerprint == fingerprint ? Result<ChildOnboardingResponse>.Ok(Map(row)) : Result<ChildOnboardingResponse>.Fail(Conflict);
         if (row.Status != ChildOnboardingStatus.ModificationRequested || !Version(row, request.RowVersion)) return Result<ChildOnboardingResponse>.Fail(Conflict);
+        if (!await db.Set<ChildOnboardingRevision>().AnyAsync(v => v.RequestId == row.Id && v.Revision == row.Revision, ct)) db.Add(new ChildOnboardingRevision(row, clock.UtcNow));
+        if (request.Intake is { } revised)
+        {
+            var today = options.Value.Today(clock.UtcNow);
+            if (string.IsNullOrWhiteSpace(revised.NameAr) || revised.NameAr.Length > 200 || revised.NameEn?.Length > 200 || revised.DateOfBirth == default ||
+                revised.DateOfBirth > today || revised.DateOfBirth <= today.AddYears(-18) || revised.Gender is not (Gender.Male or Gender.Female) ||
+                revised.RelationToChild != row.ParentRole || revised.PhoneNumber?.Length > 30 || string.IsNullOrWhiteSpace(revised.PrimaryContactNameAr) ||
+                revised.PrimaryContactNameAr.Length > 200 || string.IsNullOrWhiteSpace(revised.PrimaryContactPhone) || revised.PrimaryContactPhone.Length > 30)
+                return Result<ChildOnboardingResponse>.Fail(Invalid);
+            var intent = Hash($"{FamilyIdentitySearch.Normalize(revised.NameAr)}:{revised.DateOfBirth:yyyy-MM-dd}:{revised.Gender}");
+            if (await db.Set<ChildOnboardingRequest>().AnyAsync(r => r.Id != row.Id && r.ParentPatientId == row.ParentPatientId && r.IntentHash == intent &&
+                (r.Status == ChildOnboardingStatus.PendingReview || r.Status == ChildOnboardingStatus.ModificationRequested), ct)) return Result<ChildOnboardingResponse>.Fail(Conflict);
+            row.CorrectPendingIntake(revised.NameAr, revised.NameEn, revised.DateOfBirth, revised.Gender, revised.PhoneNumber, revised.PrimaryContactNameAr, revised.PrimaryContactPhone, intent);
+        }
         row.Resubmit(request.IdempotencyKey, fingerprint); await SaveEvidenceAsync(row, request.Evidence, ct);
         db.Add(new ChildOnboardingHistory(row.Id, row.Revision, actor.User.Id, "Resubmitted", clock.UtcNow));
-        await db.SaveChangesAsync(ct); return Result<ChildOnboardingResponse>.Ok(Map(row));
+        await db.SaveChangesAsync(ct);
+        db.Add(new ChildOnboardingRevision(row, clock.UtcNow)); await db.SaveChangesAsync(ct);
+        return Result<ChildOnboardingResponse>.Ok(Map(row));
     }
     public async Task<Result<IReadOnlyList<ChildOnboardingReview>>> ReadAsync(GetChildOnboardingRequestsQuery request, CancellationToken ct)
     {

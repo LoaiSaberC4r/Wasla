@@ -1,5 +1,8 @@
 # Implementation review checkpoint — epic incomplete
 
+> This file records the first foundation checkpoint. See [EXTENSION-CHECKPOINT.md](EXTENSION-CHECKPOINT.md) for the current historical/diagnostic/profile/finance/intake additions and their exact validation status. The full epic remains in progress. Draft PR: https://github.com/LoaiSaberC4r/Wasla/pull/38.
+
+
 This checkpoint is a reviewable operational/discovery/intake foundation. It is
 **not completion of the consolidated epic and not Production approval**. Remaining
 code and external gates are distinguished below. Final test results are recorded

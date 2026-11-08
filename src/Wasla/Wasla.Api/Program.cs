@@ -64,8 +64,9 @@ builder.Services.PostConfigure<LogRedactionOptions>(options => options.Sensitive
     "Otp", "EmailVerificationToken", "VerificationToken", "InvitationToken", "X-Onboarding-Token", "IdentityFront", "IdentityBack", "BirthCertificate", "GuardianRelationshipDocument", "ClaimantNormalizedEmail", "ApplicantNameAr", "VerificationNote", "OperatorPassword"]);
 builder.Services.AddWaslaCors(builder.Configuration);
 builder.Services.PostConfigure<LogRedactionOptions>(options => options.SensitivePropertyNames = [.. options.SensitivePropertyNames,
-    "CandidateReference", "Criteria", "CriteriaHash", "Intake", "PossibleMatches", "PrimaryContactNameAr", "PrimaryContactPhone", "ContactPhone",
-    "SubmissionFingerprint", "Fingerprint", "IntentHash", "TokenHash", "Evidence", "NameAr", "NameEn", "DateOfBirth", "FileName", "OriginalFileName", "MessageOrReason", "ModificationMessage"]);
+    "CandidateReference", "InvitationReference", "ProtectedReference", "RedemptionKey", "RevocationKey", "Criteria", "CriteriaHash", "Intake", "PossibleMatches", "PrimaryContactNameAr", "PrimaryContactPhone", "ContactPhone",
+    "SubmissionFingerprint", "Fingerprint", "IntentHash", "TokenHash", "Evidence", "NameAr", "NameEn", "DateOfBirth", "FileName", "OriginalFileName", "MessageOrReason", "ModificationMessage",
+    "Metadata", "Title", "ProviderName", "Photo", "Files", "Contact", "Revised", "ProposedIdentity"]);
 builder.Services.PostConfigure<LogRedactionOptions>(options => options.SensitivePropertyNames = [.. options.SensitivePropertyNames,
     "AmountReceived", "PriceAmount", "DifferenceAmount", "TargetPriceSnapshot", "TermsSnapshotJson", "TargetTermsSnapshotJson", "IdempotencyKey", "Reference"]);
 builder.Services.AddWaslaApplication();

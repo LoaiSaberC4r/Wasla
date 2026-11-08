@@ -521,4 +521,19 @@
 <data name="ChildOnboarding_PossibleDuplicateReview" xml:space="preserve"><value>تحتاج هوية محتملة موجودة إلى مراجعة مستقلة.</value></data>
 <data name="FamilyRelationship_RequestRejected" xml:space="preserve"><value>لم تتم الموافقة على طلب العلاقة. تواصل مع فريق المراجعة المختص لمعرفة الخطوة التالية.</value></data>
 <data name="FamilyRelationship_ReviewSubmittedEvidence" xml:space="preserve"><value>يرجى مراجعة المستندات التي قدمتها وإعادة إرسالها.</value></data>
+<data name="HistoricalDocument_NotFound" xml:space="preserve"><value>المستند غير متاح.</value></data>
+<data name="HistoricalDocument_Invalid" xml:space="preserve"><value>راجع بيانات المستند والمرفقات المسموح بها.</value></data>
+<data name="HistoricalDocument_VersionConflict" xml:space="preserve"><value>حدّث المستند قبل إعادة المحاولة.</value></data>
+<data name="HistoricalDocument_ScannerUnavailable" xml:space="preserve"><value>فحص المستندات غير متاح. حاول لاحقاً.</value></data>
+<data name="HistoricalDocument_QuotaExceeded" xml:space="preserve"><value>تم بلوغ الحد المسموح للتخزين أو الإرسال.</value></data>
+<data name="DependentDiagnostic.Invalid" xml:space="preserve"><value>راجع الطلب والمرفقات وبيانات المراجعة.</value></data>
+<data name="FamilyGovernance_Invalid" xml:space="preserve"><value>راجع بيانات التصحيح والمستندات المقدمة.</value></data>
+<data name="FamilyGovernance_Conflict" xml:space="preserve"><value>حدّث حالة الطلب أو تواصل مع فريق المراجعة المختص.</value></data>
+<data name="FamilyInvitation_Unavailable" xml:space="preserve"><value>دعوة الانضمام غير متاحة. اطلب دعوة جديدة من الوالد المخوّل.</value></data>
+<data name="DependentAccess_PermissionRequired" xml:space="preserve"><value>الصلاحية المطلوبة غير متاحة.</value></data>
+<data name="DependentAccess_AdultChild" xml:space="preserve"><value>تنتهي إدارة العمليات التابعة عند بلوغ ١٨ سنة.</value></data>
+<data name="DependentAccess_FamilyInactive" xml:space="preserve"><value>الأسرة غير نشطة.</value></data>
+<data name="DependentAccess_AlreadyVerified" xml:space="preserve"><value>تم التحقق من العلاقة الدقيقة بين الوالد والطفل.</value></data>
+<data name="DependentAccess_MedicalWriteUnavailable" xml:space="preserve"><value>صلاحية تقديم المستندات الطبية غير متاحة.</value></data>
+<data name="HistoricalDocument_Disabled" xml:space="preserve"><value>رفع المستندات الطبية السابقة غير متاح.</value></data>
 </root>

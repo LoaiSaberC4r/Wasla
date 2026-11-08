@@ -18,7 +18,8 @@ internal sealed partial class FinanceReadService(
     ICurrentUser currentUser,
     IWaslaDataStore dataStore,
     IReceptionPracticeAuthorizationService receptionAuthorization,
-    Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptions) : IFinanceReadService
+    Wasla.Application.Features.Subscriptions.ISubscriptionPermissionGuard subscriptions,
+    Wasla.Application.Features.Families.IDependentAccessPolicy dependents) : IFinanceReadService, IDependentFinanceReadService
 {
     private static Error AccessDenied => Error.Security(
         "Finance.AccessDenied", ErrorMessage.GetString("FinanceAccessDenied"));

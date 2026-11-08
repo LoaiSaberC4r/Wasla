@@ -49,3 +49,13 @@ internal sealed class DiagnosticMediaCompensationBehavior(DiagnosticMediaCompens
         }
     }
 }
+internal sealed class DependentDiagnosticCompensationBehavior(DiagnosticMediaCompensation compensation)
+    : IPipelineBehavior<DependentDiagnosticMutation, Result<DependentDiagnosticReceipt>>
+{
+    public async Task<Result<DependentDiagnosticReceipt>> Handle(DependentDiagnosticMutation request, RequestHandlerDelegate<Result<DependentDiagnosticReceipt>> next, CancellationToken ct)
+    {
+        var committed = false;
+        try { var response = await next(ct); committed = response.IsSuccess; return response; }
+        finally { if (committed) compensation.Clear(); else await compensation.CleanAsync(); }
+    }
+}

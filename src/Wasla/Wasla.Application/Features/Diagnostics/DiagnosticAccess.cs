@@ -11,12 +11,28 @@ using Wasla.Domain.Security;
 
 namespace Wasla.Application.Features.Diagnostics;
 
-internal sealed record DiagnosticActor(Guid UserId, Guid? DoctorId, Guid? PatientId, IReadOnlyList<string> Permissions)
+internal sealed record DiagnosticActor(Guid UserId, Guid? DoctorId, Guid? PatientId, IReadOnlyList<string> Permissions,
+    bool Dependent = false, string? OperationPermission = null, string? AccessVersion = null)
 {
     public Guid OwnerId => DoctorId ?? PatientId ?? UserId;
 }
-internal sealed class DiagnosticAccess(IWaslaDataStore store, ICurrentUser current, ISubscriptionPermissionGuard subscriptions)
+internal sealed class DiagnosticAccess(IWaslaDataStore store, ICurrentUser current, ISubscriptionPermissionGuard subscriptions,
+    Wasla.Application.Features.Families.IFamilyMedicalOperationPolicy medical)
 {
+    public async Task<Result<DiagnosticActor>> DependentAsync(Guid child, string permission, CancellationToken ct)
+    {
+        var actor = await ActorAsync(permission, UserType.Patient, ct);
+        if (actor.IsFailure) return actor;
+        var scope = await medical.ScopeAsync(child, permission, ct);
+        return scope.IsFailure ? Result<DiagnosticActor>.Fail(DiagnosticErrors.Denied()) : Result<DiagnosticActor>.Ok(
+            actor.Value with { PatientId = child, Dependent = true, OperationPermission = permission, AccessVersion = scope.Value.AccessVersion });
+    }
+    public async Task<bool> RecheckDependentAsync(DiagnosticActor actor, CancellationToken ct)
+    {
+        if (!actor.Dependent) return true;
+        var fresh = await DependentAsync(actor.PatientId!.Value, actor.OperationPermission!, ct);
+        return fresh.IsSuccess && fresh.Value.UserId == actor.UserId && fresh.Value.AccessVersion == actor.AccessVersion;
+    }
     public async Task<Result<DiagnosticActor>> ActorAsync(string permission, UserType type, CancellationToken ct, SubscriptionResource? resource = null)
     {
         if (!current.IsAuthenticated || current.UserId is not { } id) return Result<DiagnosticActor>.Fail(DiagnosticErrors.Denied());

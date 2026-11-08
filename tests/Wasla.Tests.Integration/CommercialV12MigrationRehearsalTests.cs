@@ -48,11 +48,18 @@ public sealed class CommercialV12MigrationRehearsalTests
         await app.WithDbAsync(async db =>
         {
             var migrator = db.Database.GetService<IMigrator>();
-            // Reconstruct the pre-cutover schema on this disposable fixture only. No proven-origin rows exist yet.
-            await migrator.MigrateAsync("20261102190031_CommercialSubscriptionFoundation", TestContext.Current.CancellationToken);
             var connection = (SqlConnection)db.Database.GetDbConnection();
             databaseName = connection.Database;
             Assert.StartsWith("WaslaPhase13Tests_", databaseName);
+            // Rehearse the earlier commercial cutover without rolling back the
+            // later forward-only family/source-history migrations. Those additive
+            // tables and their migration history stay intact on this disposable DB.
+            Assert.Empty(await db.Set<Wasla.Domain.Patients.PatientHistoricalDocument>().ToArrayAsync());
+            Assert.Empty(await db.Set<Wasla.Domain.Families.ChildOnboardingRequest>().ToArrayAsync());
+            var commercialRollback = migrator.GenerateScript("20261105111042_CommercialContractsAndPracticeAllocations", "20261102190031_CommercialSubscriptionFoundation");
+            foreach (var batch in System.Text.RegularExpressions.Regex.Split(commercialRollback, @"^\s*GO\s*$",
+                System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1)).Where(b => !string.IsNullOrWhiteSpace(b)))
+                await db.Database.ExecuteSqlRawAsync(batch, TestContext.Current.CancellationToken);
             await using var master = new SqlConnection(masterConnection); await master.OpenAsync(TestContext.Current.CancellationToken);
             await using var folderCommand = master.CreateCommand();
             folderCommand.CommandText = "SELECT CONVERT(nvarchar(4000), COALESCE(SERVERPROPERTY('InstanceDefaultBackupPath'), SERVERPROPERTY('InstanceDefaultDataPath')))";

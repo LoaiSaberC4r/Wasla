@@ -19,6 +19,7 @@ internal sealed class FamilyCandidateConfiguration : IWriteEntityConfiguration<F
         b.HasOne<ApplicationUser>().WithMany().HasForeignKey(s => s.ActorApplicationUserId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Patient>().WithMany().HasForeignKey(s => s.ParentPatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Patient>().WithMany().HasForeignKey(s => s.TargetPatientId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<FamilyGovernanceCase>().WithMany().HasForeignKey(s => s.GovernanceCaseId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<FamilyRelationshipRequest>().WithMany().HasForeignKey(s => s.RelationshipRequestId).OnDelete(DeleteBehavior.Restrict);
     }
 }

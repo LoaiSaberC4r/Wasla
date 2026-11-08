@@ -19,7 +19,13 @@ public sealed class FamilyCandidateSelection : Entity<Guid>
     public string? IdempotencyKey { get; private set; }
     public string? SubmissionFingerprint { get; private set; }
     public Guid? RelationshipRequestId { get; private set; }
+    public Guid? GovernanceCaseId { get; private set; }
     public byte[] RowVersion { get; private set; } = [];
+    public void ConsumeConflict(string key, string fingerprint, Guid caseId, DateTime now)
+    {
+        if (ConsumedAtUtc.HasValue || ExpiresAtUtc <= now || caseId == Guid.Empty) throw new InvalidOperationException("Candidate reference unavailable.");
+        IdempotencyKey = key; SubmissionFingerprint = fingerprint; GovernanceCaseId = caseId; ConsumedAtUtc = now;
+    }
     public void Consume(string key, string fingerprint, Guid request, DateTime now)
     {
         if (ConsumedAtUtc.HasValue || ExpiresAtUtc <= now) throw new InvalidOperationException("Candidate reference unavailable.");

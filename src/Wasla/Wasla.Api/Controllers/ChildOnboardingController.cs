@@ -33,12 +33,13 @@ public sealed class ChildOnboardingController(ISender sender) : ControllerBase
         => (await sender.Send(new GetChildOnboardingRequestsQuery(requestId, false), ct)).ToIActionResult(ct);
     [HttpPost("child-onboarding-requests/{requestId:guid}/resubmit"), Consumes("multipart/form-data"), RequestSizeLimit(52440000)]
     [Permission(FamilySelfServicePermissionNames.OnboardingResubmit)]
-    public async Task<IActionResult> Resubmit(Guid requestId, [FromForm] ResubmitFamilyRelationshipRequest form,
+    public async Task<IActionResult> Resubmit(Guid requestId, [FromForm] ChildOnboardingResubmissionForm form,
         [FromHeader(Name = "Idempotency-Key")] string key, CancellationToken ct)
     {
         if (form.EvidenceFiles.Count != form.DocumentTypes.Count) return new[] { FamilyErrors.EvidenceRequired }.ToActionProblem(ct);
         return (await sender.Send(new ResubmitChildOnboardingCommand(requestId, form.RowVersion,
-            FamilyRelationshipRequestsController.ToEvidence(form.EvidenceFiles, form.DocumentTypes), key), ct)).ToIActionResult(ct);
+            FamilyRelationshipRequestsController.ToEvidence(form.EvidenceFiles, form.DocumentTypes), key,
+            form.NameAr is null ? null : new ChildOnboardingInput(form.NameAr, form.NameEn, form.DateOfBirth, form.Gender, form.PhoneNumber, form.PrimaryContactNameAr, form.PrimaryContactPhone, form.RelationToChild)), ct)).ToIActionResult(ct);
     }
 }
 
@@ -84,6 +85,20 @@ public sealed class OperationalAuthorityController(ISender sender) : ControllerB
         => (await sender.Send(new RevokeOperationalAuthorityCommand(authorityId, form.RowVersion, form.Reason, key), ct)).ToIActionResult(ct);
 }
 public sealed record ChildOnboardingDecision(string RowVersion, string? Reason, Guid? ConfirmedExistingPatientId);
+public sealed class ChildOnboardingResubmissionForm
+{
+    public string RowVersion { get; set; } = "";
+    public string? NameAr { get; set; }
+    public string? NameEn { get; set; }
+    public DateOnly DateOfBirth { get; set; }
+    public Gender Gender { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? PrimaryContactNameAr { get; set; }
+    public string? PrimaryContactPhone { get; set; }
+    public FamilyMemberRole RelationToChild { get; set; }
+    public List<IFormFile> EvidenceFiles { get; set; } = [];
+    public List<FamilyRelationshipDocumentType> DocumentTypes { get; set; } = [];
+}
 public sealed class ChildOnboardingForm
 {
     public string NameAr { get; set; } = string.Empty;

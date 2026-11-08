@@ -19,7 +19,7 @@ public sealed record SubmitChildOnboardingCommand(ChildOnboardingInput Intake, I
     : ICommand<ChildOnboardingResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record ReviewChildOnboardingCommand(Guid RequestId, ChildOnboardingStatus Decision, string RowVersion, string? Reason,
     Guid? ConfirmedExistingPatientId, string IdempotencyKey) : ICommand<ChildOnboardingResponse>, ITransactionalCommand<WaslaWritePersistence>;
-public sealed record ResubmitChildOnboardingCommand(Guid RequestId, string RowVersion, IReadOnlyList<FamilyEvidenceUpload> Evidence, string IdempotencyKey)
+public sealed record ResubmitChildOnboardingCommand(Guid RequestId, string RowVersion, IReadOnlyList<FamilyEvidenceUpload> Evidence, string IdempotencyKey, ChildOnboardingInput? Intake = null)
     : ICommand<ChildOnboardingResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record GetChildOnboardingRequestsQuery(Guid? RequestId, bool Admin, int PageNumber = 1, int PageSize = 20) : IQuery<IReadOnlyList<ChildOnboardingReview>>;
 public sealed record GetChildOnboardingEvidenceQuery(Guid RequestId, Guid EvidenceId) : IQuery<PrivateMedia>;

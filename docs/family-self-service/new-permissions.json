@@ -63,5 +63,95 @@
     "index": 349,
     "name": "ChildOnboarding.ViewEvidence",
     "id": "20000000-0000-0000-0000-000000000350"
+  },
+  {
+    "index": 350,
+    "name": "DependentPatientProfile.ManageContacts",
+    "id": "20000000-0000-0000-0000-000000000351"
+  },
+  {
+    "index": 351,
+    "name": "DependentPatientProfile.ManagePhoto",
+    "id": "20000000-0000-0000-0000-000000000352"
+  },
+  {
+    "index": 352,
+    "name": "DependentFinance.ViewTransactions",
+    "id": "20000000-0000-0000-0000-000000000353"
+  },
+  {
+    "index": 353,
+    "name": "DependentFinance.ViewReceipts",
+    "id": "20000000-0000-0000-0000-000000000354"
+  },
+  {
+    "index": 354,
+    "name": "MedicalDocuments.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000355"
+  },
+  {
+    "index": 355,
+    "name": "MedicalDocuments.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000356"
+  },
+  {
+    "index": 356,
+    "name": "MedicalDocuments.ReviseOwn",
+    "id": "20000000-0000-0000-0000-000000000357"
+  },
+  {
+    "index": 357,
+    "name": "MedicalDocuments.WithdrawOwn",
+    "id": "20000000-0000-0000-0000-000000000358"
+  },
+  {
+    "index": 358,
+    "name": "MedicalDocuments.CreateDependent",
+    "id": "20000000-0000-0000-0000-000000000359"
+  },
+  {
+    "index": 359,
+    "name": "MedicalDocuments.ViewDependent",
+    "id": "20000000-0000-0000-0000-000000000360"
+  },
+  {
+    "index": 360,
+    "name": "MedicalDocuments.ReviseDependent",
+    "id": "20000000-0000-0000-0000-000000000361"
+  },
+  {
+    "index": 361,
+    "name": "MedicalDocuments.WithdrawDependent",
+    "id": "20000000-0000-0000-0000-000000000362"
+  },
+  {
+    "index": 362,
+    "name": "DependentLabSubmissions.Create",
+    "id": "20000000-0000-0000-0000-000000000363"
+  },
+  {
+    "index": 363,
+    "name": "DependentLabSubmissions.View",
+    "id": "20000000-0000-0000-0000-000000000364"
+  },
+  {
+    "index": 364,
+    "name": "DependentLabSubmissions.Withdraw",
+    "id": "20000000-0000-0000-0000-000000000365"
+  },
+  {
+    "index": 365,
+    "name": "DependentRadiologySubmissions.Create",
+    "id": "20000000-0000-0000-0000-000000000366"
+  },
+  {
+    "index": 366,
+    "name": "DependentRadiologySubmissions.View",
+    "id": "20000000-0000-0000-0000-000000000367"
+  },
+  {
+    "index": 367,
+    "name": "DependentRadiologySubmissions.Withdraw",
+    "id": "20000000-0000-0000-0000-000000000368"
   }
 ]

@@ -134,16 +134,21 @@ internal sealed class WaslaSecuritySeeder(
 
     private async Task SeedPermissionsAsync(CancellationToken cancellationToken)
     {
+        // Read security metadata once. Per-name Find/Single queries repeatedly
+        // compiled expressions and dominated fixture and operator seeding time.
+        var existing = await dbContext.Permissions.ToArrayAsync(cancellationToken);
+        var byNameLookup = existing.ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+        var byIdLookup = existing.ToDictionary(p => p.Id);
         foreach (var name in PermissionNames.All)
         {
             var id = SystemPermissionIds.For(name);
-            var byName = await dbContext.Permissions.SingleOrDefaultAsync(permission => permission.Name == name, cancellationToken);
+            byNameLookup.TryGetValue(name, out var byName);
             if (byName is not null && byName.Id != id)
             {
                 throw new InvalidOperationException($"System permission '{name}' has a conflicting identity.");
             }
 
-            var byId = await dbContext.Permissions.FindAsync([id], cancellationToken);
+            byIdLookup.TryGetValue(id, out var byId);
             if (byId is not null && !string.Equals(byId.Name, name, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException($"System permission id for '{name}' is already used.");
@@ -151,7 +156,8 @@ internal sealed class WaslaSecuritySeeder(
 
             if (byName is null && byId is null)
             {
-                dbContext.Permissions.Add(Permission.Create(id, name, true).Value);
+                var permission = Permission.Create(id, name, true).Value;
+                dbContext.Permissions.Add(permission); byNameLookup.Add(name, permission); byIdLookup.Add(id, permission);
             }
         }
 
@@ -355,17 +361,21 @@ internal sealed class WaslaSecuritySeeder(
             mappings[role] = mappings[role].Concat(PermissionNames.NotificationOwnDefaults).ToArray();
         mappings[SystemRoleIds.SuperAdmin] = mappings[SystemRoleIds.SuperAdmin].Concat(PermissionNames.NotificationAdminDefaults).ToArray();
         mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(FamilySelfServicePermissionNames.PatientDefaults).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(FamilyExtensionPermissionNames.All).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(MedicalDocumentPermissionNames.All).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(DependentDiagnosticPermissionNames.All).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(FamilyGovernancePermissionNames.All).ToArray();
         mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(FamilySelfServicePermissionNames.OnboardingPatientDefaults).ToArray();
         mappings[SystemRoleIds.SuperAdmin] = mappings[SystemRoleIds.SuperAdmin].Concat(FamilySelfServicePermissionNames.OnboardingAdminDefaults).ToArray();
         mappings[SystemRoleIds.SuperAdmin] = mappings[SystemRoleIds.SuperAdmin].Concat(FamilySelfServicePermissionNames.AdminDefaults).ToArray();
+        var retainedMappings = (await dbContext.RolePermissions.AsNoTracking().Select(m => new { m.RoleId, m.PermissionId }).ToArrayAsync(cancellationToken))
+            .Select(m => (m.RoleId, m.PermissionId)).ToHashSet();
         foreach (var (roleId, permissionNames) in mappings)
         {
             foreach (var permissionName in permissionNames)
             {
                 var permissionId = SystemPermissionIds.For(permissionName);
-                if (await dbContext.RolePermissions.AnyAsync(
-                        mapping => mapping.RoleId == roleId && mapping.PermissionId == permissionId,
-                        cancellationToken))
+                if (!retainedMappings.Add((roleId, permissionId)))
                 {
                     continue;
                 }

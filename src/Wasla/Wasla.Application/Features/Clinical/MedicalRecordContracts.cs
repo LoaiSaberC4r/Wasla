@@ -14,7 +14,11 @@ public record MedicalRecordOverviewResponse(MedicalRecordPatient Patient, Record
     RecordPage<TimelineEntry> Timeline, RecordCapabilities Capabilities, IReadOnlyList<string> AvailableFilters);
 [JsonDerivedType(typeof(ClinicalTimelineEntry))]
 [JsonDerivedType(typeof(HiddenTimelineEntry))]
+[JsonDerivedType(typeof(HistoricalDocumentTimelineEntry))]
 public abstract record TimelineEntry(string Type, string EntryId);
+public sealed record HistoricalDocumentTimelineEntry(string EntryId, Guid DocumentId, DateTime OccurredAtUtc,
+    Wasla.Domain.Patients.HistoricalDocumentCategory Category, DateOnly? DocumentDate, bool DateUnknown,
+    string Source = "PatientProvided", string VerificationStatus = "Unverified") : TimelineEntry("HistoricalPatientDocument", EntryId);
 public sealed record TimelineCapabilities(bool CanViewDetails, bool CanViewAttachments);
 public sealed record ClinicalTimelineEntry(string Type, string EntryId, DateTime OccurredAtUtc, Guid SourceId, Guid EncounterId,
     string ResourceType, string Status, string Title, TimelineCapabilities Capabilities) : TimelineEntry(Type, EntryId);

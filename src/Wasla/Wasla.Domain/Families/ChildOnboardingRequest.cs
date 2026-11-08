@@ -60,6 +60,32 @@ public sealed class ChildOnboardingRequest : Entity<Guid>
         Revision++; Status = ChildOnboardingStatus.PendingReview; ReviewMessage = null; ReviewedAtUtc = null; ReviewedByApplicationUserId = null;
         ResubmitIdempotencyKey = key; ResubmitFingerprint = fingerprint;
     }
+    public void CorrectPendingIntake(string nameAr, string? nameEn, DateOnly birth, Gender gender, string? phone, string contactName, string contactPhone, string intent)
+    {
+        if (Status != ChildOnboardingStatus.ModificationRequested || string.IsNullOrWhiteSpace(nameAr) || nameAr.Length > 200 || nameEn?.Length > 200 ||
+            birth == default || gender is not (Gender.Male or Gender.Female) || phone?.Length > 30 || contactName.Length is 0 or > 200 || contactPhone.Length is 0 or > 30)
+            throw new ArgumentException("Invalid revised child intake.");
+        NameAr = nameAr.Trim(); NameEn = nameEn?.Trim(); DateOfBirth = birth; Gender = gender; PhoneNumber = phone?.Trim(); ContactNameAr = contactName.Trim(); ContactPhone = contactPhone.Trim(); IntentHash = intent;
+    }
+}
+public sealed class ChildOnboardingRevision : Entity<Guid>
+{
+    private ChildOnboardingRevision() { }
+    public ChildOnboardingRevision(ChildOnboardingRequest r, DateTime now)
+    { Id = Guid.NewGuid(); RequestId = r.Id; Revision = r.Revision; NameAr = r.NameAr; NameEn = r.NameEn; DateOfBirth = r.DateOfBirth; Gender = r.Gender; PhoneNumber = r.PhoneNumber; ContactNameAr = r.ContactNameAr; ContactPhone = r.ContactPhone; CreatedAtUtc = now; ResubmitIdempotencyKey = r.ResubmitIdempotencyKey; ResubmitFingerprint = r.ResubmitFingerprint; ResultRowVersion = Convert.ToBase64String(r.RowVersion); }
+    public Guid RequestId { get; private set; }
+    public int Revision { get; private set; }
+    public string NameAr { get; private set; } = "";
+    public string? NameEn { get; private set; }
+    public DateOnly DateOfBirth { get; private set; }
+    public Gender Gender { get; private set; }
+    public string? PhoneNumber { get; private set; }
+    public string ContactNameAr { get; private set; } = "";
+    public string ContactPhone { get; private set; } = "";
+    public DateTime CreatedAtUtc { get; private set; }
+    public string? ResubmitIdempotencyKey { get; private set; }
+    public string? ResubmitFingerprint { get; private set; }
+    public string ResultRowVersion { get; private set; } = "";
 }
 public sealed class ChildOnboardingEvidence : Entity<Guid>
 {

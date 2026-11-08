@@ -1,5 +1,7 @@
 # Family self-service API handoff (in progress)
 
+See [API-HANDOFF-EXTENSIONS.md](API-HANDOFF-EXTENSIONS.md) for added profile, historical, diagnostic and finance routes.
+
 The owner epic remains the full acceptance scope. This file describes the routes
 present in this branch, not a claim that every epic feature has been completed.
 All routes use `/api/v1`, authenticated verified active Patient accounts for
