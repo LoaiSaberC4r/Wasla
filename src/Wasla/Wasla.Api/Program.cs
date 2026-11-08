@@ -71,9 +71,7 @@ builder.Services.PostConfigure<LogRedactionOptions>(options => options.Sensitive
     "AmountReceived", "PriceAmount", "DifferenceAmount", "TargetPriceSnapshot", "TermsSnapshotJson", "TargetTermsSnapshotJson", "IdempotencyKey", "Reference"]);
 builder.Services.AddWaslaApplication();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
-builder.Services.AddWaslaSqlServerPersistence(builder.Configuration);
-builder.Services.Configure<MediaStorageOptions>(options =>
-    options.ContentRootPath = builder.Environment.ContentRootPath);
+builder.Services.AddWaslaSqlServerPersistence(builder.Configuration, builder.Environment.ContentRootPath, builder.Environment.IsProduction());
 builder.Services.AddWaslaAuthentication();
 builder.Services.AddRateLimiter(options =>
 {

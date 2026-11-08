@@ -5,7 +5,14 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <DefaultItemExcludes>$(DefaultItemExcludes);App_Data/**</DefaultItemExcludes>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Remove="App_Data/**" />
+    <None Remove="App_Data/**" />
+    <EmbeddedResource Remove="App_Data/**" />
+    <Compile Remove="App_Data/**" />
+  </ItemGroup>
   <ItemGroup>
     <Content Remove="Views\Templates\**\*.cshtml" />
     <None Include="Views\Templates\**\*.cshtml">
