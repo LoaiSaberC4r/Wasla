@@ -217,6 +217,29 @@
         "pending": 0
       },
       "sha256": "044e939e989e6d7fdb6de91fdb0faa5891cb62f4eeeccab7ab6e1ee143d1f7b5"
+    },
+    {
+      "artifact": "artifacts/family-results/activation-migration/activation-migration.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "720178ec35cc8631aba761266e413d7f112fe7a28cc4807dbeb8fad782682613"
     }
   ],
   "fullIntegration": {
@@ -227,7 +250,7 @@
       "WASLA_RUN_BROWSER_TESTS": "1",
       "ClamAV": "real loopback3310 container1.5.4"
     },
-    "stateAtSnapshot": "running; two initial cold-browser request timeouts identified; real-browser fixtures now await provisioning before HTTP assertions; exact final-head outcome is in CI evidence",
+    "stateAtSnapshot": "Pre-final consolidated local run still executing; cold-browser setup and stale Production gate expectation diagnosed and corrected. Exact final-head outcome is in CI evidence.",
     "noSkippedTestCountedAsPass": true
   },
   "baseline": {
@@ -303,5 +326,24 @@
     "probe": "tools/Wasla.ProductionProbe"
   },
   "coverageMap": "TEST-MATRIX-2026-11-08.md",
-  "productionReady": false
+  "productionReady": false,
+  "priorClosureCI": {
+    "runId": 42480141248,
+    "commit": "234f299756a52320a6dc68a4b73e4a8cd3a0dbde",
+    "unit": {
+      "passed": 463,
+      "failed": 0,
+      "skipped": 0
+    },
+    "integration": {
+      "passed": 458,
+      "failed": 2,
+      "skipped": 0
+    },
+    "diagnosis": [
+      "Production release-gate test expected disabled flags contrary to owner-approved activation",
+      "Subscription migration model test expected the old commercial migration to remain last after additive family migrations"
+    ],
+    "resolution": "Update intentional configuration/current-migration expectations; retain original migration presence and all model/authorization assertions. Final-head CI required."
+  }
 }

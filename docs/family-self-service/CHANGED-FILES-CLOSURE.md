@@ -93,3 +93,5 @@
 | `tools/generate-family-migration.py` | Generate complete EF upgrade SQL with per-operation deferred compilation and idempotent history guards. | Execute safely on clean, populated and already-upgraded SQL Server databases. |
 | `tools/write-test-evidence.py` | Provide repeatable permission, SMTP/outbox or exact-checkout evidence tooling. | Make verification reproducible and prevent duplicate controlled SMTP sends. |
 | `docs/family-self-service/TEST-MATRIX-2026-11-08.md` | Map all T01–T38 requirements to executable regression coverage. | Keep case coverage distinct from actually executed pass counts. |
+| `tests/Wasla.Tests.Integration/Phase16SharingActivationTests.cs` | Require the approved enabled Production sharing target. | Keep configuration regression aligned with the owner-approved activation. |
+| `tests/Wasla.Tests.Integration/SubscriptionMigrationTests.cs` | Require both the original commercial migration and the current final migration. | Preserve migration/model assertions after additive family migrations. |

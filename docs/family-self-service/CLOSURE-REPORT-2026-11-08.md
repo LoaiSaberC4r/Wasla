@@ -150,7 +150,14 @@ runs are not added together as unique suite coverage.
 The 548-case consolidated local integration run was still executing when this
 snapshot was written. Its two initial failures were cold Chromium downloads
 exceeding request timeouts; the corrected real-browser rerun passed both cases.
-No incomplete run is counted as successful. Final-head GitHub CI is the
+The first closure CI run (42480141248) passed 463 unit tests and 458 of 460
+main integration tests, with zero skipped tests. Its two stale expectations
+required Production sharing to remain disabled and a pre-family commercial
+migration to remain last. Those assertions now require the approved enabled
+Production target and the new final migration, while still requiring the
+original commercial migration. The focused corrected rerun passed all five
+configuration/model cases with zero failures/skips. No authorization assertion was weakened.
+No incomplete or failed run is counted as successful. Final-head GitHub CI is the
 authoritative complete-suite result, with exact counters and SHA in its
 test-results artifact. TEST-EVIDENCE.json records the local snapshot and is
 enriched by CI with that checkout's actual results.

@@ -27,7 +27,9 @@ public sealed class SubscriptionMigrationTests
         using var db = new WaslaDbContext(new DbContextOptionsBuilder<WaslaDbContext>()
             .UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=SubscriptionModelOnly;Integrated Security=true;TrustServerCertificate=true").Options);
         Assert.False(db.Database.HasPendingModelChanges());
-        Assert.EndsWith("_CommercialContractsAndPracticeAllocations", db.Database.GetMigrations().Last());
+        var migrations = db.Database.GetMigrations().ToArray();
+        Assert.Contains("20261105111042_CommercialContractsAndPracticeAllocations", migrations);
+        Assert.Equal("20261108111713_HistoricalValidationReceipts", migrations[^1]);
         var entity = db.Model.FindEntityType(typeof(DoctorSubscription))!;
         Assert.Equal(4, entity.GetIndexes().Count(i => i.IsUnique && i.GetFilter() is not null));
         Assert.True(entity.FindProperty("RowVersion")!.IsConcurrencyToken);
