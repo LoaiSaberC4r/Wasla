@@ -10,7 +10,7 @@ public sealed class ProductionActivationTests
 {
     private static readonly string ContentRoot = Path.Combine(Path.GetTempPath(), "WaslaProductionActivationTests");
 
-    private static IConfigurationRoot Configuration(Dictionary<string, string?>? overrides = null)
+    internal static IConfigurationRoot Configuration(Dictionary<string, string?>? overrides = null)
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);
         while (folder is not null && !File.Exists(Path.Combine(folder.FullName, "Wasla.sln"))) folder = folder.Parent;
@@ -145,10 +145,45 @@ public sealed class ProductionActivationTests
         => Assert.Throws<InvalidOperationException>(() => PrivateStorageWriteProbe.Verify(directory));
     [Theory]
     [InlineData("DependentManagement:Enabled")][InlineData("HistoricalDocuments:Enabled")][InlineData("MedicalRecord:GuardianSharingEnabled")]
-    [InlineData("MedicalRecord:CrossDoctorSharingEnabled")][InlineData("MalwareScanner:Enabled")][InlineData("PrivateMediaReconciliation:Enabled")]
+    [InlineData("MedicalRecord:CrossDoctorSharingEnabled")][InlineData("PrivateMediaReconciliation:Enabled")]
     [InlineData("NotificationPrivacy:ClinicalEmailReleaseApproved")][InlineData("NotificationPrivacy:ClinicalInAppReleaseApproved")][InlineData("EmailOutbox:Enabled")]
     public void Disabled_production_feature_is_a_startup_error(string key)
         => Assert.Contains(ProductionActivationValidation.Errors(Configuration(new() { [key] = "false" }), ContentRoot), e => e.StartsWith(key, StringComparison.Ordinal));
+    [Fact]
+    public void Production_temporarily_disables_scanning_without_disabling_historical_uploads()
+    {
+        var configuration = Configuration();
+        Assert.True(configuration.GetValue<bool>("HistoricalDocuments:Enabled"));
+        Assert.False(configuration.GetValue<bool>("HistoricalDocuments:RequireRealScanner"));
+        Assert.False(configuration.GetValue<bool>("MediaStorage:RequireMalwareScanner"));
+        Assert.False(configuration.GetValue<bool>("MalwareScanner:Enabled"));
+        Assert.Empty(ProductionActivationValidation.Errors(configuration, ContentRoot));
+    }
+    [Fact]
+    public void Disabled_scanner_does_not_require_valid_ClamAV_configuration()
+        => Assert.Empty(ProductionActivationValidation.Errors(Configuration(new()
+        {
+            ["MalwareScanner:Host"] = "203.0.113.1", ["MalwareScanner:Port"] = "0",
+            ["MalwareScanner:TimeoutSeconds"] = "0", ["MalwareScanner:MaxStreamBytes"] = "0"
+        }), ContentRoot));
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void Enabled_scanner_accepts_valid_configuration_with_optional_or_required_upload_scans(bool required)
+        => Assert.Empty(ProductionActivationValidation.Errors(Configuration(new()
+        {
+            ["MalwareScanner:Enabled"] = "true", ["HistoricalDocuments:RequireRealScanner"] = required.ToString(),
+            ["MediaStorage:RequireMalwareScanner"] = required.ToString()
+        }), ContentRoot));
+    [Theory]
+    [InlineData("MalwareScanner:Host", "203.0.113.1")]
+    [InlineData("MalwareScanner:Port", "0")]
+    [InlineData("MalwareScanner:TimeoutSeconds", "0")]
+    [InlineData("MalwareScanner:MaxStreamBytes", "10485759")]
+    public void Enabled_scanner_rejects_invalid_ClamAV_configuration(string key, string value)
+        => Assert.Contains(ProductionActivationValidation.Errors(Configuration(new()
+        {
+            ["MalwareScanner:Enabled"] = "true", [key] = value
+        }), ContentRoot), e => e.StartsWith("MalwareScanner", StringComparison.Ordinal));
     [Fact]
     public void Automatic_production_migrations_and_invalid_policy_never_pass_validation()
     {

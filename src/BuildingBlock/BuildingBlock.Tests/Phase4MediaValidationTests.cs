@@ -12,6 +12,40 @@ public sealed class Phase4MediaValidationTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"bb-phase4-media-{Guid.NewGuid():N}");
 
+    [Theory]
+    [InlineData("sample.png", "image/png")]
+    [InlineData("sample.jpg", "image/jpeg")]
+    [InlineData("sample.pdf", "application/pdf")]
+    public async Task Optional_scanner_allows_valid_images_and_PDF_without_registered_scanners(string fileName, string contentType)
+    {
+        var bytes = Path.GetExtension(fileName) switch { ".png" => Png(), ".jpg" => Jpeg(), _ => "%PDF-1.4\n%%EOF"u8.ToArray() };
+        var validator = CreateValidator();
+        using var stream = new MemoryStream(bytes);
+        await using var validated = await validator.ValidateAsync(new MediaUpload(stream, fileName, contentType), TestContext.Current.CancellationToken);
+        Assert.Equal(contentType, validated.ContentType);
+        Assert.Equal(bytes.Length, validated.Length);
+    }
+
+    [Fact]
+    public async Task Optional_scanner_does_not_allow_unsupported_extensions()
+    {
+        var exception = await Assert.ThrowsAsync<MediaServiceException>(() =>
+            CreateValidator().ValidateAsync(new MediaUpload(new MemoryStream(Png()), "sample.txt", "image/png"), TestContext.Current.CancellationToken));
+        Assert.Equal(ExternalServiceErrorCodes.Media.UnsupportedType, exception.Error.Code);
+    }
+
+    [Fact]
+    public async Task Optional_scanner_does_not_allow_oversized_files()
+    {
+        var validator = new MediaUploadValidator(Options.Create(new MediaStorageOptions
+        {
+            RootPath = _root, RequireMalwareScanner = false, MaxFileSizeBytes = Png().Length - 1
+        }), Array.Empty<IMalwareScanner>());
+        var exception = await Assert.ThrowsAsync<MediaServiceException>(() =>
+            validator.ValidateAsync(new MediaUpload(new MemoryStream(Png()), "sample.png", "image/png"), TestContext.Current.CancellationToken));
+        Assert.Equal(ExternalServiceErrorCodes.Media.FileTooLarge, exception.Error.Code);
+    }
+
     [Fact]
     public async Task Empty_stream_is_rejected()
     {
@@ -146,7 +180,7 @@ public sealed class Phase4MediaValidationTests : IDisposable
 
     private MediaUploadValidator CreateValidator(params IMalwareScanner[] scanners)
         => new(
-            Options.Create(new MediaStorageOptions { RootPath = _root }),
+            Options.Create(new MediaStorageOptions { RootPath = _root, RequireMalwareScanner = false }),
             scanners);
 
     private MediaService CreateService()
