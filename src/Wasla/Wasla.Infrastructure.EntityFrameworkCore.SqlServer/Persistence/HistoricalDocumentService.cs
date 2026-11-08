@@ -134,10 +134,12 @@ internal sealed class HistoricalDocumentService(WaslaDbContext db, IWaslaDataSto
                 Trim(m.ProviderName), Trim(m.Title), Trim(m.PatientNote), scope.ActorId, clock.UtcNow, Trim(c.Reason), doc.UploadedAtUtc);
             foreach (var file in c.Files!)
             {
-                // Private media is validated and scanned before any available metadata is committed.
+                // Private media is validated, and scanned when a real scanner is registered, before metadata is committed.
                 var saved = await media.SaveAsync(file, new($"HistoricalDocuments/{doc.Id:N}/{version.Id:N}"), ct);
                 file.Content.Position = 0; var hash = Convert.ToHexString(await SHA256.HashDataAsync(file.Content, ct)); file.Content.Position = 0;
-                db.Add(new PatientHistoricalDocumentAttachment(version.Id, saved.Key, SafeName(file.FileName), saved.ContentType, saved.Length, hash, clock.UtcNow));
+                // The non-nullable scan timestamp stays unset when the optional scan was skipped.
+                var scannedAt = scanners.Any(s => s is ClamAvMalwareScanner) ? clock.UtcNow : default;
+                db.Add(new PatientHistoricalDocumentAttachment(version.Id, saved.Key, SafeName(file.FileName), saved.ContentType, saved.Length, hash, scannedAt));
             }
             db.Add(version); doc.PublishValidatedVersion(version.VersionNumber, clock.UtcNow);
         }

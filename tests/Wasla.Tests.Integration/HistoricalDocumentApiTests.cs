@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Features.Clinical;
 using Wasla.Domain.Patients;
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Media;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
 namespace Wasla.Tests.Integration;
 
@@ -55,6 +57,7 @@ public sealed class HistoricalDocumentApiTests
         await f.WithDbAsync(async db => {
             var stored = await db.Set<PatientHistoricalDocument>().SingleAsync(d => d.Id == id);
             Assert.Equal(f.PatientId, stored.SubjectPatientId); Assert.Equal(HistoricalDocumentState.Withdrawn, stored.State);
+            Assert.All(await db.Set<PatientHistoricalDocumentAttachment>().ToArrayAsync(), a => Assert.Equal(default, a.ScannedAtUtc));
             Assert.Equal(2, await db.Set<PatientHistoricalDocumentVersion>().CountAsync(v => v.DocumentId == id));
             Assert.Equal(3, await db.Set<PatientHistoricalDocumentHistory>().CountAsync(h => h.DocumentId == id));
             Assert.Empty(await db.LabResults.ToArrayAsync()); Assert.Empty(await db.RadiologyResults.ToArrayAsync()); Assert.Empty(await db.MedicalEncounters.ToArrayAsync());
@@ -70,6 +73,33 @@ public sealed class HistoricalDocumentApiTests
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Contains("HistoricalDocument.ScannerUnavailable", await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), StringComparison.Ordinal);
         await f.WithDbAsync(async db => Assert.Empty(await db.Set<PatientHistoricalDocument>().ToArrayAsync()));
+    }
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Optional_real_scanner_preserves_scanning_and_only_records_successful_scans(bool available)
+    {
+        await using var f = await CreateAsync(realScanner: true);
+        var settings = f.Services.GetRequiredService<IOptions<HistoricalDocumentOptions>>().Value;
+        settings.Enabled = true; settings.RequireRealScanner = false;
+        if (!available)
+        {
+            using var unavailable = new TcpListener(IPAddress.Loopback, 0); unavailable.Start();
+            var scanner = f.Services.GetRequiredService<IOptions<ClamAvMalwareScannerOptions>>().Value;
+            scanner.Port = ((IPEndPoint)unavailable.LocalEndpoint).Port; unavailable.Stop();
+        }
+        using var owner = await f.ClientAsync("patient");
+        using var response = await Upload(owner, null, Guid.NewGuid().ToString("N"));
+        Assert.Equal(available ? HttpStatusCode.Created : HttpStatusCode.Accepted, response.StatusCode);
+        var receipt = await JsonAsync(response);
+        Assert.Equal(available ? "AvailableUnverified" : "Quarantined", receipt.GetProperty("validationState").GetString());
+        await f.WithDbAsync(async db =>
+        {
+            var doc = await db.Set<PatientHistoricalDocument>().SingleAsync();
+            Assert.Equal(available ? HistoricalDocumentState.AvailableUnverified : HistoricalDocumentState.Quarantined, doc.State);
+            var attachments = await db.Set<PatientHistoricalDocumentAttachment>().ToArrayAsync();
+            if (available) Assert.NotEqual(default, Assert.Single(attachments).ScannedAtUtc);
+            else Assert.Empty(attachments);
+        });
     }
     [Fact]
     public async Task Medical_policy_off_denies_child_upload_without_widening_self_route()
