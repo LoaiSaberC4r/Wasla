@@ -33,10 +33,20 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddWaslaSqlServerPersistence(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        string? contentRootPath = null,
+        bool isProduction = false)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+        // Hosts supply ContentRootPath; existing two-argument maintenance callers retain their working-directory semantics.
+        var storageContentRoot = contentRootPath ?? Directory.GetCurrentDirectory();
+        if (contentRootPath is not null)
+            services.PostConfigure<BuildingBlock.Infrastructure.Options.MediaStorageOptions>(options =>
+            {
+                options.ContentRootPath = contentRootPath;
+                if (isProduction) options.RootPath = PrivateStoragePathResolver.Resolve(contentRootPath, options.RootPath);
+            });
         // Validate Production dependencies before any delivery or reconciliation worker starts.
         services.AddHostedService<ProductionActivationStartup>();
 
@@ -200,12 +210,23 @@ public static class DependencyInjection
         services.AddScoped<IMedicalRecordReadService>(p => p.GetRequiredService<MedicalRecordReadService>());
         services.AddScoped<IMedicalRecordMediaReader>(p => p.GetRequiredService<MedicalRecordReadService>());
         var protection = services.AddDataProtection().SetApplicationName("Wasla.Phase16");
-        if (configuration["MedicalRecord:DataProtectionKeyRingPath"] is { Length: > 0 } keyPath)
-            protection.PersistKeysToFileSystem(new DirectoryInfo(keyPath));
-        if (configuration["MedicalRecord:DataProtectionCertificatePath"] is { Length: > 0 } certificatePath)
+        var keyPath = configuration["MedicalRecord:DataProtectionKeyRingPath"];
+        if (isProduction || keyPath is { Length: > 0 })
+            protection.PersistKeysToFileSystem(new DirectoryInfo(PrivateStoragePathResolver.Resolve(storageContentRoot, keyPath, isProduction)));
+        var certificatePath = configuration["MedicalRecord:DataProtectionCertificatePath"];
+        if (isProduction || certificatePath is { Length: > 0 })
         {
-            var certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
-                certificatePath, configuration["MedicalRecord:DataProtectionCertificatePassword"]);
+            var resolvedCertificatePath = PrivateStoragePathResolver.Resolve(storageContentRoot, certificatePath, isProduction);
+            System.Security.Cryptography.X509Certificates.X509Certificate2 certificate;
+            try
+            {
+                certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
+                    resolvedCertificatePath, configuration["MedicalRecord:DataProtectionCertificatePassword"]);
+            }
+            catch (Exception exception) when (exception is System.Security.Cryptography.CryptographicException or IOException or UnauthorizedAccessException)
+            {
+                throw new InvalidOperationException("MedicalRecord:DataProtectionCertificatePath must reference a readable PFX with the configured password.");
+            }
             if (!certificate.HasPrivateKey) throw new InvalidOperationException("MedicalRecord:DataProtectionCertificatePath must contain the private key required for recovery and shared-instance decryption.");
             protection.ProtectKeysWithCertificate(certificate);
         }

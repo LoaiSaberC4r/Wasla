@@ -7,6 +7,8 @@
 TestResults/
 coverage/
 logs/
+# Runtime private media, encrypted key ring and certificates must never be committed.
+/src/Wasla/Wasla.Api/App_Data/
 *.db
 *.db-shm
 *.db-wal

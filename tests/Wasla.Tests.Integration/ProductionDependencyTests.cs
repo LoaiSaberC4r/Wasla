@@ -4,9 +4,14 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using BuildingBlock.Infrastructure.Options;
+using Wasla.Infrastructure;
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Media;
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
 
 namespace Wasla.Tests.Integration;
 
@@ -41,27 +46,50 @@ public sealed class ProductionDependencyTests
     [Fact]
     public void Protected_key_ring_survives_restart_and_is_shared_by_independent_instances()
     {
-        var root = Path.Combine(Path.GetTempPath(), "WaslaDataProtection_" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
-        using var rsa = RSA.Create(2048);
-        var request = new CertificateRequest("CN=Wasla synthetic test only", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(1));
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "WaslaDataProtection_" + Guid.NewGuid().ToString("N")));
+        const string keyRingPath = "App_Data/Wasla/DataProtection/KeyRing";
+        const string certificatePath = "App_Data/Wasla/Certificates/Wasla-DataProtection.pfx";
+        const string mediaPath = "App_Data/Wasla/Media";
+        const string testPassword = "synthetic-test-only";
+        var keyRing = PrivateStoragePathResolver.Resolve(root, keyRingPath);
+        var pfx = PrivateStoragePathResolver.Resolve(root, certificatePath);
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:Database"] = "Server=(local);Database=WaslaSyntheticStorageTest;Integrated Security=true",
+            ["MedicalRecord:DataProtectionKeyRingPath"] = keyRingPath,
+            ["MedicalRecord:DataProtectionCertificatePath"] = certificatePath,
+            ["MedicalRecord:DataProtectionCertificatePassword"] = testPassword,
+            ["MediaStorage:RootPath"] = mediaPath
+        }).Build();
         ServiceProvider Instance()
         {
             var services = new ServiceCollection(); services.AddLogging();
-            services.AddDataProtection().SetApplicationName("Wasla.Phase16").PersistKeysToFileSystem(new DirectoryInfo(root)).ProtectKeysWithCertificate(certificate);
+            services.AddWaslaInfrastructure(configuration);
+            services.AddWaslaSqlServerPersistence(configuration, root, isProduction: true);
             return services.BuildServiceProvider();
         }
         try
         {
+            Directory.CreateDirectory(keyRing); Directory.CreateDirectory(Path.GetDirectoryName(pfx)!);
+            using (var rsa = RSA.Create(2048))
+            {
+                var request = new CertificateRequest("CN=Wasla synthetic test only", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(1));
+                File.WriteAllBytes(pfx, certificate.Export(X509ContentType.Pfx, testPassword));
+            }
             string token;
-            using (var first = Instance()) token = first.GetRequiredService<IDataProtectionProvider>().CreateProtector("Wasla.FamilyJoinInvitation.Response.v1").Protect("synthetic bound reference");
+            using (var first = Instance())
+            {
+                Assert.Equal(PrivateStoragePathResolver.Resolve(root, mediaPath), first.GetRequiredService<IOptions<MediaStorageOptions>>().Value.RootPath);
+                token = first.GetRequiredService<IDataProtectionProvider>().CreateProtector("Wasla.FamilyJoinInvitation.Response.v1").Protect("synthetic bound reference");
+            }
             using var restarted = Instance(); using var secondNode = Instance();
             Assert.Equal("synthetic bound reference", restarted.GetRequiredService<IDataProtectionProvider>().CreateProtector("Wasla.FamilyJoinInvitation.Response.v1").Unprotect(token));
             Assert.Equal("synthetic bound reference", secondNode.GetRequiredService<IDataProtectionProvider>().CreateProtector("Wasla.FamilyJoinInvitation.Response.v1").Unprotect(token));
-            var xml = File.ReadAllText(Assert.Single(Directory.GetFiles(root, "key-*.xml")));
+            var xml = File.ReadAllText(Assert.Single(Directory.GetFiles(keyRing, "key-*.xml")));
             Assert.Contains("encryptedSecret", xml, StringComparison.Ordinal); Assert.DoesNotContain("<value>", xml, StringComparison.Ordinal);
             Assert.Throws<System.Security.Cryptography.CryptographicException>(() => secondNode.GetRequiredService<IDataProtectionProvider>().CreateProtector("OtherPurpose").Unprotect(token));
         }
-        finally { foreach (var file in Directory.GetFiles(root)) File.Delete(file); Directory.Delete(root); }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
     }
 }

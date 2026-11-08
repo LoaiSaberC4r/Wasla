@@ -11,7 +11,7 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
 
 public static class ProductionActivationValidation
 {
-    public static IReadOnlyList<string> Errors(IConfiguration configuration)
+    public static IReadOnlyList<string> Errors(IConfiguration configuration, string? contentRootPath = null)
     {
         var errors = new List<string>();
         foreach (var key in new[] { "MedicalRecord:CrossDoctorSharingEnabled", "MedicalRecord:GuardianSharingEnabled", "DependentManagement:Enabled",
@@ -31,7 +31,10 @@ public static class ProductionActivationValidation
         var secret = configuration["MedicalRecord:OpaqueEntryKey"];
         if (string.IsNullOrWhiteSpace(secret) || Encoding.UTF8.GetByteCount(secret) < 32) errors.Add("MedicalRecord:OpaqueEntryKey requires at least 32 stable cryptographic bytes.");
         foreach (var key in new[] { "MedicalRecord:DataProtectionKeyRingPath", "MedicalRecord:DataProtectionCertificatePath", "MediaStorage:RootPath" })
-            if (configuration[key] is not { Length: > 0 } path || !Path.IsPathFullyQualified(path)) errors.Add(key + " requires a confirmed absolute persistent host path.");
+        {
+            try { PrivateStoragePathResolver.Resolve(contentRootPath ?? AppContext.BaseDirectory, configuration[key]); }
+            catch (ArgumentException) { errors.Add(key + " requires a relative path inside App_Data/Wasla."); }
+        }
         var smtp = configuration.GetSection("Smtp").Get<SmtpOptions>() ?? new();
         if (string.IsNullOrWhiteSpace(smtp.Host) || smtp.Port is < 1 or > 65535 || !smtp.RequireStartTls || smtp.UseSsl ||
             string.IsNullOrWhiteSpace(smtp.UserName) || string.IsNullOrWhiteSpace(smtp.Password) || !System.Net.Mail.MailAddress.TryCreate(smtp.FromEmail, out _))
@@ -46,9 +49,9 @@ internal sealed class ProductionActivationStartup(IConfiguration configuration, 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (!environment.IsProduction()) return;
-        var errors = ProductionActivationValidation.Errors(configuration);
+        var errors = ProductionActivationValidation.Errors(configuration, environment.ContentRootPath);
         if (errors.Count != 0) throw new InvalidOperationException("Production activation configuration: " + string.Join(" ", errors));
-        var directory = configuration["MedicalRecord:DataProtectionKeyRingPath"]!;
+        var directory = PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionKeyRingPath"]);
         if (!Directory.Exists(directory)) throw new InvalidOperationException("MedicalRecord:DataProtectionKeyRingPath must be provisioned before startup.");
         var test = protection.CreateProtector("Wasla.ProductionReadiness.v1");
         if (test.Unprotect(test.Protect("readiness")) != "readiness") throw new InvalidOperationException("Persistent Data Protection verification failed.");
@@ -74,7 +77,10 @@ internal sealed class PrivateDependencyHealthCheck(IHostEnvironment environment,
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         if (!environment.IsProduction()) return HealthCheckResult.Healthy();
-        if (ProductionActivationValidation.Errors(configuration).Count != 0) return HealthCheckResult.Unhealthy("Production configuration is incomplete.");
+        if (ProductionActivationValidation.Errors(configuration, environment.ContentRootPath).Count != 0) return HealthCheckResult.Unhealthy("Production configuration is incomplete.");
+        if (!Directory.Exists(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionKeyRingPath"])) ||
+            !File.Exists(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionCertificatePath"])))
+            return HealthCheckResult.Unhealthy("Persistent Data Protection storage is unavailable.");
         return await scanner.PingAsync(cancellationToken) ? HealthCheckResult.Healthy() : HealthCheckResult.Unhealthy("Private media scanner unavailable.");
     }
 }
