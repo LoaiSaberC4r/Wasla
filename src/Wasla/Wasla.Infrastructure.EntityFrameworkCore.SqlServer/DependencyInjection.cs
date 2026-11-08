@@ -221,7 +221,9 @@ public static class DependencyInjection
             try
             {
                 certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
-                    resolvedCertificatePath, configuration["MedicalRecord:DataProtectionCertificatePassword"]);
+                    resolvedCertificatePath, configuration["MedicalRecord:DataProtectionCertificatePassword"],
+                    System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.MachineKeySet |
+                    System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.EphemeralKeySet);
             }
             catch (Exception exception) when (exception is System.Security.Cryptography.CryptographicException or IOException or UnauthorizedAccessException)
             {
