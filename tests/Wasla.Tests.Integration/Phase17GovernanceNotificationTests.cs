@@ -1,7 +1,11 @@
 using System.Net;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Wasla.Application.Features.Notifications;
 using Wasla.Domain.Common;
 using Wasla.Domain.Doctors;
+using Wasla.Domain.Notifications;
 using Wasla.Domain.Security;
 using static Wasla.Tests.Integration.Phase13ApiFixture;
 using static Wasla.Tests.Integration.Phase17NotificationFixture;
@@ -31,20 +35,26 @@ public sealed class Phase17GovernanceNotificationTests
             var e = await db.NotificationEvents.SingleAsync(e => e.SourceId == doctorId && e.EventType == "Doctor.Approved");
             Assert.Single(await db.UserNotifications.Where(n => db.NotificationDeliveries.Any(d => d.Id == n.NotificationDeliveryId && d.NotificationEventId == e.Id)).ToArrayAsync());
         });
-        var reservation = await ReservationAsync(app);
+        var reservation = await ReservationAsync(app, trusted: true);
         await app.WithDbAsync(async db =>
         {
             var patient = await db.Patients.SingleAsync(p => p.Id == app.PatientId); patient.UpdateProfile(patient.NameAr, patient.NameEn, patient.PhoneNumber, "patient@example.test");
             version = Convert.ToBase64String((await db.Doctors.SingleAsync(d => d.Id == app.DoctorId)).RowVersion); await db.SaveChangesAsync();
         });
+        app.Services.GetRequiredService<IOptions<NotificationOptions>>().Value.OwnReservationEmails = true;
         using (var suspended = await PostAsync(admin, $"/api/v1/admin/doctors/{app.DoctorId}/suspend", new { reason = "PRIVATE_GOVERNANCE_REASON", rowVersion = version })) Assert.Equal(HttpStatusCode.OK, suspended.StatusCode);
         await DispatchAsync(app); await DispatchAsync(app);
         await app.WithDbAsync(async db =>
         {
-            Assert.Single(await db.EmailOutboxMessages.Where(m => m.IdempotencyKey.StartsWith("doctor-suspended:")).ToArrayAsync());
+            var suspension = Assert.Single(await db.EmailOutboxMessages.Where(m => m.IdempotencyKey.StartsWith("doctor-suspended:")).ToArrayAsync());
+            Assert.Null(suspension.NotificationDeliveryId);
             var cancellation = Assert.Single(await db.EmailOutboxMessages.Where(m => m.IdempotencyKey.StartsWith("reservation-doctor-suspended:")).ToArrayAsync());
             Assert.DoesNotContain("PRIVATE_GOVERNANCE_REASON", cancellation.HtmlBody, StringComparison.Ordinal);
-            Assert.Single(await db.NotificationEvents.Where(e => e.SourceId == reservation && e.EventType == "Reservation.Cancelled").ToArrayAsync());
+            var cancellationEvent = Assert.Single(await db.NotificationEvents.Where(e => e.SourceId == reservation && e.EventType == "Reservation.Cancelled").ToArrayAsync());
+            Assert.False(cancellationEvent.LegacyEmailOwned);
+            var delivery = Assert.Single(await db.NotificationDeliveries.Where(d => d.NotificationEventId == cancellationEvent.Id && d.Channel == NotificationChannel.Email).ToArrayAsync());
+            Assert.Equal(delivery.Id, cancellation.NotificationDeliveryId);
+            Assert.True((await db.NotificationEvents.SingleAsync(e => e.SourceId == reservation && e.EventType == "Reservation.Created")).LegacyEmailOwned);
             Assert.Single(await db.NotificationEvents.Where(e => e.SourceId == app.DoctorId && e.EventType == "Doctor.Suspended").ToArrayAsync());
         });
     }

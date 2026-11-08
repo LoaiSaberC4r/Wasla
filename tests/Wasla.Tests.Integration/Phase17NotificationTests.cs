@@ -61,7 +61,9 @@ public sealed class Phase17NotificationTests
     [Fact]
     public async Task A08_A09_A11_A12_mutations_preserve_history_and_invalidate_previous_revisions()
     {
-        await using var app = await Phase13ApiFixture.CreateAsync(); var id = await ReservationAsync(app);
+        await using var app = await Phase13ApiFixture.CreateAsync();
+        app.Services.GetRequiredService<IOptions<NotificationOptions>>().Value.OwnReservationEmails = true;
+        var id = await ReservationAsync(app);
         Guid oldRevision = Guid.Empty;
         await app.WithDbAsync(async db =>
         {
@@ -80,12 +82,12 @@ public sealed class Phase17NotificationTests
             var old = await db.NotificationEvents.SingleAsync(e => e.SourceId == id && e.EventType == "Appointment.ReminderDue");
             Assert.Equal(oldRevision.ToString("N"), old.SourceRevisionKey);
             Assert.Equal(NotificationIntentStatus.Cancelled, (await db.NotificationIntents.SingleAsync(i => i.NotificationEventId == old.Id)).Status);
-            Assert.Equal(1, await db.NotificationEvents.CountAsync(e => e.SourceId == id && e.EventType == "Reservation.Rescheduled"));
+            Assert.False((await db.NotificationEvents.SingleAsync(e => e.SourceId == id && e.EventType == "Reservation.Rescheduled")).LegacyEmailOwned);
             var r = await db.Reservations.Include(r => r.History).SingleAsync(r => r.Id == id);
             Assert.True(r.Cancel(ReservationCancellationInitiator.Patient, ReservationActionInitiator.Patient, r.CreatedByApplicationUserId,
                 ReservationCancellationReasons.PatientChangedPlans, "PRIVATE_REASON", app.Clock.UtcNow.AddSeconds(2)).IsSuccess);
             await db.SaveChangesAsync();
-            Assert.Equal(1, await db.NotificationEvents.CountAsync(e => e.SourceId == id && e.EventType == "Reservation.Cancelled"));
+            Assert.False((await db.NotificationEvents.SingleAsync(e => e.SourceId == id && e.EventType == "Reservation.Cancelled")).LegacyEmailOwned);
         });
     }
     [Theory]

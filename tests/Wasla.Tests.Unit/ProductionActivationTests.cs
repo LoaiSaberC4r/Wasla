@@ -24,6 +24,15 @@ public sealed class ProductionActivationTests
         Assert.Equal(300, configuration.GetValue<int>("Archive:IntervalSeconds"));
     }
     [Fact]
+    public void Production_reservation_emails_are_owned_by_notifications_with_outbox_enabled()
+    {
+        var configuration = Configuration();
+        Assert.True(configuration.GetValue<bool>("Notifications:Enabled"));
+        Assert.True(configuration.GetValue<bool>("Notifications:DispatchEnabled"));
+        Assert.True(configuration.GetValue<bool>("Notifications:OwnReservationEmails"));
+        Assert.True(configuration.GetValue<bool>("EmailOutbox:Enabled"));
+    }
+    [Fact]
     public void Owner_approved_policy_is_complete_and_only_real_host_paths_remain_unconfirmed()
     {
         var configuration = Configuration(); var policy = configuration.GetSection("FamilyMedicalPolicy").Get<FamilyMedicalPolicyOptions>()!;
