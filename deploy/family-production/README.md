@@ -59,10 +59,27 @@ subdirectories and keys are unchanged; copy their complete contents during a mov
 Provision the directories before starting the application. Give the application
 identity read/write access to Media and KeyRing, and read access to Certificates
 and the PFX; restrict other identities. For IIS, the existing
-Prepare-PrivateStorage.ps1 accepts the resolved physical Media and KeyRing
-directories and the real app-pool identity; provision the Certificates directory
-and its read-only application permission separately. Keep all of App_Data outside
-wwwroot. Neither the web server nor an application Static Files mapping may expose
+Prepare-PrivateStorage.ps1 requires the actual absolute ContentRootPath and
+WebRootPath reported by the application, the resolved physical Media and KeyRing
+directories and the real app-pool identity. Do not infer WebRootPath from a
+directory name. For example, after supplying both actual host roots:
+
+```powershell
+./deploy/family-production/Prepare-PrivateStorage.ps1 `
+  -ContentRootPath $contentRoot -WebRootPath $webRoot `
+  -PrivateMediaPath (Join-Path $contentRoot 'App_Data/Wasla/Media') `
+  -KeyRingPath (Join-Path $contentRoot 'App_Data/Wasla/DataProtection/KeyRing') `
+  -ApplicationIdentity $applicationIdentity
+```
+
+Use `-WhatIf` to validate the paths without creating directories or changing ACLs.
+Run `pwsh -NoProfile -File tools/verify-private-storage-paths.ps1` on Windows for
+the focused containment checks, including an ancestor named wwwroot.
+Both targets must remain inside ContentRootPath/App_Data/Wasla and outside the
+actual WebRootPath. An ancestor named wwwroot alone does not make a target public.
+Provision the Certificates directory and its read-only application permission
+separately. Keep all of App_Data outside the actual WebRootPath. Neither the web
+server nor an application Static Files mapping may expose
 it; retain only the authorized private-media retrieval flow and verify unauthenticated
 direct file requests cannot retrieve any private file on the actual host.
 
@@ -90,10 +107,17 @@ ring and certificate together. A provider migration requires copying App_Data
 contents and the corresponding database backup; relative paths transfer no files.
 
 See [Microsoft's Data Protection guidance](https://learn.microsoft.com/en-us/aspnet/core/security/data-protection/configuration/overview?view=aspnetcore-10.0).
-Production startup verifies policy, flags, provisioned key-ring directory,
+Production startup verifies policy, flags, provisioned writable Media and KeyRing directories,
 certificate private key, protected-key roundtrip, scanner reachability and SMTP
-authentication. `/health` reports storage/scanner/configuration failure without
-physical paths or secret values.
+authentication. Startup and `/health` create, flush and immediately remove unique
+non-sensitive temporary files in Media and KeyRing. Missing directories are not
+created by these probes. `/health` also requires a readable certificate file and
+reports storage/scanner/configuration failure without physical paths or secret values.
+
+CI runs `bash tools/verify-app-data-publish-exclusion.sh` after the Release build.
+This publishes into an isolated temporary directory, rejects any App_Data or
+sentinel in the output, and cleans its own sentinel and temporary output on success
+or failure. It never removes existing App_Data contents.
 
 ## SMTP and workers
 

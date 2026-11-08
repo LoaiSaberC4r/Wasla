@@ -89,6 +89,10 @@ public sealed class ProductionDependencyTests
             var xml = File.ReadAllText(Assert.Single(Directory.GetFiles(keyRing, "key-*.xml")));
             Assert.Contains("encryptedSecret", xml, StringComparison.Ordinal); Assert.DoesNotContain("<value>", xml, StringComparison.Ordinal);
             Assert.Throws<System.Security.Cryptography.CryptographicException>(() => secondNode.GetRequiredService<IDataProtectionProvider>().CreateProtector("OtherPurpose").Unprotect(token));
+            var keyFiles = Directory.GetFiles(keyRing).Order(StringComparer.Ordinal).ToArray();
+            PrivateStorageWriteProbe.Verify(keyRing);
+            Assert.Equal(keyFiles, Directory.GetFiles(keyRing).Order(StringComparer.Ordinal).ToArray());
+            Assert.Empty(Directory.GetFiles(keyRing, "*.tmp"));
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
     }

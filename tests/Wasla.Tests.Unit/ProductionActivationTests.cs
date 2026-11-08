@@ -97,6 +97,53 @@ public sealed class ProductionActivationTests
         Assert.Throws<ArgumentException>(() => services.AddWaslaSqlServerPersistence(Configuration(new() { [key] = null }), ContentRoot, isProduction: true));
     }
     [Theory]
+    [InlineData("Media")]
+    [InlineData("DataProtection/KeyRing")]
+    public void Private_storage_write_probe_cleans_up_and_preserves_existing_files(string relative)
+    {
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "WaslaWriteProbe_" + Guid.NewGuid().ToString("N")));
+        var directory = Path.Combine(root, "App_Data", "Wasla", relative.Replace('/', Path.DirectorySeparatorChar));
+        try
+        {
+            Directory.CreateDirectory(directory);
+            var retained = Path.Combine(directory, "retained.txt"); File.WriteAllText(retained, "synthetic retained content");
+            PrivateStorageWriteProbe.Verify(directory);
+            PrivateStorageWriteProbe.Verify(directory);
+            Assert.Equal(retained, Assert.Single(Directory.GetFiles(directory)));
+            Assert.Equal("synthetic retained content", File.ReadAllText(retained));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+    }
+    [Fact]
+    public void Private_storage_write_probe_rejects_missing_directories_without_creating_them_or_disclosing_paths()
+    {
+        var missing = Path.Combine(Path.GetTempPath(), "WaslaMissingProbe_" + Guid.NewGuid().ToString("N"));
+        var error = Assert.Throws<InvalidOperationException>(() => PrivateStorageWriteProbe.Verify(missing));
+        Assert.False(Directory.Exists(missing));
+        Assert.DoesNotContain(missing, error.Message, StringComparison.Ordinal);
+        Assert.Null(error.InnerException);
+    }
+    [Fact]
+    public void Private_storage_write_probe_rejects_file_targets_without_altering_them_or_disclosing_paths()
+    {
+        var file = Path.Combine(Path.GetTempPath(), "WaslaInvalidProbe_" + Guid.NewGuid().ToString("N") + ".tmp");
+        try
+        {
+            File.WriteAllText(file, "synthetic retained content");
+            var error = Assert.Throws<InvalidOperationException>(() => PrivateStorageWriteProbe.Verify(file));
+            Assert.DoesNotContain(file, error.Message, StringComparison.Ordinal);
+            Assert.Null(error.InnerException);
+            Assert.Equal("synthetic retained content", File.ReadAllText(file));
+        }
+        finally { File.Delete(file); }
+    }
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void Private_storage_write_probe_rejects_empty_targets(string? directory)
+        => Assert.Throws<InvalidOperationException>(() => PrivateStorageWriteProbe.Verify(directory));
+    [Theory]
     [InlineData("DependentManagement:Enabled")][InlineData("HistoricalDocuments:Enabled")][InlineData("MedicalRecord:GuardianSharingEnabled")]
     [InlineData("MedicalRecord:CrossDoctorSharingEnabled")][InlineData("MalwareScanner:Enabled")][InlineData("PrivateMediaReconciliation:Enabled")]
     [InlineData("NotificationPrivacy:ClinicalEmailReleaseApproved")][InlineData("NotificationPrivacy:ClinicalInAppReleaseApproved")][InlineData("EmailOutbox:Enabled")]

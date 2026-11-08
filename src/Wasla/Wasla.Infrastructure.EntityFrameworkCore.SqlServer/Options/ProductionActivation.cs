@@ -51,8 +51,8 @@ internal sealed class ProductionActivationStartup(IConfiguration configuration, 
         if (!environment.IsProduction()) return;
         var errors = ProductionActivationValidation.Errors(configuration, environment.ContentRootPath);
         if (errors.Count != 0) throw new InvalidOperationException("Production activation configuration: " + string.Join(" ", errors));
-        var directory = PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionKeyRingPath"]);
-        if (!Directory.Exists(directory)) throw new InvalidOperationException("MedicalRecord:DataProtectionKeyRingPath must be provisioned before startup.");
+        PrivateStorageWriteProbe.Verify(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MediaStorage:RootPath"]));
+        PrivateStorageWriteProbe.Verify(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionKeyRingPath"]));
         var test = protection.CreateProtector("Wasla.ProductionReadiness.v1");
         if (test.Unprotect(test.Protect("readiness")) != "readiness") throw new InvalidOperationException("Persistent Data Protection verification failed.");
         if (!await scanner.PingAsync(cancellationToken)) throw new InvalidOperationException("MalwareScanner dependency is unreachable or unhealthy.");
@@ -78,9 +78,17 @@ internal sealed class PrivateDependencyHealthCheck(IHostEnvironment environment,
     {
         if (!environment.IsProduction()) return HealthCheckResult.Healthy();
         if (ProductionActivationValidation.Errors(configuration, environment.ContentRootPath).Count != 0) return HealthCheckResult.Unhealthy("Production configuration is incomplete.");
-        if (!Directory.Exists(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionKeyRingPath"])) ||
-            !File.Exists(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionCertificatePath"])))
-            return HealthCheckResult.Unhealthy("Persistent Data Protection storage is unavailable.");
+        try
+        {
+            PrivateStorageWriteProbe.Verify(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MediaStorage:RootPath"]));
+            PrivateStorageWriteProbe.Verify(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionKeyRingPath"]));
+            using var certificate = File.OpenRead(PrivateStoragePathResolver.Resolve(environment.ContentRootPath, configuration["MedicalRecord:DataProtectionCertificatePath"]));
+            if (certificate.ReadByte() == -1) return HealthCheckResult.Unhealthy("Private storage or certificate access is unavailable.");
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            return HealthCheckResult.Unhealthy("Private storage or certificate access is unavailable.");
+        }
         return await scanner.PingAsync(cancellationToken) ? HealthCheckResult.Healthy() : HealthCheckResult.Unhealthy("Private media scanner unavailable.");
     }
 }
