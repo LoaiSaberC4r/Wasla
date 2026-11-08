@@ -128,6 +128,15 @@ public sealed class Patient : AggregateRoot<Guid>, IAuditableEntity
 
         return age;
     }
+    // Called only by the reviewed identity-correction workflow. Identity/account
+    // email, PatientId, clinical ownership and contacts are preserved.
+    public Result CorrectIdentity(string nameAr, string? nameEn, DateOnly birth, Gender gender, DateOnly today)
+    {
+        var ar = NormalizeRequired(nameAr); var en = Normalize(nameEn);
+        if (ar.Length is 0 or > 200 || en?.Length > 200 || birth == default || birth > today || gender is not (Gender.Male or Gender.Female))
+            return Result.Fail(PatientErrors.Invalid);
+        NameAr = ar; NameEn = en; DateOfBirth = birth; Gender = gender; return Result.Ok();
+    }
 
     private static string NormalizeRequired(string? value) => value?.Trim() ?? string.Empty;
 

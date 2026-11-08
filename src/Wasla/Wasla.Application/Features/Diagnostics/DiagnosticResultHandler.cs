@@ -20,8 +20,11 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
     IDiagnosticReadService reader, IDiagnosticCoverageReader coverageReader, MedicationIdempotency idem,
     IMediaService media, IDateTimeProvider clock, DiagnosticMediaCompensation compensation) : ICommandHandler<DiagnosticResultCommand, DiagnosticResultMutationResponse>
 {
-    public async Task<Result<DiagnosticResultMutationResponse>> Handle(DiagnosticResultCommand r, CancellationToken ct)
+    public Task<Result<DiagnosticResultMutationResponse>> Handle(DiagnosticResultCommand r, CancellationToken ct) => ExecuteAsync(r, null, ct);
+    internal Task<Result<DiagnosticResultMutationResponse>> HandleDependentAsync(DiagnosticResultCommand r, Guid child, CancellationToken ct) => ExecuteAsync(r, child, ct);
+    private async Task<Result<DiagnosticResultMutationResponse>> ExecuteAsync(DiagnosticResultCommand r, Guid? child, CancellationToken ct)
     {
+        if (child.HasValue && r.Mutation is not (DiagnosticResultMutation.Submit or DiagnosticResultMutation.Withdraw)) return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied());
         var patient = r.Mutation is DiagnosticResultMutation.Submit or DiagnosticResultMutation.Withdraw;
         var permission = r.Kind + (r.Mutation switch
         {
@@ -35,8 +38,9 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
         var resourceKind = r.ResultId.HasValue ? r.Kind == DiagnosticKind.Lab ? SubscriptionResourceKind.LabResult : SubscriptionResourceKind.RadiologyResult :
             r.SubmissionId.HasValue ? r.Kind == DiagnosticKind.Lab ? SubscriptionResourceKind.LabSubmission : SubscriptionResourceKind.RadiologySubmission :
             r.Kind == DiagnosticKind.Lab ? SubscriptionResourceKind.LabRequest : SubscriptionResourceKind.RadiologyRequest;
-        var actor = await access.ActorAsync(permission, patient ? UserType.Patient : UserType.Doctor, ct,
-            new(resourceKind, r.ResultId ?? r.SubmissionId ?? r.RequestId.GetValueOrDefault()));
+        if (child.HasValue) permission = Wasla.Domain.Security.DependentDiagnosticPermissionNames.For(r.Kind == DiagnosticKind.Lab, r.Mutation == DiagnosticResultMutation.Submit ? "Create" : "Withdraw");
+        var actor = child is { } subject ? await access.DependentAsync(subject, permission, ct) :
+            await access.ActorAsync(permission, patient ? UserType.Patient : UserType.Doctor, ct, new(resourceKind, r.ResultId ?? r.SubmissionId ?? r.RequestId.GetValueOrDefault()));
         if (actor.IsFailure) return Result<DiagnosticResultMutationResponse>.Fail(actor.Errors);
         var payload = new
         {
@@ -51,13 +55,26 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
             r.ExternalReportDate,
             r.PatientNote,
             r.Reason,
+            ChildPatientId = child,
             Attachments = r.Attachments?.Select(a => new { a.FileName, a.ContentType, a.Kind, Hash = Convert.ToHexString(SHA256.HashData(a.Content)) }).ToArray()
         };
         Task<Result<DiagnosticResultMutationResponse>> Run() => r.Kind == DiagnosticKind.Lab ? MutateLabAsync(r, actor.Value, patient, ct) : MutateRadiologyAsync(r, actor.Value, patient, ct);
-        var sensitive = r.Mutation is DiagnosticResultMutation.Submit or DiagnosticResultMutation.Accept or DiagnosticResultMutation.Upload or DiagnosticResultMutation.Correct or DiagnosticResultMutation.Void;
+        var sensitive = child.HasValue || r.Mutation is DiagnosticResultMutation.Submit or DiagnosticResultMutation.Accept or DiagnosticResultMutation.Upload or DiagnosticResultMutation.Correct or DiagnosticResultMutation.Void;
         return sensitive ? await idem.ExecuteAsync(actor.Value.UserId, "Phase15:" + r.Kind + "Result:" + r.Mutation, r.IdempotencyKey, payload, Run, ct,
             async original =>
             {
+                if (!await access.RecheckDependentAsync(actor.Value, ct)) return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied());
+                if (actor.Value.Dependent)
+                {
+                    var submissionId = original.Submission!.SubmissionId;
+                    if (r.Kind == DiagnosticKind.Lab)
+                    {
+                        var sub = await work.WriteRepository<PatientLabResultSubmission>().FirstOrDefaultAsync(new DiagnosticForUpdate<PatientLabResultSubmission>(s => s.Id == submissionId && s.PatientId == child && s.UploadedByUserId == actor.Value.UserId), ct);
+                        return sub is null ? Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied()) : Result<DiagnosticResultMutationResponse>.Ok(original with { Submission = MinimalSubmission(sub.Id, sub.RequestId, sub.Status, sub.RowVersion, sub.SubmittedAtUtc) });
+                    }
+                    var radio = await work.WriteRepository<PatientRadiologyResultSubmission>().FirstOrDefaultAsync(new DiagnosticForUpdate<PatientRadiologyResultSubmission>(s => s.Id == submissionId && s.PatientId == child && s.UploadedByUserId == actor.Value.UserId), ct);
+                    return radio is null ? Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied()) : Result<DiagnosticResultMutationResponse>.Ok(original with { Submission = MinimalSubmission(radio.Id, radio.RequestId, radio.Status, radio.RowVersion, radio.SubmittedAtUtc) });
+                }
                 if (!patient && !await access.OwnPracticeAsync(actor.Value.DoctorId!.Value, original.Request.Practice.Id, ct))
                     return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied());
                 var state = await reader.RequestAsync(r.Kind, original.Request.RequestId!.Value, actor.Value.OwnerId, patient, actor.Value.Permissions, ct);
@@ -97,7 +114,7 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
         var requestId = existingResult?.RequestId ?? submission?.RequestId ?? r.RequestId.GetValueOrDefault();
         await idem.LockResourceAsync("Phase15:LabOrder", requestId, ct);
         var request = await work.WriteRepository<LabRequest>().FirstOrDefaultAsync(new DiagnosticForUpdate<LabRequest>(x => x.Id == requestId, x => x.Items), ct);
-        if (request is null || (patient ? request.PatientId != actor.PatientId || request.Status == DiagnosticRequestStatus.Draft : request.DoctorId != actor.DoctorId ||
+        if (request is null || r.RequestId.HasValue && r.RequestId.Value != request.Id || actor.Dependent && submission is not null && submission.UploadedByUserId != actor.UserId || (patient ? request.PatientId != actor.PatientId || request.Status == DiagnosticRequestStatus.Draft : request.DoctorId != actor.DoctorId ||
             !await access.OwnPracticeAsync(actor.DoctorId!.Value, request.DoctorPracticeId, ct)) || r.ResultId.HasValue && existingResult is null || r.SubmissionId.HasValue && submission is null)
             return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.NotFound("LabRequest.NotFound"));
         if (existingResult is not null && !TicketRowVersion.Matches(existingResult.RowVersion, r.RowVersion ?? "") ||
@@ -136,12 +153,15 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
                 changed = submission is null ? Result.Fail(DiagnosticErrors.NotFound("LabResultSubmission.NotFound")) : submission.Withdraw(actor.UserId, clock.UtcNow); break;
         }
         if (changed.IsFailure) return Result<DiagnosticResultMutationResponse>.Fail(changed.Errors);
+        if (!await access.RecheckDependentAsync(actor, ct)) return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied());
         await work.SaveChangesAsync(ct);
         if (r.Mutation is DiagnosticResultMutation.Upload or DiagnosticResultMutation.Accept or DiagnosticResultMutation.Correct or DiagnosticResultMutation.Void)
         {
             request.RecalculateCoverage(await coverageReader.CurrentCoverageAsync(r.Kind, request.Id, ct), actor.UserId, clock.UtcNow);
             await work.SaveChangesAsync(ct);
         }
+        if (actor.Dependent) return Result<DiagnosticResultMutationResponse>.Ok(ProxyResponse(
+            MinimalSubmission(submission!.Id, request.Id, submission.Status, submission.RowVersion, submission.SubmittedAtUtc), request.MedicalEncounterId, request.DoctorId, request.DoctorPracticeId, request.Origin, request.Status));
         var response = new DiagnosticResultMutationResponse(
             submission is null ? null : await reader.SubmissionAsync(r.Kind, submission.Id, actor.OwnerId, patient, actor.Permissions, ct),
             existingResult is null ? null : await reader.ResultAsync(r.Kind, existingResult.Id, actor.OwnerId, patient, actor.Permissions, ct),
@@ -159,7 +179,7 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
         var requestId = existingResult?.RequestId ?? submission?.RequestId ?? r.RequestId.GetValueOrDefault();
         await idem.LockResourceAsync("Phase15:RadiologyOrder", requestId, ct);
         var request = await work.WriteRepository<RadiologyRequest>().FirstOrDefaultAsync(new DiagnosticForUpdate<RadiologyRequest>(x => x.Id == requestId, x => x.Items), ct);
-        if (request is null || (patient ? request.PatientId != actor.PatientId || request.Status == DiagnosticRequestStatus.Draft : request.DoctorId != actor.DoctorId ||
+        if (request is null || r.RequestId.HasValue && r.RequestId.Value != request.Id || actor.Dependent && submission is not null && submission.UploadedByUserId != actor.UserId || (patient ? request.PatientId != actor.PatientId || request.Status == DiagnosticRequestStatus.Draft : request.DoctorId != actor.DoctorId ||
             !await access.OwnPracticeAsync(actor.DoctorId!.Value, request.DoctorPracticeId, ct)) || r.ResultId.HasValue && existingResult is null || r.SubmissionId.HasValue && submission is null)
             return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.NotFound("RadiologyRequest.NotFound"));
         if (existingResult is not null && !TicketRowVersion.Matches(existingResult.RowVersion, r.RowVersion ?? "") ||
@@ -198,12 +218,15 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
                 changed = submission is null ? Result.Fail(DiagnosticErrors.NotFound("RadiologyResultSubmission.NotFound")) : submission.Withdraw(actor.UserId, clock.UtcNow); break;
         }
         if (changed.IsFailure) return Result<DiagnosticResultMutationResponse>.Fail(changed.Errors);
+        if (!await access.RecheckDependentAsync(actor, ct)) return Result<DiagnosticResultMutationResponse>.Fail(DiagnosticErrors.Denied());
         await work.SaveChangesAsync(ct);
         if (r.Mutation is DiagnosticResultMutation.Upload or DiagnosticResultMutation.Accept or DiagnosticResultMutation.Correct or DiagnosticResultMutation.Void)
         {
             request.RecalculateCoverage(await coverageReader.CurrentCoverageAsync(r.Kind, request.Id, ct), actor.UserId, clock.UtcNow);
             await work.SaveChangesAsync(ct);
         }
+        if (actor.Dependent) return Result<DiagnosticResultMutationResponse>.Ok(ProxyResponse(
+            MinimalSubmission(submission!.Id, request.Id, submission.Status, submission.RowVersion, submission.SubmittedAtUtc), request.MedicalEncounterId, request.DoctorId, request.DoctorPracticeId, request.Origin, request.Status));
         var response = new DiagnosticResultMutationResponse(
             submission is null ? null : await reader.SubmissionAsync(r.Kind, submission.Id, actor.OwnerId, patient, actor.Permissions, ct),
             existingResult is null ? null : await reader.ResultAsync(r.Kind, existingResult.Id, actor.OwnerId, patient, actor.Permissions, ct),
@@ -211,4 +234,8 @@ internal sealed class DiagnosticResultHandler(DiagnosticAccess access, IUnitOfWo
         return Result<DiagnosticResultMutationResponse>.Ok(response);
     }
 
+    private static DiagnosticSubmissionResponse MinimalSubmission(Guid id, Guid request, PatientSubmissionStatus status, byte[] rowVersion, DateTime submitted)
+        => new(id, request, status, null, null, null, null, null, submitted, Convert.ToBase64String(rowVersion), [], new(false, false, false));
+    private static DiagnosticResultMutationResponse ProxyResponse(DiagnosticSubmissionResponse submission, Guid encounter, Guid doctor, Guid practice, DiagnosticOrigin origin, DiagnosticRequestStatus status)
+        => new(submission, null, new(submission.RequestId, encounter, new(doctor, "", null), new(practice, "", null), origin, status, null, null, null, [], new(false, false, false), [], []));
 }

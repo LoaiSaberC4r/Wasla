@@ -14,7 +14,7 @@ using Wasla.Domain.Security;
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataStore store, ICurrentUser current,
-    IDateTimeProvider clock, IOptions<MedicalRecordOptions> sharing, IOptions<FamilyMedicalPolicyOptions> policy) : IFamilyMedicalAccessPolicy
+    IDateTimeProvider clock, IOptions<MedicalRecordOptions> sharing, IOptions<FamilyMedicalPolicyOptions> policy) : IFamilyMedicalAccessPolicy, IFamilyMedicalOperationPolicy
 {
     internal FamilyMedicalPolicyOptions Policy => policy.Value;
     internal bool Configured => Policy.IsConfigured && EffectiveDate() is not null;
@@ -90,15 +90,61 @@ internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataSto
             return Result<MedicalRecordScope>.Fail(Wasla.Domain.Clinical.MedicalRecordErrors.Denied);
         return Result<MedicalRecordScope>.Ok(new(user, id, MedicalRecordMode.Dependent, AccessVersion: statuses.Value.Versions[id]));
     }
+    public async Task<Result<MedicalRecordScope>> ScopeAsync(Guid child, string permission, CancellationToken ct)
+    {
+        if (!(MedicalDocumentPermissionNames.All.Contains(permission, StringComparer.Ordinal) && permission.EndsWith("Dependent", StringComparison.Ordinal)) && !DependentDiagnosticPermissionNames.All.Contains(permission, StringComparer.Ordinal))
+            return Result<MedicalRecordScope>.Fail(Wasla.Domain.Clinical.MedicalRecordErrors.Denied);
+        if (!SharingEnabled || current.UserId is not { } user) return Result<MedicalRecordScope>.Fail(Wasla.Domain.Clinical.MedicalRecordErrors.Denied);
+        if (permission is MedicalDocumentPermissionNames.ViewDependent or DependentDiagnosticPermissionNames.LabView or DependentDiagnosticPermissionNames.RadiologyView &&
+            (await ScopeAsync((Guid?)child, ct)).IsFailure)
+            return Result<MedicalRecordScope>.Fail(Wasla.Domain.Clinical.MedicalRecordErrors.Denied);
+        var data = await LoadAsync(permission, ct, true);
+        var parentId = await PatientAsync(permission, ct);
+        var member = parentId is { } id ? await MemberAsync(id, ct) : null;
+        var parent = parentId is { } parentPatient ? await db.Patients.AsNoTracking().SingleOrDefaultAsync(p => p.Id == parentPatient, ct) : null;
+        if (member?.Role is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) || data is null ||
+            parent is null || EffectiveDate() is not { } today || parent.GetAge(today) < 18 || !data.Value.Statuses.TryGetValue(child, out var status) || !status.CanView)
+            return Result<MedicalRecordScope>.Fail(Wasla.Domain.Clinical.MedicalRecordErrors.Denied);
+        return Result<MedicalRecordScope>.Ok(new(user, child, MedicalRecordMode.Dependent, AccessVersion: data.Value.Versions[child]));
+    }
     public async Task<Result<FamilyMedicalAccessStatusResponse>> StatusAsync(Guid child, CancellationToken ct)
     {
         var data = await LoadAsync(PermissionNames.FamiliesViewOwn, ct);
         return data is not null && data.Value.Statuses.TryGetValue(child, out var status)
             ? Result<FamilyMedicalAccessStatusResponse>.Ok(status) : Result<FamilyMedicalAccessStatusResponse>.Fail(FamilyMedicalErrors.Unavailable);
     }
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlySet<string>>> CapabilitiesAsync(Guid family, CancellationToken ct)
+    {
+        var result = new Dictionary<Guid, IReadOnlySet<string>>();
+        if (!SharingEnabled) return result;
+        var permissions = await PermissionsAsync(ct);
+        var operations = MedicalDocumentPermissionNames.All.Where(p => p.EndsWith("Dependent", StringComparison.Ordinal))
+            .Concat(DependentDiagnosticPermissionNames.All).Where(p => permissions.Contains(p, StringComparer.OrdinalIgnoreCase)).ToArray();
+        if (operations.Length == 0) return result;
+        var patientId = await PatientAsync(operations[0], ct);
+        var member = patientId is { } parentId ? await MemberAsync(parentId, ct) : null;
+        var patient = patientId is { } id ? await db.Patients.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id, ct) : null;
+        if (member?.Role is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) || member.FamilyId != family ||
+            patient is null || EffectiveDate() is not { } today || patient.GetAge(today) < 18) return result;
+        var data = await LoadAsync(operations[0], ct, true);
+        if (data is null || data.Value.Family != family) return result;
+        foreach (var pair in data.Value.Statuses)
+        {
+            if (!pair.Value.CanView) { result[pair.Key] = new HashSet<string>(); continue; }
+            result[pair.Key] = operations.Where(p => p is not (MedicalDocumentPermissionNames.ViewDependent or
+                DependentDiagnosticPermissionNames.LabView or DependentDiagnosticPermissionNames.RadiologyView) ||
+                permissions.Contains(PermissionNames.MedicalRecordsViewDependent, StringComparer.OrdinalIgnoreCase)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+        return result;
+    }
     public async Task<IReadOnlyDictionary<Guid, FamilyMedicalAccessStatusResponse>> StatusesAsync(Guid family, CancellationToken ct)
     {
         var data = await LoadAsync(PermissionNames.FamiliesViewOwn, ct);
+        return data is not null && data.Value.Family == family ? data.Value.Statuses : new Dictionary<Guid, FamilyMedicalAccessStatusResponse>();
+    }
+    public async Task<IReadOnlyDictionary<Guid, FamilyMedicalAccessStatusResponse>> WorkspaceStatusesAsync(Guid family, CancellationToken ct)
+    {
+        var data = await LoadAsync(FamilySelfServicePermissionNames.Workspace, ct);
         return data is not null && data.Value.Family == family ? data.Value.Statuses : new Dictionary<Guid, FamilyMedicalAccessStatusResponse>();
     }
     public async Task<Result<RecordPage<FamilyMedicalDependent>>> DependentsAsync(CancellationToken ct)
@@ -114,7 +160,7 @@ internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataSto
         return Result<RecordPage<FamilyMedicalDependent>>.Ok(new(patients.Where(p => confirmed.Value.Statuses.TryGetValue(p.Id, out var s) && s.CanView)
             .Select(p => new FamilyMedicalDependent(p.Id, p.NameAr, p.NameEn, confirmed.Value.Statuses[p.Id])).ToArray(), null, false));
     }
-    private async Task<(Guid Family, Dictionary<Guid, FamilyMedicalAccessStatusResponse> Statuses, Dictionary<Guid, string> Versions)?> LoadAsync(string permission, CancellationToken ct)
+    private async Task<(Guid Family, Dictionary<Guid, FamilyMedicalAccessStatusResponse> Statuses, Dictionary<Guid, string> Versions)?> LoadAsync(string permission, CancellationToken ct, bool operationPermission = false)
     {
         var patient = await PatientAsync(permission, ct); if (patient is not { } actorPatient) return null;
         // Normal roster metadata remains visible when the family is inactive; clinical membership is checked separately.
@@ -169,7 +215,7 @@ internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataSto
                 review.BasisReference is not null && Policy.BasisReferences.Contains(review.BasisReference, StringComparer.Ordinal));
             var open = own.FirstOrDefault(r => r.ChildPatientId == c.Member.PatientId);
             var status = !SharingEnabled ? "Unavailable" : !baseEligible ? "RelationshipNotEligible" : !ageEligible ? "AgeNotEligible" :
-                restriction is not null ? "Restricted" : !entitlement ? "RelationshipNotEligible" : !Has(PermissionNames.MedicalRecordsViewDependent) ? "Unavailable" : "Allowed";
+                restriction is not null ? "Restricted" : !entitlement ? "RelationshipNotEligible" : !Has(operationPermission ? permission : PermissionNames.MedicalRecordsViewDependent) ? "Unavailable" : "Allowed";
             var reason = status switch { "Unavailable" => SharingEnabled ? "PermissionUnavailable" : "PolicyUnavailable", "Restricted" => "RestrictionActive",
                 "AgeNotEligible" => "AgeNotEligible", "RelationshipNotEligible" => !baseEligible ? "RelationshipNotEligible" : parent ? "ParentChildVerificationRequired" : review is null or { Status: FamilyMedicalEligibilityStatus.PendingReview } ? "EligibilityReviewPending" : "EligibilityUnavailable", _ => null };
             statuses[c.Member.PatientId] = new(status, status == "Allowed", Configured && baseEligible && ageEligible && Has(PermissionNames.FamilyMedicalAccessRequestsCreateOwn),

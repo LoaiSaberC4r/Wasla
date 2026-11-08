@@ -381,6 +381,11 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
     {
         foreach (var entry in ChangeTracker.Entries())
         {
+            if (entry.State is EntityState.Modified or EntityState.Deleted && entry.Entity is
+                PatientHistoricalDocumentVersion or PatientHistoricalDocumentAttachment or PatientHistoricalDocumentHistory or HistoricalDocumentOperation or DependentProfileChange or Wasla.Domain.Media.PrivateMediaReconciliationRun)
+                throw new InvalidOperationException("Historical source versions and proxy audit records are immutable.");
+            if (entry.State == EntityState.Deleted && entry.Entity is PatientHistoricalDocument)
+                throw new InvalidOperationException("Historical documents must be withdrawn without erasing history.");
             if (entry.State == EntityState.Deleted &&
                 entry.Entity is DrugCatalog or DrugCatalogRequest or DrugCatalogImportBatch or MedicationIdempotencyRecord or Payment or Refund or PaymentCorrectionHistory or RefundCorrectionHistory or MedicalEncounter or EncounterAmendment or EncounterAmendmentChange or EncounterAuditEvent or FollowUpEligibility or FollowUpEligibilityHistory or DrugCatalogHistory or DrugCatalogRequestHistory or DrugCatalogImportRecord or PrescriptionAuditEvent)
             {
@@ -404,7 +409,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         var utcConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
             value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
         foreach (var entity in modelBuilder.Model.GetEntityTypes().Where(e => e.ClrType.Namespace is
-            "Wasla.Domain.Subscriptions" or "Wasla.Domain.Notifications" or "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations" or "Wasla.Domain.Patients"))
+            "Wasla.Domain.Subscriptions" or "Wasla.Domain.Notifications" or "Wasla.Domain.OperatingFinance" or "Wasla.Domain.Reporting" or "Wasla.Domain.Operations" or "Wasla.Domain.Archives" or "Wasla.Domain.Tickets" or "Wasla.Domain.Reservations" or "Wasla.Domain.Patients" or "Wasla.Domain.Families"))
             foreach (var property in entity.GetProperties().Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?)))
                 if (!property.Name.Contains("Local", StringComparison.Ordinal)) property.SetValueConverter(utcConverter);
         modelBuilder.ApplySoftDeleteQueryFilter();

@@ -15,8 +15,22 @@ namespace Wasla.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/families")]
 [Authorize]
+[ResponseCache(NoStore = true)]
 public sealed class FamiliesController(ISender sender) : ControllerBase
 {
+    [HttpGet("mine/workspace"), ProducesResponseType<FamilyWorkspaceResponse>(200)]
+    [ResponseCache(NoStore = true)]
+    [Permission(FamilySelfServicePermissionNames.Workspace)]
+    public async Task<IActionResult> Workspace(CancellationToken ct)
+        => (await sender.Send(new GetFamilyWorkspaceQuery(), ct)).ToIActionResult(ct);
+
+    [HttpPost("patient-candidates/search"), ProducesResponseType<FamilyCandidateSearchResponse>(200)]
+    [ResponseCache(NoStore = true)]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("family-discovery")]
+    [Permission(FamilySelfServicePermissionNames.Search)]
+    public async Task<IActionResult> SearchCandidates([FromBody] FamilyCandidateSearch request, CancellationToken ct)
+        => (await sender.Send(new SearchFamilyCandidatesCommand(request), ct)).ToIActionResult(ct);
+
     [HttpGet("mine"), ProducesResponseType<MyFamilyResponse>(200)]
     [Permission(PermissionNames.FamiliesViewOwn)]
     public async Task<IActionResult> Mine(CancellationToken cancellationToken)
@@ -27,8 +41,24 @@ public sealed class FamiliesController(ISender sender) : ControllerBase
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/family-relationship-requests")]
 [Authorize]
+[ResponseCache(NoStore = true)]
 public sealed class FamilyRelationshipRequestsController(ISender sender) : ControllerBase
 {
+    [HttpPost("from-candidate")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(52440000)]
+    [ResponseCache(NoStore = true)]
+    [Permission(FamilySelfServicePermissionNames.Submit)]
+    public async Task<IActionResult> FromCandidate([FromForm] SubmitCandidateFamilyRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey, CancellationToken ct)
+    {
+        if (request.EvidenceFiles.Count != request.DocumentTypes.Count)
+            return new[] { Wasla.Domain.Families.FamilyErrors.EvidenceRequired }.ToActionProblem(ct);
+        var result = await sender.Send(new SubmitCandidateRelationshipCommand(request.CandidateReference, request.RelationshipType,
+            ToEvidence(request.EvidenceFiles, request.DocumentTypes), idempotencyKey), ct);
+        return result.IsSuccess ? StatusCode(202, result.Value) : result.Errors.ToActionProblem(ct);
+    }
+
     [HttpPost]
     [Consumes("multipart/form-data")]
     [Permission(PermissionNames.FamilyRelationshipRequestsCreate)]
@@ -80,6 +110,7 @@ public sealed class FamilyRelationshipRequestsController(ISender sender) : Contr
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/family-relationship-requests/assisted")]
 [Authorize]
+[ResponseCache(NoStore = true)]
 public sealed class AssistedFamilyRelationshipRequestsController(ISender sender) : ControllerBase
 {
     [HttpPost]
@@ -126,6 +157,7 @@ public sealed class AssistedFamilyRelationshipRequestsController(ISender sender)
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/family-relationship-requests")]
 [Authorize]
+[ResponseCache(NoStore = true)]
 public sealed class AdminFamilyRelationshipRequestsController(ISender sender) : ControllerBase
 {
     [HttpGet]
@@ -187,3 +219,10 @@ public sealed class ResubmitFamilyRelationshipRequest
 public sealed record FamilyRowVersionRequest(string RowVersion);
 public sealed record RejectFamilyRelationshipRequest(string Reason, string RowVersion);
 public sealed record ModifyFamilyRelationshipRequest(string Message, string RowVersion);
+public sealed class SubmitCandidateFamilyRequest
+{
+    public string CandidateReference { get; set; } = string.Empty;
+    public FamilyMemberRole RelationshipType { get; set; }
+    public List<IFormFile> EvidenceFiles { get; set; } = [];
+    public List<FamilyRelationshipDocumentType> DocumentTypes { get; set; } = [];
+}

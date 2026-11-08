@@ -17,6 +17,7 @@ internal sealed class FamilyRelationshipMedicalVerification(WaslaDbContext db, I
 
     public async Task<Result> RecordAsync(FamilyRelationshipRequest request, Family family, CancellationToken ct)
     {
+        if (request.RequestType is FamilyRelationshipRequestType.VerifyOperationalParentChild or FamilyRelationshipRequestType.JoinFamilyAsParent) return Result.Ok();
         var verification = request.RequestType is FamilyRelationshipRequestType.VerifyParentChild or FamilyRelationshipRequestType.VerifyGuardianChild;
         var adult = family.Members.SingleOrDefault(m => m.IsActive && m.PatientId == request.RequesterPatientId && m.Role == request.RequesterClaimedRole);
         var child = family.Members.SingleOrDefault(m => m.IsActive && m.PatientId == request.TargetPatientId && m.Role == FamilyMemberRole.Child);

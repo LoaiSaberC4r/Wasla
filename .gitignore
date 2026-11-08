@@ -20,3 +20,8 @@ _local-data/
 artifacts/phase17-*.log
 artifacts/phase17-supplement/
 artifacts/phase17-final-checks/
+artifacts/family-*/
+artifacts/family-*.log
+artifacts/PermissionSnapshot/
+artifacts-baseline-*.log
+artifacts/baseline/

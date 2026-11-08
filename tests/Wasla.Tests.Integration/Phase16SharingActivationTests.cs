@@ -27,7 +27,7 @@ public sealed class Phase16SharingActivationTests : IDisposable
     [Theory]
     [InlineData(null, true)]
     [InlineData("Development", true)]
-    [InlineData("Production", false)]
+    [InlineData("Production", true)]
     [InlineData("Staging", false)]
     public void Configuration_binds_external_key_and_environment_release_gates(string? environment, bool enabled)
     {

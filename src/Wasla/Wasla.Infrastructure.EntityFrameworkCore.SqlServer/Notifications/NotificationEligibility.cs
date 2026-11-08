@@ -22,7 +22,8 @@ public sealed record NotificationRecipient(string LogicalKey, Guid? UserId, Guid
 
 public sealed class NotificationEligibility(WaslaDbContext db, IWaslaDataStore store, IDateTimeProvider clock,
     IOptions<NotificationOptions> options, IOptions<NotificationPrivacyOptions> privacy,
-    IOptions<Wasla.Application.Features.PatientOnboarding.PatientIdentityOptions> identityOptions)
+    IOptions<Wasla.Application.Features.PatientOnboarding.PatientIdentityOptions> identityOptions,
+    Wasla.Application.Features.Families.IOperationalAuthorityReader operationalAuthority)
 {
     public async Task<string?> SourceDenialAsync(NotificationEvent source, NotificationIntent intent, CancellationToken ct)
     {
@@ -95,20 +96,7 @@ public sealed class NotificationEligibility(WaslaDbContext db, IWaslaDataStore s
         var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == child.FamilyId && m.IsActive && m.PatientId != patientId).ToArrayAsync(ct);
         foreach (var adult in adults)
         {
-            if (!new PatientAccessPolicy().CanBookReservation(adult, child, patient, DateOnly.FromDateTime(clock.UtcNow))) continue;
-            // Medical and booking ages remain separate. Exact relationship evidence is evaluated independently.
-            if (await db.Set<FamilyMedicalAccessRestriction>().AnyAsync(r => r.ChildPatientId == patientId && r.AffectedAdultPatientId == adult.PatientId && r.Status == FamilyMedicalRestrictionStatus.Active, ct)) continue;
-            var proof = await db.FamilyRelationshipRequests.AsNoTracking().Where(p => p.FamilyId == child.FamilyId &&
-                p.RequesterPatientId == adult.PatientId && p.TargetPatientId == patientId && p.RequesterClaimedRole == adult.Role &&
-                p.TargetClaimedRole == FamilyMemberRole.Child && p.Status == FamilyRelationshipRequestStatus.Approved &&
-                p.ReviewedBySuperAdminApplicationUserId != null && p.ReviewedOnUtc != null).OrderByDescending(p => p.ReviewedOnUtc).FirstOrDefaultAsync(ct);
-            if (proof is null || !await db.FamilyRelationshipDocuments.AnyAsync(d => d.FamilyRelationshipRequestId == proof.Id && d.RevisionNumber == proof.CurrentRevisionNumber, ct)) continue;
-            if (!await db.SuperAdmins.AnyAsync(a => a.ApplicationUserId == proof.ReviewedBySuperAdminApplicationUserId, ct)) continue;
-            if (adult.Role == FamilyMemberRole.LegalGuardian && await db.Set<FamilyMedicalEligibilityReview>().AnyAsync(r =>
-                r.AdultPatientId == adult.PatientId && r.ChildPatientId == patientId && r.AuthorityRelationshipRequestId == proof.Id && r.Status == FamilyMedicalEligibilityStatus.Revoked, ct)) continue;
-            if (adult.Role is FamilyMemberRole.Father or FamilyMemberRole.Mother && !await db.Set<VerifiedParentChildRelationship>().AnyAsync(p =>
-                p.ParentFamilyMemberId == adult.Id && p.ChildFamilyMemberId == child.Id && p.Status == ParentChildVerificationStatus.Active &&
-                p.ApprovedRelationshipRequestId == proof.Id && p.ApprovedRevisionNumber == proof.CurrentRevisionNumber, ct)) continue;
+            if (await operationalAuthority.FindAsync(adult.PatientId, patientId, ct) is null) continue;
             await AddPatientAsync(adult.PatientId, result, ct);
         }
         return result.DistinctBy(r => r.LogicalKey).ToArray();

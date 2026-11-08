@@ -1,0 +1,80 @@
+using System.Text;
+using BuildingBlock.Infrastructure.Options;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
+using Wasla.Application.Features.Families;
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Media;
+
+namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Options;
+
+public static class ProductionActivationValidation
+{
+    public static IReadOnlyList<string> Errors(IConfiguration configuration)
+    {
+        var errors = new List<string>();
+        foreach (var key in new[] { "MedicalRecord:CrossDoctorSharingEnabled", "MedicalRecord:GuardianSharingEnabled", "DependentManagement:Enabled",
+            "HistoricalDocuments:Enabled", "HistoricalDocuments:RequireRealScanner", "MediaStorage:RequireMalwareScanner", "PrivateMediaReconciliation:Enabled",
+            "MalwareScanner:Enabled", "NotificationPrivacy:ClinicalEmailReleaseApproved", "NotificationPrivacy:ClinicalInAppReleaseApproved",
+            "Notifications:Enabled", "Notifications:DispatchEnabled", "EmailOutbox:Enabled" })
+            if (!configuration.GetValue<bool>(key)) errors.Add(key + " must be true.");
+        if (configuration.GetValue<bool>("DatabaseInitialization:ApplyMigrationsOnStartup") || configuration.GetValue<bool>("DatabaseInitialization:ApplySeedingOnStartup"))
+            errors.Add("DatabaseInitialization startup migration and seeding must remain false.");
+        var policy = configuration.GetSection("FamilyMedicalPolicy").Get<FamilyMedicalPolicyOptions>() ?? new();
+        if (!policy.IsConfigured) errors.Add("FamilyMedicalPolicy must contain approved policy metadata and allowed evidence.");
+        if (!policy.RestrictionEvidenceRequired || !policy.RestorationEvidenceRequired || policy.RestrictionGroundsReferences.Length == 0 ||
+            policy.RestrictionGroundsReferences.Any(string.IsNullOrWhiteSpace)) errors.Add("FamilyMedicalPolicy restriction/restoration evidence and approved grounds are required.");
+        var scanner = configuration.GetSection("MalwareScanner").Get<ClamAvMalwareScannerOptions>() ?? new();
+        if (!scanner.Enabled || !scanner.IsValid || scanner.MaxStreamBytes < configuration.GetValue<long>("HistoricalDocuments:MaxFileBytes"))
+            errors.Add("MalwareScanner requires a loopback endpoint and sufficient stream limit.");
+        var secret = configuration["MedicalRecord:OpaqueEntryKey"];
+        if (string.IsNullOrWhiteSpace(secret) || Encoding.UTF8.GetByteCount(secret) < 32) errors.Add("MedicalRecord:OpaqueEntryKey requires at least 32 stable cryptographic bytes.");
+        foreach (var key in new[] { "MedicalRecord:DataProtectionKeyRingPath", "MedicalRecord:DataProtectionCertificatePath", "MediaStorage:RootPath" })
+            if (configuration[key] is not { Length: > 0 } path || !Path.IsPathFullyQualified(path)) errors.Add(key + " requires a confirmed absolute persistent host path.");
+        var smtp = configuration.GetSection("Smtp").Get<SmtpOptions>() ?? new();
+        if (string.IsNullOrWhiteSpace(smtp.Host) || smtp.Port is < 1 or > 65535 || !smtp.RequireStartTls || smtp.UseSsl ||
+            string.IsNullOrWhiteSpace(smtp.UserName) || string.IsNullOrWhiteSpace(smtp.Password) || !System.Net.Mail.MailAddress.TryCreate(smtp.FromEmail, out _))
+            errors.Add("Smtp requires authenticated STARTTLS configuration.");
+        return errors;
+    }
+}
+
+internal sealed class ProductionActivationStartup(IConfiguration configuration, IHostEnvironment environment,
+    ClamAvMalwareScanner scanner, IDataProtectionProvider protection) : IHostedService
+{
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        if (!environment.IsProduction()) return;
+        var errors = ProductionActivationValidation.Errors(configuration);
+        if (errors.Count != 0) throw new InvalidOperationException("Production activation configuration: " + string.Join(" ", errors));
+        var directory = configuration["MedicalRecord:DataProtectionKeyRingPath"]!;
+        if (!Directory.Exists(directory)) throw new InvalidOperationException("MedicalRecord:DataProtectionKeyRingPath must be provisioned before startup.");
+        var test = protection.CreateProtector("Wasla.ProductionReadiness.v1");
+        if (test.Unprotect(test.Protect("readiness")) != "readiness") throw new InvalidOperationException("Persistent Data Protection verification failed.");
+        if (!await scanner.PingAsync(cancellationToken)) throw new InvalidOperationException("MalwareScanner dependency is unreachable or unhealthy.");
+        var smtp = configuration.GetSection("Smtp").Get<SmtpOptions>()!;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        try
+        {
+            using var client = new MailKit.Net.Smtp.SmtpClient { Timeout = Math.Min(smtp.TimeoutMilliseconds, 30000) };
+            await client.ConnectAsync(smtp.Host, smtp.Port, MailKit.Security.SecureSocketOptions.StartTls, timeout.Token);
+            await client.AuthenticateAsync(smtp.UserName, smtp.Password, timeout.Token);
+            await client.DisconnectAsync(true, timeout.Token);
+        }
+        catch (Exception error) when (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        { throw new InvalidOperationException("Smtp authenticated STARTTLS startup probe failed. Verify the existing appsettings credentials and network access."); }
+    }
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+internal sealed class PrivateDependencyHealthCheck(IHostEnvironment environment, IConfiguration configuration,
+    ClamAvMalwareScanner scanner) : IHealthCheck
+{
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        if (!environment.IsProduction()) return HealthCheckResult.Healthy();
+        if (ProductionActivationValidation.Errors(configuration).Count != 0) return HealthCheckResult.Unhealthy("Production configuration is incomplete.");
+        return await scanner.PingAsync(cancellationToken) ? HealthCheckResult.Healthy() : HealthCheckResult.Unhealthy("Private media scanner unavailable.");
+    }
+}

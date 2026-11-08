@@ -1,3 +1,4 @@
+using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Media;
 using Wasla.Application.Features.PatientOnboarding;
 using Microsoft.AspNetCore.DataProtection;
 using Wasla.Application.Email;
@@ -36,6 +37,8 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+        // Validate Production dependencies before any delivery or reconciliation worker starts.
+        services.AddHostedService<ProductionActivationStartup>();
 
         var connectionString = configuration.GetConnectionString("Database")
             ?? throw new InvalidOperationException(
@@ -118,6 +121,8 @@ public static class DependencyInjection
         services.AddScoped<ArchiveEngine>();
         services.AddScoped<IWalkInOptionsReader, WalkInOptionsReader>();
         services.AddScoped<IFinanceReadService, FinanceReadService>();
+        services.AddScoped<IDependentFinanceReadService, FinanceReadService>();
+        services.AddScoped<IDependentProfileManagement, DependentProfileManagement>();
         services.AddOptions<Phase18Options>().Bind(configuration.GetSection("Phase18"))
             .Validate(o => !string.IsNullOrWhiteSpace(o.DefaultReportTimeZoneId) &&
                 TimeZoneInfo.TryFindSystemTimeZoneById(o.DefaultReportTimeZoneId, out _) &&
@@ -155,8 +160,33 @@ public static class DependencyInjection
         services.AddOptions<DiagnosticCatalogImportOptions>().Bind(configuration.GetSection(DiagnosticCatalogImportOptions.SectionName))
             .Validate(o => o.MaxPackageBytes > 0 && o.MaxExpandedBytes >= o.MaxPackageBytes && o.MaxEntries > 0 && o.MaxRows > 0 && o.MaxCompressionRatio > 0 && o.SupportedVersions.Length > 0, "Invalid diagnostic import limits.").ValidateOnStart();
         services.AddOptions<FamilyMedicalPolicyOptions>().Bind(configuration.GetSection("FamilyMedicalPolicy"));
+        services.AddOptions<DependentManagementOptions>().Bind(configuration.GetSection("DependentManagement"))
+            .Validate(o => o.IsValid(), "Invalid dependent management limits or operational timezone.").ValidateOnStart();
+        services.AddScoped<IOperationalAuthorityReader, OperationalAuthorityReader>();
+        services.AddScoped<IDependentAccessPolicy, DependentAccessPolicy>();
+        services.AddScoped<IFamilyOperationalVerification, FamilyOperationalVerification>();
+        services.AddScoped<IFamilyCandidateStore, FamilyCandidateStore>();
+        services.AddScoped<IFamilyWorkspacePendingReader, FamilyWorkspacePendingReader>();
+        services.AddScoped<IFamilyGovernanceWorkflow, FamilyGovernanceWorkflow>();
+        services.AddScoped<IFamilyJoinInvitations, FamilyJoinInvitations>();
+        services.AddOptions<PrivateMediaReconciliationOptions>().Bind(configuration.GetSection("PrivateMediaReconciliation"))
+            .Validate(o => o.IsValid, "Private media reconciliation limits are invalid.").ValidateOnStart();
+        services.AddScoped<Wasla.Application.Media.IPrivateMediaReconciliation, PrivateMediaReconciliation>();
+        services.AddHostedService<PrivateMediaReconciliationWorker>();
+        services.AddOptions<Media.ClamAvMalwareScannerOptions>().Bind(configuration.GetSection("MalwareScanner"))
+            .Validate(o => o.IsValid, "Invalid local malware scanner configuration.").ValidateOnStart();
+        services.AddSingleton<Media.ClamAvMalwareScanner>();
+        if (configuration.GetValue<bool>("MalwareScanner:Enabled"))
+            services.AddSingleton<BuildingBlock.Application.Abstraction.Media.IMalwareScanner>(p => p.GetRequiredService<Media.ClamAvMalwareScanner>());
+        services.AddHealthChecks().AddCheck<PrivateDependencyHealthCheck>("private-dependencies");
+        services.AddScoped<IChildOnboardingWorkflow, ChildOnboardingWorkflow>();
         services.AddScoped<FamilyMedicalAccessPolicy>();
         services.AddScoped<IFamilyMedicalAccessPolicy>(p => p.GetRequiredService<FamilyMedicalAccessPolicy>());
+        services.AddScoped<IFamilyMedicalOperationPolicy>(p => p.GetRequiredService<FamilyMedicalAccessPolicy>());
+        services.AddOptions<HistoricalDocumentOptions>().Bind(configuration.GetSection("HistoricalDocuments")).Validate(o => o.IsValid(), "Invalid historical document limits.").ValidateOnStart();
+        services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<HistoricalDocumentOptions>, Media.HistoricalDocumentOptionsValidator>();
+        services.AddScoped<HistoricalDocumentService>();
+        services.AddScoped<IHistoricalDocumentService>(p => p.GetRequiredService<HistoricalDocumentService>());
         services.AddScoped<IFamilyMedicalWorkflow, FamilyMedicalWorkflow>();
         services.AddScoped<IFamilyRelationshipMedicalVerification, FamilyRelationshipMedicalVerification>();
         services.AddScoped<IFamilyProofReconciler, FamilyProofReconciler>();
@@ -172,6 +202,13 @@ public static class DependencyInjection
         var protection = services.AddDataProtection().SetApplicationName("Wasla.Phase16");
         if (configuration["MedicalRecord:DataProtectionKeyRingPath"] is { Length: > 0 } keyPath)
             protection.PersistKeysToFileSystem(new DirectoryInfo(keyPath));
+        if (configuration["MedicalRecord:DataProtectionCertificatePath"] is { Length: > 0 } certificatePath)
+        {
+            var certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
+                certificatePath, configuration["MedicalRecord:DataProtectionCertificatePassword"]);
+            if (!certificate.HasPrivateKey) throw new InvalidOperationException("MedicalRecord:DataProtectionCertificatePath must contain the private key required for recovery and shared-instance decryption.");
+            protection.ProtectKeysWithCertificate(certificate);
+        }
         services.AddSingleton<IMedicalRecordTokens, MedicalRecordTokens>();
         services.AddScoped<IEncounterVisibilityReader, EncounterVisibilityReader>();
         services.AddScoped<IClinicalReadService, ClinicalReadService>();

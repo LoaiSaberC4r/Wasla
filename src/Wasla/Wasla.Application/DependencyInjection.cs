@@ -34,6 +34,8 @@ public static class DependencyInjection
         // Wrap the transaction behavior so compensation observes failures after handler/idempotency saves or commit.
         services.AddTransient<MediatR.IPipelineBehavior<DiagnosticResultCommand, BuildingBlock.Domain.Results.Result<DiagnosticResultMutationResponse>>, DiagnosticMediaCompensationBehavior>();
         services.AddScoped<DiagnosticMediaCompensation>();
+        services.AddScoped<DiagnosticResultHandler>();
+        services.AddTransient<MediatR.IPipelineBehavior<DependentDiagnosticMutation, BuildingBlock.Domain.Results.Result<DependentDiagnosticReceipt>>, DependentDiagnosticCompensationBehavior>();
         services.AddTransient<MediatR.IPipelineBehavior<FamilyMedicalCommand, BuildingBlock.Domain.Results.Result<object>>, FamilyMedicalMediaCompensationBehavior>();
         services.AddScoped<PatientIdentityWorkflow>();
         services.AddScoped<Wasla.Application.Features.PatientIdentityMatching.PatientIdentityReuseGuard>();

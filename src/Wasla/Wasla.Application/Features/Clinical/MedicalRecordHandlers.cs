@@ -11,7 +11,7 @@ namespace Wasla.Application.Features.Clinical;
 public static class MedicalRecordInput
 {
     public static readonly string[] ResourceTypes = ["prescription", "lab-request", "lab-result", "radiology-request", "radiology-result"];
-    public static readonly string[] Filters = ["all", "visits", "diagnoses", "prescriptions", "labs", "radiology"];
+    public static readonly string[] Filters = ["all", "visits", "diagnoses", "prescriptions", "labs", "radiology", "historical-documents"];
     public static bool ValidTypes(string? types) => types is null || types.Split(',').All(t => Filters.Contains(t.Trim(), StringComparer.Ordinal));
     public static string Permission(MedicalRecordMode mode, bool log = false) => mode == MedicalRecordMode.OwnPatient
         ? log ? PermissionNames.MedicalRecordsViewOwnAccessLog : PermissionNames.MedicalRecordsViewOwn

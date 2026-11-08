@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 2,
+  "branch": "codex/family-self-service-historical-documents",
+  "startingCommit": "d05338369ed6c0b80691459f4086470005f8ad67",
+  "recordedAtUtc": "2026-11-08T12:20:47.822474+00:00",
+  "historicalEvidence": "TEST-EVIDENCE-PR38-BASELINE.json",
+  "finalCheckoutEvidence": {
+    "source": "GitHub CI artifact test-results/TEST-EVIDENCE.json and provenance.json",
+    "requirement": "commit must equal final PR38 head; checkout is explicitly pinned to pull_request.head.sha",
+    "generator": "tools/write-test-evidence.py",
+    "note": "CI enriches this checked-in local snapshot with exact final checkout SHA and all executed TRX counters."
+  },
+  "localCompletedRuns": [
+    {
+      "artifact": "artifacts/family-results/unit-complete/unit-complete.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 463,
+        "executed": 463,
+        "passed": 463,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "83aa4465efe4314941fdbfcdaba2c9008f1899b4362942797f0e405c451e9751"
+    },
+    {
+      "artifact": "artifacts/family-results/architecture-complete/architecture-complete.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "75b0add9594f0db0813eee4b5151dbe2e8f5d6eb5340203e9b6186b4ee5aa4cb"
+    },
+    {
+      "artifact": "artifacts/family-results/buildingblock/foundation.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 323,
+        "executed": 323,
+        "passed": 323,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "f965a889a9b3b017d4cd5be1a6ffb188f4dfb7883814962eace184755315e484"
+    },
+    {
+      "artifact": "artifacts/family-results/sql-rehearsal/sql-rehearsal.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 4,
+        "executed": 4,
+        "passed": 4,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "5798680b555a9a11011655648e2d1f4382c0a81c13c58037a2a684d44376920d"
+    },
+    {
+      "artifact": "artifacts/family-results/complete-focused/complete-focused.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 22,
+        "executed": 22,
+        "passed": 22,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "1dd7b8b4d1e39c656e04c80c90b6bcb71af6767b8c8bf7992f705d4d5249b18a"
+    },
+    {
+      "artifact": "artifacts/family-results/final-additions/final-additions.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "aa7ebc7d59215b95d140af58ffcf6660d5464d265d184f1075c83132db3512b1"
+    },
+    {
+      "artifact": "artifacts/family-results/public-discovery-final/public-discovery-final.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "b67143da93a8a43b0abff23774bd9cdb2c8c981e2d47417eb79ee8d48716309b"
+    },
+    {
+      "artifact": "artifacts/family-results/directory-load/directory-load.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "dc5920c8d8695c6eb28c3f1891600d3a0e6ed8e14d6849eb7b1cfb413c1364d6"
+    },
+    {
+      "artifact": "artifacts/family-results/prescription-real-browser/prescription-real-browser.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 2,
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "044e939e989e6d7fdb6de91fdb0faa5891cb62f4eeeccab7ab6e1ee143d1f7b5"
+    },
+    {
+      "artifact": "artifacts/family-results/activation-migration/activation-migration.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "720178ec35cc8631aba761266e413d7f112fe7a28cc4807dbeb8fad782682613"
+    }
+  ],
+  "fullIntegration": {
+    "discoveredCases": 548,
+    "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --artifacts-path artifacts/family-finish --no-build --logger trx",
+    "testDependencies": {
+      "WASLA_SQLSERVER_CONNECTION_STRING": "explicit disposable local SQL Server Express configuration; value omitted",
+      "WASLA_RUN_BROWSER_TESTS": "1",
+      "ClamAV": "real loopback3310 container1.5.4"
+    },
+    "stateAtSnapshot": "Pre-final consolidated local run still executing; cold-browser setup and stale Production gate expectation diagnosed and corrected. Exact final-head outcome is in CI evidence.",
+    "noSkippedTestCountedAsPass": true
+  },
+  "baseline": {
+    "restore": "passed",
+    "build": {
+      "passed": true,
+      "warnings": 0,
+      "errors": 0
+    },
+    "unit": {
+      "passed": 450,
+      "failed": 1,
+      "skipped": 0,
+      "failure": "CommercialFeaturePermissionCoverageTests CSV expected372 lines actual369"
+    },
+    "architecture": {
+      "passed": 26,
+      "failed": 0,
+      "skipped": 0
+    },
+    "integration": "Full baseline attempts aborted/incomplete. Original fixture failures: duplicate migration-seeded permissions and unreviewed operational family proof. Subsequent broad regression exposed stale finance constructor fixture, native directory timeout and change-tracking load costs; fixed without removing tests or weakening assertions."
+  },
+  "migration": {
+    "script": "MIGRATION.sql",
+    "sha256": "695bf8c415cf6df319d56102c7f08c683ec8001229811525d64fbb09d7847494",
+    "deferredOperations": 1193,
+    "newMigrations": [
+      "20261108111202_FamilyProductionClosure",
+      "20261108111713_HistoricalValidationReceipts"
+    ],
+    "cleanSQLServer": "passed",
+    "populatedUpgrade": "passed",
+    "checksumBackupRestoreRehearsal": "passed",
+    "idempotentReplay": "passed",
+    "productionDatabaseTouched": false
+  },
+  "permissions": {
+    "count": 371,
+    "changedExistingIds": 0,
+    "missingDocumentedEntriesFixed": [
+      "DependentIdentityCorrection.RequestOwn",
+      "FamilyJoinInvitations.CreateOwn",
+      "FamilyJoinInvitations.RedeemOwn"
+    ]
+  },
+  "production": {
+    "featureTargetEnabled": true,
+    "policyOwnerInputsComplete": true,
+    "policySource": "DECISION-2026-11-08-v2.md",
+    "automaticMigrations": false,
+    "automaticSeeding": false,
+    "actualDeploymentVerified": false,
+    "missingHostKeys": [
+      "MediaStorage:RootPath",
+      "MedicalRecord:DataProtectionKeyRingPath",
+      "MedicalRecord:DataProtectionCertificatePath"
+    ],
+    "otherMissingHostInputs": [
+      "API hostname and publish plan/profile",
+      "worker continuity and daemon/tunnel support",
+      "instance topology/shared storage/certificate permissions and backup"
+    ],
+    "configurationStorage": "appsettings; existing credentials retained; values omitted"
+  },
+  "smtp": {
+    "connectivity": true,
+    "startTls": true,
+    "authentication": false,
+    "failureType": "AuthenticationException",
+    "controlledMessagesSent": 0,
+    "inboxDeliveryVerified": false,
+    "configurationModified": false,
+    "probe": "tools/Wasla.ProductionProbe"
+  },
+  "coverageMap": "TEST-MATRIX-2026-11-08.md",
+  "productionReady": false,
+  "priorClosureCI": {
+    "runId": 42480141248,
+    "commit": "234f299756a52320a6dc68a4b73e4a8cd3a0dbde",
+    "unit": {
+      "passed": 463,
+      "failed": 0,
+      "skipped": 0
+    },
+    "integration": {
+      "passed": 458,
+      "failed": 2,
+      "skipped": 0
+    },
+    "diagnosis": [
+      "Production release-gate test expected disabled flags contrary to owner-approved activation",
+      "Subscription migration model test expected the old commercial migration to remain last after additive family migrations"
+    ],
+    "resolution": "Update intentional configuration/current-migration expectations; retain original migration presence and all model/authorization assertions. Final-head CI required."
+  }
+}

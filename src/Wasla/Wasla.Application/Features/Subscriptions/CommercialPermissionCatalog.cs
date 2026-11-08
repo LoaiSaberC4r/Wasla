@@ -494,6 +494,18 @@ public static class CommercialPermissionCatalog
             Phase18PartTwoPermissionNames.AuditPractice,
             Phase18PartTwoPermissionNames.AuditOwnActivity,
         ]);
+        Add(result, new(SubscriptionPermissionCategory.UniversalPatient),
+        [
+            FamilySelfServicePermissionNames.Workspace, FamilySelfServicePermissionNames.Search, FamilySelfServicePermissionNames.Submit,
+            FamilySelfServicePermissionNames.Profile, FamilySelfServicePermissionNames.Tickets, FamilySelfServicePermissionNames.Onboard,
+            FamilySelfServicePermissionNames.OnboardingOwn, FamilySelfServicePermissionNames.OnboardingResubmit,
+            .. FamilyExtensionPermissionNames.All, .. MedicalDocumentPermissionNames.All, .. DependentDiagnosticPermissionNames.All, .. FamilyGovernancePermissionNames.All
+        ]);
+        Add(result, new(SubscriptionPermissionCategory.SuperAdminGovernance),
+        [
+            FamilySelfServicePermissionNames.RevokeAuthority, FamilySelfServicePermissionNames.OnboardingReview,
+            FamilySelfServicePermissionNames.OnboardingInbox, FamilySelfServicePermissionNames.OnboardingDetails, FamilySelfServicePermissionNames.OnboardingEvidence
+        ]);
         return result;
     }
     private static void Add(Dictionary<string, SubscriptionPermissionClassification> result,

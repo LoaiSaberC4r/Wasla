@@ -177,7 +177,14 @@ public sealed class Phase12FinanceReadTests
             "Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.FinanceReadService")!;
         return (IFinanceReadService)Activator.CreateInstance(type,
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null,
-            [db, user, dataStore, receptionAuthorization!, new SubscriptionTestData.EntitledPermissions()], null)!;
+            [db, user, dataStore, receptionAuthorization!, new SubscriptionTestData.EntitledPermissions(), new NoDependentAccess()], null)!;
+    }
+    private sealed class NoDependentAccess : Wasla.Application.Features.Families.IDependentAccessPolicy
+    {
+        public Task<Result<Wasla.Application.Features.Families.DependentOperationalScope>> AuthorizeAsync(Guid childPatientId, string permission, CancellationToken ct)
+            => throw new InvalidOperationException("Own/practice finance tests must never authorize dependent access.");
+        public Task<Wasla.Application.Features.Families.DependentAccessSnapshot> SnapshotAsync(IReadOnlyCollection<Guid> children, CancellationToken ct)
+            => throw new InvalidOperationException("Own/practice finance tests must never load dependent scopes.");
     }
 
     private static readonly Guid SharedSegmentId = Guid.NewGuid();
