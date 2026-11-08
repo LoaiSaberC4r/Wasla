@@ -15,6 +15,15 @@ public sealed class ProductionActivationTests
             .AddInMemoryCollection(overrides ?? []).Build();
     }
     [Fact]
+    public void Production_archive_is_enabled_and_retains_inherited_batch_settings()
+    {
+        var configuration = Configuration();
+        Assert.True(configuration.GetValue<bool>("Archive:Enabled"));
+        Assert.True(configuration.GetValue<bool>("Archive:ReadModelsVerified"));
+        Assert.Equal(50, configuration.GetValue<int>("Archive:BatchSize"));
+        Assert.Equal(300, configuration.GetValue<int>("Archive:IntervalSeconds"));
+    }
+    [Fact]
     public void Owner_approved_policy_is_complete_and_only_real_host_paths_remain_unconfirmed()
     {
         var configuration = Configuration(); var policy = configuration.GetSection("FamilyMedicalPolicy").Get<FamilyMedicalPolicyOptions>()!;
