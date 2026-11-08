@@ -57,8 +57,8 @@ public sealed class Phase17RecipientNotificationTests
             Assert.Equal(verified, await db.NotificationDeliveries.AnyAsync(d => d.NotificationEventId == e.Id && d.RecipientApplicationUserId == user && d.Channel == NotificationChannel.InApp && d.Status == NotificationDeliveryStatus.Queued));
             if (verified)
             {
-                var proof = await db.Set<VerifiedParentChildRelationship>().SingleAsync(p => p.ChildPatientId == family.ChildId && p.ParentPatientId == app.PatientId);
-                proof.Revoke(app.Clock.UtcNow); await db.SaveChangesAsync();
+                var proof = await db.Set<ParentChildOperationalAuthority>().SingleAsync(p => p.ChildPatientId == family.ChildId && p.ParentPatientId == app.PatientId);
+                proof.Revoke(proof.ReviewedByApplicationUserId, app.Clock.UtcNow, "Reviewed operational revocation"); await db.SaveChangesAsync();
             }
         });
         app.Clock.UtcNow = app.Clock.UtcNow.AddHours(2); await DispatchAsync(app);
@@ -128,6 +128,8 @@ public sealed class Phase17RecipientNotificationTests
             var review = await db.Set<FamilyMedicalEligibilityReview>().SingleAsync(r => r.AdultPatientId == app.PatientId && r.ChildPatientId == family.ChildId);
             var admin = await db.ApplicationUsers.SingleAsync(u => u.UserName == "admin");
             Assert.True(review.Decide("revoke", admin.Id, app.Clock.UtcNow, null, null, "Revoked authority evidence").IsSuccess);
+            var operational = await db.Set<ParentChildOperationalAuthority>().SingleAsync(p => p.ChildPatientId == family.ChildId && p.ParentPatientId == app.PatientId);
+            operational.Revoke(admin.Id, app.Clock.UtcNow, "Independent reviewed operational revocation");
             await db.SaveChangesAsync();
         });
         app.Clock.UtcNow = app.Clock.UtcNow.AddHours(2); await DispatchAsync(app);

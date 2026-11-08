@@ -155,6 +155,17 @@ public static class DependencyInjection
         services.AddOptions<DiagnosticCatalogImportOptions>().Bind(configuration.GetSection(DiagnosticCatalogImportOptions.SectionName))
             .Validate(o => o.MaxPackageBytes > 0 && o.MaxExpandedBytes >= o.MaxPackageBytes && o.MaxEntries > 0 && o.MaxRows > 0 && o.MaxCompressionRatio > 0 && o.SupportedVersions.Length > 0, "Invalid diagnostic import limits.").ValidateOnStart();
         services.AddOptions<FamilyMedicalPolicyOptions>().Bind(configuration.GetSection("FamilyMedicalPolicy"));
+        services.AddOptions<DependentManagementOptions>().Bind(configuration.GetSection("DependentManagement"))
+            .Validate(o => o.IsValid(), "Invalid dependent management limits or operational timezone.").ValidateOnStart();
+        services.AddScoped<IOperationalAuthorityReader, OperationalAuthorityReader>();
+        services.AddScoped<IDependentAccessPolicy, DependentAccessPolicy>();
+        services.AddScoped<IFamilyOperationalVerification, FamilyOperationalVerification>();
+        services.AddScoped<IFamilyCandidateStore, FamilyCandidateStore>();
+        services.AddOptions<Media.ClamAvMalwareScannerOptions>().Bind(configuration.GetSection("MalwareScanner"))
+            .Validate(o => o.IsValid, "Invalid local malware scanner configuration.").ValidateOnStart();
+        if (configuration.GetValue<bool>("MalwareScanner:Enabled"))
+            services.AddSingleton<BuildingBlock.Application.Abstraction.Media.IMalwareScanner, Media.ClamAvMalwareScanner>();
+        services.AddScoped<IChildOnboardingWorkflow, ChildOnboardingWorkflow>();
         services.AddScoped<FamilyMedicalAccessPolicy>();
         services.AddScoped<IFamilyMedicalAccessPolicy>(p => p.GetRequiredService<FamilyMedicalAccessPolicy>());
         services.AddScoped<IFamilyMedicalWorkflow, FamilyMedicalWorkflow>();

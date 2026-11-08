@@ -178,6 +178,7 @@ public sealed class Phase16FinalGapTests
             await db.SaveChangesAsync();
         });
         using var adult = await app.ClientAsync("patient"); using var admin = await app.ClientAsync("admin");
+        using var assisted = await app.ClientAsync("reception");
         Guid? familyId = null;
         foreach (var child in children)
         {
@@ -185,10 +186,13 @@ public sealed class Phase16FinalGapTests
             form.Add(new StringContent(familyId is null ? "CreateFamily" : "AddFamilyMember"), "requestType");
             if (familyId.HasValue) form.Add(new StringContent(familyId.Value.ToString()), "familyId");
             form.Add(new StringContent(child.ToString()), "targetPatientId"); form.Add(new StringContent(role.ToString()), "requesterClaimedRole");
+            form.Add(new StringContent(app.PatientId.ToString()), "requesterPatientId");
             form.Add(new StringContent("Child"), "targetClaimedRole");
             var file = new ByteArrayContent(Encoding.ASCII.GetBytes("%PDF-1.4\nTEST-ONLY explicit parent proof\n%%EOF")); file.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
             form.Add(file, "evidenceFiles", "proof.pdf"); form.Add(new StringContent("BirthCertificate"), "documentTypes");
-            using var submitted = await adult.PostAsync(Relationships, form, TestContext.Current.CancellationToken);
+            // Legacy staff-mediated exact-ID cases remain supported. Public bootstrap
+            // now requires opaque selection and cannot safely select these ambiguous twins.
+            using var submitted = await assisted.PostAsync(Relationships + "/assisted", form, TestContext.Current.CancellationToken);
             Assert.True(submitted.IsSuccessStatusCode, await submitted.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
             var request = await JsonAsync(submitted); var id = request.GetProperty("requestId").GetGuid();
             using var approved = await PostAsync(admin, ReviewRelationships + $"/{id}/approve", new { rowVersion = request.GetProperty("rowVersion").GetString() });

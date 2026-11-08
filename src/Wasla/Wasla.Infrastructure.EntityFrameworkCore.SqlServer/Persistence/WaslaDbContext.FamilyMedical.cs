@@ -9,6 +9,19 @@ public sealed partial class WaslaDbContext
     {
         foreach (var e in ChangeTracker.Entries().Where(e => e.State is EntityState.Modified or EntityState.Deleted))
         {
+            if (e.Entity is OperationalAuthorityHistory or ChildOnboardingHistory or ChildOnboardingEvidence)
+                throw new InvalidOperationException("Operational authority history is immutable.");
+            if (e.Entity is ParentChildOperationalAuthority && (e.State == EntityState.Deleted ||
+                e.Properties.Any(p => p.IsModified && p.Metadata.Name is not ("IsActive" or "RevokedAtUtc" or "RevocationReason" or "RevokedByApplicationUserId" or "RevocationIdempotencyKey")) ||
+                e.Property("IsActive").OriginalValue is false))
+                throw new InvalidOperationException("Operational authority provenance is immutable; revoke and review a new proof.");
+            if (e.Entity is FamilyCandidateSelection && (e.State == EntityState.Deleted || e.Property("ConsumedAtUtc").OriginalValue is not null ||
+                e.Properties.Any(p => p.IsModified && p.Metadata.Name is not ("ConsumedAtUtc" or "RelationshipRequestId" or "IdempotencyKey" or "SubmissionFingerprint"))))
+                throw new InvalidOperationException("Candidate provenance is immutable and redemption is one-use.");
+            if (e.Entity is ChildOnboardingRequest && (e.State == EntityState.Deleted ||
+                e.Properties.Any(p => p.IsModified && p.Metadata.Name is "ActorApplicationUserId" or "ParentPatientId" or "ParentRole" or "NameAr" or "NameEn" or
+                    "DateOfBirth" or "Gender" or "PhoneNumber" or "ContactNameAr" or "ContactPhone" or "Fingerprint" or "IntentHash" or "IdempotencyKey" or "CreatedAtUtc")))
+                throw new InvalidOperationException("Private child intake is retained and immutable.");
             if (e.Entity is VerifiedParentChildRelationship && (e.State == EntityState.Deleted ||
                 e.Properties.Any(p => p.IsModified && p.Metadata.Name is not ("Status" or "RevokedAtUtc"))))
                 throw new InvalidOperationException("Verified relationship provenance is immutable; revoke and review a new proof.");

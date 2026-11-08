@@ -354,6 +354,10 @@ internal sealed class WaslaSecuritySeeder(
         foreach (var role in new[] { SystemRoleIds.Patient, SystemRoleIds.Doctor, SystemRoleIds.Reception, SystemRoleIds.SuperAdmin })
             mappings[role] = mappings[role].Concat(PermissionNames.NotificationOwnDefaults).ToArray();
         mappings[SystemRoleIds.SuperAdmin] = mappings[SystemRoleIds.SuperAdmin].Concat(PermissionNames.NotificationAdminDefaults).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(FamilySelfServicePermissionNames.PatientDefaults).ToArray();
+        mappings[SystemRoleIds.Patient] = mappings[SystemRoleIds.Patient].Concat(FamilySelfServicePermissionNames.OnboardingPatientDefaults).ToArray();
+        mappings[SystemRoleIds.SuperAdmin] = mappings[SystemRoleIds.SuperAdmin].Concat(FamilySelfServicePermissionNames.OnboardingAdminDefaults).ToArray();
+        mappings[SystemRoleIds.SuperAdmin] = mappings[SystemRoleIds.SuperAdmin].Concat(FamilySelfServicePermissionNames.AdminDefaults).ToArray();
         foreach (var (roleId, permissionNames) in mappings)
         {
             foreach (var permissionName in permissionNames)

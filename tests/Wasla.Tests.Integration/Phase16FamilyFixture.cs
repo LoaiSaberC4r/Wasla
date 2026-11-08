@@ -45,6 +45,7 @@ internal sealed class Phase16FamilyFixture : IAsyncDisposable
         try
         {
             ConfigurePolicy(app.Services.GetRequiredService<IOptions<FamilyMedicalPolicyOptions>>().Value);
+            app.Services.GetRequiredService<IOptions<DependentManagementOptions>>().Value.Enabled = true;
             app.Services.GetRequiredService<IOptions<MedicalRecordOptions>>().Value.GuardianSharingEnabled = true;
             var ct = TestContext.Current.CancellationToken;
             await using (var scope = app.Services.CreateAsyncScope())
@@ -90,7 +91,11 @@ internal sealed class Phase16FamilyFixture : IAsyncDisposable
                 await db.SaveChangesAsync(ct);
                 if (verifyParents)
                     foreach (var proof in await db.FamilyRelationshipRequests.Where(rq => rq.FamilyId == family.Id).ToArrayAsync(ct))
+                    {
                         Assert.True((await scope.ServiceProvider.GetRequiredService<IFamilyRelationshipMedicalVerification>().RecordAsync(proof, family, ct)).IsSuccess);
+                        // Explicit reviewed fixture cases independently establish operational proof.
+                        Assert.True((await scope.ServiceProvider.GetRequiredService<IFamilyOperationalVerification>().RecordAsync(proof, family, ct)).IsSuccess);
+                    }
                 await db.SaveChangesAsync(ct);
                 await setupTransaction.CommitAsync(ct);
             }

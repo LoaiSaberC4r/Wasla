@@ -106,8 +106,9 @@ public sealed class Phase5FinalIdentityDomainTests
         Assert.Equal(Phase5Permissions, PermissionNames.All.Skip(old.Length).Take(10));
         Assert.Equal(NotificationPermissions, PermissionNames.All.Skip(old.Length + 10).Take(8));
         Assert.Equal(PermissionNames.DoctorPatientDefaults, PermissionNames.All.Skip(old.Length + 10 + 8).Take(PermissionNames.DoctorPatientDefaults.Count));
-        Assert.Equal(Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All, PermissionNames.All.Skip(old.Length + 10 + 8 + PermissionNames.DoctorPatientDefaults.Count));
-        Assert.Equal(old.Length + 10 + 8 + 3 + Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count, PermissionNames.All.Count);
+        Assert.Equal(Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All, PermissionNames.All.Skip(old.Length + 10 + 8 + PermissionNames.DoctorPatientDefaults.Count).Take(Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count));
+        Assert.Equal(FamilySelfServicePermissionNames.All, PermissionNames.All.Skip(old.Length + 10 + 8 + 3 + Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count));
+        Assert.Equal(old.Length + 10 + 8 + 3 + Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count + FamilySelfServicePermissionNames.All.Count, PermissionNames.All.Count);
         var expected = old.Concat(Phase5Permissions).Concat(NotificationPermissions).ToArray();
         for (var i = 0; i < expected.Length; i++) Assert.Equal(Guid.Parse($"20000000-0000-0000-0000-{i + 1:D12}"), SystemPermissionIds.For(expected[i]));
         Assert.Equal(1, (int)PatientAccountLinkSource.SelfRegistration); Assert.Equal(2, (int)PatientAccountLinkSource.PatientClaim); Assert.Equal(3, (int)PatientAccountLinkSource.ReceptionFullRegistration);

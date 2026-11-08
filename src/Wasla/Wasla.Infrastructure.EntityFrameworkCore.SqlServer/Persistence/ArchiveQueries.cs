@@ -14,7 +14,7 @@ using Wasla.Domain.Tickets;
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 internal sealed class ArchiveQueries(WaslaDbContext db, IReportingAccessGuard guard, ArchiveTokens tokens,
-    IDateTimeProvider clock, ICurrentUser user, IWaslaDataStore store, IPatientAccessPolicy family) : IArchiveQueries
+    IDateTimeProvider clock, ICurrentUser user, IWaslaDataStore store, Wasla.Application.Features.Families.IDependentAccessPolicy dependents) : IArchiveQueries
 {
     private static string Permission(ReportActor actor, bool ticket) => actor switch
     {
@@ -39,7 +39,7 @@ internal sealed class ArchiveQueries(WaslaDbContext db, IReportingAccessGuard gu
         if (actorMember == null || patient == null) return false;
         var members = await store.ListActiveFamilyMembersAsync(actorMember.FamilyId, ct);
         var target = members.SingleOrDefault(x => x.Member.PatientId == subject)?.Member;
-        return target != null && family.CanBookReservation(actorMember, target, patient, DateOnly.FromDateTime(clock.UtcNow));
+        return target != null && (await dependents.AuthorizeAsync(subject, PermissionNames.ReservationsViewDependents, ct)).IsSuccess;
     }
     public async Task<Result<OptionsPage<ArchivePatientOption>>> PatientsAsync(int pageNumber, int pageSize, CancellationToken ct)
     {

@@ -597,6 +597,7 @@ public static class PermissionNames
         .. NotificationAdminDefaults,
         .. DoctorPatientDefaults,
         .. Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All,
+        .. FamilySelfServicePermissionNames.All,
     ];
 
     public static readonly IReadOnlySet<string> ReceptionAssignmentScoped = new HashSet<string>(

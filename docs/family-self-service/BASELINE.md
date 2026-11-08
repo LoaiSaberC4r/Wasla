@@ -11,3 +11,8 @@
 - baseline-permissions.json captures every pre-task name/index/GUID from the compiled baseline Domain assembly.
 - credential-review.json identifies configuration key locations without values. Active status was not probed. Rotation, history review and secure deployment overrides remain external P0 release gates.
 - No production/staging database or credentials were queried. No migration or seeding was run against a live environment.
+
+The broad integration baseline was stopped after prolonged no-output/resource
+consumption; it is INCOMPLETE and has no claimed integration pass. Changed-code
+validation used isolated output paths because the Windows baseline runner locked
+its binaries. See TEST-EVIDENCE.json for final focused SQL and regression evidence.

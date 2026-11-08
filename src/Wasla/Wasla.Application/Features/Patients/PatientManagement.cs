@@ -504,7 +504,8 @@ internal static class PatientIdentity
         if (!currentUser.IsAuthenticated || currentUser.UserId is not { } userId)
             return Result<Patient>.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
         var access = await dataStore.GetAccessSnapshotAsync(userId, cancellationToken);
-        if (access is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.Patient, PatientId: not null } || !access.Permissions.Contains(permission)) return Result<Patient>.Fail(PatientIdentityErrors.Denied);
+        if (access is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.Patient, PatientId: not null } ||
+            !currentUser.Permissions.Contains(permission) || !access.Permissions.Contains(permission)) return Result<Patient>.Fail(PatientIdentityErrors.Denied);
         var patient = await dataStore.FindPatientByUserIdAsync(userId, cancellationToken);
         return patient is null ? Result<Patient>.Fail(PatientErrors.AccountLinkNotFound) : Result<Patient>.Ok(patient);
     }

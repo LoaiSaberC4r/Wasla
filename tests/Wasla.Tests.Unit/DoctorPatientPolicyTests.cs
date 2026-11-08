@@ -49,9 +49,9 @@ public sealed class DoctorPatientPolicyTests
     [Fact]
     public void New_permissions_are_unique_append_only_and_have_deterministic_ids()
     {
-        Assert.Equal(PermissionNames.DoctorPatientDefaults, PermissionNames.All.Skip(PermissionNames.All.Count - Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count - 3).Take(3));
+        Assert.Equal(PermissionNames.DoctorPatientDefaults, PermissionNames.All.Skip(PermissionNames.All.Count - FamilySelfServicePermissionNames.All.Count - Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count - 3).Take(3));
         Assert.Equal(PermissionNames.All.Count, PermissionNames.All.Distinct(StringComparer.Ordinal).Count());
-        var first = PermissionNames.All.Count - Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count - 2;
+        var first = PermissionNames.All.Count - FamilySelfServicePermissionNames.All.Count - Wasla.Domain.Subscriptions.SubscriptionPermissionNames.All.Count - 2;
         Assert.Equal(Guid.Parse($"20000000-0000-0000-0000-{first:D12}"), SystemPermissionIds.For(PermissionNames.DoctorPatientsViewOwn));
     }
     [Fact]

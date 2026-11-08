@@ -9,7 +9,9 @@ public enum FamilyRelationshipRequestType
     CreateFamily = 1,
     AddFamilyMember = 2,
     VerifyParentChild = 3,
-    VerifyGuardianChild = 4
+    VerifyGuardianChild = 4,
+    VerifyOperationalParentChild = 5,
+    JoinFamilyAsParent = 6
 }
 
 public enum FamilyRelationshipRequestStatus
@@ -107,6 +109,10 @@ public sealed class FamilyRelationshipRequest : AggregateRoot<Guid>, IAuditableE
                 requesterClaimedRole is FamilyMemberRole.Father or FamilyMemberRole.Mother && targetClaimedRole == FamilyMemberRole.Child,
             FamilyRelationshipRequestType.VerifyGuardianChild => familyId is not null && familyId != Guid.Empty &&
                 requesterClaimedRole is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian && targetClaimedRole == FamilyMemberRole.Child,
+            FamilyRelationshipRequestType.VerifyOperationalParentChild => familyId is not null && familyId != Guid.Empty &&
+                requesterClaimedRole is FamilyMemberRole.Father or FamilyMemberRole.Mother or FamilyMemberRole.LegalGuardian && targetClaimedRole == FamilyMemberRole.Child,
+            FamilyRelationshipRequestType.JoinFamilyAsParent => familyId is not null && familyId != Guid.Empty &&
+                requesterClaimedRole is FamilyMemberRole.Father or FamilyMemberRole.Mother && targetClaimedRole == FamilyMemberRole.Child,
             _ => false
         };
         if (id == Guid.Empty || requesterPatientId == Guid.Empty || targetPatientId == Guid.Empty ||

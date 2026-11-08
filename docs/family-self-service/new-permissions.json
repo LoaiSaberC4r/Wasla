@@ -1,0 +1,67 @@
+[
+  {
+    "index": 337,
+    "name": "FamilyWorkspace.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000338"
+  },
+  {
+    "index": 338,
+    "name": "PatientFamilyCandidates.Search",
+    "id": "20000000-0000-0000-0000-000000000339"
+  },
+  {
+    "index": 339,
+    "name": "PatientFamilyCandidates.Submit",
+    "id": "20000000-0000-0000-0000-000000000340"
+  },
+  {
+    "index": 340,
+    "name": "DependentPatientProfile.View",
+    "id": "20000000-0000-0000-0000-000000000341"
+  },
+  {
+    "index": 341,
+    "name": "DependentTickets.ViewAuthorized",
+    "id": "20000000-0000-0000-0000-000000000342"
+  },
+  {
+    "index": 342,
+    "name": "FamilyOperationalProofRequests.Revoke",
+    "id": "20000000-0000-0000-0000-000000000343"
+  },
+  {
+    "index": 343,
+    "name": "ChildOnboarding.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000344"
+  },
+  {
+    "index": 344,
+    "name": "ChildOnboarding.ViewOwn",
+    "id": "20000000-0000-0000-0000-000000000345"
+  },
+  {
+    "index": 345,
+    "name": "ChildOnboarding.ResubmitOwn",
+    "id": "20000000-0000-0000-0000-000000000346"
+  },
+  {
+    "index": 346,
+    "name": "ChildOnboarding.Decide",
+    "id": "20000000-0000-0000-0000-000000000347"
+  },
+  {
+    "index": 347,
+    "name": "ChildOnboarding.ViewAll",
+    "id": "20000000-0000-0000-0000-000000000348"
+  },
+  {
+    "index": 348,
+    "name": "ChildOnboarding.ViewDetails",
+    "id": "20000000-0000-0000-0000-000000000349"
+  },
+  {
+    "index": 349,
+    "name": "ChildOnboarding.ViewEvidence",
+    "id": "20000000-0000-0000-0000-000000000350"
+  }
+]

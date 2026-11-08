@@ -91,8 +91,8 @@ public sealed record FamilyRelationshipRequestQueueResponse(
     FamilyRelationshipRequestStatus Status,
     Guid RequesterPatientId,
     string RequesterNameAr,
-    Guid TargetPatientId,
-    string TargetNameAr,
+    Guid? TargetPatientId,
+    string? TargetNameAr,
     FamilyMemberRole RequesterClaimedRole,
     FamilyMemberRole TargetClaimedRole,
     int CurrentRevisionNumber,
@@ -104,7 +104,7 @@ public sealed record FamilyRelationshipHistoryResponse(Guid HistoryId, int Revis
 public sealed record FamilyRelationshipRequestDetailsResponse(
     FamilyRelationshipRequestResponse Request,
     FamilyRelationshipPatientResponse Requester,
-    FamilyRelationshipPatientResponse Target,
+    FamilyRelationshipPatientResponse? Target,
     FamilyMemberRole RequesterClaimedRole,
     FamilyMemberRole TargetClaimedRole,
     string? ModificationMessage,
@@ -214,21 +214,32 @@ internal sealed class SubmitFamilyRelationshipRequestCommandHandler(FamilyRelati
 {
     public async Task<Result<FamilyRelationshipRequestResponse>> Handle(SubmitFamilyRelationshipRequestCommand request, CancellationToken cancellationToken)
     {
-        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken);
+        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken, PermissionNames.FamilyRelationshipRequestsCreate);
         if (patient.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(patient.Errors);
+        // Public discovery must redeem an actor-bound candidate reference. Raw IDs are
+        // retained only for already visible same-family verification workflows.
+        var own = await dataStore.FindActiveFamilyMemberByPatientIdAsync(patient.Value.Id, cancellationToken);
+        var subject = await dataStore.FindActiveFamilyMemberByPatientIdAsync(request.TargetPatientId, cancellationToken);
+        if (own is null || subject is null || own.FamilyId != subject.FamilyId || request.FamilyId != own.FamilyId ||
+            request.RequestType is not (FamilyRelationshipRequestType.VerifyParentChild or FamilyRelationshipRequestType.VerifyGuardianChild or FamilyRelationshipRequestType.VerifyOperationalParentChild))
+            return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.AccessForbidden);
         return await workflow.SubmitAsync(request.RequestType, request.FamilyId, patient.Value.Id, request.TargetPatientId,
             request.RequesterClaimedRole, request.TargetClaimedRole, request.Evidence, currentUser.UserId!.Value, cancellationToken);
     }
 }
 
-internal sealed class SubmitAssistedFamilyRelationshipRequestCommandHandler(FamilyRelationshipWorkflowService workflow, ICurrentUser currentUser)
+internal sealed class SubmitAssistedFamilyRelationshipRequestCommandHandler(FamilyRelationshipWorkflowService workflow, ICurrentUser currentUser, IWaslaDataStore dataStore)
     : ICommandHandler<SubmitAssistedFamilyRelationshipRequestCommand, FamilyRelationshipRequestResponse>
 {
-    public Task<Result<FamilyRelationshipRequestResponse>> Handle(SubmitAssistedFamilyRelationshipRequestCommand request, CancellationToken cancellationToken)
-        => !currentUser.IsAuthenticated || currentUser.UserId is not { } actorId
-            ? Task.FromResult(Result<FamilyRelationshipRequestResponse>.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired)))
-            : workflow.SubmitAsync(request.RequestType, request.FamilyId, request.RequesterPatientId, request.TargetPatientId,
-                request.RequesterClaimedRole, request.TargetClaimedRole, request.Evidence, actorId, cancellationToken);
+    public async Task<Result<FamilyRelationshipRequestResponse>> Handle(SubmitAssistedFamilyRelationshipRequestCommand request, CancellationToken cancellationToken)
+    {
+        if (request.RequestType is FamilyRelationshipRequestType.VerifyOperationalParentChild or FamilyRelationshipRequestType.JoinFamilyAsParent)
+            return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.AccessForbidden);
+        if (!await FamilyHandlerAccess.AllowedAsync(dataStore, currentUser, PermissionNames.FamilyRelationshipRequestsCreateAssisted, UserType.Reception, cancellationToken))
+            return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.AccessForbidden);
+        return await workflow.SubmitAsync(request.RequestType, request.FamilyId, request.RequesterPatientId, request.TargetPatientId,
+            request.RequesterClaimedRole, request.TargetClaimedRole, request.Evidence, currentUser.UserId!.Value, cancellationToken);
+    }
 }
 
 internal sealed class ResubmitFamilyRelationshipRequestCommandHandler(FamilyRelationshipWorkflowService workflow, IWaslaDataStore dataStore, ICurrentUser currentUser)
@@ -236,19 +247,22 @@ internal sealed class ResubmitFamilyRelationshipRequestCommandHandler(FamilyRela
 {
     public async Task<Result<FamilyRelationshipRequestResponse>> Handle(ResubmitFamilyRelationshipRequestCommand request, CancellationToken cancellationToken)
     {
-        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken);
+        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken, PermissionNames.FamilyRelationshipRequestsResubmitOwn);
         if (patient.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(patient.Errors);
-        return await workflow.ResubmitAsync(request.RequestId, request.Evidence, request.RowVersion, currentUser.UserId!.Value, patient.Value.Id, false, cancellationToken);
+        var result = await workflow.ResubmitAsync(request.RequestId, request.Evidence, request.RowVersion, currentUser.UserId!.Value, patient.Value.Id, false, cancellationToken);
+        return result.IsSuccess ? Result<FamilyRelationshipRequestResponse>.Ok(result.Value with { FamilyId = null }) : result;
     }
 }
 
-internal sealed class ResubmitAssistedFamilyRelationshipRequestCommandHandler(FamilyRelationshipWorkflowService workflow, ICurrentUser currentUser)
+internal sealed class ResubmitAssistedFamilyRelationshipRequestCommandHandler(FamilyRelationshipWorkflowService workflow, ICurrentUser currentUser, IWaslaDataStore dataStore)
     : ICommandHandler<ResubmitAssistedFamilyRelationshipRequestCommand, FamilyRelationshipRequestResponse>
 {
-    public Task<Result<FamilyRelationshipRequestResponse>> Handle(ResubmitAssistedFamilyRelationshipRequestCommand request, CancellationToken cancellationToken)
-        => !currentUser.IsAuthenticated || currentUser.UserId is not { } actorId
-            ? Task.FromResult(Result<FamilyRelationshipRequestResponse>.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired)))
-            : workflow.ResubmitAsync(request.RequestId, request.Evidence, request.RowVersion, actorId, null, true, cancellationToken);
+    public async Task<Result<FamilyRelationshipRequestResponse>> Handle(ResubmitAssistedFamilyRelationshipRequestCommand request, CancellationToken cancellationToken)
+    {
+        if (!await FamilyHandlerAccess.AllowedAsync(dataStore, currentUser, PermissionNames.FamilyRelationshipRequestsResubmitAssisted, UserType.Reception, cancellationToken))
+            return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.AccessForbidden);
+        return await workflow.ResubmitAsync(request.RequestId, request.Evidence, request.RowVersion, currentUser.UserId!.Value, null, true, cancellationToken);
+    }
 }
 
 internal sealed class ApproveFamilyRelationshipRequestCommandHandler(FamilyRelationshipWorkflowService workflow)
@@ -275,7 +289,7 @@ internal sealed class GetMyFamilyQueryHandler(IWaslaDataStore dataStore, ICurren
 {
     public async Task<Result<MyFamilyResponse>> Handle(GetMyFamilyQuery request, CancellationToken cancellationToken)
     {
-        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken);
+        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken, PermissionNames.FamiliesViewOwn);
         if (patient.IsFailure) return Result<MyFamilyResponse>.Fail(patient.Errors);
         var member = await dataStore.FindActiveFamilyMemberByPatientIdAsync(patient.Value.Id, cancellationToken);
         if (member is null) return Result<MyFamilyResponse>.Fail(FamilyErrors.NotFound);
@@ -293,7 +307,7 @@ internal sealed class GetMyFamilyRelationshipRequestsQueryHandler(IWaslaDataStor
 {
     public async Task<Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>> Handle(GetMyFamilyRelationshipRequestsQuery request, CancellationToken cancellationToken)
     {
-        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken);
+        var patient = await PatientIdentity.ResolveAsync(dataStore, currentUser, cancellationToken, PermissionNames.FamilyRelationshipRequestsViewOwn);
         if (patient.IsFailure) return Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Fail(patient.Errors);
         return Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Ok(await FamilyWorkflowMapper.ListAsync(
             dataStore, request.Status, request.RequestType, null, null, patient.Value.Id, request.PageNumber, request.PageSize, cancellationToken));
@@ -305,18 +319,20 @@ internal sealed class ListAssistedFamilyRelationshipRequestsQueryHandler(IWaslaD
 {
     public async Task<Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>> Handle(ListAssistedFamilyRelationshipRequestsQuery request, CancellationToken cancellationToken)
     {
-        if (!currentUser.IsAuthenticated || currentUser.UserId is not { } actorId)
-            return Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
+        if (!await FamilyHandlerAccess.AllowedAsync(dataStore, currentUser, PermissionNames.FamilyRelationshipRequestsViewAssisted, UserType.Reception, cancellationToken))
+            return Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Fail(FamilyErrors.AccessForbidden);
         return Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Ok(await FamilyWorkflowMapper.ListAsync(
-            dataStore, request.Status, request.RequestType, request.Search, actorId, null, request.PageNumber, request.PageSize, cancellationToken));
+            dataStore, request.Status, request.RequestType, request.Search, currentUser.UserId, null, request.PageNumber, request.PageSize, cancellationToken));
     }
 }
 
-internal sealed class ListFamilyRelationshipRequestsQueryHandler(IWaslaDataStore dataStore)
+internal sealed class ListFamilyRelationshipRequestsQueryHandler(IWaslaDataStore dataStore, ICurrentUser currentUser)
     : IQueryHandler<ListFamilyRelationshipRequestsQuery, PagedResponse<FamilyRelationshipRequestQueueResponse>>
 {
     public async Task<Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>> Handle(ListFamilyRelationshipRequestsQuery request, CancellationToken cancellationToken)
-        => Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Ok(await FamilyWorkflowMapper.ListAsync(
+        => !await FamilyHandlerAccess.AllowedAsync(dataStore, currentUser, PermissionNames.FamilyRelationshipRequestsViewAll, UserType.SuperAdmin, cancellationToken)
+            ? Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Fail(FamilyErrors.AccessForbidden)
+            : Result<PagedResponse<FamilyRelationshipRequestQueueResponse>>.Ok(await FamilyWorkflowMapper.ListAsync(
             dataStore, request.Status, request.RequestType, request.Search, null, null, request.PageNumber, request.PageSize, cancellationToken));
 }
 
@@ -335,10 +351,16 @@ internal sealed class GetFamilyRelationshipRequestDetailsQueryHandler(IWaslaData
             ? await dataStore.ListActiveFamilyMembersAsync(familyId, cancellationToken)
             : [];
         return Result<FamilyRelationshipRequestDetailsResponse>.Ok(new(
-            FamilyWorkflowMapper.Request(record.Request), FamilyWorkflowMapper.Patient(record.Requester), FamilyWorkflowMapper.Patient(record.Target),
-            record.Request.RequesterClaimedRole, record.Request.TargetClaimedRole, record.Request.ModificationMessage, record.Request.RejectionReason,
-            members.Select(FamilyWorkflowMapper.Member).ToArray(),
-            documents.Select(FamilyWorkflowMapper.Document).ToArray(), history.Select(FamilyWorkflowMapper.History).ToArray()));
+            FamilyWorkflowMapper.Request(record.Request) with { FamilyId = request.AccessMode == FamilyRelationshipAccessMode.Admin ? record.Request.FamilyId : null }, FamilyWorkflowMapper.Patient(record.Requester),
+            request.AccessMode == FamilyRelationshipAccessMode.Admin ? FamilyWorkflowMapper.Patient(record.Target) : null,
+            record.Request.RequesterClaimedRole, record.Request.TargetClaimedRole,
+            request.AccessMode == FamilyRelationshipAccessMode.Admin ? record.Request.ModificationMessage :
+                record.Request.Status == FamilyRelationshipRequestStatus.ModificationRequested ? FamilySelfServiceText.Get("FamilyRelationship_ReviewSubmittedEvidence") : null,
+            request.AccessMode == FamilyRelationshipAccessMode.Admin ? record.Request.RejectionReason :
+                record.Request.Status == FamilyRelationshipRequestStatus.Rejected ? FamilySelfServiceText.Get("FamilyRelationship_RequestRejected") : null,
+            request.AccessMode == FamilyRelationshipAccessMode.Admin ? members.Select(FamilyWorkflowMapper.Member).ToArray() : [],
+            documents.Select(FamilyWorkflowMapper.Document).ToArray(), history.Select(h => request.AccessMode == FamilyRelationshipAccessMode.Admin ? FamilyWorkflowMapper.History(h) :
+                FamilyWorkflowMapper.History(h) with { PerformedByApplicationUserId = Guid.Empty, MessageOrReason = null }).ToArray()));
     }
 }
 
@@ -354,18 +376,22 @@ internal sealed class GetFamilyRelationshipDocumentQueryHandler(IWaslaDataStore 
         var document = await dataStore.FindFamilyRelationshipDocumentAsync(request.RequestId, request.DocumentId, cancellationToken);
         if (document is null) return Result<PrivateMedia>.Fail(FamilyErrors.DocumentNotFound);
         var media = await mediaReader.OpenAsync(document.MediaKey, cancellationToken);
+        if (media is not null && (await FamilyRequestAccess.AuthorizeAsync(dataStore, currentUser, record, request.AccessMode, cancellationToken)).IsFailure)
+        { await media.Content.DisposeAsync(); return Result<PrivateMedia>.Fail(FamilyErrors.AccessForbidden); }
         return media is null ? Result<PrivateMedia>.Fail(FamilyErrors.DocumentNotFound) : Result<PrivateMedia>.Ok(media with { FileName = document.OriginalFileName, ContentType = document.ContentType });
     }
 }
 
-internal sealed class FamilyRelationshipWorkflowService(
+public sealed class FamilyRelationshipWorkflowService(
     IWaslaDataStore dataStore,
     ICurrentUser currentUser,
     IMediaService mediaService,
     IDateTimeProvider clock,
     IEmailNotificationFactory emailFactory,
     IEmailOutbox emailOutbox,
-    IFamilyRelationshipMedicalVerification medicalVerification)
+    IFamilyRelationshipMedicalVerification medicalVerification,
+    IFamilyOperationalVerification operationalVerification,
+    IPatientIdentityStore identityLocks)
 {
     public async Task<Result<FamilyRelationshipRequestResponse>> SubmitAsync(
         FamilyRelationshipRequestType type, Guid? familyId, Guid requesterPatientId, Guid targetPatientId,
@@ -386,7 +412,14 @@ internal sealed class FamilyRelationshipWorkflowService(
             if (!ValidVerification(type, familyId, requesterRole, targetRole, requesterMembership, targetMembership) ||
                 (await dataStore.FindFamilyByIdAsync(familyId!.Value, cancellationToken))?.Status != FamilyStatus.Active)
                 return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.ManagementForbidden);
-            if (!medicalVerification.AcceptsEvidence(evidence)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyMedicalErrors.PolicyUnavailable);
+            if (type != FamilyRelationshipRequestType.VerifyOperationalParentChild && !medicalVerification.AcceptsEvidence(evidence)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyMedicalErrors.PolicyUnavailable);
+        }
+        else if (type == FamilyRelationshipRequestType.JoinFamilyAsParent)
+        {
+            if (requesterMembership is not null || targetMembership is null || targetMembership.FamilyId != familyId ||
+                targetMembership.Role != FamilyMemberRole.Child || requesterRole is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) ||
+                (await dataStore.FindFamilyByIdAsync(familyId!.Value, cancellationToken))?.Status != FamilyStatus.Active)
+                return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.ManagementForbidden);
         }
         else if (targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
         if (type == FamilyRelationshipRequestType.CreateFamily && requesterMembership is not null)
@@ -445,7 +478,7 @@ internal sealed class FamilyRelationshipWorkflowService(
             var c = await dataStore.FindActiveFamilyMemberByPatientIdAsync(record.Request.TargetPatientId, cancellationToken);
             var activeFamily = record.Request.FamilyId is { } verificationFamily ? await dataStore.FindFamilyByIdAsync(verificationFamily, cancellationToken) : null;
             if (!ValidVerification(record.Request.RequestType, record.Request.FamilyId, record.Request.RequesterClaimedRole, record.Request.TargetClaimedRole, a, c) ||
-                activeFamily is not { Status: FamilyStatus.Active } || !medicalVerification.AcceptsEvidence(evidence)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyMedicalErrors.Unavailable);
+                activeFamily is not { Status: FamilyStatus.Active } || (record.Request.RequestType != FamilyRelationshipRequestType.VerifyOperationalParentChild && !medicalVerification.AcceptsEvidence(evidence))) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyMedicalErrors.Unavailable);
         }
         var now = clock.UtcNow;
         var transitioned = record.Request.Resubmit(actorId, now);
@@ -471,6 +504,7 @@ internal sealed class FamilyRelationshipWorkflowService(
 
     public async Task<Result<FamilyRelationshipRequestResponse>> ApproveAsync(Guid requestId, string encodedRowVersion, CancellationToken cancellationToken)
     {
+        await identityLocks.LockAsync(cancellationToken);
         var context = await LoadReviewAsync(requestId, encodedRowVersion, PermissionNames.FamilyRelationshipRequestsApprove, cancellationToken);
         if (context.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(context.Errors);
         var (record, actorId, supplied) = context.Value;
@@ -479,7 +513,7 @@ internal sealed class FamilyRelationshipWorkflowService(
         if (!Enum.IsDefined(request.RequestType)) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.RequestInvalid);
         var targetMembership = await dataStore.FindActiveFamilyMemberByPatientIdAsync(request.TargetPatientId, cancellationToken);
         var verification = IsVerification(request.RequestType);
-        if (!verification && targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
+        if (!verification && request.RequestType != FamilyRelationshipRequestType.JoinFamilyAsParent && targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
         Family approvedFamily;
 
         if (request.RequestType == FamilyRelationshipRequestType.CreateFamily)
@@ -497,6 +531,17 @@ internal sealed class FamilyRelationshipWorkflowService(
             if (assigned.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(assigned.Errors);
             dataStore.Add(family);
             approvedFamily = family;
+        }
+        else if (request.RequestType == FamilyRelationshipRequestType.JoinFamilyAsParent)
+        {
+            if (await dataStore.FindActiveFamilyMemberByPatientIdAsync(request.RequesterPatientId, cancellationToken) is not null ||
+                targetMembership is null || targetMembership.FamilyId != request.FamilyId || targetMembership.Role != FamilyMemberRole.Child)
+                return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.ManagementForbidden);
+            var family = await dataStore.FindFamilyByIdAsync(request.FamilyId!.Value, cancellationToken);
+            if (family is not { Status: FamilyStatus.Active }) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.NotFound);
+            var added = family.AddMember(Guid.NewGuid(), request.RequesterPatientId, request.RequesterClaimedRole, now, actorId, request.Id);
+            if (added.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(added.Errors);
+            dataStore.Add(added.Value); dataStore.MarkFamilyMembershipChanged(family); approvedFamily = family;
         }
         else
         {
@@ -522,11 +567,16 @@ internal sealed class FamilyRelationshipWorkflowService(
             approvedFamily = family;
         }
 
+        // Proof supersession may flush tracked changes to release filtered indexes.
+        // Apply the client's version before that first save, never restore the old
+        // version after SQL/SQLite has advanced it inside this transaction.
+        dataStore.SetOriginalRowVersion(request, supplied);
         var transition = request.Approve(actorId, now);
         if (transition.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(transition.Errors);
+        var operational = await operationalVerification.RecordAsync(request, approvedFamily, cancellationToken);
+        if (operational.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(operational.Errors);
         var verified = await medicalVerification.RecordAsync(request, approvedFamily, cancellationToken);
         if (verified.IsFailure) return Result<FamilyRelationshipRequestResponse>.Fail(verified.Errors);
-        dataStore.SetOriginalRowVersion(request, supplied);
         dataStore.Add(new FamilyRelationshipRequestHistory(Guid.NewGuid(), request.Id, request.CurrentRevisionNumber,
             FamilyRelationshipRequestStatus.Pending, FamilyRelationshipRequestStatus.Approved,
             FamilyRelationshipRequestAction.Approved, null, actorId, now));
@@ -581,12 +631,13 @@ internal sealed class FamilyRelationshipWorkflowService(
             access.Permissions.Contains(permission, StringComparer.OrdinalIgnoreCase);
     }
 
-    private static bool IsVerification(FamilyRelationshipRequestType type) => type is FamilyRelationshipRequestType.VerifyParentChild or FamilyRelationshipRequestType.VerifyGuardianChild;
+    private static bool IsVerification(FamilyRelationshipRequestType type) => type is FamilyRelationshipRequestType.VerifyParentChild or FamilyRelationshipRequestType.VerifyGuardianChild or FamilyRelationshipRequestType.VerifyOperationalParentChild;
     private static bool ValidVerification(FamilyRelationshipRequestType type, Guid? family, FamilyMemberRole adultRole,
         FamilyMemberRole childRole, FamilyMember? adult, FamilyMember? child)
         => family.HasValue && adult is { IsActive: true } && child is { IsActive: true } && adult.PatientId != child.PatientId &&
             adult.FamilyId == family && child.FamilyId == family && adult.Role == adultRole && child.Role == childRole && childRole == FamilyMemberRole.Child &&
-            (type == FamilyRelationshipRequestType.VerifyParentChild ? adultRole is FamilyMemberRole.Father or FamilyMemberRole.Mother : adultRole is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian);
+            (type == FamilyRelationshipRequestType.VerifyOperationalParentChild ? adultRole is FamilyMemberRole.Father or FamilyMemberRole.Mother or FamilyMemberRole.LegalGuardian :
+                type == FamilyRelationshipRequestType.VerifyParentChild ? adultRole is FamilyMemberRole.Father or FamilyMemberRole.Mother : adultRole is FamilyMemberRole.Guardian or FamilyMemberRole.LegalGuardian);
 
     private static Result<byte[]> VerifyRowVersion(FamilyRelationshipRequest request, string encoded)
     {
@@ -616,7 +667,9 @@ internal sealed class FamilyRelationshipWorkflowService(
 
     private async Task QueueNotificationAsync(FamilyRelationshipRequestRecord record, FamilyRelationshipRequestAction action, string? message, CancellationToken cancellationToken)
     {
-        var content = emailFactory.FamilyRelationshipStatus(record.Requester.NameAr, action, record.Request.CurrentRevisionNumber, message);
+        // Reviewer free text may contain confidential identity/conflict information.
+        // Status notifications never distribute that private review text.
+        var content = emailFactory.FamilyRelationshipStatus(record.Requester.NameAr, action, record.Request.CurrentRevisionNumber, null);
         await emailOutbox.QueueAsync(new QueueEmailMessage(
             $"family-relationship:{record.Request.Id}:revision-{record.Request.CurrentRevisionNumber}:{action}",
             record.Submitter.Email, content.Subject, content.HtmlBody, content.TextBody), cancellationToken);
@@ -629,16 +682,21 @@ internal static class FamilyRequestAccess
     {
         if (!currentUser.IsAuthenticated || currentUser.UserId is not { } actorId)
             return Result.Fail(Error.Unauthorized("Auth.AuthenticationRequired", ErrorMessage.AuthenticationRequired));
+        var live = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
+        var required = mode == FamilyRelationshipAccessMode.Admin ? PermissionNames.FamilyRelationshipRequestsViewDetails :
+            mode == FamilyRelationshipAccessMode.Assisted ? PermissionNames.FamilyRelationshipRequestsViewAssisted : PermissionNames.FamilyRelationshipRequestsViewOwn;
+        if (live is not { User.IsActive: true, User.IsFirstLogin: false } || !live.Permissions.Contains(required) || !currentUser.Permissions.Contains(required))
+            return Result.Fail(FamilyErrors.AccessForbidden);
         if (mode == FamilyRelationshipAccessMode.Assisted)
-            return actorId == record.Request.SubmittedByApplicationUserId ? Result.Ok() : Result.Fail(FamilyErrors.AccessForbidden);
+            return live.User.UserType == UserType.Reception && actorId == record.Request.SubmittedByApplicationUserId ? Result.Ok() : Result.Fail(FamilyErrors.AccessForbidden);
         if (mode == FamilyRelationshipAccessMode.Admin)
         {
             var snapshot = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
-            return snapshot?.Permissions.Contains(PermissionNames.FamilyRelationshipRequestsViewDetails, StringComparer.OrdinalIgnoreCase) == true
+            return snapshot is { User.UserType: UserType.SuperAdmin, SuperAdminId: not null } && snapshot.Permissions.Contains(PermissionNames.FamilyRelationshipRequestsViewDetails, StringComparer.OrdinalIgnoreCase)
                 ? Result.Ok() : Result.Fail(FamilyErrors.AccessForbidden);
         }
         var link = await dataStore.FindPatientAccountLinkAsync(actorId, cancellationToken);
-        return link is not null && (link.PatientId == record.Request.RequesterPatientId || link.PatientId == record.Request.TargetPatientId)
+        return live.User.UserType == UserType.Patient && link is not null && link.PatientId == record.Request.RequesterPatientId
             ? Result.Ok() : Result.Fail(FamilyErrors.AccessForbidden);
     }
 }
@@ -662,8 +720,9 @@ internal static class FamilyWorkflowMapper
     {
         var (items, total) = await dataStore.ListFamilyRelationshipRequestsAsync(status, type, search, submittedBy, relatedPatient, pageNumber, pageSize, cancellationToken);
         return new(items.Select(item => new FamilyRelationshipRequestQueueResponse(
-            item.RequestId, item.RequestType, item.Status, item.RequesterPatientId, item.RequesterNameAr,
-            item.TargetPatientId, item.TargetNameAr, item.RequesterClaimedRole, item.TargetClaimedRole,
+            item.RequestId, item.RequestType, item.Status, relatedPatient.HasValue && item.RequesterPatientId != relatedPatient ? Guid.Empty : item.RequesterPatientId,
+            relatedPatient.HasValue && item.RequesterPatientId != relatedPatient ? "***" : item.RequesterNameAr,
+            relatedPatient.HasValue ? null : item.TargetPatientId, relatedPatient.HasValue ? "***" : item.TargetNameAr, item.RequesterClaimedRole, item.TargetClaimedRole,
             item.CurrentRevisionNumber, item.SubmittedOnUtc, RowVersionCodec.Encode(item.RowVersion))).ToArray(), total, pageNumber, pageSize);
     }
 }

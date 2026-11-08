@@ -100,6 +100,9 @@ internal sealed class PatientConfiguration : IWriteEntityConfiguration<Patient>
         builder.Property<string>("NormalizedSearchNameAr").HasMaxLength(200).HasComputedColumnSql("UPPER(LTRIM(RTRIM([NameAr])))", stored: true);
         builder.Property<string>("NormalizedSearchNameEn").HasMaxLength(200).HasComputedColumnSql("UPPER(LTRIM(RTRIM([NameEn])))", stored: true);
         builder.HasIndex("NormalizedSearchNameAr", nameof(Patient.DateOfBirth), nameof(Patient.Gender));
+        // Family search folds Arabic orthography after an indexed DOB/gender seek;
+        // this index also bounds duplicate classification before child approval.
+        builder.HasIndex(patient => new { patient.DateOfBirth, patient.Gender });
         builder.HasIndex("NormalizedSearchNameEn", nameof(Patient.DateOfBirth));
         builder.Property(patient => patient.Gender).HasConversion<int>().IsRequired();
         builder.Property(patient => patient.PhoneNumber).HasMaxLength(30);

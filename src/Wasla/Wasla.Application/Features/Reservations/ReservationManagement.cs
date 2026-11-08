@@ -677,7 +677,7 @@ internal sealed partial class ReservationApplicationService(
     FollowUpWorkflow followUp,
     ICurrentUser currentUser,
     IDateTimeProvider clock,
-    IPatientAccessPolicy patientAccessPolicy,
+    Wasla.Application.Features.Families.IDependentAccessPolicy dependents,
     IReceptionPracticeAuthorizationService receptionAuthorization,
     IEmailOutbox emailOutbox,
     IPracticeReservationOccupancyReader occupancyReader,
@@ -2071,14 +2071,14 @@ internal sealed partial class ReservationApplicationService(
 
         var snapshot = await dataStore.GetAccessSnapshotAsync(actorId, cancellationToken);
         var actorPatient = await dataStore.FindPatientAccountLinkAsync(actorId, cancellationToken);
-        if (snapshot is null || !snapshot.User.IsActive || actorPatient is null)
+        if (snapshot is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.Patient } || actorPatient is null)
         {
             return Result<ReservationActorAccess>.Fail(ReservationErrors.AccessDenied);
         }
 
         if (actorPatient.PatientId == patientId)
         {
-            return snapshot.Permissions.Contains(ownPermission, StringComparer.OrdinalIgnoreCase)
+            return currentUser.Permissions.Contains(ownPermission, StringComparer.OrdinalIgnoreCase) && snapshot.Permissions.Contains(ownPermission, StringComparer.OrdinalIgnoreCase)
                 ? Result<ReservationActorAccess>.Ok(new ReservationActorAccess(
                     actorId,
                     ReservationBookingSource.Patient,
@@ -2103,9 +2103,7 @@ internal sealed partial class ReservationApplicationService(
 
         var members = await dataStore.ListActiveFamilyMembersAsync(actorMember.FamilyId, cancellationToken);
         var subject = members.SingleOrDefault(item => item.Member.PatientId == patientId)?.Member;
-        var today = DateOnly.FromDateTime(clock.UtcNow);
-        if (subject is null || !patientAccessPolicy.CanBookReservation(
-                actorMember, subject, subjectPatient, today))
+        if (subject is null || (await dependents.AuthorizeAsync(patientId, dependentPermission, cancellationToken)).IsFailure)
         {
             return Result<ReservationActorAccess>.Fail(ReservationErrors.AccessDenied);
         }
@@ -2254,8 +2252,8 @@ internal sealed partial class ReservationApplicationService(
         var patient = link is null
             ? null
             : await dataStore.FindPatientByIdAsync(link.PatientId, cancellationToken);
-        if (snapshot is null || !snapshot.User.IsActive || link is null || patient is null ||
-            !snapshot.Permissions.Contains(ownPermission, StringComparer.OrdinalIgnoreCase))
+        if (snapshot is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.Patient } || link is null || patient is null ||
+            !currentUser.Permissions.Contains(ownPermission, StringComparer.OrdinalIgnoreCase) || !snapshot.Permissions.Contains(ownPermission, StringComparer.OrdinalIgnoreCase))
         {
             return Result<IReadOnlyList<BookablePatientResponse>>.Fail(ReservationErrors.AccessDenied);
         }
@@ -2276,10 +2274,9 @@ internal sealed partial class ReservationApplicationService(
         }
 
         var members = await dataStore.ListActiveFamilyMembersAsync(actorMember.FamilyId, cancellationToken);
-        var today = DateOnly.FromDateTime(clock.UtcNow);
         foreach (var member in members.Where(item => item.Member.PatientId != patient.Id))
         {
-            if (patientAccessPolicy.CanBookReservation(actorMember, member.Member, member.Patient, today))
+            if ((await dependents.AuthorizeAsync(member.Patient.Id, dependentPermission, cancellationToken)).IsSuccess)
             {
                 result.Add(new BookablePatientResponse(
                     member.Patient.Id,
