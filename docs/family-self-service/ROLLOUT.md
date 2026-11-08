@@ -1,3 +1,14 @@
+# Current rollout — owner-approved activation target
+
+The 2026-11-08 owner decision supersedes the disabled-feature target below.
+All in-scope Production flags are true. Approved product-policy metadata is
+integrated in the repository Master Source of Truth and Production appsettings.
+Startup migrations/seeding remain false. Actual host deployment is unverified.
+Use [the current deployment/backup/rollback runbook](../../deploy/family-production/README.md)
+and [current closure evidence](CLOSURE-REPORT-2026-11-08.md).
+
+## Archived first-checkpoint rollout
+
 # Family self-service rollout / release gates
 
 Production deployment is not authorized. New operational paths default disabled.

@@ -23,3 +23,5 @@ artifacts/phase17-final-checks/
 artifacts/family-*/
 artifacts/family-*.log
 artifacts/PermissionSnapshot/
+artifacts-baseline-*.log
+artifacts/baseline/

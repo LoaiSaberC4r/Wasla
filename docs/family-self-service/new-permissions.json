@@ -153,5 +153,20 @@
     "index": 367,
     "name": "DependentRadiologySubmissions.Withdraw",
     "id": "20000000-0000-0000-0000-000000000368"
+  },
+  {
+    "index": 368,
+    "name": "DependentIdentityCorrection.RequestOwn",
+    "id": "20000000-0000-0000-0000-000000000369"
+  },
+  {
+    "index": 369,
+    "name": "FamilyJoinInvitations.CreateOwn",
+    "id": "20000000-0000-0000-0000-000000000370"
+  },
+  {
+    "index": 370,
+    "name": "FamilyJoinInvitations.RedeemOwn",
+    "id": "20000000-0000-0000-0000-000000000371"
   }
 ]

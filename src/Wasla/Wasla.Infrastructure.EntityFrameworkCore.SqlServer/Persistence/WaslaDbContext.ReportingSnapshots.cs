@@ -28,6 +28,17 @@ public sealed partial class WaslaDbContext
 
     private async Task CaptureReportingPoliciesAsync(Guid[] practiceIds, CancellationToken ct)
     {
+        if (practiceIds.Length == 0) return;
+        var automatic = ChangeTracker.AutoDetectChangesEnabled;
+        // Every policy reads the same unit-of-work state. Detect once instead of
+        // rescanning the entire graph for every typed Entries call per practice.
+        if (automatic) ChangeTracker.DetectChanges();
+        ChangeTracker.AutoDetectChangesEnabled = false;
+        try { await CaptureReportingPoliciesCoreAsync(practiceIds, ct); }
+        finally { ChangeTracker.AutoDetectChangesEnabled = automatic; }
+    }
+    private async Task CaptureReportingPoliciesCoreAsync(Guid[] practiceIds, CancellationToken ct)
+    {
         foreach (var id in practiceIds)
         {
             if (Database.IsSqlServer())

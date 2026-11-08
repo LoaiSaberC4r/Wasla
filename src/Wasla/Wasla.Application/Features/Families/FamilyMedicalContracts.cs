@@ -76,12 +76,14 @@ public interface IFamilyMedicalAccessPolicy
     Task<Result<MedicalRecordScope>> ScopeAsync(Guid? child, CancellationToken ct);
     Task<Result<FamilyMedicalAccessStatusResponse>> StatusAsync(Guid child, CancellationToken ct);
     Task<IReadOnlyDictionary<Guid, FamilyMedicalAccessStatusResponse>> StatusesAsync(Guid family, CancellationToken ct);
+    Task<IReadOnlyDictionary<Guid, FamilyMedicalAccessStatusResponse>> WorkspaceStatusesAsync(Guid family, CancellationToken ct);
     Task<Result<RecordPage<FamilyMedicalDependent>>> DependentsAsync(CancellationToken ct);
 }
 public interface IFamilyMedicalOperationPolicy
 {
     // The operation permission is independently checked; medical read permission is not a write grant.
     Task<Result<MedicalRecordScope>> ScopeAsync(Guid child, string permission, CancellationToken ct);
+    Task<IReadOnlyDictionary<Guid, IReadOnlySet<string>>> CapabilitiesAsync(Guid family, CancellationToken ct);
 }
 public sealed record FamilyMedicalCommand(string Operation, Guid? RequestId = null, FamilyMedicalRequestType? RequestType = null,
     Guid? ChildPatientId = null, Guid? AffectedAdultPatientId = null, string? Reason = null, string? RowVersion = null,

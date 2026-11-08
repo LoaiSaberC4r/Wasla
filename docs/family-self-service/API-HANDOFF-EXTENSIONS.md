@@ -1,3 +1,5 @@
+> Updated by [the closure handoff](API-HANDOFF-CLOSURE.md): dependent phone updates, complete Workspace fields and historical rejected/quarantined receipts are additive changes.
+
 # Additional family contracts — checkpoint
 
 All prefixes below follow `/api/v1`. Endpoints require authenticated actors, JWT
@@ -75,8 +77,9 @@ and decompression-limit configuration remain operational release gates.
 Private downloads check exact document/version/attachment/subject, original size and
 SHA256, persist metadata-only audit, then reauthorize/recheck availability. They use
 attachment disposition with safe original filename and no-store/nosniff. No media key
-or public URL is returned. Uncertain commit retains staged files. Automated orphan
-reconciliation is still an implementation gap.
+or public URL is returned. Uncertain commit retains staged files. Automated
+reconciliation reports six private modules with durable resumable cursors and
+private findings; it never automatically deletes orphan candidates.
 
 Timeline adds HistoricalPatientDocument without EncounterId. Only `all` and new
 `historical-documents` include this source. Existing prescriptions/labs/radiology
@@ -108,11 +111,11 @@ doctor acceptance. Existing own diagnostic routes remain own-only.
 
 Onboarding resubmission optionally accepts complete revised intake with fresh
 evidence/rowVersion. Omit NameAr to retain intake; supplying it requires the complete
-DOB/gender/role/contact set. Role is immutable. Old identity/contact/evidence
+DOB/gender/role and either a child phone or usable guardian contact. Role is immutable. Old identity/contact/evidence
 snapshots remain retained. Only current reviewed intake applies on approval. Revision
 key replay retains the original response even after approval.
 
 Workspace computes contacts/photo, receipts, historical upload and diagnostic
-capabilities separately. Identity correction remains unavailable: its review flow
-is not implemented. Scanner availability may change between capability display and
+capabilities separately. Identity correction uses its evidence-reviewed governance
+workflow and independent capability. Scanner availability may change between capability display and
 submission; handle the localized operation failure.

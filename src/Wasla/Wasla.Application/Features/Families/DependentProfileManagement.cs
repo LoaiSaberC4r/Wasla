@@ -9,7 +9,7 @@ using Wasla.Application.Persistence;
 namespace Wasla.Application.Features.Families;
 
 public sealed record ManageDependentProfileCommand(Guid ChildPatientId, string Operation, string RowVersion, string IdempotencyKey,
-    Guid? ContactId = null, PatientContactInput? Contact = null, MediaUpload? Photo = null)
+    Guid? ContactId = null, PatientContactInput? Contact = null, MediaUpload? Photo = null, string? PhoneNumber = null)
     : ICommand<DependentProfileChangeResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record DependentProfileChangeResponse(Guid ChangeId, Guid? ContactId);
 public sealed record GetDependentProfileImageQuery(Guid ChildPatientId) : IQuery<PrivateMedia>;
@@ -18,6 +18,7 @@ public interface IDependentProfileManagement
     Task<Result<DependentProfileChangeResponse>> ExecuteAsync(ManageDependentProfileCommand command, CancellationToken ct);
     Task<Result<PrivateMedia>> ImageAsync(Guid child, CancellationToken ct);
     Task<bool> CanManageAsync(Guid child, string permission, CancellationToken ct);
+    Task<IReadOnlySet<Guid>> LinkedPatientsAsync(IReadOnlyCollection<Guid> children, CancellationToken ct);
 }
 internal sealed class ManageDependentProfileHandler(IDependentProfileManagement service) : ICommandHandler<ManageDependentProfileCommand, DependentProfileChangeResponse>
 { public Task<Result<DependentProfileChangeResponse>> Handle(ManageDependentProfileCommand request, CancellationToken ct) => service.ExecuteAsync(request, ct); }

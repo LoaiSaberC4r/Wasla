@@ -25,13 +25,14 @@ public sealed record HistoricalDocumentMetadata(HistoricalDocumentCategory Categ
 public sealed record HistoricalDocumentMutation(string Operation, Guid? ChildPatientId, Guid? DocumentId, string IdempotencyKey,
     string? RowVersion = null, HistoricalDocumentMetadata? Metadata = null, IReadOnlyList<MediaUpload>? Files = null, string? Reason = null)
     : ICommand<HistoricalDocumentMutationResponse>, ITransactionalCommand<WaslaWritePersistence>;
-public sealed record HistoricalDocumentMutationResponse(Guid DocumentId, int VersionNumber, string Source = "PatientProvided", string VerificationStatus = "Unverified");
+public sealed record HistoricalDocumentMutationResponse(Guid DocumentId, int VersionNumber, string Source = "PatientProvided", string VerificationStatus = "Unverified",
+    string ValidationState = "AvailableUnverified", string? FailureCode = null);
 public sealed record HistoricalDocumentQuery(Guid? ChildPatientId = null, Guid? DocumentId = null, bool Versions = false, int PageNumber = 1, int PageSize = 20, bool IncludeWithdrawn = false) : IQuery<object>;
 public sealed record HistoricalDocumentMediaQuery(Guid? ChildPatientId, Guid DocumentId, Guid AttachmentId) : IQuery<PrivateMedia>;
 public sealed record HistoricalAttachmentResponse(Guid AttachmentId, string FileName, string ContentType, long Length);
 public sealed record HistoricalVersionResponse(int VersionNumber, HistoricalDocumentMetadata Metadata, DateTime CreatedAtUtc, IReadOnlyList<HistoricalAttachmentResponse> Attachments);
 public sealed record HistoricalDocumentResponse(Guid DocumentId, Guid SubjectPatientId, HistoricalDocumentState State, int CurrentVersionNumber,
-    DateTime UploadedAtUtc, string RowVersion, HistoricalVersionResponse CurrentVersion, bool CanRevise, bool CanWithdraw,
+    DateTime UploadedAtUtc, string RowVersion, HistoricalVersionResponse? CurrentVersion, bool CanRevise, bool CanWithdraw,
     string Source = "PatientProvided", string VerificationStatus = "Unverified");
 public interface IHistoricalDocumentService
 {

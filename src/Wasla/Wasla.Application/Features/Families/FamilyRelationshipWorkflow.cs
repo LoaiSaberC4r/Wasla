@@ -420,6 +420,9 @@ public sealed class FamilyRelationshipWorkflowService(
                 targetMembership.Role != FamilyMemberRole.Child || requesterRole is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) ||
                 (await dataStore.FindFamilyByIdAsync(familyId!.Value, cancellationToken))?.Status != FamilyStatus.Active)
                 return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.ManagementForbidden);
+            var family = await dataStore.FindFamilyByIdAsync(familyId!.Value, cancellationToken);
+            if (family!.Members.Any(m => m.IsActive && m.Role == requesterRole))
+                return Result<FamilyRelationshipRequestResponse>.Fail(requesterRole == FamilyMemberRole.Father ? FamilyErrors.ActiveFatherAlreadyExists : FamilyErrors.ActiveMotherAlreadyExists);
         }
         else if (targetMembership is not null) return Result<FamilyRelationshipRequestResponse>.Fail(FamilyErrors.PatientAlreadyInAnotherFamily);
         if (type == FamilyRelationshipRequestType.CreateFamily && requesterMembership is not null)

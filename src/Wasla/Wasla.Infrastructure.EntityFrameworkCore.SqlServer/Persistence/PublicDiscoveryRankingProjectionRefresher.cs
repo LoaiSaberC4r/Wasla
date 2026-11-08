@@ -98,15 +98,33 @@ internal sealed class PublicDiscoveryRankingProjectionRefresher(
             }
         }
 
+        await using var transaction = dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        if (dbContext.ChangeTracker.HasChanges()) await dbContext.SaveChangesAsync(cancellationToken);
         await dbContext.PublicPracticeAvailabilitySlots
             .Where(item => ids.Contains(item.DoctorPracticeId))
             .ExecuteDeleteAsync(cancellationToken);
-        dbContext.PublicPracticeAvailabilitySlots.AddRange(projected);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // Disposable read-model rows have no clinical/audit behavior. Insert in
+        // parameterized bounded batches instead of tracking millions of slots
+        // through every aggregate SaveChanges guard during a full refresh.
+        foreach (var batch in projected.Chunk(100))
+        {
+            var values = new List<object>(batch.Length * 8); var rows = new List<string>(batch.Length);
+            foreach (var slot in batch)
+            {
+                var start = values.Count;
+                values.AddRange([slot.DoctorId, slot.DoctorPracticeId, slot.LocalDate, slot.LocalTime,
+                    slot.SlotStartUtc, slot.VisibleFromUtc, slot.IsAvailable, slot.RefreshedOnUtc]);
+                rows.Add("(" + string.Join(",", Enumerable.Range(start, 8).Select(index => "{" + index.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}")) + ")");
+            }
+            var sql = "INSERT INTO [PublicPracticeAvailabilitySlots] ([DoctorId],[DoctorPracticeId],[LocalDate],[LocalTime],[SlotStartUtc],[VisibleFromUtc],[IsAvailable],[RefreshedOnUtc]) VALUES " + string.Join(",", rows);
+            await dbContext.Database.ExecuteSqlRawAsync(sql, values, cancellationToken);
+        }
 
         await RefreshDoctorsAsync(
             practices.Select(item => item.DoctorId).Distinct().ToArray(),
             cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
     }
 
     public async Task RefreshDoctorsAsync(

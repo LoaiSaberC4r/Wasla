@@ -113,9 +113,38 @@ internal sealed class FamilyMedicalAccessPolicy(WaslaDbContext db, IWaslaDataSto
         return data is not null && data.Value.Statuses.TryGetValue(child, out var status)
             ? Result<FamilyMedicalAccessStatusResponse>.Ok(status) : Result<FamilyMedicalAccessStatusResponse>.Fail(FamilyMedicalErrors.Unavailable);
     }
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlySet<string>>> CapabilitiesAsync(Guid family, CancellationToken ct)
+    {
+        var result = new Dictionary<Guid, IReadOnlySet<string>>();
+        if (!SharingEnabled) return result;
+        var permissions = await PermissionsAsync(ct);
+        var operations = MedicalDocumentPermissionNames.All.Where(p => p.EndsWith("Dependent", StringComparison.Ordinal))
+            .Concat(DependentDiagnosticPermissionNames.All).Where(p => permissions.Contains(p, StringComparer.OrdinalIgnoreCase)).ToArray();
+        if (operations.Length == 0) return result;
+        var patientId = await PatientAsync(operations[0], ct);
+        var member = patientId is { } parentId ? await MemberAsync(parentId, ct) : null;
+        var patient = patientId is { } id ? await db.Patients.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id, ct) : null;
+        if (member?.Role is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) || member.FamilyId != family ||
+            patient is null || EffectiveDate() is not { } today || patient.GetAge(today) < 18) return result;
+        var data = await LoadAsync(operations[0], ct, true);
+        if (data is null || data.Value.Family != family) return result;
+        foreach (var pair in data.Value.Statuses)
+        {
+            if (!pair.Value.CanView) { result[pair.Key] = new HashSet<string>(); continue; }
+            result[pair.Key] = operations.Where(p => p is not (MedicalDocumentPermissionNames.ViewDependent or
+                DependentDiagnosticPermissionNames.LabView or DependentDiagnosticPermissionNames.RadiologyView) ||
+                permissions.Contains(PermissionNames.MedicalRecordsViewDependent, StringComparer.OrdinalIgnoreCase)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+        return result;
+    }
     public async Task<IReadOnlyDictionary<Guid, FamilyMedicalAccessStatusResponse>> StatusesAsync(Guid family, CancellationToken ct)
     {
         var data = await LoadAsync(PermissionNames.FamiliesViewOwn, ct);
+        return data is not null && data.Value.Family == family ? data.Value.Statuses : new Dictionary<Guid, FamilyMedicalAccessStatusResponse>();
+    }
+    public async Task<IReadOnlyDictionary<Guid, FamilyMedicalAccessStatusResponse>> WorkspaceStatusesAsync(Guid family, CancellationToken ct)
+    {
+        var data = await LoadAsync(FamilySelfServicePermissionNames.Workspace, ct);
         return data is not null && data.Value.Family == family ? data.Value.Statuses : new Dictionary<Guid, FamilyMedicalAccessStatusResponse>();
     }
     public async Task<Result<RecordPage<FamilyMedicalDependent>>> DependentsAsync(CancellationToken ct)

@@ -28,6 +28,11 @@ public sealed class PatientHistoricalDocument
         if (State != HistoricalDocumentState.AvailableUnverified) throw new InvalidOperationException("Invalid historical document transition.");
         State = HistoricalDocumentState.Withdrawn; ModifiedAtUtc = now;
     }
+    public void RejectValidation(bool malwareDetected, DateTime now)
+    {
+        if (State != HistoricalDocumentState.PendingValidation || CurrentVersionNumber != 0) throw new InvalidOperationException("Only a staged source may be rejected.");
+        State = malwareDetected ? HistoricalDocumentState.RejectedUnsafe : HistoricalDocumentState.Quarantined; ModifiedAtUtc = now;
+    }
 }
 public sealed class PatientHistoricalDocumentVersion
 {
@@ -78,8 +83,9 @@ public sealed class PatientHistoricalDocumentHistory
 public sealed class HistoricalDocumentOperation
 {
     private HistoricalDocumentOperation() { }
-    public HistoricalDocumentOperation(Guid actor, Guid subject, string operation, string key, string fingerprint, Guid document, int version, DateTime now)
-    { Id = Guid.NewGuid(); ActorUserId = actor; SubjectPatientId = subject; Operation = operation; IdempotencyKey = key; Fingerprint = fingerprint; DocumentId = document; VersionNumber = version; CreatedAtUtc = now; }
+    public HistoricalDocumentOperation(Guid actor, Guid subject, string operation, string key, string fingerprint, Guid document, int version, DateTime now,
+        string validationState = "AvailableUnverified", string? failureCode = null, string? metadataJson = null)
+    { Id = Guid.NewGuid(); ActorUserId = actor; SubjectPatientId = subject; Operation = operation; IdempotencyKey = key; Fingerprint = fingerprint; DocumentId = document; VersionNumber = version; CreatedAtUtc = now; ValidationState = validationState; FailureCode = failureCode; MetadataJson = metadataJson; }
     public Guid Id { get; private set; }
     public Guid ActorUserId { get; private set; }
     public Guid SubjectPatientId { get; private set; }
@@ -89,4 +95,7 @@ public sealed class HistoricalDocumentOperation
     public Guid DocumentId { get; private set; }
     public int VersionNumber { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+    public string ValidationState { get; private set; } = "AvailableUnverified";
+    public string? FailureCode { get; private set; }
+    public string? MetadataJson { get; private set; }
 }

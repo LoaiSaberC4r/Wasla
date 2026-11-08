@@ -16,7 +16,8 @@ namespace Wasla.Application.Features.Families;
 
 public sealed record FamilyCandidateSearch(string NameAr, DateOnly DateOfBirth, Gender Gender, string? PhoneNumber);
 public sealed record FamilyCandidateResponse(string CandidateReference, string DisplayNameMasked, int BirthYear, DateTime ExpiresAtUtc);
-public sealed record FamilyCandidateSearchResponse(string SearchStatus, IReadOnlyList<FamilyCandidateResponse> Candidates, bool HasMore = false);
+public sealed record FamilyCandidateSearchResponse(string SearchStatus, IReadOnlyList<FamilyCandidateResponse> Candidates, bool HasMore = false,
+    string NextAction = "SubmitSelectedCandidateWithEvidence");
 public sealed record SearchFamilyCandidatesCommand(FamilyCandidateSearch Criteria) : ICommand<FamilyCandidateSearchResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record FamilyCandidateSubmissionResponse(Guid? RequestId, string Status, Guid? ConflictCaseId, string NextAction);
 public sealed record SubmitCandidateRelationshipCommand(string CandidateReference, FamilyMemberRole RelationshipType,
@@ -129,13 +130,23 @@ public static class FamilySelfServiceActor
 public sealed record FamilyWorkspaceChild(Guid PatientId, string NameAr, bool CanBook, bool CanViewReservations, bool CanViewQueue, bool CanViewMedicalRecord,
     bool CanViewProfile, bool CanManageContacts, bool CanUploadHistoricalDocument, bool CanViewReceipts, string? OperationalReasonCode, string? MedicalReasonCode,
     bool CanManagePhoto = false, bool CanSubmitDoctorOrderedDiagnostic = false, bool CanRequestVerification = false, bool CanCorrectIdentity = false,
-    IReadOnlyDictionary<string, string?>? CapabilityReasons = null);
+    IReadOnlyDictionary<string, string?>? CapabilityReasons = null, bool CanCancelReservation = false, bool CanRescheduleReservation = false,
+    bool CanViewTicket = false, bool CanViewHistoricalDocuments = false, bool CanRequestIdentityCorrection = false,
+    bool CanSubmitLabResult = false, bool CanSubmitRadiologyResult = false, bool CanViewDiagnosticSubmissions = false,
+    bool CanWithdrawDiagnosticSubmission = false, bool CanViewTransactions = false, bool CanViewLabSubmissions = false,
+    bool CanViewRadiologySubmissions = false, bool CanWithdrawLabSubmission = false, bool CanWithdrawRadiologySubmission = false);
 public sealed record FamilyWorkspaceResponse(bool HasFamily, MyFamilyResponse? Family, IReadOnlyList<FamilyWorkspaceChild> Dependents,
-    IReadOnlyList<FamilyRelationshipRequestQueueResponse> PendingRequests, bool CanStartExistingChildLink, bool CanStartChildOnboarding, bool CanJoinExistingFamily);
+    IReadOnlyList<FamilyRelationshipRequestQueueResponse> PendingRequests, bool CanStartExistingChildLink, bool CanStartChildOnboarding, bool CanJoinExistingFamily,
+    IReadOnlyList<FamilyWorkspacePendingItem>? PendingWorkflows = null);
+public sealed record FamilyWorkspacePendingItem(string Kind, Guid Reference, string Status, string NextAction, DateTime CreatedAtUtc);
+public interface IFamilyWorkspacePendingReader
+{
+    Task<IReadOnlyList<FamilyWorkspacePendingItem>> ListAsync(Guid actorUserId, CancellationToken ct);
+}
 public sealed record GetFamilyWorkspaceQuery : IQuery<FamilyWorkspaceResponse>;
 internal sealed class GetFamilyWorkspaceHandler(IWaslaDataStore store, ICurrentUser current, IDependentAccessPolicy dependent,
     IFamilyMedicalAccessPolicy medical, IDateTimeProvider clock, IOptions<DependentManagementOptions> options,
-    IDependentProfileManagement profiles, IOperationalAuthorityReader proofReader, IFamilyMedicalOperationPolicy medicalOperations, IOptions<Wasla.Application.Features.Clinical.HistoricalDocumentOptions> historical) : IQueryHandler<GetFamilyWorkspaceQuery, FamilyWorkspaceResponse>
+    IDependentProfileManagement profiles, IFamilyWorkspacePendingReader pendingReader, IFamilyMedicalOperationPolicy medicalOperations, IOptions<Wasla.Application.Features.Clinical.HistoricalDocumentOptions> historical) : IQueryHandler<GetFamilyWorkspaceQuery, FamilyWorkspaceResponse>
 {
     public async Task<Result<FamilyWorkspaceResponse>> Handle(GetFamilyWorkspaceQuery request, CancellationToken ct)
     {
@@ -153,54 +164,82 @@ internal sealed class GetFamilyWorkspaceHandler(IWaslaDataStore store, ICurrentU
             {
                 var members = await store.ListActiveFamilyMembersAsync(aggregate.Id, ct);
                 family = new(aggregate.Id, aggregate.Status, members.Select(FamilyWorkflowMapper.Member).ToArray());
-                foreach (var child in members.Where(m => m.Member.Role == FamilyMemberRole.Child))
+                var dependents = members.Where(m => m.Member.Role == FamilyMemberRole.Child).ToArray();
+                var ids = dependents.Select(c => c.Patient.Id).ToArray();
+                var operational = await dependent.SnapshotAsync(ids, ct);
+                var statuses = await medical.WorkspaceStatusesAsync(aggregate.Id, ct);
+                var medicalCapabilities = await medicalOperations.CapabilitiesAsync(aggregate.Id, ct);
+                var linked = await profiles.LinkedPatientsAsync(ids, ct);
+                foreach (var child in dependents)
                 {
-                    var book = await dependent.AuthorizeAsync(child.Patient.Id, PermissionNames.ReservationsCreateDependents, ct);
-                    var view = await dependent.AuthorizeAsync(child.Patient.Id, PermissionNames.ReservationsViewDependents, ct);
-                    var queue = await dependent.AuthorizeAsync(child.Patient.Id, FamilySelfServicePermissionNames.Tickets, ct);
-                    var profile = await dependent.AuthorizeAsync(child.Patient.Id, FamilySelfServicePermissionNames.Profile, ct);
-                    var clinical = await medical.ScopeAsync(child.Patient.Id, ct);
-                    var contact = await profiles.CanManageAsync(child.Patient.Id, FamilyExtensionPermissionNames.ManageContacts, ct);
-                    var photo = await profiles.CanManageAsync(child.Patient.Id, FamilyExtensionPermissionNames.ManagePhoto, ct);
-                    var finance = await dependent.AuthorizeAsync(child.Patient.Id, FamilyExtensionPermissionNames.Receipts, ct);
-                    var upload = historical.Value.Enabled && (await medicalOperations.ScopeAsync(child.Patient.Id, MedicalDocumentPermissionNames.CreateDependent, ct)).IsSuccess;
-                    var diagnostic = (await medicalOperations.ScopeAsync(child.Patient.Id, DependentDiagnosticPermissionNames.LabCreate, ct)).IsSuccess ||
-                        (await medicalOperations.ScopeAsync(child.Patient.Id, DependentDiagnosticPermissionNames.RadiologyCreate, ct)).IsSuccess;
-                    var status = await medical.StatusAsync(child.Patient.Id, ct);
-                    var correct = (await dependent.AuthorizeAsync(child.Patient.Id, FamilyGovernancePermissionNames.IdentityCorrectionRequest, ct)).IsSuccess &&
-                        member.Role is FamilyMemberRole.Father or FamilyMemberRole.Mother;
-                    var proof = await proofReader.FindAsync(actor.Value.Id, child.Patient.Id, ct);
+                    var id = child.Patient.Id;
+                    bool Op(string permission) => operational.Allows(id, permission);
+                    bool Med(string permission) => medicalCapabilities.TryGetValue(id, out var granted) && granted.Contains(permission);
                     var under18 = child.Patient.DateOfBirth > options.Value.Today(clock.UtcNow).AddYears(-18);
+                    var hasProof = operational.Scopes.ContainsKey(id);
                     string? OperationalReason(string permission, bool allowed) => allowed ? null : !Has(permission) ? "DependentAccess.PermissionRequired" :
                         !under18 ? "DependentAccess.AdultChild" : aggregate.Status != FamilyStatus.Active ? "DependentAccess.FamilyInactive" :
-                        proof is null ? "DependentAccess.OperationalProofRequired" : "DependentAccess.Unavailable";
-                    var medicalReason = clinical.IsFailure ? status.IsSuccess ? status.Value.UnavailableReasonCode : "DependentAccess.MedicalPolicyUnavailable" : null;
-                    var canVerify = under18 && aggregate.Status == FamilyStatus.Active && proof is null && Has(FamilySelfServicePermissionNames.Submit) && member.Role is FamilyMemberRole.Father or FamilyMemberRole.Mother;
-                    var reasons = new Dictionary<string, string?>
+                        !hasProof ? "DependentAccess.OperationalProofRequired" : "DependentAccess.Unavailable";
+                    var clinical = Has(PermissionNames.MedicalRecordsViewDependent) && statuses.TryGetValue(id, out var status) && status.CanView;
+                    var medicalReason = clinical ? null : !Has(PermissionNames.MedicalRecordsViewDependent) ? "DependentAccess.PermissionRequired" :
+                        statuses.GetValueOrDefault(id)?.UnavailableReasonCode ?? "DependentAccess.MedicalPolicyUnavailable";
+                    var capabilities = new Dictionary<string, (string Permission, bool Allowed)>
                     {
-                        ["canBook"] = OperationalReason(PermissionNames.ReservationsCreateDependents, book.IsSuccess),
-                        ["canViewReservations"] = OperationalReason(PermissionNames.ReservationsViewDependents, view.IsSuccess),
-                        ["canViewQueue"] = OperationalReason(FamilySelfServicePermissionNames.Tickets, queue.IsSuccess),
-                        ["canViewProfile"] = OperationalReason(FamilySelfServicePermissionNames.Profile, profile.IsSuccess),
-                        ["canManageContacts"] = OperationalReason(FamilyExtensionPermissionNames.ManageContacts, contact),
-                        ["canManagePhoto"] = OperationalReason(FamilyExtensionPermissionNames.ManagePhoto, photo),
-                        ["canCorrectIdentity"] = OperationalReason(FamilyGovernancePermissionNames.IdentityCorrectionRequest, correct),
-                        ["canViewReceipts"] = OperationalReason(FamilyExtensionPermissionNames.Receipts, finance.IsSuccess),
-                        ["canViewMedicalRecord"] = medicalReason,
-                        ["canUploadHistoricalDocument"] = upload ? null : !historical.Value.Enabled ? "HistoricalDocument.Disabled" : "DependentAccess.MedicalWriteUnavailable",
-                        ["canSubmitDoctorOrderedDiagnostic"] = diagnostic ? null : "DependentAccess.MedicalWriteUnavailable",
-                        ["canRequestVerification"] = canVerify ? null : proof is not null ? "DependentAccess.AlreadyVerified" : "DependentAccess.Unavailable"
+                        ["canBook"] = (PermissionNames.ReservationsCreateDependents, Op(PermissionNames.ReservationsCreateDependents)),
+                        ["canViewReservations"] = (PermissionNames.ReservationsViewDependents, Op(PermissionNames.ReservationsViewDependents)),
+                        ["canCancelReservation"] = (PermissionNames.ReservationsCancelDependents, Op(PermissionNames.ReservationsCancelDependents)),
+                        ["canRescheduleReservation"] = (PermissionNames.ReservationsRescheduleDependents, Op(PermissionNames.ReservationsRescheduleDependents)),
+                        ["canViewQueue"] = (FamilySelfServicePermissionNames.Tickets, Op(FamilySelfServicePermissionNames.Tickets)),
+                        ["canViewTicket"] = (FamilySelfServicePermissionNames.Tickets, Op(FamilySelfServicePermissionNames.Tickets)),
+                        ["canViewProfile"] = (FamilySelfServicePermissionNames.Profile, Op(FamilySelfServicePermissionNames.Profile)),
+                        ["canManageContacts"] = (FamilyExtensionPermissionNames.ManageContacts, !linked.Contains(id) && Op(FamilyExtensionPermissionNames.ManageContacts)),
+                        ["canManagePhoto"] = (FamilyExtensionPermissionNames.ManagePhoto, !linked.Contains(id) && Op(FamilyExtensionPermissionNames.ManagePhoto)),
+                        ["canCorrectIdentity"] = (FamilyGovernancePermissionNames.IdentityCorrectionRequest, Op(FamilyGovernancePermissionNames.IdentityCorrectionRequest) && member.Role is FamilyMemberRole.Father or FamilyMemberRole.Mother),
+                        ["canViewReceipts"] = (FamilyExtensionPermissionNames.Receipts, Op(FamilyExtensionPermissionNames.Receipts)),
+                        ["canViewTransactions"] = (FamilyExtensionPermissionNames.Transactions, Op(FamilyExtensionPermissionNames.Transactions))
                     };
-                    children.Add(new(child.Patient.Id, child.Patient.NameAr, book.IsSuccess, view.IsSuccess, queue.IsSuccess, clinical.IsSuccess,
-                        profile.IsSuccess, contact, upload, finance.IsSuccess, reasons["canBook"], medicalReason,
-                        photo, diagnostic, canVerify, correct, reasons));
+                    var reasons = capabilities.ToDictionary(p => p.Key, p => OperationalReason(p.Value.Permission, p.Value.Allowed));
+                    if (linked.Contains(id))
+                    {
+                        reasons["canManageContacts"] = "DependentAccess.AccountLinked";
+                        reasons["canManagePhoto"] = "DependentAccess.AccountLinked";
+                    }
+                    bool Allowed(string name) => capabilities[name].Allowed;
+                    var viewDocuments = historical.Value.Enabled && Med(MedicalDocumentPermissionNames.ViewDependent);
+                    var upload = historical.Value.Enabled && Med(MedicalDocumentPermissionNames.CreateDependent);
+                    var lab = Med(DependentDiagnosticPermissionNames.LabCreate); var radiology = Med(DependentDiagnosticPermissionNames.RadiologyCreate);
+                    var labView = Med(DependentDiagnosticPermissionNames.LabView); var radiologyView = Med(DependentDiagnosticPermissionNames.RadiologyView);
+                    var labWithdraw = Med(DependentDiagnosticPermissionNames.LabWithdraw); var radiologyWithdraw = Med(DependentDiagnosticPermissionNames.RadiologyWithdraw);
+                    var canVerify = under18 && aggregate.Status == FamilyStatus.Active && !hasProof && Has(FamilySelfServicePermissionNames.Submit) && member.Role is FamilyMemberRole.Father or FamilyMemberRole.Mother;
+                    string? MedicalReason(string permission, bool allowed) => allowed ? null : !Has(permission) ? "DependentAccess.PermissionRequired" :
+                        statuses.GetValueOrDefault(id)?.UnavailableReasonCode ?? "DependentAccess.MedicalWriteUnavailable";
+                    reasons["canViewMedicalRecord"] = medicalReason;
+                    reasons["canViewHistoricalDocuments"] = !historical.Value.Enabled ? "HistoricalDocument.Disabled" : MedicalReason(MedicalDocumentPermissionNames.ViewDependent, viewDocuments);
+                    reasons["canUploadHistoricalDocument"] = !historical.Value.Enabled ? "HistoricalDocument.Disabled" : MedicalReason(MedicalDocumentPermissionNames.CreateDependent, upload);
+                    reasons["canSubmitLabResult"] = MedicalReason(DependentDiagnosticPermissionNames.LabCreate, lab);
+                    reasons["canSubmitRadiologyResult"] = MedicalReason(DependentDiagnosticPermissionNames.RadiologyCreate, radiology);
+                    reasons["canViewLabSubmissions"] = MedicalReason(DependentDiagnosticPermissionNames.LabView, labView);
+                    reasons["canViewRadiologySubmissions"] = MedicalReason(DependentDiagnosticPermissionNames.RadiologyView, radiologyView);
+                    reasons["canWithdrawLabSubmission"] = MedicalReason(DependentDiagnosticPermissionNames.LabWithdraw, labWithdraw);
+                    reasons["canWithdrawRadiologySubmission"] = MedicalReason(DependentDiagnosticPermissionNames.RadiologyWithdraw, radiologyWithdraw);
+                    reasons["canViewDiagnosticSubmissions"] = labView || radiologyView ? null : "DependentAccess.MedicalWriteUnavailable";
+                    reasons["canWithdrawDiagnosticSubmission"] = labWithdraw || radiologyWithdraw ? null : "DependentAccess.MedicalWriteUnavailable";
+                    reasons["canSubmitDoctorOrderedDiagnostic"] = lab || radiology ? null : "DependentAccess.MedicalWriteUnavailable";
+                    reasons["canRequestVerification"] = canVerify ? null : hasProof ? "DependentAccess.AlreadyVerified" : "DependentAccess.Unavailable";
+                    reasons["canRequestIdentityCorrection"] = reasons["canCorrectIdentity"];
+                    children.Add(new(id, child.Patient.NameAr, Allowed("canBook"), Allowed("canViewReservations"), Allowed("canViewQueue"), clinical,
+                        Allowed("canViewProfile"), Allowed("canManageContacts"), upload, Allowed("canViewReceipts"), reasons["canBook"], medicalReason,
+                        Allowed("canManagePhoto"), lab || radiology, canVerify, Allowed("canCorrectIdentity"), reasons,
+                        Allowed("canCancelReservation"), Allowed("canRescheduleReservation"), Allowed("canViewTicket"), viewDocuments,
+                        Allowed("canCorrectIdentity"), lab, radiology, labView || radiologyView, labWithdraw || radiologyWithdraw, Allowed("canViewTransactions"),
+                        labView, radiologyView, labWithdraw, radiologyWithdraw));
                 }
             }
         }
 
         var canManage = family is null || family.Status == FamilyStatus.Active && (member!.Role is FamilyMemberRole.Father or FamilyMemberRole.Mother);
         return Result<FamilyWorkspaceResponse>.Ok(new(family is not null, family, children, pending.Items,
-            canManage && Has(FamilySelfServicePermissionNames.Search) && Has(FamilySelfServicePermissionNames.Submit),
-            canManage && Has(FamilySelfServicePermissionNames.Onboard), family is null && Has(FamilySelfServicePermissionNames.Submit)));
+            Has(FamilySelfServicePermissionNames.Search) && Has(FamilySelfServicePermissionNames.Submit),
+            canManage && Has(FamilySelfServicePermissionNames.Onboard), Has(FamilySelfServicePermissionNames.Submit), await pendingReader.ListAsync(current.UserId!.Value, ct)));
     }
 }

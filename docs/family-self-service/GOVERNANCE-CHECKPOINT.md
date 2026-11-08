@@ -1,3 +1,5 @@
+> Historical implementation checkpoint. Superseded by [CLOSURE-REPORT-2026-11-08.md](CLOSURE-REPORT-2026-11-08.md) and [owner decision v2](DECISION-2026-11-08-v2.md). Earlier disabled-feature and missing-policy statements describe that checkpoint, not the current Production target.
+
 # Family governance implementation checkpoint
 
 Work in progress. These additions are being compiled and tested separately from the already running extension regression suite. They are not deployed or released.

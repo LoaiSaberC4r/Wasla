@@ -48,8 +48,10 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
     public string TicketUrl(Guid id) => $"/api/v1/practices/{PracticeId}/tickets/{id}";
     public string EncounterUrl(Guid id) => $"/api/v1/doctors/me/practices/{PracticeId}/encounters/{id}";
 
-    private Phase13ApiFixture(string? sqlConnection, Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor? commands = null)
+    private readonly bool _realScanner;
+    private Phase13ApiFixture(string? sqlConnection, Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor? commands = null, bool realScanner = false)
     {
+        _realScanner = realScanner;
         _commands = commands;
         if (sqlConnection is null) _sqlite = new SqliteConnection("Data Source=:memory:");
         else
@@ -60,11 +62,11 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
         }
     }
 
-    public static async Task<Phase13ApiFixture> CreateAsync(bool sqlServer = false, Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor? commands = null)
+    public static async Task<Phase13ApiFixture> CreateAsync(bool sqlServer = false, Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor? commands = null, bool realScanner = false)
     {
         var connection = sqlServer ? Environment.GetEnvironmentVariable("WASLA_SQLSERVER_CONNECTION_STRING") : null;
         if (sqlServer) Assert.SkipWhen(string.IsNullOrWhiteSpace(connection), "WASLA_SQLSERVER_CONNECTION_STRING is required.");
-        var fixture = new Phase13ApiFixture(connection, commands);
+        var fixture = new Phase13ApiFixture(connection, commands, realScanner);
         if (fixture._sqlite is not null) await fixture._sqlite.OpenAsync(TestContext.Current.CancellationToken);
         using var client = fixture.CreateClient();
         try { await fixture.InitializeAsync(); }
@@ -85,6 +87,9 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
             ["DatabaseInitialization:ApplyMigrationsOnStartup"] = "false",
             ["DatabaseInitialization:ApplySeedingOnStartup"] = "false",
             ["EmailOutbox:Enabled"] = "false",
+            ["MalwareScanner:Enabled"] = _realScanner ? "true" : "false",
+            ["MalwareScanner:Host"] = "127.0.0.1",
+            ["MalwareScanner:Port"] = "3310",
             ["Archive:Enabled"] = "false",
             ["Archive:ReadModelsVerified"] = "false",
             ["MediaStorage:RootPath"] = _medicalMediaRoot,
@@ -93,6 +98,9 @@ internal sealed class Phase13ApiFixture : WebApplicationFactory<Program>
         }));
         builder.ConfigureServices(services =>
         {
+            if (_realScanner)
+                services.AddSingleton<BuildingBlock.Application.Abstraction.Media.IMalwareScanner>(p =>
+                    p.GetRequiredService<Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Media.ClamAvMalwareScanner>());
             // API scenarios drive lifecycle transitions explicitly and own database initialization.
             services.RemoveAll<IHostedService>();
             services.RemoveAll<DbContextOptions<WaslaDbContext>>();

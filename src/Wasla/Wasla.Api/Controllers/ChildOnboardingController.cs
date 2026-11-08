@@ -51,8 +51,8 @@ public sealed class AdminChildOnboardingController(ISender sender) : ControllerB
     public async Task<IActionResult> Inbox([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
         => (await sender.Send(new GetChildOnboardingRequestsQuery(null, true, pageNumber, pageSize), ct)).ToIActionResult(ct);
     [HttpGet("{requestId:guid}"), Permission(FamilySelfServicePermissionNames.OnboardingDetails)]
-    public async Task<IActionResult> Details(Guid requestId, CancellationToken ct)
-        => (await sender.Send(new GetChildOnboardingRequestsQuery(requestId, true), ct)).ToIActionResult(ct);
+    public async Task<IActionResult> Details(Guid requestId, CancellationToken ct, [FromQuery] int matchPageNumber = 1, [FromQuery] int matchPageSize = 20)
+        => (await sender.Send(new GetChildOnboardingRequestsQuery(requestId, true, MatchPageNumber: matchPageNumber, MatchPageSize: matchPageSize), ct)).ToIActionResult(ct);
     [HttpGet("{requestId:guid}/evidence/{documentId:guid}/content"), Permission(FamilySelfServicePermissionNames.OnboardingEvidence)]
     public async Task<IActionResult> Evidence(Guid requestId, Guid documentId, CancellationToken ct)
     {

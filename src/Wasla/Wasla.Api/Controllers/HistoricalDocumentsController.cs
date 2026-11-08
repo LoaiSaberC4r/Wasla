@@ -42,7 +42,7 @@ public sealed class HistoricalDocumentsController(ISender sender) : ControllerBa
             var files = form.Files.Select(f => { var stream = f.OpenReadStream(); streams.Add(stream); return new MediaUpload(stream, f.FileName, f.ContentType, f.Length); }).ToArray();
             var response = await sender.Send(new HistoricalDocumentMutation(doc.HasValue ? "revise" : "create", child, doc, key, form.RowVersion,
                 new(form.Category, form.DocumentDate, form.DateUnknown, form.ProviderName, form.Title, form.PatientNote), files, form.Reason), ct);
-            return response.IsSuccess ? controller.StatusCode(doc.HasValue ? 200 : 201, response.Value) : response.Errors.ToActionProblem(ct);
+            return response.IsSuccess ? controller.StatusCode(response.Value.ValidationState is "RejectedUnsafe" or "Quarantined" ? 202 : doc.HasValue ? 200 : 201, response.Value) : response.Errors.ToActionProblem(ct);
         }
         finally { foreach (var stream in streams) await stream.DisposeAsync(); }
     }

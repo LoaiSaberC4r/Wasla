@@ -56,6 +56,7 @@ internal sealed class HistoricalDocumentOperationConfiguration : IWriteEntityCon
     {
         b.ToTable("HistoricalDocumentOperations"); b.HasKey(o => o.Id); b.Property(o => o.Id).ValueGeneratedNever();
         b.Property(o => o.Operation).HasMaxLength(20).IsRequired(); b.Property(o => o.IdempotencyKey).HasMaxLength(100).IsRequired(); b.Property(o => o.Fingerprint).HasMaxLength(64).IsRequired();
+        b.Property(o => o.ValidationState).HasMaxLength(40).HasDefaultValue("AvailableUnverified"); b.Property(o => o.FailureCode).HasMaxLength(60);
         b.HasOne<PatientHistoricalDocument>().WithMany().HasForeignKey(o => o.DocumentId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Patient>().WithMany().HasForeignKey(o => o.SubjectPatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ApplicationUser>().WithMany().HasForeignKey(o => o.ActorUserId).OnDelete(DeleteBehavior.Restrict);

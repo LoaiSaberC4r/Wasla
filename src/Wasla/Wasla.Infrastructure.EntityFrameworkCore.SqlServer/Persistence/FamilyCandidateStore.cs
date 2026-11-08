@@ -25,15 +25,15 @@ internal sealed class FamilyCandidateStore(WaslaDbContext db, ITicketQueueLock l
             return Result<FamilyCandidateSearchResponse>.Fail(Error.RateLimit("FamilyCandidate.RateLimited", Wasla.Domain.Resources.FamilySelfServiceText.Get("FamilyCandidate_RateLimited"), TimeSpan.FromMinutes(15)));
         var name = FamilyIdentitySearch.Normalize(criteria.NameAr);
         var eligible = db.Patients.AsNoTracking().Where(p => p.Id != parent && p.DateOfBirth == criteria.DateOfBirth && p.Gender == criteria.Gender);
-        var found = await FamilyIdentitySearch.Exact(eligible, name).OrderBy(p => p.Id).Select(p => new { p.Id, p.DateOfBirth }).Take(options.Value.SearchMaxCandidates + 1).ToArrayAsync(ct);
+        // Phone only ranks identities that already match all three required fields.
+        // A shared or missing phone never broadens the identity search.
+        var phone = criteria.PhoneNumber?.Trim();
+        var found = await FamilyIdentitySearch.Exact(eligible, name)
+            .OrderByDescending(p => phone != null && phone != "" && p.PhoneNumber == phone).ThenBy(p => p.Id)
+            .Select(p => new { p.Id, p.DateOfBirth }).Take(options.Value.SearchMaxCandidates + 1).ToArrayAsync(ct);
         db.Add(new ArchiveAuditEvent("FamilyCandidateSearch", "FamilyCandidate", null, null, actor, clock.UtcNow));
-        if (found.Length > 1)
-        {
-            await db.SaveChangesAsync(ct);
-            return Result<FamilyCandidateSearchResponse>.Ok(new("ManualReviewRequired", []));
-        }
         var results = new List<FamilyCandidateResponse>();
-        foreach (var p in found)
+        foreach (var p in found.Take(options.Value.SearchMaxCandidates))
         {
             var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             var expires = clock.UtcNow.AddMinutes(options.Value.CandidateReferenceTtlMinutes);
@@ -41,7 +41,10 @@ internal sealed class FamilyCandidateStore(WaslaDbContext db, ITicketQueueLock l
             results.Add(new(token, "***", p.DateOfBirth.Year, expires));
         }
         await db.SaveChangesAsync(ct);
-        return Result<FamilyCandidateSearchResponse>.Ok(new(found.Length == 0 ? "NoPotentialMatch" : "PotentialMatches", results));
+        var hasMore = found.Length > options.Value.SearchMaxCandidates;
+        return Result<FamilyCandidateSearchResponse>.Ok(new(found.Length == 0 ? "NoPotentialMatch" :
+            found.Length > 1 ? "ManualReviewRequired" : "PotentialMatches", results, hasMore,
+            found.Length != 1 ? "SubmitChildOnboardingForManualReview" : "SubmitSelectedCandidateWithEvidence"));
     }
     public async Task<Result<CandidateRedemption>> ResolveAsync(Guid actor, Guid parent, string reference, string key, string fingerprint, CancellationToken ct)
     {
@@ -57,7 +60,11 @@ internal sealed class FamilyCandidateStore(WaslaDbContext db, ITicketQueueLock l
             return row.IdempotencyKey == key && row.SubmissionFingerprint == fingerprint && (row.RelationshipRequestId is not null || row.GovernanceCaseId is not null) ?
                 Result<CandidateRedemption>.Ok(new(row.TargetPatientId, row.RelationshipRequestId, row.GovernanceCaseId)) :
                 Result<CandidateRedemption>.Fail(Error.Conflict("FamilyCandidate.ReferenceConsumed", Wasla.Domain.Resources.FamilySelfServiceText.Get("FamilyCandidate_ReferenceConsumed")));
-        return row.ExpiresAtUtc <= clock.UtcNow ? Result<CandidateRedemption>.Fail(Unavailable) : Result<CandidateRedemption>.Ok(new(row.TargetPatientId, null));
+        if (row.ExpiresAtUtc <= clock.UtcNow) return Result<CandidateRedemption>.Fail(Unavailable);
+        var patient = await db.Patients.AsNoTracking().SingleOrDefaultAsync(p => p.Id == row.TargetPatientId, ct);
+        if (patient is null || row.CriteriaHash != Hash($"{FamilyIdentitySearch.Normalize(patient.NameAr)}:{patient.DateOfBirth:yyyy-MM-dd}:{patient.Gender}"))
+            return Result<CandidateRedemption>.Fail(Unavailable);
+        return Result<CandidateRedemption>.Ok(new(row.TargetPatientId, null));
     }
     public async Task CompleteConflictAsync(Guid actor, string reference, string key, string fingerprint, Guid caseId, CancellationToken ct)
     {

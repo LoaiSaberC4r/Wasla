@@ -60,18 +60,11 @@ public sealed class Phase13LifecycleSecurityTests
     {
         await using var app = await Phase13ApiFixture.CreateAsync();
         using var doctor = await app.ClientAsync("doctor"); using var reception = await app.ClientAsync("reception"); using var parent = await app.ClientAsync("patient");
-        var childId = Guid.NewGuid();
-        await app.WithDbAsync(async db =>
-        {
-            db.Patients.Add(Patient.Create(childId, "طفل", "Child", new DateOnly(2020, 1, 1), Gender.Male, null, null, null, null, null, app.Today).Value);
-            var family = Family.Create(Guid.NewGuid(), app.DoctorUserId).Value;
-            var request = FamilyRelationshipRequest.Create(Guid.NewGuid(), FamilyRelationshipRequestType.CreateFamily, null,
-                app.PatientId, childId, FamilyMemberRole.Father, FamilyMemberRole.Child, app.DoctorUserId, app.Clock.UtcNow).Value;
-            db.FamilyRelationshipRequests.Add(request); db.Families.Add(family);
-            family.AddMember(Guid.NewGuid(), app.PatientId, FamilyMemberRole.Father, app.Clock.UtcNow, app.DoctorUserId, request.Id);
-            family.AddMember(Guid.NewGuid(), childId, FamilyMemberRole.Child, app.Clock.UtcNow, app.DoctorUserId, request.Id);
-            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-        });
+        // Booking uses independent, evidence-reviewed operational authority.
+        // An unapproved roster entry is never a grant to the dependent journey.
+        FamilyClosureRegressionTests.Enable(app);
+        using var admin = await app.ClientAsync("root");
+        var childId = await FamilyClosureRegressionTests.Child(app, parent, admin, "طفل");
         var source = await app.CompleteAsync(doctor, await app.StartAsync(doctor, await app.WalkInAsync(reception, patientId: childId)));
         var encounterId = source.Encounter.GetProperty("encounterId").GetGuid(); var eligibility = await app.EligibilityAsync(doctor, encounterId);
         var id = eligibility.GetProperty("eligibilityId").GetGuid();

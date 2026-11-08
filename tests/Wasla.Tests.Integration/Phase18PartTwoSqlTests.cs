@@ -154,6 +154,8 @@ public sealed class Phase18PartTwoSqlTests
         async Task Pdf(string language)
         {
             if(!runBrowser)return; // Actual automatic provisioning has a separate browser smoke test.
+            await app.Services.GetRequiredService<Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Reports.IChromiumBrowserRuntime>()
+                .EnsureBrowserDownloadedAsync(TestContext.Current.CancellationToken);
             using var response=await doctor.GetAsync("/api/v1/doctors/me/reports/queue/export"+query+"&format=pdf&language="+language,TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.OK,response.StatusCode);Assert.Equal("application/pdf",response.Content.Headers.ContentType?.MediaType);
             Assert.True((await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken)).AsSpan().StartsWith("%PDF"u8));

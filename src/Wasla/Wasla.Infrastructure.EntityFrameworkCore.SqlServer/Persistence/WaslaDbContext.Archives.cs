@@ -24,10 +24,14 @@ public sealed partial class WaslaDbContext
     private bool HasNewArchiveIdentities => ChangeTracker.Entries().Any(x => x.State == EntityState.Added && x.Entity is Ticket or Reservation);
     private void PrepareArchiveIdentities()
     {
+        // DbSet.Local triggers change detection. Snapshot IDs once rather than
+        // rescanning the tracked graph for every admission in a bulk command.
+        var reservationIds = ReservationRegistry.Local.Select(x => x.Id).ToHashSet();
         foreach (var reservation in ChangeTracker.Entries<Reservation>().Where(x => x.State == EntityState.Added).Select(x => x.Entity).ToArray())
-            if (!ReservationRegistry.Local.Any(x => x.Id == reservation.Id)) ReservationRegistry.Add(Domain.Archives.ReservationRegistry.Register(reservation));
+            if (reservationIds.Add(reservation.Id)) ReservationRegistry.Add(Domain.Archives.ReservationRegistry.Register(reservation));
+        var ticketIds = TicketRegistry.Local.Select(x => x.Id).ToHashSet();
         foreach (var ticket in ChangeTracker.Entries<Ticket>().Where(x => x.State == EntityState.Added).Select(x => x.Entity).ToArray())
-            if (!TicketRegistry.Local.Any(x => x.Id == ticket.Id)) TicketRegistry.Add(Domain.Archives.TicketRegistry.Register(ticket));
+            if (ticketIds.Add(ticket.Id)) TicketRegistry.Add(Domain.Archives.TicketRegistry.Register(ticket));
         foreach (var entry in ChangeTracker.Entries())
         {
             if (entry.State is EntityState.Modified or EntityState.Deleted &&

@@ -63,11 +63,15 @@ internal sealed class DoctorPatientReadService(WaslaDbContext db, IDateTimeProvi
         var clinical = a.Has(PermissionNames.MedicalEncountersViewOwn);
         var appointments = a.Has(PermissionNames.DoctorPracticeReservationsViewOwn);
         var now = clock.UtcNow;
+        // Join the aggregate's latest timestamp first. The deterministic tie
+        // lookup is then restricted to that timestamp, rather than sorting every
+        // qualified live/archive attendance again for every candidate patient.
         var rows = from g in groups
             join p in db.Patients.AsNoTracking() on g.PatientId equals p.Id
-            join last in tickets on tickets.Where(t => t.PatientId == g.PatientId)
-                .OrderByDescending(t => t.CheckInTimeUtc).ThenBy(t => t.Id).Select(t => t.Id).First() equals last.Id
+            join last in tickets on new { g.PatientId, At = g.Last } equals new { last.PatientId, At = last.CheckInTimeUtc }
             join practice in db.DoctorPractices.AsNoTracking() on last.DoctorPracticeId equals practice.Id
+            where last.Id == tickets.Where(t => t.PatientId == g.PatientId && t.CheckInTimeUtc == g.Last)
+                .OrderBy(t => t.Id).Select(t => t.Id).First()
             select new
             {
                 g, p.Id, p.NameAr, p.NameEn, p.PhoneNumber, p.Email, p.DateOfBirth, p.Gender,

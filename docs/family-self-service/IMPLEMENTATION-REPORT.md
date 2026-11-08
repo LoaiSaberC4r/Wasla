@@ -1,3 +1,5 @@
+> Historical implementation checkpoint. Superseded by [CLOSURE-REPORT-2026-11-08.md](CLOSURE-REPORT-2026-11-08.md) and [owner decision v2](DECISION-2026-11-08-v2.md). Earlier disabled-feature and missing-policy statements describe that checkpoint, not the current Production target.
+
 # Implementation review checkpoint — epic incomplete
 
 > This file records the first foundation checkpoint. See [EXTENSION-CHECKPOINT.md](EXTENSION-CHECKPOINT.md) for the current historical/diagnostic/profile/finance/intake additions and their exact validation status. The full epic remains in progress. Draft PR: https://github.com/LoaiSaberC4r/Wasla/pull/38.

@@ -27,10 +27,16 @@ public sealed record DependentOperationalScope(Guid ActorUserId, Guid AdultPatie
 public interface IDependentAccessPolicy
 {
     Task<Result<DependentOperationalScope>> AuthorizeAsync(Guid childPatientId, string permission, CancellationToken ct);
+    Task<DependentAccessSnapshot> SnapshotAsync(IReadOnlyCollection<Guid> children, CancellationToken ct);
+}
+public sealed record DependentAccessSnapshot(IReadOnlyDictionary<Guid, DependentOperationalScope> Scopes, IReadOnlySet<string> Permissions)
+{
+    public bool Allows(Guid child, string permission) => Permissions.Contains(permission) && Scopes.ContainsKey(child);
 }
 public interface IOperationalAuthorityReader
 {
     Task<ParentChildOperationalAuthority?> FindAsync(Guid adultPatientId, Guid childPatientId, CancellationToken ct);
+    Task<IReadOnlyDictionary<Guid, ParentChildOperationalAuthority>> FindManyAsync(Guid adultPatientId, IReadOnlyCollection<Guid> children, CancellationToken ct);
 }
 public interface IFamilyOperationalVerification
 {

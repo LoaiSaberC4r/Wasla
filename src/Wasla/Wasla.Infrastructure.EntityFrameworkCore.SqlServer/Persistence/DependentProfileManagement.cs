@@ -17,6 +17,8 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 internal sealed class DependentProfileManagement(WaslaDbContext db, IDependentAccessPolicy access, IPatientIdentityStore identities,
     IPrivateMediaReader reader, IMediaService media, IDateTimeProvider clock) : IDependentProfileManagement
 {
+    public async Task<IReadOnlySet<Guid>> LinkedPatientsAsync(IReadOnlyCollection<Guid> children, CancellationToken ct)
+        => (await db.PatientAccountLinks.AsNoTracking().Where(l => children.Contains(l.PatientId)).Select(l => l.PatientId).ToArrayAsync(ct)).ToHashSet();
     public async Task<bool> CanManageAsync(Guid child, string permission, CancellationToken ct)
         => permission is FamilyExtensionPermissionNames.ManageContacts or FamilyExtensionPermissionNames.ManagePhoto &&
             (await access.AuthorizeAsync(child, permission, ct)).IsSuccess && !await db.PatientAccountLinks.AnyAsync(l => l.PatientId == child, ct);
@@ -35,7 +37,7 @@ internal sealed class DependentProfileManagement(WaslaDbContext db, IDependentAc
         var permission = c.Operation == "photo" ? FamilyExtensionPermissionNames.ManagePhoto : FamilyExtensionPermissionNames.ManageContacts;
         var scope = await access.AuthorizeAsync(c.ChildPatientId, permission, ct);
         if (scope.IsFailure) return Result<DependentProfileChangeResponse>.Fail(scope.Errors);
-        if (c.Operation is not ("photo" or "add" or "update" or "delete") || string.IsNullOrWhiteSpace(c.IdempotencyKey) || c.IdempotencyKey.Length > 100)
+        if (c.Operation is not ("photo" or "phone" or "add" or "update" or "delete") || string.IsNullOrWhiteSpace(c.IdempotencyKey) || c.IdempotencyKey.Length > 100 || c.PhoneNumber?.Length > 30)
             return Result<DependentProfileChangeResponse>.Fail(PatientErrors.Invalid);
         if (c.Contact?.LinkedPatientId is not null) return Result<DependentProfileChangeResponse>.Fail(PatientErrors.InvalidContact);
         string? imageHash = null;
@@ -47,7 +49,7 @@ internal sealed class DependentProfileManagement(WaslaDbContext db, IDependentAc
             photo.Content.Position = 0; imageHash = Convert.ToHexString(await SHA256.HashDataAsync(photo.Content, ct)); photo.Content.Position = 0;
             if (!await Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Media.HistoricalDocumentSafety.IsPassiveAsync(photo.Content, Path.GetExtension(photo.FileName), ct)) return Result<DependentProfileChangeResponse>.Fail(PatientErrors.Invalid);
         }
-        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { c.ChildPatientId, c.Operation, c.RowVersion, c.ContactId, c.Contact, imageHash }))));
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { c.ChildPatientId, c.Operation, c.RowVersion, c.ContactId, c.Contact, c.PhoneNumber, imageHash }))));
         await identities.LockAsync(ct);
         var replay = await db.Set<DependentProfileChange>().SingleOrDefaultAsync(r => r.ActorUserId == scope.Value.ActorUserId && r.IdempotencyKey == c.IdempotencyKey && r.Operation == c.Operation, ct);
         if (replay is not null) return replay.ChildPatientId == c.ChildPatientId && replay.Fingerprint == fingerprint ?
@@ -59,17 +61,27 @@ internal sealed class DependentProfileManagement(WaslaDbContext db, IDependentAc
         if (!version.AsSpan().SequenceEqual(patient.RowVersion)) return Result<DependentProfileChangeResponse>.Fail(FamilyErrors.ConcurrencyConflict);
         // A linked teenager controls their own operational profile. Never alter their account-bound data through a proxy.
         if (await db.PatientAccountLinks.AnyAsync(l => l.PatientId == patient.Id, ct)) return Result<DependentProfileChangeResponse>.Fail(DependentAccessErrors.Unavailable);
+        var contacts = await db.PatientContacts.Where(p => p.PatientId == patient.Id && !p.IsDeleted).ToListAsync(ct);
+        var existing = contacts.SingleOrDefault(p => p.Id == c.ContactId);
         Guid? changedContact = null;
+        string Snapshot() => JsonSerializer.Serialize(new { patient.PhoneNumber, patient.ProfileImageMediaKey,
+            Contact = contacts.SingleOrDefault(p => p.Id == (c.ContactId ?? changedContact)) });
+        var before = Snapshot();
         if (c.Operation == "photo")
         {
             var saved = await media.SaveAsync(c.Photo!, new($"Patients/{patient.Id:N}/Profile"), ct);
             var updated = patient.UpdateProfile(patient.NameAr, patient.NameEn, patient.PhoneNumber, patient.Email, saved.Key, true);
             if (updated.IsFailure) return Result<DependentProfileChangeResponse>.Fail(updated.Errors);
         }
+        else if (c.Operation == "phone")
+        {
+            if (string.IsNullOrWhiteSpace(c.PhoneNumber) && !contacts.Any(p => p.IsPrimary && !string.IsNullOrWhiteSpace(p.PhoneNumber)))
+                return Result<DependentProfileChangeResponse>.Fail(PatientErrors.LastContactRequired);
+            var updated = patient.UpdateProfile(patient.NameAr, patient.NameEn, c.PhoneNumber, patient.Email, null, false);
+            if (updated.IsFailure) return Result<DependentProfileChangeResponse>.Fail(updated.Errors);
+        }
         else
         {
-            var contacts = await db.PatientContacts.Where(p => p.PatientId == patient.Id && !p.IsDeleted).ToArrayAsync(ct);
-            var existing = contacts.SingleOrDefault(p => p.Id == c.ContactId);
             if (c.Operation != "add" && existing is null) return Result<DependentProfileChangeResponse>.Fail(PatientErrors.ContactNotFound);
             if (c.Operation is "delete" or "update" && existing!.IsPrimary && (c.Operation == "delete" || c.Contact?.IsPrimary != true) &&
                 string.IsNullOrWhiteSpace(patient.PhoneNumber) && !contacts.Any(p => p.Id != existing.Id && p.IsPrimary && !string.IsNullOrWhiteSpace(p.PhoneNumber)))
@@ -82,7 +94,7 @@ internal sealed class DependentProfileManagement(WaslaDbContext db, IDependentAc
                 {
                     var made = PatientContact.Create(Guid.NewGuid(), patient.Id, i.NameAr, i.NameEn, i.PhoneNumber, i.RelationshipType, null, i.IsPrimary, i.ContactEmail);
                     if (made.IsFailure) return Result<DependentProfileChangeResponse>.Fail(made.Errors);
-                    db.Add(made.Value); changedContact = made.Value.Id;
+                    db.Add(made.Value); contacts.Add(made.Value); changedContact = made.Value.Id;
                 }
                 else
                 {
@@ -91,10 +103,12 @@ internal sealed class DependentProfileManagement(WaslaDbContext db, IDependentAc
                 }
             }
         }
+        if (string.IsNullOrWhiteSpace(patient.PhoneNumber) && !contacts.Any(p => !p.IsDeleted && p.IsPrimary && !string.IsNullOrWhiteSpace(p.PhoneNumber)))
+            return Result<DependentProfileChangeResponse>.Fail(PatientErrors.LastContactRequired);
         if ((await access.AuthorizeAsync(c.ChildPatientId, permission, ct)).IsFailure) return Result<DependentProfileChangeResponse>.Fail(DependentAccessErrors.Unavailable);
         patient.ModifiedOnUtc = clock.UtcNow; db.Entry(patient).Property(p => p.ModifiedOnUtc).IsModified = true;
         db.Entry(patient).Property(p => p.RowVersion).OriginalValue = version;
-        var change = new DependentProfileChange(scope.Value.ActorUserId, scope.Value.AdultPatientId, patient.Id, c.Operation, c.IdempotencyKey, fingerprint, changedContact, clock.UtcNow);
+        var change = new DependentProfileChange(scope.Value.ActorUserId, scope.Value.AdultPatientId, patient.Id, c.Operation, c.IdempotencyKey, fingerprint, changedContact, clock.UtcNow, before, Snapshot());
         db.Add(change); await db.SaveChangesAsync(ct);
         return Result<DependentProfileChangeResponse>.Ok(new(change.Id, changedContact));
     }

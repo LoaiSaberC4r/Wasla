@@ -24,6 +24,8 @@ public sealed class DoctorPatientPrescriptionTests
         var id = issued.Prescription.GetProperty("prescriptionId").GetGuid(); var root = $"/api/v1/doctors/me/prescriptions/{id}";
         var list = await GetAsync(doctor, $"/api/v1/doctors/me/patients/{f.PatientId}/prescriptions");
         Assert.Equal(1, list.GetProperty("totalCount").GetInt32()); Assert.True(list.GetProperty("items")[0].GetProperty("canExport").GetBoolean());
+        if (Environment.GetEnvironmentVariable("WASLA_RUN_BROWSER_TESTS") == "1")
+            await f.Services.GetRequiredService<IChromiumBrowserRuntime>().EnsureBrowserDownloadedAsync(TestContext.Current.CancellationToken);
         await using var pdfHost = f.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
         {
             if (Environment.GetEnvironmentVariable("WASLA_RUN_BROWSER_TESTS") == "1") return;

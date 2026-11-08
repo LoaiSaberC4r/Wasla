@@ -11,17 +11,19 @@ namespace Wasla.Application.Features.Families;
 public sealed record ChildOnboardingInput(string NameAr, string? NameEn, DateOnly DateOfBirth, Gender Gender, string? PhoneNumber,
     string? PrimaryContactNameAr, string? PrimaryContactPhone, FamilyMemberRole RelationToChild);
 public sealed record ChildOnboardingResponse(Guid RequestId, ChildOnboardingStatus Status, int Revision, DateTime CreatedAtUtc,
-    string RowVersion, string? ReviewMessage, bool CanResubmit, Guid? ApprovedPatientId = null, Guid? FamilyRelationshipRequestId = null);
+    string RowVersion, string? ReviewMessage, bool CanResubmit, Guid? ApprovedPatientId = null, Guid? FamilyRelationshipRequestId = null,
+    Guid? ConflictCaseId = null, string? NextAction = null);
 public sealed record ChildOnboardingDuplicateCandidate(Guid PatientId, string NameAr, string? NameEn, DateOnly DateOfBirth, Gender Gender);
 public sealed record ChildOnboardingReview(ChildOnboardingResponse Request, ChildOnboardingInput Intake, IReadOnlyList<FamilyRelationshipDocumentResponse> Evidence,
-    IReadOnlyList<ChildOnboardingDuplicateCandidate> PossibleMatches);
+    IReadOnlyList<ChildOnboardingDuplicateCandidate> PossibleMatches, bool HasMorePossibleMatches = false, int PossibleMatchPageNumber = 1);
 public sealed record SubmitChildOnboardingCommand(ChildOnboardingInput Intake, IReadOnlyList<FamilyEvidenceUpload> Evidence, string IdempotencyKey)
     : ICommand<ChildOnboardingResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record ReviewChildOnboardingCommand(Guid RequestId, ChildOnboardingStatus Decision, string RowVersion, string? Reason,
     Guid? ConfirmedExistingPatientId, string IdempotencyKey) : ICommand<ChildOnboardingResponse>, ITransactionalCommand<WaslaWritePersistence>;
 public sealed record ResubmitChildOnboardingCommand(Guid RequestId, string RowVersion, IReadOnlyList<FamilyEvidenceUpload> Evidence, string IdempotencyKey, ChildOnboardingInput? Intake = null)
     : ICommand<ChildOnboardingResponse>, ITransactionalCommand<WaslaWritePersistence>;
-public sealed record GetChildOnboardingRequestsQuery(Guid? RequestId, bool Admin, int PageNumber = 1, int PageSize = 20) : IQuery<IReadOnlyList<ChildOnboardingReview>>;
+public sealed record GetChildOnboardingRequestsQuery(Guid? RequestId, bool Admin, int PageNumber = 1, int PageSize = 20,
+    int MatchPageNumber = 1, int MatchPageSize = 20) : IQuery<IReadOnlyList<ChildOnboardingReview>>;
 public sealed record GetChildOnboardingEvidenceQuery(Guid RequestId, Guid EvidenceId) : IQuery<PrivateMedia>;
 public interface IChildOnboardingWorkflow
 {

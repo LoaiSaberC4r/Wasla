@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Wasla.Domain.Media;
+using Wasla.Application.Features.Tickets.Common;
 using System.Diagnostics.Metrics;
 using BuildingBlock.Application.Time;
 using BuildingBlock.Infrastructure.Options;
@@ -23,13 +26,16 @@ public sealed class PrivateMediaReconciliationOptions
 }
 
 internal sealed class PrivateMediaReconciliation(WaslaDbContext db, IOptions<MediaStorageOptions> storage,
-    IOptions<PrivateMediaReconciliationOptions> options, IDateTimeProvider clock) : IPrivateMediaReconciliation
+    IOptions<PrivateMediaReconciliationOptions> options, IDateTimeProvider clock, ITicketQueueLock locks) : IPrivateMediaReconciliation
 {
-    private static readonly string[] Modules = ["HistoricalDocuments", "FamilyGovernance", "ChildOnboarding"];
+    private static readonly string[] Modules = ["HistoricalDocuments", "FamilyGovernance", "ChildOnboarding", "FamilyRelationshipRequests", "FamilyMedicalRequests", "PatientProfilePhotos"];
     private IQueryable<string> Keys(string module) => module switch {
-        "HistoricalDocuments" => db.Set<PatientHistoricalDocumentAttachment>().AsNoTracking().OrderBy(a => a.Id).Select(a => a.MediaKey),
-        "FamilyGovernance" => db.Set<FamilyGovernanceEvidence>().AsNoTracking().OrderBy(a => a.Id).Select(a => a.MediaKey),
-        _ => db.Set<ChildOnboardingEvidence>().AsNoTracking().OrderBy(a => a.Id).Select(a => a.MediaKey) };
+        "HistoricalDocuments" => db.Set<PatientHistoricalDocumentAttachment>().IgnoreQueryFilters().AsNoTracking().Select(a => a.MediaKey),
+        "FamilyGovernance" => db.Set<FamilyGovernanceEvidence>().IgnoreQueryFilters().AsNoTracking().Select(a => a.MediaKey),
+        "ChildOnboarding" => db.Set<ChildOnboardingEvidence>().IgnoreQueryFilters().AsNoTracking().Select(a => a.MediaKey),
+        "FamilyRelationshipRequests" => db.FamilyRelationshipDocuments.IgnoreQueryFilters().AsNoTracking().Select(a => a.MediaKey),
+        "FamilyMedicalRequests" => db.Set<FamilyMedicalAccessRequestDocument>().IgnoreQueryFilters().AsNoTracking().Select(a => a.MediaKey),
+        _ => db.Patients.IgnoreQueryFilters().AsNoTracking().Where(p => p.ProfileImageMediaKey != null).Select(p => p.ProfileImageMediaKey!) };
     public async Task<PrivateMediaReconciliationReport> InspectAsync(CancellationToken ct)
     {
         if (!options.Value.IsValid) throw new InvalidOperationException("Invalid media reconciliation limits.");
@@ -37,26 +43,50 @@ internal sealed class PrivateMediaReconciliation(WaslaDbContext db, IOptions<Med
         var root = Path.GetFullPath(Path.IsPathRooted(configured.RootPath) ? configured.RootPath :
             Path.Combine(configured.ContentRootPath ?? AppContext.BaseDirectory, configured.RootPath));
         var max = options.Value.MaxFilesPerModule; var cutoff = clock.UtcNow.AddHours(-options.Value.StaleStagingHours);
-        long examined = 0, orphans = 0, references = 0, missing = 0; var hasMore = false;
+        var reports = new List<PrivateMediaModuleReport>();
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await locks.AcquireIdempotencyAsync(Guid.Empty, "PrivateMedia:Reconciliation", "Checkpoint", ct);
         foreach (var module in Modules)
         {
-            ct.ThrowIfCancellationRequested(); var folder = Path.Combine(root, module);
-            var files = Directory.Exists(folder) ? Enumerate(folder).Take(max + 1).ToArray() : [];
-            hasMore |= files.Length > max; files = files.Take(max).ToArray(); examined += files.Length;
-            var old = files.Where(p => File.GetLastWriteTimeUtc(p) < cutoff).Select(p => Path.GetRelativePath(root, p).Replace('\\', '/')).ToArray();
+            ct.ThrowIfCancellationRequested();
+            var state = await db.Set<PrivateMediaReconciliationCheckpoint>().SingleOrDefaultAsync(r => r.Module == module, ct);
+            if (state is null) { state = new(module); db.Add(state); }
+            var prefix = module == "PatientProfilePhotos" ? "Patients" : module;
+            var folder = Path.Combine(root, prefix);
+            var files = (Directory.Exists(folder) ? Enumerate(folder) : []).Select(p => Path.GetRelativePath(root, p).Replace('\\', '/'))
+                .Where(k => module != "PatientProfilePhotos" || k.Contains("/Profile/", StringComparison.Ordinal))
+                .Where(k => state.LastFileKey == null || string.CompareOrdinal(k, state.LastFileKey) > 0)
+                .Order(StringComparer.Ordinal).Take(max + 1).ToArray();
+            var moreFiles = files.Length > max; files = files.Take(max).ToArray();
+            var orphanKeys = new List<string>(); var missingKeys = new List<string>();
+            var old = files.Where(k => TryResolve(root, prefix, k, out var path) && File.GetLastWriteTimeUtc(path) < cutoff).ToArray();
             foreach (var chunk in old.Chunk(500))
             {
                 var retained = await Keys(module).Where(key => chunk.Contains(key)).ToArrayAsync(ct);
-                orphans += chunk.Except(retained, StringComparer.Ordinal).LongCount();
+                orphanKeys.AddRange(chunk.Except(retained, StringComparer.Ordinal));
             }
-            var keys = await Keys(module).Take(max + 1).ToArrayAsync(ct); hasMore |= keys.Length > max;
-            foreach (var key in keys.Take(max))
+            var references = Keys(module).Distinct();
+            // CompareTo translates to the database collation, matching OrderBy and the durable cursor.
+            if (state.LastReferenceKey is { } cursor) references = references.Where(k => k.CompareTo(cursor) > 0);
+            var keys = await references.OrderBy(k => k).Take(max + 1).ToArrayAsync(ct);
+            var moreReferences = keys.Length > max; keys = keys.Take(max).ToArray();
+            foreach (var key in keys)
             {
-                ct.ThrowIfCancellationRequested(); references++;
-                if (!TryResolve(root, module, key, out var path) || !File.Exists(path)) missing++;
+                ct.ThrowIfCancellationRequested();
+                if (!TryResolve(root, prefix, key, out var path) || !File.Exists(path)) missingKeys.Add(key);
             }
+            // Hold the completed side at its last key until the entire module's
+            // cycle finishes. Independent resets would repeatedly scan page one.
+            var continuing = moreFiles || moreReferences;
+            state.Advance(continuing ? files.LastOrDefault() ?? state.LastFileKey : null,
+                continuing ? keys.LastOrDefault() ?? state.LastReferenceKey : null, clock.UtcNow);
+            var run = new PrivateMediaReconciliationRun(module, clock.UtcNow, files.Length, keys.Length, orphanKeys.Count, missingKeys.Count,
+                moreFiles || moreReferences, JsonSerializer.Serialize(new { OrphanCandidates = orphanKeys, MissingReferences = missingKeys }));
+            db.Add(run); reports.Add(new(module, run.Id, files.Length, keys.Length, orphanKeys.Count, missingKeys.Count, run.HasMore));
         }
-        return new(examined, orphans, references, missing, hasMore);
+        await db.SaveChangesAsync(ct); await transaction.CommitAsync(ct);
+        return new(reports.Sum(r => r.ExaminedFiles), reports.Sum(r => r.StaleUnreferencedCandidates), reports.Sum(r => r.ExaminedReferences),
+            reports.Sum(r => r.MissingReferencedFiles), reports.Any(r => r.HasMore), reports);
     }
     private static IEnumerable<string> Enumerate(string folder)
     {
@@ -95,17 +125,23 @@ internal sealed class PrivateMediaReconciliationWorker(IServiceScopeFactory scop
         if (!options.Value.Enabled) return;
         while (!stoppingToken.IsCancellationRequested)
         {
+            var hasMore = false;
             try
             {
                 await using var scope = scopes.CreateAsyncScope();
                 var report = await scope.ServiceProvider.GetRequiredService<IPrivateMediaReconciliation>().InspectAsync(stoppingToken);
-                Runs.Add(1); Orphans.Record(report.StaleUnreferencedCandidates); Missing.Record(report.MissingReferencedFiles);
+                Runs.Add(1); hasMore = report.HasMore;
+                foreach (var module in report.Modules ?? [])
+                {
+                    var tag = new KeyValuePair<string, object?>("module", module.Module);
+                    Orphans.Record(module.StaleUnreferencedCandidates, tag); Missing.Record(module.MissingReferencedFiles, tag);
+                }
                 Completed(logger, report.StaleUnreferencedCandidates, report.MissingReferencedFiles, report.HasMore, null);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Data.Common.DbException or InvalidOperationException)
             { Failures.Add(1); Failed(logger, null); }
-            await Task.Delay(TimeSpan.FromHours(options.Value.IntervalHours), stoppingToken);
+            await Task.Delay(hasMore ? TimeSpan.FromSeconds(1) : TimeSpan.FromHours(options.Value.IntervalHours), stoppingToken);
         }
     }
 }

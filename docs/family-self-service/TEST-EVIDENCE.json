@@ -1,2731 +1,307 @@
 {
-  "baselineSha": "feaa8c73f4f2eaed46d38e24e161893fae6909a3",
+  "schemaVersion": 2,
   "branch": "codex/family-self-service-historical-documents",
-  "sdk": "10.0.401",
-  "build": {
-    "errors": 0,
-    "command": "dotnet build Wasla.sln --artifacts-path artifacts/family-validation --no-restore -p:Platform=\"Any CPU\" -m:1 -p:UseSharedCompilation=false",
-    "warnings": 0,
-    "result": "Passed"
+  "startingCommit": "d05338369ed6c0b80691459f4086470005f8ad67",
+  "recordedAtUtc": "2026-11-08T12:20:47.822474+00:00",
+  "historicalEvidence": "TEST-EVIDENCE-PR38-BASELINE.json",
+  "finalCheckoutEvidence": {
+    "source": "GitHub CI artifact test-results/TEST-EVIDENCE.json and provenance.json",
+    "requirement": "commit must equal final PR38 head; checkout is explicitly pinned to pull_request.head.sha",
+    "generator": "tools/write-test-evidence.py",
+    "note": "CI enriches this checked-in local snapshot with exact final checkout SHA and all executed TRX counters."
   },
-  "modelCheck": "No changes have been made to the model since the last migration",
-  "runs": [
+  "localCompletedRuns": [
     {
-      "name": "unit-final",
-      "command": "dotnet test tests/Wasla.Tests.Unit/Wasla.Tests.Unit.csproj --artifacts-path artifacts/family-validation --no-build --no-restore -p:Platform=\"Any CPU\"",
-      "total": 441,
-      "passed": 441,
-      "failed": 0,
-      "notExecuted": 0,
-      "started": "2026-11-08T01:21:36.2787352+02:00",
-      "finished": "2026-11-08T01:22:41.0860124+02:00",
-      "results": [
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Eligibility_does_not_add_or_reinterpret_business_states(status: NoShow, eligible: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007882"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"annual-mismatch\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0041219"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Appointment.ReminderDue\", email: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003657"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Conflicting_normalized_canonical_paths_are_rejected(path: \"LoincTable\\\\Loinc.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0234674"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Draft_snapshots_duplicate_prevention_and_publication",
-          "outcome": "Passed",
-          "duration": "00:00:00.0023494"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Encounter_requires_started_ticket_and_copies_trusted_relationships",
-          "outcome": "Passed",
-          "duration": "00:00:00.0406872"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Initial_import_uses_only_approved_classification(name: \"clean ILLEGAL IMPORT\", science: \"science\", route: \"ORAL\", status: Inactive, reason: \"SourceIllegalImport\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001821"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Caller_cancellation_disposes_page_browser_and_releases_shared_slot",
-          "outcome": "Passed",
-          "duration": "00:00:00.0057241"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TechnicalFoundationTests.EmailOutboxContract_IsDomainNeutral",
-          "outcome": "Passed",
-          "duration": "00:00:00.0742163"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Payment_requires_exact_ticket_price_and_remains_paid",
-          "outcome": "Passed",
-          "duration": "00:00:00.0385488"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Movement_dates_reject_future_and_require_backdate_reason",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006057"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperationalAnalyticsTests.Multiple_reschedules_count_events_once_per_event_and_distinct_reservations_once",
-          "outcome": "Passed",
-          "duration": "00:00:00.0039738"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorPracticeLocation_RejectsInvalidCoordinates(latitude: -90.000000999999997, longitude: 31, code: \"DoctorPracticeLocation.InvalidLatitude\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000453"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.MedicalSpecialization_Create_RejectsMissingArabicName(nameAr: \"   \")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0042225"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Submission_transitions_are_terminal_and_audited(terminal: NoLongerApplicable)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005743"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ClamAvMalwareScannerTests.Missing_scanner_fails_closed_and_remote_plaintext_targets_are_not_accepted",
-          "outcome": "Passed",
-          "duration": "00:00:02.1768153"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.A18_settings_audit_preserves_old_version_and_increments_monotonically",
-          "outcome": "Passed",
-          "duration": "00:00:00.0086469"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Merge_requires_active_target_and_preserves_source_reference(targetStatus: NeedsReview, valid: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014581"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PersistenceContractTests.Migration_BackfillsBeforeDroppingLegacyPatientLink",
-          "outcome": "Passed",
-          "duration": "00:00:00.0658394"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionDomainTests.Feature_matrix_contains_only_approved_booking_capabilities",
-          "outcome": "Passed",
-          "duration": "00:00:00.0114541"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionDomainTests.Trial_extension_is_active_only_positive_reasoned_and_preserves_start",
-          "outcome": "Passed",
-          "duration": "00:00:00.0057780"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Prescription.Available\", email: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000308"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Reservation.MarkedNoShow\", email: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000269"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Reservation.Expired\", email: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000379"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"negative-price\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0085887"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: SuperAdmin, code: \"overview\", headlines: \"RegisteredDoctors PendingDoctors ApprovedDoctors A\"···, primary: \"Approval:\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002544"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Unknown_permissions_fail_closed_without_inheriting_a_prefix_or_querying_patient_data(permission: \"FutureCommercial.Feature.View\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014729"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Converted_reservations_are_never_independent_units(status: Cancelled, eligible: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006481"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Terminal_requests_cannot_be_reopened(action: \"approve\", status: Approved)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000718"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.PasswordResetChallenge_EnforcesAttemptsExpiryAndOneTimeUse",
-          "outcome": "Passed",
-          "duration": "00:00:00.0064326"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"reservations\", headlines: \"BookingsCreated AppointmentsScheduled ReservationT\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009775"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Allocation_reconciles_to_every_piastre(amount: 3000, a: 60, b: 40, expectedA: 180000, expectedB: 120000)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0647457"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.No_response_uses_attempt_number_even_when_database_materializes_children_out_of_order",
-          "outcome": "Passed",
-          "duration": "00:00:00.0010321"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Valid_call_start_complete_path_is_domain_owned",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007571"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Unsafe_zip_paths_are_rejected(path: \"nested/../../escape.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0017836"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase12FinancialDomainTests.Payment_records_exact_full_egp_amount_with_selectable_method(method: Wallet)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0442547"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.MedicalSpecialization_Create_RejectsNegativeSortOrder",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005148"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Grace_window_is_inclusive_and_has_no_quiet_hours(caseId: \"A05\", secondsAfterDue: 900, expected: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014778"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Invalid_PDFs_and_prescription_byte_limits_fail_closed(large: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0082824"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Terminal_requests_cannot_be_reopened(action: \"withdraw\", status: Withdrawn)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0094047"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialV12InvariantTests.Contract_periods_cannot_overlap_but_independent_contracts_and_exclusive_successors_fit",
-          "outcome": "Passed",
-          "duration": "00:00:00.0080189"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Explicit_localized_schema_aliases_are_supported_case_insensitively(column: \"DisplayName\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011820"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.ApplicationUser_NormalizesAndManagesCredentialState",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012581"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.SpecializationRequest_ApproveOnlyAllowsPendingReview",
-          "outcome": "Passed",
-          "duration": "00:00:00.0030805"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_or_obviously_nonlocalized_arabic_never_falls_back_to_english(localized: \"   \")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0494347"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Equal_variable_amount_still_needs_explicit_confirmation",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006370"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Nonactive_source_rows_and_partial_arabic_are_retained(status: \"DISCOURAGED\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014256"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Week, snapshot: 1)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0021926"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"operating-finance\", headlines: \"GrossCollected Refunds NetCollected PaidOperatingE\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002920"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Future_terms_do_not_rewrite_old_plan_allocations_or_advance_on_pause",
-          "outcome": "Passed",
-          "duration": "00:00:00.0274467"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Patient_submission_never_completes_the_order_and_acceptance_retains_patient_provenance",
-          "outcome": "Passed",
-          "duration": "00:00:00.0567897"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.PatientReschedule_PreservesIdentityCatalogAndPriceAndEnforcesLimit",
-          "outcome": "Passed",
-          "duration": "00:00:00.0018818"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Patient_identity_email_is_normalized_without_provider_specific_rewriting(input: null, expected: null)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000411"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Ongoing_duration_has_no_value_or_unit_quantity_is_positive_with_unit",
-          "outcome": "Passed",
-          "duration": "00:00:00.0021963"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Queue_priority_visit_type_and_price_are_separate_concepts",
-          "outcome": "Passed",
-          "duration": "00:00:00.0538973"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityApplicationTests.Global_lookup_requires_bounded_predicate(email: \"p@example.test\", phone: null, name: null, expected: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009074"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Ambiguous_accessory_basenames_are_rejected(kind: Lab, path: \"Other/arJO32LinguisticVariant.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0020496"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PatientFamilyValidationTests.ReceptionPatient_RejectsFutureDobAndMissingGender",
-          "outcome": "Passed",
-          "duration": "00:00:01.3503422"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: SuperAdmin, code: \"geography\", headlines: \"PracticeCoverage SpecializationCoverage\", primary: \"Governorate:\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003027"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"DISCOURAGED\", selectable: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002205"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.ContactOnlyFather_GrantsNoFamilyOrMedicalAccess",
-          "outcome": "Passed",
-          "duration": "00:00:00.0089847"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.NoShow_Restore_ExpireAndConvert_RespectTransitionsAndCapacityStatus",
-          "outcome": "Passed",
-          "duration": "00:00:00.0449928"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PersistenceContractTests.Migration_DownFailsRatherThanDiscardingPatientsWithoutLinks",
-          "outcome": "Passed",
-          "duration": "00:00:00.0352610"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Source_status_revision_and_future_appointment_are_mandatory(caseId: \"A09\", revisionMatches: False, active: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005492"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.Request_RejectsWithoutReasonAndFinalRejectedCannotTransition",
-          "outcome": "Passed",
-          "duration": "00:00:00.0010066"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"TRIAL\", selectable: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0054894"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Supplied_fixed_duration_must_be_positive(duration: 7, accepted: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001796"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Exact_canonical_table_ignores_unrelated_Loinc_basename_in_either_zip_order(kind: Radiology, accessoryFirst: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011189"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Eligibility_does_not_add_or_reinterpret_business_states(status: Cancelled, eligible: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006870"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18InvestigationTests.Incorrect_open_case_can_be_withdrawn_without_granting_resource_access",
-          "outcome": "Passed",
-          "duration": "00:00:00.0146741"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.O01_O11_terminal_intents_and_idempotent_reads_preserve_logical_identity",
-          "outcome": "Passed",
-          "duration": "00:00:00.0538150"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"Ticket.Recalled\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001730"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Source_status_revision_and_future_appointment_are_mandatory(caseId: \"A07\", revisionMatches: False, active: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000391"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.Create_StartsActiveAndSnapshotsAppointmentCommercialDataAndHistory",
-          "outcome": "Passed",
-          "duration": "00:00:00.0860035"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Prn_requires_reason_and_minimum_interval_but_not_normal_frequency(prn: True, reason: True, interval: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002460"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Unsafe_zip_paths_are_rejected(path: \"/absolute.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0010615"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.Doctor_LifecycleEnforcesTransitionsAndNationalId",
-          "outcome": "Passed",
-          "duration": "00:00:00.0023113"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"booking-wrong-price\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0070704"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.Inclusive_window_allows_366_days_but_rejects_future_asof_and_unknown_zone",
-          "outcome": "Passed",
-          "duration": "00:00:00.0272435"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionDomainTests.Snapshot_does_not_change_when_source_configuration_or_arrays_change",
-          "outcome": "Passed",
-          "duration": "00:00:00.6495432"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPdfTests.Issued_versions_render_private_encoded_bilingual_documents(status: Voided, label: \"VOIDED — NOT VALID\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0026037"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Continuation_distinguishes_otp_purpose_from_server_allowed_action_and_mutation_from_read",
-          "outcome": "Passed",
-          "duration": "00:00:00.0026591"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase12FinancialDomainTests.Refund_is_full_once_and_does_not_replace_original_payment",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013286"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Catalog_changes_require_reasons_and_preserve_immutable_snapshots",
-          "outcome": "Passed",
-          "duration": "00:00:00.0078890"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Clinical_notes_enforce_length(length: 8000, accepted: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0026413"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Arabic_alias_priority_skips_empty_or_nonlocalized_values(explicitArabic: \"English alias\", display: \"اسم عرض بديل\", expected: \"اسم عرض بديل\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005557"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Schedule_accepts_multiple_periods_and_detects_overlap",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008233"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Historical_read_intervals_are_inclusive_at_start_exclusive_at_end_and_legacy_is_resource_bounded",
-          "outcome": "Passed",
-          "duration": "00:00:00.0173709"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.ErrorResources_HaveKeyParityAndResolveBothCultures",
-          "outcome": "Passed",
-          "duration": "00:00:00.1010065"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"recurring-expenses\", headlines: \"PaidOperatingExpenses OutstandingDueInPeriod AllOu\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002892"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields",
-          "outcome": "Passed",
-          "duration": "00:00:00.0069938"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Catalog_merge_and_review_lifecycles_are_reasoned_and_terminal",
-          "outcome": "Passed",
-          "duration": "00:00:00.0090900"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Correction_creates_a_new_version_and_removed_coverage_reopens_items_then_void_reopens_remaining",
-          "outcome": "Passed",
-          "duration": "00:00:00.0064481"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Restore_keeps_identity_and_snapshots_and_can_grant_one_time_fast_track",
-          "outcome": "Passed",
-          "duration": "00:00:00.0135987"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Headlines_select_source_codes_and_distinguish_unavailable_from_zero(status: Partial, value: 12, measured: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005318"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionDomainTests.Paid_period_uses_calendar_month_or_year_and_cancellation_preserves_period(cycle: Annual)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0147149"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_or_obviously_nonlocalized_arabic_never_falls_back_to_english(localized: \"\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009521"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Invalid_PDFs_and_prescription_byte_limits_fail_closed(large: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.1307616"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_or_obviously_nonlocalized_arabic_never_falls_back_to_english(localized: \"MET gene mutations\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005243"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Doctor, status: Approved, active: True, firstLogin: False, expected: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0036547"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"expenses\", headlines: \"PaidOperatingExpenses OutstandingDueInPeriod AllOu\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003069"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Canonical_table_must_have_the_exact_official_relative_path(path: \"Loinc.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012949"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Source_status_revision_and_future_appointment_are_mandatory(caseId: \"A15\", revisionMatches: True, active: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004445"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Snapshots_survive_catalog_changes_and_request_approval",
-          "outcome": "Passed",
-          "duration": "00:00:00.0107639"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Merge_requires_active_target_and_preserves_source_reference(targetStatus: Active, valid: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.2371629"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Export_account_state_and_shared_patient_permissions_keep_their_distinct_boundaries",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012400"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Closed_observed_day_cannot_be_revised_or_reopened",
-          "outcome": "Passed",
-          "duration": "00:00:00.0101296"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Schedule_period_duration_is_the_only_source_of_slot_boundaries",
-          "outcome": "Passed",
-          "duration": "00:00:00.1450080"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Due_time_uses_only_committed_utc_and_configured_snapshot(caseId: \"A20\", lead: 120)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000835"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Excluded_finance_and_suppressed_families_do_not_reappear(actor: SuperAdmin)",
-          "outcome": "Passed",
-          "duration": "00:00:02.0645997"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Day_off_custom_hours_and_blocked_ranges_apply_to_the_original_slot_grid",
-          "outcome": "Passed",
-          "duration": "00:00:00.0034475"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Charts_preserve_cohorts_units_signed_flows_and_authorized_practices",
-          "outcome": "Passed",
-          "duration": "00:00:01.8354534"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PatientDomainTests.Patient_RequiresValidNameDobAndGender",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007639"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Prn_requires_reason_and_minimum_interval_but_not_normal_frequency(prn: True, reason: True, interval: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0015129"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18HandoverTests.Sensitive_notes_are_rejected(note: \"Salary 300 EGP\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000684"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Day, snapshot: 0)",
-          "outcome": "Passed",
-          "duration": "00:00:00.1799238"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Partial_trends_keep_dated_positions_and_break_at_missing_observations(grouping: Month, omitGroup: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0029621"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Salary_due_day_is_clamped_to_real_month(year: 2028, month: 2, day: 29)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000478"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PatientFamilyValidationTests.ReceptionPatient_NoPhoneRequiresPrimaryContact",
-          "outcome": "Passed",
-          "duration": "00:00:00.4065959"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.Family_AllowsManyChildrenAndGuardiansButOnlyOneFatherAndMother",
-          "outcome": "Passed",
-          "duration": "00:00:00.0262060"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Variable_bill_requires_confirmation_and_full_payment_and_paid_data_is_immutable",
-          "outcome": "Passed",
-          "duration": "00:00:00.0175603"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_required_source_or_accessory_is_rejected(kind: Lab, missingPath: \"AccessoryFiles/UniversalLabOrders/LoincUniversalLa\"···)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011578"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Empty_correction_requires_items_and_can_be_discarded_without_voiding_current",
-          "outcome": "Passed",
-          "duration": "00:00:00.1612329"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Nonactive_source_rows_and_partial_arabic_are_retained(status: \"DEPRECATED\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007904"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorPracticeLocation_RejectsInvalidCoordinates(latitude: 30, longitude: 180.000001, code: \"DoctorPracticeLocation.InvalidLongitude\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0015259"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16HiddenAccessTests.Treatment_completion_expires_pending_and_approved_requests(approve: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0017658"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Prn_requires_reason_and_minimum_interval_but_not_normal_frequency(prn: False, reason: False, interval: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005764"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Html_is_bilingual_encoded_and_explains_the_executive_scope(arabic: True)",
-          "outcome": "Passed",
-          "duration": "00:00:14.2127249"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18HandoverTests.Sensitive_notes_are_rejected(note: \"diagnosis\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004949"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Supplied_fixed_duration_must_be_positive(duration: 0, accepted: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007214"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ClamAvMalwareScannerTests.Only_explicit_clean_framed_verdict_accepts_the_stream(response: \"OK\", safe: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0503407"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"Doctor.NoShowDigest\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001780"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Unsafe_zip_paths_are_rejected(path: \"C:/absolute.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004329"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.English_base_column_alone_is_not_a_supported_arabic_schema",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009099"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Official_part_type_casing_produces_the_ordered_modality_location_and_laterality_snapshot",
-          "outcome": "Passed",
-          "duration": "00:00:00.0173688"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.MedicalSpecialization_Lifecycle_RequiresDeactivationAndRestoreRemainsInactive",
-          "outcome": "Passed",
-          "duration": "00:00:00.0042842"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Salary_due_day_is_clamped_to_real_month(year: 2027, month: 2, day: 28)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004928"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Diagnosis_text_limits_are_enforced(textLength: 0, notesLength: 0, accepted: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007383"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Every_existing_permission_id_is_preserved_and_only_approved_permissions_are_appended",
-          "outcome": "Passed",
-          "duration": "00:00:00.1303361"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Otp_attempt_limit_and_exact_expiry_are_enforced",
-          "outcome": "Passed",
-          "duration": "00:00:00.0038180"
-        },
-        {
-          "test": "Wasla.Tests.Unit.PublicDiscoveryHostedServiceShutdownTests.Repeated_and_concurrent_shutdown_cancels_and_disposes_the_worker_once",
-          "outcome": "Passed",
-          "duration": "00:00:00.1268090"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Initial_draft_copies_trusted_parties_allows_incomplete_items_and_aggregates_errors",
-          "outcome": "Passed",
-          "duration": "00:00:00.0063910"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Failures_are_classified_and_browser_resources_are_disposed(stage: \"BrowserLaunch\", expected: \"BrowserLaunchFailed\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0079568"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityApplicationTests.New_mutations_require_uuid_idempotency_keys",
-          "outcome": "Passed",
-          "duration": "00:00:00.4284676"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Modification_requires_new_revision_and_rejection_requires_reason",
-          "outcome": "Passed",
-          "duration": "00:00:00.0092815"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.BookingNoteHasNoMutationPathAndReferenceRemainsStable",
-          "outcome": "Passed",
-          "duration": "00:00:00.0173058"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Eligibility_does_not_add_or_reinterpret_business_states(status: Completed, eligible: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001488"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Clinical_notes_enforce_length(length: 8001, accepted: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0052152"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Conflicting_normalized_canonical_paths_are_rejected(path: \"LoincTable/Loinc.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004040"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5RegistrationApplicationTests.SelfRegistration_WithoutVerifiedProofCannotCreateUserPatientLinkOrRole",
-          "outcome": "Passed",
-          "duration": "00:00:00.3763586"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"DEPRECATED\", selectable: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0053090"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Headlines_select_source_codes_and_distinguish_unavailable_from_zero(status: NotAvailable, value: 99, measured: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011872"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Exact_canonical_table_ignores_unrelated_Loinc_basename_in_either_zip_order(kind: Lab, accessoryFirst: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007402"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorPracticeLocation_RejectsInvalidCoordinates(latitude: 30, longitude: -180.000001, code: \"DoctorPracticeLocation.InvalidLongitude\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000318"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"automatic-renewal\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0091213"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Coverage_rejects_foreign_duplicate_cancelled_and_already_completed_items",
-          "outcome": "Passed",
-          "duration": "00:00:00.0022166"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.Excel_handles_the_full_row_limit_and_empty_reports_with_no_silent_truncation",
-          "outcome": "Passed",
-          "duration": "00:00:19.8702343"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"overflow-duration\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0103311"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_optional_arabic_retains_null_official_translation",
-          "outcome": "Passed",
-          "duration": "00:00:00.0021633"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Merge_cannot_target_self_and_requires_reason_and_is_terminal",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007996"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.ProviderReschedule_RequiresConsentAndDoesNotConsumePatientAllowance",
-          "outcome": "Passed",
-          "duration": "00:00:00.0351143"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E09_E10_E11_E12_preferences_are_independent_and_essential_categories_are_not_editable",
-          "outcome": "Passed",
-          "duration": "00:00:00.0027321"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Diagnosis_invariants_hold_after_each_draft_mutation",
-          "outcome": "Passed",
-          "duration": "00:00:00.0058439"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.GuardianMedicalAccess_StopsAtSixteenWithoutRemovingFamilyRelationship",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012933"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Submission_transitions_are_terminal_and_audited(terminal: Accepted)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0106030"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"missing-price\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0023623"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Exact_canonical_table_ignores_unrelated_Loinc_basename_in_either_zip_order(kind: Radiology, accessoryFirst: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014151"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.Registry_has_unique_codes_and_distinguishes_operational_and_clinical_completion",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014738"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Excel_does_not_require_templates_or_browser_and_health_only_becomes_ready_after_render",
-          "outcome": "Passed",
-          "duration": "00:00:13.5539239"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.SpecializationRequest_ModificationAndResubmit_CreateNextRevisionState",
-          "outcome": "Passed",
-          "duration": "00:00:00.0073150"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionDomainTests.Paid_period_uses_calendar_month_or_year_and_cancellation_preserves_period(cycle: Monthly)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0668507"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"booking-wrong-plan\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0068476"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"fractional-price\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0093195"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Submission_transitions_are_terminal_and_audited(terminal: Withdrawn)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003451"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperationalAnalyticsTests.Booking_creation_and_scheduled_cohorts_are_distinct_and_walkins_never_convert_bookings",
-          "outcome": "Passed",
-          "duration": "00:00:00.0047840"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityApplicationTests.Global_lookup_requires_bounded_predicate(email: null, phone: null, name: \"مريض\", expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000320"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Explicit_localized_schema_aliases_are_supported_case_insensitively(column: \"LONG_COMMON_NAME_AR\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0171445"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PersistenceContractTests.ExistingPermissionIdsRemainStableAndNewPermissionsAreAppended",
-          "outcome": "Passed",
-          "duration": "00:00:00.0054425"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Excluded_finance_and_suppressed_families_do_not_reappear(actor: Doctor)",
-          "outcome": "Passed",
-          "duration": "00:00:02.5705003"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ClamAvMalwareScannerTests.Only_explicit_clean_framed_verdict_accepts_the_stream(response: \"stream: scanner ERROR\", safe: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0769327"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Draft_snapshots_duplicate_prevention_and_publication",
-          "outcome": "Passed",
-          "duration": "00:00:00.0041403"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Doctor_can_own_multiple_inactive_practices",
-          "outcome": "Passed",
-          "duration": "00:00:00.0047396"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.EmailTemplates_AreBilingualEscapedAndUseConfiguredFooter",
-          "outcome": "Passed",
-          "duration": "00:00:00.3703147"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPdfTests.Drafts_never_reach_browser_and_launch_failure_is_controlled_without_path_configuration",
-          "outcome": "Passed",
-          "duration": "00:00:00.0072695"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Arabic_alias_priority_skips_empty_or_nonlocalized_values(explicitArabic: \"English alias\", display: \"English display\", expected: null)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005465"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.Overlapping_intervals_are_unioned_and_invalid_intervals_excluded",
-          "outcome": "Passed",
-          "duration": "00:00:00.0787969"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Patient.CheckedIn\", email: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000294"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.Reschedule_to_same_effective_appointment_is_rejected_without_mutation",
-          "outcome": "Passed",
-          "duration": "00:00:00.0043328"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Full_calendar_months_have_no_automatic_proration",
-          "outcome": "Passed",
-          "duration": "00:00:00.0560789"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.RequestHistory_IsAppendOnlyByContract",
-          "outcome": "Passed",
-          "duration": "00:00:00.0138975"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Import_fingerprints_exclude_price_content_hash_includes_it_and_schema_is_strict",
-          "outcome": "Passed",
-          "duration": "00:00:00.0158425"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Doctor, status: Pending, active: True, firstLogin: False, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001047"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Header_based_import_filters_and_groups_the_real_source_schema(kind: Lab)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0034575"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Amendment_stages_all_changes_preserves_before_state_and_voids_instead_of_deleting",
-          "outcome": "Passed",
-          "duration": "00:00:00.0506732"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPdfTests.Issued_versions_render_private_encoded_bilingual_documents(status: Finalized, label: \"FINALIZED\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.1005143"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.Logos_reject_unsupported_formats_truncated_headers_and_excessive_pixel_dimensions",
-          "outcome": "Passed",
-          "duration": "00:00:00.0031898"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityApplicationTests.Global_lookup_requires_bounded_predicate(email: null, phone: null, name: null, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004843"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Partial_trends_keep_dated_positions_and_break_at_missing_observations(grouping: Month, omitGroup: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0020910"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Correction_creates_a_new_version_and_removed_coverage_reopens_items_then_void_reopens_remaining",
-          "outcome": "Passed",
-          "duration": "00:00:00.1803445"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"DISCOURAGED\", selectable: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.2259178"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Normal_segment_is_protected_and_reserved_capacity_releases_at_cutoff",
-          "outcome": "Passed",
-          "duration": "00:00:00.0702730"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorSpecializationSet_AcceptsMultipleWithExactlyOnePrimary",
-          "outcome": "Passed",
-          "duration": "00:00:00.0038480"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Invite_is_single_use_scoped_and_invalid_at_exact_48_hours",
-          "outcome": "Passed",
-          "duration": "00:00:00.0033326"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPdfTests.Issued_versions_render_private_encoded_bilingual_documents(status: Superseded, label: \"SUPERSEDED — NOT CURRENT\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0017798"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityApplicationTests.Default_retention_requires_operator_enablement_and_exact_approved_lifetimes",
-          "outcome": "Passed",
-          "duration": "00:00:00.0025867"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16HiddenAccessTests.Approval_is_scoped_and_terminal_states_cannot_reactivate",
-          "outcome": "Passed",
-          "duration": "00:00:00.0994699"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"duplicate-plan\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0921638"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorSpecializationSet_RejectsNoPrimary",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009160"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Archive_permissions_use_exact_readonly_mappings(permission: \"Archives.Reservations.ViewAssigned\", feature: \"RESERVATION_MANAGEMENT\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003793"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Reception, code: \"activity\", headlines: \"ReceptionActivity\", primary: \"Metrics\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004149"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Online_booking_walk_in_and_lateness_are_independent_rules",
-          "outcome": "Passed",
-          "duration": "00:00:00.0049557"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Eligibility_transfer_and_consumption_are_single_use",
-          "outcome": "Passed",
-          "duration": "00:00:00.0040740"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"Ticket.Called\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013307"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TechnicalFoundationTests.PersistenceMarkers_UseBuildingBlockContracts",
-          "outcome": "Passed",
-          "duration": "00:00:00.0026972"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.RootSuperAdmin_IsImmutableThroughBusinessMethods",
-          "outcome": "Passed",
-          "duration": "00:00:00.0063657"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Converted_reservations_are_never_independent_units(status: Active, eligible: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000610"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Removing_last_initial_item_marks_root_for_automatic_discard",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008745"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"queue\", headlines: \"CheckIns TicketsCompleted TicketsNoShow WaitToFirs\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002052"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Failed_download_is_retryable_and_precancelled_requests_do_not_download",
-          "outcome": "Passed",
-          "duration": "00:00:00.0048623"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Partial_trends_keep_dated_positions_and_break_at_missing_observations(grouping: Week, omitGroup: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0242466"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Doctor.NewBooking\", email: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000259"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Failures_are_classified_and_browser_resources_are_disposed(stage: \"HtmlRender\", expected: \"HtmlRenderFailed\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001691"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.Doctor_PendingCanBeRejectedButNotSuspended",
-          "outcome": "Passed",
-          "duration": "00:00:00.0433401"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Environment_style_override_wins_over_json",
-          "outcome": "Passed",
-          "duration": "00:00:00.0083024"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Ambiguous_accessory_basenames_are_rejected(kind: Lab, path: \"Other/LoincUniversalLabOrdersValueSet.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013979"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ClamAvMalwareScannerTests.Only_explicit_clean_framed_verdict_accepts_the_stream(response: \"stream: OK\", safe: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0019267"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Submission_transitions_are_terminal_and_audited(terminal: Accepted)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005597"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Visit_types_do_not_own_slot_duration_and_configuration_keeps_setup_default",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009003"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Headlines_select_source_codes_and_distinguish_unavailable_from_zero(status: NotMeasured, value: 99, measured: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009645"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Merge_requires_active_target_and_preserves_source_reference(targetStatus: Inactive, valid: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011498"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"booking-zero-price\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0027815"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: SuperAdmin, code: \"doctor-lifecycle\", headlines: \"RegisteredDoctors PendingDoctors ApprovedDoctors R\"···, primary: \"Approval:\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0459520"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Initial_import_uses_only_approved_classification(name: \"clean\", science: null, route: \"ORAL\", status: NeedsReview, reason: null)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001091"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"DEPRECATED\", selectable: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003354"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Month, snapshot: 0)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0017242"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Cancellation_preserves_completed_items_and_recalculates_parent",
-          "outcome": "Passed",
-          "duration": "00:00:00.0038693"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Diagnosis_text_limits_are_enforced(textLength: 1, notesLength: 2001, accepted: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0038024"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Retention_uses_utc_inactivity_boundary_and_legal_hold_is_durable_metadata",
-          "outcome": "Passed",
-          "duration": "00:00:00.0971419"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Claim_approval_does_not_link_and_terminal_claim_cannot_reopen",
-          "outcome": "Passed",
-          "duration": "00:00:00.0354812"
-        },
-        {
-          "test": "Wasla.Tests.Unit.FamilySelfServiceFoundationTests.Operational_proof_binds_both_members_and_preserves_revocation",
-          "outcome": "Passed",
-          "duration": "00:00:00.0171869"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PatientDomainTests.Patients_CanSharePhoneAndCanExistWithoutAccount",
-          "outcome": "Passed",
-          "duration": "00:00:00.0184464"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.ReservationPermissionsAreAppendOnlyAndReceptionGranularPermissionsAreDelegatable",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007159"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Blank_justification_is_invalid(reason: \" \")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004711"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Blank_justification_is_invalid(reason: \"\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004586"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Terminal_requests_cannot_be_reopened(action: \"reject\", status: Rejected)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0022204"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Concurrent_first_requests_share_one_download_and_cancelled_waiter_does_not_release_it",
-          "outcome": "Passed",
-          "duration": "00:00:00.0385772"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Completed_ticket_is_terminal",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013289"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18HandoverTests.Doctor_can_close_open_handover_only_with_outcome",
-          "outcome": "Passed",
-          "duration": "00:00:00.0076863"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.New_permissions_are_appended_and_private_finance_is_never_assignment_scoped",
-          "outcome": "Passed",
-          "duration": "00:00:00.0018890"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Headlines_select_source_codes_and_distinguish_unavailable_from_zero(status: Complete, value: 0, measured: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0026285"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Patient, status: Approved, active: True, firstLogin: False, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.1410664"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Arabic_name_normalization_is_searchable_without_collapsing_taa_marbuta",
-          "outcome": "Passed",
-          "duration": "00:00:00.0037386"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Arabic_alias_priority_skips_empty_or_nonlocalized_values(explicitArabic: \"\", display: \"اسم عرض بديل\", expected: \"اسم عرض بديل\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014155"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Exact_canonical_table_ignores_unrelated_Loinc_basename_in_either_zip_order(kind: Lab, accessoryFirst: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013489"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"VisitSummary.Available\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0052175"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.Gender_HasOnlyApprovedValues",
-          "outcome": "Passed",
-          "duration": "00:00:00.0108303"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Invalid_archive_headers_version_and_package_limits_are_rejected",
-          "outcome": "Passed",
-          "duration": "00:00:00.0037910"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperationalAnalyticsTests.Missing_calls_are_excluded_from_wait_averages_and_operational_duration_uses_inprogress",
-          "outcome": "Passed",
-          "duration": "00:00:00.0022251"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Due_time_uses_only_committed_utc_and_configured_snapshot(caseId: \"A18\", lead: 43200)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0016929"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Submission_transitions_are_terminal_and_audited(terminal: Withdrawn)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003723"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Conflicting_normalized_canonical_paths_are_rejected(path: \"loinctable/LOINC.CSV\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011125"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Doctor, status: Approved, active: True, firstLogin: True, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001115"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Operational_day_end_cancels_waiting_but_not_in_progress",
-          "outcome": "Passed",
-          "duration": "00:00:00.1040682"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Date_exception_overrides_recurring_schedule_and_blocked_ranges_are_subtracted",
-          "outcome": "Passed",
-          "duration": "00:00:00.1945511"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Request_name_only_more_info_resubmission_and_approval_are_audited",
-          "outcome": "Passed",
-          "duration": "00:00:00.0169599"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Paging_anchor_rejects_utc_window_underflow_and_unspecified_timestamps",
-          "outcome": "Passed",
-          "duration": "00:00:00.6832778"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"ACTIVE\", selectable: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004358"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorSpecializationSet_RejectsMultiplePrimary",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008856"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Fractional_allocation_remainder_is_deterministic_and_input_order_independent",
-          "outcome": "Passed",
-          "duration": "00:00:00.1040592"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Cancellation_preserves_completed_items_and_recalculates_parent",
-          "outcome": "Passed",
-          "duration": "00:00:00.1728366"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Patient_submission_never_completes_the_order_and_acceptance_retains_patient_provenance",
-          "outcome": "Passed",
-          "duration": "00:00:00.0052880"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Arabic_alias_priority_skips_empty_or_nonlocalized_values(explicitArabic: \"اسم عربي بديل\", display: \"اسم عرض بديل\", expected: \"اسم عربي بديل\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0656321"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Day, snapshot: 2)",
-          "outcome": "Passed",
-          "duration": "00:00:00.1170823"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialV12InvariantTests.Historical_read_predicate_binds_practice_before_time_and_cannot_borrow_another_practices_window",
-          "outcome": "Passed",
-          "duration": "00:00:00.0055943"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Supplied_fixed_duration_must_be_positive(duration: -1, accepted: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0046872"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_or_obviously_nonlocalized_arabic_never_falls_back_to_english(localized: \"MET ١٢٣؛\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005120"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TrustAccessDomainTests.Patient_AgeIsDerivedFromDateOfBirth",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007944"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Release_returns_available_or_expired_according_to_business_date(days: 1, expected: Expired)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0563745"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Release_returns_available_or_expired_according_to_business_date(days: 0, expected: Available)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006896"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Reception, code: \"overview\", headlines: \"AppointmentsScheduled CheckIns TicketsCompleted Wa\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002768"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Day, snapshot: 1)",
-          "outcome": "Passed",
-          "duration": "00:00:00.2943700"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Correction_clones_new_ids_keeps_current_then_supersedes_it_and_void_is_immutable",
-          "outcome": "Passed",
-          "duration": "00:00:00.0033538"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Historical_day_cannot_be_fabricated_as_an_observed_snapshot",
-          "outcome": "Passed",
-          "duration": "00:00:00.0015442"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PatientDomainTests.Patient_NormalizesProfileAndDerivesAgeAroundBirthday",
-          "outcome": "Passed",
-          "duration": "00:00:00.0046886"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Relationship_and_historical_scope_are_independent_of_role_and_patient_identifier",
-          "outcome": "Passed",
-          "duration": "00:00:00.0302377"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Exact_canonical_path_normalizes_slashes_and_case(path: \"LoincTable\\\\Loinc.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0016597"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Lifecycle_matches_reference_and_preserves_options_and_disposal",
-          "outcome": "Passed",
-          "duration": "00:00:00.0443213"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Explicit_localized_schema_aliases_are_supported_case_insensitively(column: \"linguisticvariantdisplayname\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0289453"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18HandoverTests.Creator_cannot_acknowledge_and_closed_is_terminal",
-          "outcome": "Passed",
-          "duration": "00:00:00.0020826"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Submission_transitions_are_terminal_and_audited(terminal: Rejected)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0330825"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Submission_transitions_are_terminal_and_audited(terminal: Rejected)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012602"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ReservationDomainTests.Cancel_TransitionsOnlyActiveAndAppendsImmutableHistory",
-          "outcome": "Passed",
-          "duration": "00:00:00.0074213"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"salary\", headlines: \"PaidOperatingExpenses OutstandingDueInPeriod AllOu\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002765"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Seekable_stream_import_matches_byte_input_and_keeps_caller_stream_open",
-          "outcome": "Passed",
-          "duration": "00:00:00.0503375"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"booking-price\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0025181"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Week, snapshot: 0)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0451760"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase12TicketRefundFlowTests.No_show_ticket_can_be_cancelled_before_refund_and_cannot_be_restored_after_cancel",
-          "outcome": "Passed",
-          "duration": "00:00:00.0019339"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Allocation_reconciles_to_every_piastre(amount: 0.01, a: 50, b: 50, expectedA: 1, expectedB: 0)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0052294"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"overflow-price\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0613539"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Month, snapshot: 2)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0022488"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Initial_import_uses_only_approved_classification(name: \"clean\", science: \"science\", route: \"ORAL\", status: Active, reason: null)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001090"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"zero-capacity\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.1347050"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Initial_import_uses_only_approved_classification(name: \"SOAP\", science: \"science\", route: \"UNKNOWN\", status: Active, reason: null)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001343"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Catalog_merge_and_review_lifecycles_are_reasoned_and_terminal",
-          "outcome": "Passed",
-          "duration": "00:00:00.0633613"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Headlines_select_source_codes_and_distinguish_unavailable_from_zero(status: Stale, value: 99, measured: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0049782"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Completion_requires_notes_and_matching_in_progress_ticket_but_no_diagnosis",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011426"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Failures_are_classified_and_browser_resources_are_disposed(stage: \"BrowserDownload\", expected: \"BrowserDownloadFailed\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005983"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Approved_v12_configuration_is_valid_with_per_practice_booking_and_self_started_trial",
-          "outcome": "Passed",
-          "duration": "00:00:00.0895037"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18HandoverTests.Sensitive_notes_are_rejected(note: \"https://example.test\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000974"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ClamAvMalwareScannerTests.Only_explicit_clean_framed_verdict_accepts_the_stream(response: \"stream: Test-Signature FOUND\", safe: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0017888"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Expiry_and_appointment_deadline_do_not_depend_on_scheduler",
-          "outcome": "Passed",
-          "duration": "00:00:00.0014604"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Contact_email_is_separate_optional_nonidentity_and_shared",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011410"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Eligibility_does_not_add_or_reinterpret_business_states(status: Called, eligible: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001429"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialV12InvariantTests.Allocation_release_preserves_original_contract_and_cannot_rewrite_a_closed_interval",
-          "outcome": "Passed",
-          "duration": "00:00:00.0030370"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Unknown_permissions_fail_closed_without_inheriting_a_prefix_or_querying_patient_data(permission: \"Archives.Tickets.NewViewPractice\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006675"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Archive_permissions_use_exact_readonly_mappings(permission: \"Archives.Tickets.ViewPractice\", feature: \"TICKET_QUEUE\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0020292"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Grace_window_is_inclusive_and_has_no_quiet_hours(caseId: \"A04\", secondsAfterDue: 0, expected: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012208"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16VisibilityTests.Completion_selects_hidden_and_toggles_increment_once_without_changing_content",
-          "outcome": "Passed",
-          "duration": "00:00:00.0019336"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Header_based_import_filters_and_groups_the_real_source_schema(kind: Radiology)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0018010"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Dense_sources_and_records_do_not_expand_the_executive_document(days: 366)",
-          "outcome": "Passed",
-          "duration": "00:00:02.7350328"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorPracticeLocation_RejectsInvalidCoordinates(latitude: 90.000000999999997, longitude: 31, code: \"DoctorPracticeLocation.InvalidLatitude\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009026"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Timeout_is_controlled_and_a_browser_acquired_after_cancellation_is_disposed",
-          "outcome": "Passed",
-          "duration": "00:00:01.0844187"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Converted_reservations_are_never_independent_units(status: ConvertedToTicket, eligible: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000468"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16HiddenAccessTests.Treatment_completion_expires_pending_and_approved_requests(approve: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005374"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Grace_window_is_inclusive_and_has_no_quiet_hours(caseId: \"A06\", secondsAfterDue: 901, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000628"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase12FinancialDomainTests.Other_refund_reason_requires_text_and_refund_correction_records_old_and_new_values",
-          "outcome": "Passed",
-          "duration": "00:00:00.0166304"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"overview\", headlines: \"AppointmentsScheduled CheckIns ReservationToTicket\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002781"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Patient_identity_email_is_normalized_without_provider_specific_rewriting(input: \" \", expected: null)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003259"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Reception, code: \"queue\", headlines: \"CheckIns TicketsCompleted TicketsNoShow WaitToFirs\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002815"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Prn_requires_reason_and_minimum_interval_but_not_normal_frequency(prn: True, reason: False, interval: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008559"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.Family_RejectsDuplicatePatient",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008101"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Official_arabic_uses_linguistic_display_field_instead_of_english_base_name",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013801"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase12FinancialDomainTests.Payment_correction_preserves_financial_identity_and_stops_after_refund",
-          "outcome": "Passed",
-          "duration": "00:00:00.0097827"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Converted_reservations_are_never_independent_units(status: Expired, eligible: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005401"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Restoration_requires_self_and_exact_restriction_and_never_reactivates_lifted_record",
-          "outcome": "Passed",
-          "duration": "00:00:00.0763319"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorSpecializationSet_RejectsDuplicateSpecialization",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008579"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Nonseekable_stream_is_rejected_without_implicit_zip_buffering",
-          "outcome": "Passed",
-          "duration": "00:00:00.0557557"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Eligibility_does_not_add_or_reinterpret_business_states(status: InProgress, eligible: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000363"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Invalid_amendments_do_not_partially_mutate_aggregate",
-          "outcome": "Passed",
-          "duration": "00:00:00.0285891"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Waiting_ticket_cannot_start_directly",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004885"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperatingFinanceTests.Salary_due_day_is_clamped_to_real_month(year: 2026, month: 4, day: 30)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012860"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16VisibilityTests.Visibility_is_independent_from_lifecycle_and_requires_owner_and_practice",
-          "outcome": "Passed",
-          "duration": "00:00:00.0063573"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Diagnosis_text_limits_are_enforced(textLength: 501, notesLength: 0, accepted: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001114"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Cancellation_before_and_during_stream_read_is_propagated",
-          "outcome": "Passed",
-          "duration": "00:00:00.0026157"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Duplicate_pair_is_canonical_and_resolution_only_classifies",
-          "outcome": "Passed",
-          "duration": "00:00:00.0139469"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Modification_resubmits_same_case_with_incremented_revision_and_withdraw_is_owned",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008409"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Rejected_duplicate_links_canonical_drug_and_is_terminal",
-          "outcome": "Passed",
-          "duration": "00:00:00.0477852"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Unknown_permissions_fail_closed_without_inheriting_a_prefix_or_querying_patient_data(permission: \"DoctorPracticeTickets.FutureAction\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.1514224"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"practice-comparison\", headlines: \"AppointmentsScheduled CheckIns WaitToFirstCall Res\"···, primary: \"Practices\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003295"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Month, snapshot: 1)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011138"
-        },
-        {
-          "test": "Wasla.Tests.Unit.FamilySelfServiceFoundationTests.All_pre_epic_permission_names_keep_their_index_and_guid",
-          "outcome": "Passed",
-          "duration": "00:00:00.2294693"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Post_visit_reason_and_completed_encounter_are_required_and_encounter_is_preserved",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013984"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Reservation_ticket_starts_waiting_and_preserves_commercial_snapshots",
-          "outcome": "Passed",
-          "duration": "00:00:00.0164375"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"Prescription.Voided\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001725"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Converted_reservations_are_never_independent_units(status: NoShow, eligible: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000459"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.In_progress_ticket_cannot_be_cancelled",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012364"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Doctor_bio_is_plain_text_and_qualification_has_bilingual_ordered_content",
-          "outcome": "Passed",
-          "duration": "00:00:00.0078417"
-        },
-        {
-          "test": "Wasla.Tests.Unit.ChromiumPdfRendererTests.Failures_are_classified_and_browser_resources_are_disposed(stage: \"Render\", expected: \"RenderUnavailable\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003274"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Csv_supports_quoted_commas_multiline_source_fields_and_preserves_copyright",
-          "outcome": "Passed",
-          "duration": "00:00:00.0012900"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_or_obviously_nonlocalized_arabic_never_falls_back_to_english(localized: \"MET 123 mg/L +\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011507"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Dense_sources_and_records_do_not_expand_the_executive_document(days: 30)",
-          "outcome": "Passed",
-          "duration": "00:00:02.0192226"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.Shared_model_renders_encoded_Razor_and_typed_safe_Excel_and_paginated_Pdf(arabic: True)",
-          "outcome": "Passed",
-          "duration": "00:00:02.8345366"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase16FamilyMedicalDomainTests.Governance_options_default_fail_closed_even_after_product_approval",
-          "outcome": "Passed",
-          "duration": "00:00:00.0020399"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Evidence_cannot_be_marked_purged_without_retirement_tombstone",
-          "outcome": "Passed",
-          "duration": "00:00:00.0101060"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Unsafe_zip_paths_are_rejected(path: \"../escape.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009503"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.Request_FollowsApprovedStateMachineAndIncrementsRevision",
-          "outcome": "Passed",
-          "duration": "00:00:00.0337879"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase12FinancialDomainTests.Payment_records_exact_full_egp_amount_with_selectable_method(method: Card)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001589"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Canonical_table_must_have_the_exact_official_relative_path(path: \"wrapper/LoincTable/Loinc.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0044558"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FamilyDomainTests.ReservationAuthority_AllowsParentOrLegalGuardianForMinorChildOnly",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013329"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportingFoundationTests.ReportingCritical_Series_matches_full_source_calculation_across_business_dates(grouping: Week, snapshot: 2)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0092225"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Html_is_bilingual_encoded_and_explains_the_executive_scope(arabic: False)",
-          "outcome": "Passed",
-          "duration": "00:00:02.1865235"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Partial_trends_keep_dated_positions_and_break_at_missing_observations(grouping: Week, omitGroup: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0021132"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"ACTIVE\", selectable: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0038823"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Diagnosis_text_limits_are_enforced(textLength: 500, notesLength: 2000, accepted: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0028252"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Doctor, code: \"patients\", headlines: \"UniqueDoctorPatients NewToDoctorPatients Returning\"···, primary: \"Metrics\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002681"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Due_time_uses_only_committed_utc_and_configured_snapshot(caseId: \"A21\", lead: 1)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0280813"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Doctor, status: Rejected, active: True, firstLogin: False, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001455"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Activation_requires_logo_but_not_schedule",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011072"
-        },
-        {
-          "test": "Wasla.Tests.Unit.FamilySelfServiceFoundationTests.Operational_day_uses_Cairo_midnight_independently_of_signed_medical_policy(utc: \"2026-11-06T22:00:00Z\", date: \"2026-11-07\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0118941"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18InvestigationTests.Review_requires_active_assignee_and_resolution_closure_and_reopen_require_notes",
-          "outcome": "Passed",
-          "duration": "00:00:00.1077687"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Ambiguous_accessory_basenames_are_rejected(kind: Radiology, path: \"Other/LoincRsnaRadiologyPlaybook.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007873"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18HandoverTests.Sensitive_notes_are_rejected(note: \"phone: 01012345678\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000521"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.Grace_window_is_inclusive_and_has_no_quiet_hours(caseId: \"E17\", secondsAfterDue: 1, expected: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001267"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Eligibility_does_not_add_or_reinterpret_business_states(status: Waiting, eligible: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002151"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Doctor.BookingCancelled\", email: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000345"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.R10_R11_logical_audiences_keep_distinct_inboxes_and_missing_owner_can_only_be_suppressed",
-          "outcome": "Passed",
-          "duration": "00:00:00.0024767"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Reception, status: Approved, active: True, firstLogin: False, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001291"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityApplicationTests.Global_lookup_requires_bounded_predicate(email: null, phone: \"01000000000\", name: null, expected: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000457"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"approval-started-trial\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0025419"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Initial_import_uses_only_approved_classification(name: \"clean CANCELLED\", science: \"science\", route: \"ORAL\", status: Inactive, reason: \"SourceCancelled\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0518238"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialV12InvariantTests.Original_booking_grant_is_snapshotted_and_cannot_gain_clinical_rights_from_mutated_input",
-          "outcome": "Passed",
-          "duration": "00:00:00.0651023"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: SuperAdmin, code: \"security-metadata\", headlines: \"ActiveUserAccounts InactiveUserAccounts RoleAssign\"···, primary: \"Role:\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002731"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase13ClinicalDomainTests.Eligibility_requires_completed_source_and_business_date",
-          "outcome": "Passed",
-          "duration": "00:00:00.0237699"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18OperationalAnalyticsTests.Ratios_recompute_from_true_denominators_and_missing_history_is_not_zero",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013312"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.Launch_failure_returns_controlled_unavailable_and_real_health_result",
-          "outcome": "Passed",
-          "duration": "00:00:00.0031411"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Merge_requires_active_target_and_preserves_source_reference(targetStatus: Merged, valid: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0013623"
-        },
-        {
-          "test": "Wasla.Tests.Unit.TechnicalFoundationTests.DatabaseMigrations_AreOptInByDefault",
-          "outcome": "Passed",
-          "duration": "00:00:00.0051434"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PersistenceContractTests.Model_EnforcesIdentityAndFamilyCardinalityWithoutUniquePhone",
-          "outcome": "Passed",
-          "duration": "00:00:16.5971798"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Coverage_rejects_foreign_duplicate_cancelled_and_already_completed_items",
-          "outcome": "Passed",
-          "duration": "00:00:00.0063659"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Headlines_select_source_codes_and_distinguish_unavailable_from_zero(status: NotInstrumented, value: 99, measured: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006047"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionCatalogOptionsTests.Invalid_configuration_fails_fast(invalid: \"negative-capacity\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0189957"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase12FinancialDomainTests.Payment_records_exact_full_egp_amount_with_selectable_method(method: Cash)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0008563"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Last_draft_item_removal_is_empty_and_cannot_be_issued",
-          "outcome": "Passed",
-          "duration": "00:00:00.0025592"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Restore_beyond_threshold_returns_to_normal_waiting_order",
-          "outcome": "Passed",
-          "duration": "00:00:00.0022395"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Nonactive_source_rows_and_partial_arabic_are_retained(status: \"TRIAL\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0010776"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_required_source_or_accessory_is_rejected(kind: Radiology, missingPath: \"AccessoryFiles/Radiology/LoincRsnaRadiologyPlayboo\"···)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0030999"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: SuperAdmin, status: Approved, active: True, firstLogin: False, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0023287"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: Reception, code: \"reservations\", headlines: \"BookingsCreated AppointmentsScheduled ReservationT\"···, primary: \"BookingWeekday:\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002943"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Exact_canonical_path_normalizes_slashes_and_case(path: \"loINCTaBLE/lOInc.CSV\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0019073"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E02_E03_E05_E06_event_channel_matrix_is_explicit(type: \"Doctor.Approved\", email: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006172"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Attestation_binds_actor_practice_patient_and_single_operation",
-          "outcome": "Passed",
-          "duration": "00:00:00.0054374"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.MedicalSpecialization_Create_TrimsNamesAndAllowsNullEnglishName",
-          "outcome": "Passed",
-          "duration": "00:00:00.0006405"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.Shared_model_renders_encoded_Razor_and_typed_safe_Excel_and_paginated_Pdf(arabic: False)",
-          "outcome": "Passed",
-          "duration": "00:00:02.7258404"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.New_permissions_are_unique_append_only_and_have_deterministic_ids",
-          "outcome": "Passed",
-          "duration": "00:00:00.0016645"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Expanded_size_row_and_compression_ratio_limits_are_enforced",
-          "outcome": "Passed",
-          "duration": "00:00:00.0244649"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18PartTwoDomainTests.Restricted_permission_has_no_default_or_delegation_and_existing_prefix_order_is_preserved",
-          "outcome": "Passed",
-          "duration": "00:00:00.0672944"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: SuperAdmin, code: \"operations\", headlines: \"ActivePractices CurrentBookableDoctors PublicEligi\"···, primary: \"Series\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002655"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Doctor, status: Approved, active: False, firstLogin: False, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004343"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Submission_transitions_are_terminal_and_audited(terminal: NoLongerApplicable)",
-          "outcome": "Passed",
-          "duration": "00:00:00.1725580"
-        },
-        {
-          "test": "Wasla.Tests.Unit.FamilySelfServiceFoundationTests.Operational_day_uses_Cairo_midnight_independently_of_signed_medical_policy(utc: \"2026-11-06T21:59:59Z\", date: \"2026-11-06\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007169"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Archive_permissions_use_exact_readonly_mappings(permission: \"Archives.Reservations.ViewPractice\", feature: \"RESERVATION_MANAGEMENT\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000636"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Partial_trends_keep_dated_positions_and_break_at_missing_observations(grouping: Day, omitGroup: True)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0195532"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5PatientDomainTests.PatientAccountLink_IsExplicitAndValidatesBothIdentities",
-          "outcome": "Passed",
-          "duration": "00:00:00.0028607"
-        },
-        {
-          "test": "Wasla.Tests.Unit.SubscriptionDomainTests.Trial_starts_at_explicit_activation_once_with_exclusive_end_and_no_billing_cycle",
-          "outcome": "Passed",
-          "duration": "00:00:00.0654866"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase11TicketDomainTests.Final_confirmed_no_response_automatically_marks_no_show",
-          "outcome": "Passed",
-          "duration": "00:00:00.0121931"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LoincImportTests.Missing_required_source_or_accessory_is_rejected(kind: Lab, missingPath: \"LoincTable/Loinc.csv\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0168344"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase14MedicationDomainTests.Initial_import_uses_only_approved_classification(name: \"clean\", science: \"science\", route: \"UNKNOWN\", status: Active, reason: null)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0028582"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Every_permission_is_explicitly_classified_and_existing_ids_are_unchanged",
-          "outcome": "Passed",
-          "duration": "00:00:00.1654115"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18HandoverTests.Sensitive_notes_are_rejected(note: \"National ID 29801011234567\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0003940"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.DoctorSpecializationSet_RejectsEmptySet",
-          "outcome": "Passed",
-          "duration": "00:00:00.0007191"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPracticeOperationalDomainTests.Same_reception_profile_can_have_assignments_to_multiple_practices",
-          "outcome": "Passed",
-          "duration": "00:00:00.0030669"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Last_draft_item_removal_is_empty_and_cannot_be_issued",
-          "outcome": "Passed",
-          "duration": "00:00:00.0026341"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase17NotificationTests.E04_E08_unapproved_triggers_cannot_be_captured(type: \"Doctor.DailyScheduleDigest\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002283"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15LabDomainTests.Post_visit_reason_and_completed_encounter_are_required_and_encounter_is_preserved",
-          "outcome": "Passed",
-          "duration": "00:00:00.0060054"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase5FinalIdentityDomainTests.Patient_identity_email_is_normalized_without_provider_specific_rewriting(input: \" Person@Example.Test \", expected: \"person@example.test\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0005906"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Partial_trends_keep_dated_positions_and_break_at_missing_observations(grouping: Day, omitGroup: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0023711"
-        },
-        {
-          "test": "Wasla.Tests.Unit.CommercialFeaturePermissionCoverageTests.Archive_permissions_use_exact_readonly_mappings(permission: \"Archives.Tickets.ViewAssigned\", feature: \"TICKET_QUEUE\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0000379"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorPatientPolicyTests.Actor_state_is_checked_against_current_database(type: Doctor, status: Suspended, active: True, firstLogin: False, expected: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0001044"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase18ReportExportTests.PdfPrint_Actor_code_mapping_is_explicit_and_ordered(actor: SuperAdmin, code: \"adoption\", headlines: \"DoctorAcquisition PatientAcquisition DoctorRetenti\"···, primary: \"DoctorRegistrationCohort:\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002228"
-        },
-        {
-          "test": "Wasla.Tests.Unit.Phase15RadiologyDomainTests.Source_status_controls_selectability_and_import_preserves_local_presentation(status: \"TRIAL\", selectable: False)",
-          "outcome": "Passed",
-          "duration": "00:00:00.0002215"
-        },
-        {
-          "test": "Wasla.Tests.Unit.DoctorOnboardingDomainTests.MedicalSpecialization_Create_RejectsMissingArabicName(nameAr: \"\")",
-          "outcome": "Passed",
-          "duration": "00:00:00.0004601"
-        }
-      ]
+      "artifact": "artifacts/family-results/unit-complete/unit-complete.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 463,
+        "executed": 463,
+        "passed": 463,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "83aa4465efe4314941fdbfcdaba2c9008f1899b4362942797f0e405c451e9751"
     },
     {
-      "name": "architecture",
-      "command": "dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --artifacts-path artifacts/family-validation --no-build --no-restore -p:Platform=\"Any CPU\"",
-      "total": 26,
+      "artifact": "artifacts/family-results/architecture-complete/architecture-complete.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 26,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "75b0add9594f0db0813eee4b5151dbe2e8f5d6eb5340203e9b6186b4ee5aa4cb"
+    },
+    {
+      "artifact": "artifacts/family-results/buildingblock/foundation.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 323,
+        "executed": 323,
+        "passed": 323,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "f965a889a9b3b017d4cd5be1a6ffb188f4dfb7883814962eace184755315e484"
+    },
+    {
+      "artifact": "artifacts/family-results/sql-rehearsal/sql-rehearsal.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 4,
+        "executed": 4,
+        "passed": 4,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "5798680b555a9a11011655648e2d1f4382c0a81c13c58037a2a684d44376920d"
+    },
+    {
+      "artifact": "artifacts/family-results/complete-focused/complete-focused.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 22,
+        "executed": 22,
+        "passed": 22,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "1dd7b8b4d1e39c656e04c80c90b6bcb71af6767b8c8bf7992f705d4d5249b18a"
+    },
+    {
+      "artifact": "artifacts/family-results/final-additions/final-additions.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 3,
+        "executed": 3,
+        "passed": 3,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "aa7ebc7d59215b95d140af58ffcf6660d5464d265d184f1075c83132db3512b1"
+    },
+    {
+      "artifact": "artifacts/family-results/public-discovery-final/public-discovery-final.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 5,
+        "executed": 5,
+        "passed": 5,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "b67143da93a8a43b0abff23774bd9cdb2c8c981e2d47417eb79ee8d48716309b"
+    },
+    {
+      "artifact": "artifacts/family-results/directory-load/directory-load.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "dc5920c8d8695c6eb28c3f1891600d3a0e6ed8e14d6849eb7b1cfb413c1364d6"
+    },
+    {
+      "artifact": "artifacts/family-results/prescription-real-browser/prescription-real-browser.trx",
+      "outcome": "Completed",
+      "counters": {
+        "total": 2,
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "sha256": "044e939e989e6d7fdb6de91fdb0faa5891cb62f4eeeccab7ab6e1ee143d1f7b5"
+    }
+  ],
+  "fullIntegration": {
+    "discoveredCases": 548,
+    "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --artifacts-path artifacts/family-finish --no-build --logger trx",
+    "testDependencies": {
+      "WASLA_SQLSERVER_CONNECTION_STRING": "explicit disposable local SQL Server Express configuration; value omitted",
+      "WASLA_RUN_BROWSER_TESTS": "1",
+      "ClamAV": "real loopback3310 container1.5.4"
+    },
+    "stateAtSnapshot": "running; two initial cold-browser request timeouts identified; real-browser fixtures now await provisioning before HTTP assertions; exact final-head outcome is in CI evidence",
+    "noSkippedTestCountedAsPass": true
+  },
+  "baseline": {
+    "restore": "passed",
+    "build": {
+      "passed": true,
+      "warnings": 0,
+      "errors": 0
+    },
+    "unit": {
+      "passed": 450,
+      "failed": 1,
+      "skipped": 0,
+      "failure": "CommercialFeaturePermissionCoverageTests CSV expected372 lines actual369"
+    },
+    "architecture": {
       "passed": 26,
       "failed": 0,
-      "notExecuted": 0,
-      "started": "2026-11-08T01:05:26.7089376+02:00",
-      "finished": "2026-11-08T01:05:42.3349214+02:00",
-      "results": [
-        {
-          "test": "Wasla.Tests.Architecture.Phase14MedicationArchitectureTests.Patient_queries_and_output_cannot_select_arbitrary_patient_or_expose_internal_context",
-          "outcome": "Passed",
-          "duration": "00:00:00.0018181"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.ArchitectureTests.ProductProjectGraph_IsAcyclic",
-          "outcome": "Passed",
-          "duration": "00:00:00.0052480"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.DoctorPatientsArchitectureTests.Patient_workspace_is_a_read_model_without_a_patient_ownership_aggregate_or_commands",
-          "outcome": "Passed",
-          "duration": "00:00:01.2211348"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase5FinalIdentityArchitectureTests.Identity_domain_stays_independent_of_application_database_api_and_mail",
-          "outcome": "Passed",
-          "duration": "00:00:01.1293365"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase11TicketArchitectureTests.Phase11_ticket_application_does_not_depend_on_frozen_data_store",
-          "outcome": "Passed",
-          "duration": "00:00:00.0225870"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase13ClinicalArchitectureTests.Clinical_application_does_not_reference_dbcontext_or_infrastructure",
-          "outcome": "Passed",
-          "duration": "00:00:00.8962535"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.ArchitectureTests.BuildingBlockAssemblies_DoNotReferenceWasla",
-          "outcome": "Passed",
-          "duration": "00:00:00.4304424"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.ArchitectureTests.Domain_DoesNotReferenceOuterLayersOrFrameworks",
-          "outcome": "Passed",
-          "duration": "00:00:00.0009664"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase11TicketArchitectureTests.Phase11_application_has_no_dbcontext_dependency",
-          "outcome": "Passed",
-          "duration": "00:00:02.8861328"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase14MedicationArchitectureTests.Medication_application_has_no_ef_infrastructure_or_http_runtime_dependency",
-          "outcome": "Passed",
-          "duration": "00:00:00.2602469"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase5FinalIdentityArchitectureTests.Identity_contract_exposes_exactly_20_new_routes_and_no_merge_or_role_switch",
-          "outcome": "Passed",
-          "duration": "00:00:00.9997086"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase13ClinicalArchitectureTests.Clinical_storage_is_separate_from_operational_ticket_and_not_soft_deletable",
-          "outcome": "Passed",
-          "duration": "00:00:00.3927397"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase14MedicationArchitectureTests.Prescription_and_history_are_separate_from_ticket_and_not_soft_deletable",
-          "outcome": "Passed",
-          "duration": "00:00:00.0022273"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase17NotificationArchitectureTests.E04_E07_E08_C11_O14_contracts_have_no_arbitrary_send_or_clinical_payload_surface",
-          "outcome": "Passed",
-          "duration": "00:00:03.2539783"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.ArchitectureTests.ActiveProductAssemblies_ContainNoRemovedBusinessTypes",
-          "outcome": "Passed",
-          "duration": "00:00:00.4606409"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase15DiagnosticArchitectureTests.Diagnostic_application_has_no_EF_or_HTTP_dependency_and_private_contracts_have_no_storage_keys",
-          "outcome": "Passed",
-          "duration": "00:00:00.0024353"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase16MedicalRecordArchitectureTests.Central_record_uses_existing_sources_and_transactional_mutations_without_new_clinical_content_aggregate",
-          "outcome": "Passed",
-          "duration": "00:00:00.2467752"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase11TicketArchitectureTests.Ticket_domain_has_no_ef_or_soft_delete_behavior",
-          "outcome": "Passed",
-          "duration": "00:00:00.0084527"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase15DiagnosticArchitectureTests.Clinical_models_are_distinct_aggregates_with_retained_history_and_no_ticket_payload",
-          "outcome": "Passed",
-          "duration": "00:00:00.0075074"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase13ClinicalArchitectureTests.Reception_delegation_includes_only_operational_follow_up_permission",
-          "outcome": "Passed",
-          "duration": "00:00:00.1038450"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase14MedicationArchitectureTests.Manager_defaults_and_reception_assignments_have_no_clinical_permissions",
-          "outcome": "Passed",
-          "duration": "00:00:00.0011994"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.ArchitectureTests.Application_DoesNotReferenceApiOrInfrastructure",
-          "outcome": "Passed",
-          "duration": "00:00:00.1481667"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase15DiagnosticArchitectureTests.Catalog_manager_and_root_permissions_do_not_create_clinical_authority",
-          "outcome": "Passed",
-          "duration": "00:00:00.0163764"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.Phase15DiagnosticArchitectureTests.Sensitive_commands_use_the_existing_transaction_marker",
-          "outcome": "Passed",
-          "duration": "00:00:00.0069494"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.ArchitectureTests.ActiveSource_ContainsNoObsoleteProductNamespace",
-          "outcome": "Passed",
-          "duration": "00:00:04.1172349"
-        },
-        {
-          "test": "Wasla.Tests.Architecture.DoctorPatientsArchitectureTests.Directory_and_overview_contracts_have_no_private_profile_or_mutation_fields",
-          "outcome": "Passed",
-          "duration": "00:00:00.0017539"
-        }
-      ]
+      "skipped": 0
     },
-    {
-      "name": "focused-integration-final",
-      "command": "dotnet test tests/Wasla.Tests.Integration/Wasla.Tests.Integration.csproj --artifacts-path artifacts/family-validation --no-build --no-restore -p:Platform=\"Any CPU\" --filter FamilySelfServiceApiTests|Phase16FinalGapTests|Phase17RecipientNotificationTests|SubscriptionPermissionMappingTests; explicit disposable LocalDB connection supplied",
-      "total": 36,
-      "passed": 36,
-      "failed": 0,
-      "notExecuted": 0,
-      "started": "2026-11-08T01:56:49.5706223+02:00",
-      "finished": "2026-11-08T02:02:56.8226412+02:00",
-      "results": [
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Sql_relationship_approval_rolls_back_proof_when_reviewer_permission_is_removed_during_evidence_open",
-          "outcome": "Passed",
-          "duration": "00:01:34.1458637"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Membership_only_and_adult_to_adult_proof_do_not_grant_parent_access_and_dispute_alone_cannot_be_approved",
-          "outcome": "Passed",
-          "duration": "00:00:06.4665940"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Initial_family_and_direct_member_addition_atomically_record_exact_parent_proof(role: Mother, sql: False)",
-          "outcome": "Passed",
-          "duration": "00:00:07.7162947"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Guardian_approval_rejects_other_child_proof_and_requires_explicit_audited_reverification(role: Guardian)",
-          "outcome": "Passed",
-          "duration": "00:00:05.1516503"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Reconciliation_reports_unknown_ambiguous_and_missing_sources_without_fabricating_verification",
-          "outcome": "Passed",
-          "duration": "00:00:04.9513638"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Existing_verification_routes_review_exact_pair_without_adding_members_and_preserve_revoked_proof(assisted: False)",
-          "outcome": "Passed",
-          "duration": "00:00:05.9210047"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R01_R04_R12_trust_survives_otp_cleanup_but_does_not_follow_email_reassignment_or_account_closure",
-          "outcome": "Passed",
-          "duration": "00:00:04.6889734"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Initial_family_and_direct_member_addition_atomically_record_exact_parent_proof(role: Father, sql: True)",
-          "outcome": "Passed",
-          "duration": "00:00:30.8223697"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Parents_read_hidden_patient_safe_outputs_without_eligibility_and_ignore_legacy_review_states(role: Mother)",
-          "outcome": "Passed",
-          "duration": "00:00:13.3860714"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct(verified: True)",
-          "outcome": "Passed",
-          "duration": "00:00:39.1524777"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Sql_second_host_rechecks_after_media_open_when_restriction_or_guardian_revocation_commits(role: Guardian)",
-          "outcome": "Passed",
-          "duration": "00:00:23.9640400"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R14_deactivated_reception_assignment_denies_operational_inbox_access",
-          "outcome": "Passed",
-          "duration": "00:00:06.4138966"
-        },
-        {
-          "test": "Wasla.Tests.Integration.FamilySelfServiceApiTests.Search_is_AND_masked_actor_bound_and_legacy_raw_identity_cannot_bootstrap_a_relationship(sql: False)",
-          "outcome": "Passed",
-          "duration": "00:00:06.5832429"
-        },
-        {
-          "test": "Wasla.Tests.Integration.FamilySelfServiceApiTests.Child_intake_has_no_patient_until_atomic_approval_and_medical_off_does_not_block_operational_authority(sql: False)",
-          "outcome": "Passed",
-          "duration": "00:00:07.4865569"
-        },
-        {
-          "test": "Wasla.Tests.Integration.SubscriptionPermissionMappingTests.Missing_archive_mapping_or_feature_snapshot_denies_direct_service_and_HTTP_without_data(sql: False)",
-          "outcome": "Passed",
-          "duration": "00:00:04.8024447"
-        },
-        {
-          "test": "Wasla.Tests.Integration.FamilySelfServiceApiTests.Child_intake_has_no_patient_until_atomic_approval_and_medical_off_does_not_block_operational_authority(sql: True)",
-          "outcome": "Passed",
-          "duration": "00:00:40.8179432"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Guardian_verification_operation_preserves_membership_and_still_requires_separate_medical_review(role: Guardian)",
-          "outcome": "Passed",
-          "duration": "00:00:04.3563205"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R02_verified_reviewed_global_contact_gets_email_without_an_invented_inbox",
-          "outcome": "Passed",
-          "duration": "00:00:05.8417234"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Operator_reconciliation_is_authenticated_repeatable_and_never_resurrects_revoked_proof",
-          "outcome": "Passed",
-          "duration": "00:00:05.7574688"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Existing_verification_routes_review_exact_pair_without_adding_members_and_preserve_revoked_proof(assisted: True)",
-          "outcome": "Passed",
-          "duration": "00:00:07.9558083"
-        },
-        {
-          "test": "Wasla.Tests.Integration.FamilySelfServiceApiTests.Sql_parallel_approval_has_one_identity_one_authority_and_replay_is_durable",
-          "outcome": "Passed",
-          "duration": "00:00:47.2743546"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Sql_two_hosts_serialize_verification_approval_and_invalidate_old_cursors",
-          "outcome": "Passed",
-          "duration": "00:00:37.2878369"
-        },
-        {
-          "test": "Wasla.Tests.Integration.SubscriptionPermissionMappingTests.Seeder_repairs_original_PR36_mappings_then_replays_without_changing_terms_or_permission_ids(sql: False)",
-          "outcome": "Passed",
-          "duration": "00:00:06.1425010"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Guardian_verification_operation_preserves_membership_and_still_requires_separate_medical_review(role: LegalGuardian)",
-          "outcome": "Passed",
-          "duration": "00:00:05.5122730"
-        },
-        {
-          "test": "Wasla.Tests.Integration.FamilySelfServiceApiTests.Search_is_AND_masked_actor_bound_and_legacy_raw_identity_cannot_bootstrap_a_relationship(sql: True)",
-          "outcome": "Passed",
-          "duration": "00:01:31.9134417"
-        },
-        {
-          "test": "Wasla.Tests.Integration.SubscriptionPermissionMappingTests.Seeder_repairs_original_PR36_mappings_then_replays_without_changing_terms_or_permission_ids(sql: True)",
-          "outcome": "Passed",
-          "duration": "00:01:41.8493165"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Initial_family_and_direct_member_addition_atomically_record_exact_parent_proof(role: Mother, sql: True)",
-          "outcome": "Passed",
-          "duration": "00:01:04.9299285"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Sql_second_host_rechecks_after_media_open_when_restriction_or_guardian_revocation_commits(role: Father)",
-          "outcome": "Passed",
-          "duration": "00:00:22.5256202"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R08_revoked_guardian_authority_prevents_dependent_reminder_delivery",
-          "outcome": "Passed",
-          "duration": "00:00:18.9823335"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Parents_read_hidden_patient_safe_outputs_without_eligibility_and_ignore_legacy_review_states(role: Father)",
-          "outcome": "Passed",
-          "duration": "00:00:09.0191749"
-        },
-        {
-          "test": "Wasla.Tests.Integration.SubscriptionPermissionMappingTests.Missing_archive_mapping_or_feature_snapshot_denies_direct_service_and_HTTP_without_data(sql: True)",
-          "outcome": "Passed",
-          "duration": "00:01:00.0522487"
-        },
-        {
-          "test": "Wasla.Tests.Integration.FamilySelfServiceApiTests.Empty_workspace_is_success_and_legacy_family_contract_remains_not_found",
-          "outcome": "Passed",
-          "duration": "00:00:05.8906710"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Guardian_approval_rejects_other_child_proof_and_requires_explicit_audited_reverification(role: LegalGuardian)",
-          "outcome": "Passed",
-          "duration": "00:00:05.4590679"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase16FinalGapTests.Initial_family_and_direct_member_addition_atomically_record_exact_parent_proof(role: Father, sql: False)",
-          "outcome": "Passed",
-          "duration": "00:00:06.4081741"
-        },
-        {
-          "test": "Wasla.Tests.Integration.FamilySelfServiceApiTests.Applicant_status_never_echoes_confidential_reviewer_text",
-          "outcome": "Passed",
-          "duration": "00:00:03.8190170"
-        },
-        {
-          "test": "Wasla.Tests.Integration.Phase17RecipientNotificationTests.R06_R07_R09_R11_family_membership_and_current_pairwise_authority_are_distinct(verified: False)",
-          "outcome": "Passed",
-          "duration": "00:00:23.4371359"
-        }
-      ]
-    }
-  ],
-  "baseline": {
-    "unitPassed": 432,
-    "architecturePassed": 26,
-    "fullIntegration": "INCOMPLETE: stopped after prolonged no-output/resource consumption; no integration pass claimed"
+    "integration": "Full baseline attempts aborted/incomplete. Original fixture failures: duplicate migration-seeded permissions and unreviewed operational family proof. Subsequent broad regression exposed stale finance constructor fixture, native directory timeout and change-tracking load costs; fixed without removing tests or weakening assertions."
   },
-  "supersededAttempts": [
-    "Initial restore failed with inherited Platform=MCD; rerun with Any CPU passed",
-    "Initial API attempt: 2 passed / 1 fixture-account failure / 1 SQL skip; corrected fixture root account",
-    "Initial full changed unit attempt: 438 passed / 3 catalog/suffix failures; explicit catalog and approved append expectations corrected",
-    "Initial selected integration: 33 passed / 3 supersession concurrency failures; fixed original RowVersion assignment before nested save"
-  ],
-  "extensionCheckpoint": {
-    "permissions": 368,
-    "buildErrors": 0,
-    "buildWarnings": 0,
-    "migrations": [
-      "20261108003144_FamilyDocumentsAndDependentProfile",
-      "20261108004756_HistoricalTimelineAndIntakeRevisions"
+  "migration": {
+    "script": "MIGRATION.sql",
+    "sha256": "695bf8c415cf6df319d56102c7f08c683ec8001229811525d64fbb09d7847494",
+    "deferredOperations": 1193,
+    "newMigrations": [
+      "20261108111202_FamilyProductionClosure",
+      "20261108111713_HistoricalValidationReceipts"
     ],
-    "runs": [
-      {
-        "name": "extensions-unit",
-        "counters": {
-          "total": "451",
-          "executed": "451",
-          "passed": "451",
-          "failed": "0",
-          "error": "0",
-          "timeout": "0",
-          "aborted": "0",
-          "inconclusive": "0",
-          "passedButRunAborted": "0",
-          "notRunnable": "0",
-          "notExecuted": "0",
-          "disconnected": "0",
-          "warning": "0",
-          "completed": "0",
-          "inProgress": "0",
-          "pending": "0"
-        },
-        "scope": "Executed evidence; see extension checkpoint for scope."
-      },
-      {
-        "name": "extensions-architecture",
-        "counters": {
-          "total": "26",
-          "executed": "26",
-          "passed": "26",
-          "failed": "0",
-          "error": "0",
-          "timeout": "0",
-          "aborted": "0",
-          "inconclusive": "0",
-          "passedButRunAborted": "0",
-          "notRunnable": "0",
-          "notExecuted": "0",
-          "disconnected": "0",
-          "warning": "0",
-          "completed": "0",
-          "inProgress": "0",
-          "pending": "0"
-        },
-        "scope": "Executed evidence; see extension checkpoint for scope."
-      },
-      {
-        "name": "extensions-sql",
-        "counters": {
-          "total": "57",
-          "executed": "57",
-          "passed": "57",
-          "failed": "0",
-          "error": "0",
-          "timeout": "0",
-          "aborted": "0",
-          "inconclusive": "0",
-          "passedButRunAborted": "0",
-          "notRunnable": "0",
-          "notExecuted": "0",
-          "disconnected": "0",
-          "warning": "0",
-          "completed": "0",
-          "inProgress": "0",
-          "pending": "0"
-        },
-        "scope": "Executed evidence; see extension checkpoint for scope."
-      },
-      {
-        "name": "extensions-final-api",
-        "counters": {
-          "total": "20",
-          "executed": "20",
-          "passed": "18",
-          "failed": "2",
-          "error": "0",
-          "timeout": "0",
-          "aborted": "0",
-          "inconclusive": "0",
-          "passedButRunAborted": "0",
-          "notRunnable": "0",
-          "notExecuted": "0",
-          "disconnected": "0",
-          "warning": "0",
-          "completed": "0",
-          "inProgress": "0",
-          "pending": "0"
-        },
-        "scope": "Includes superseded stale-output paging failure; forced rebuild completed afterward; full regression pending."
-      },
-      {
-        "name": "extension-sqlite",
-        "counters": {
-          "total": "12",
-          "executed": "11",
-          "passed": "9",
-          "failed": "2",
-          "error": "0",
-          "timeout": "0",
-          "aborted": "0",
-          "inconclusive": "0",
-          "passedButRunAborted": "0",
-          "notRunnable": "0",
-          "notExecuted": "0",
-          "disconnected": "0",
-          "warning": "0",
-          "completed": "0",
-          "inProgress": "0",
-          "pending": "0"
-        },
-        "scope": "Early preflight failure corrected and superseded by selected SQL run."
-      }
+    "cleanSQLServer": "passed",
+    "populatedUpgrade": "passed",
+    "checksumBackupRestoreRehearsal": "passed",
+    "idempotentReplay": "passed",
+    "productionDatabaseTouched": false
+  },
+  "permissions": {
+    "count": 371,
+    "changedExistingIds": 0,
+    "missingDocumentedEntriesFixed": [
+      "DependentIdentityCorrection.RequestOwn",
+      "FamilyJoinInvitations.CreateOwn",
+      "FamilyJoinInvitations.RedeemOwn"
+    ]
+  },
+  "production": {
+    "featureTargetEnabled": true,
+    "policyOwnerInputsComplete": true,
+    "policySource": "DECISION-2026-11-08-v2.md",
+    "automaticMigrations": false,
+    "automaticSeeding": false,
+    "actualDeploymentVerified": false,
+    "missingHostKeys": [
+      "MediaStorage:RootPath",
+      "MedicalRecord:DataProtectionKeyRingPath",
+      "MedicalRecord:DataProtectionCertificatePath"
     ],
-    "fullIntegration": {
-      "state": "Stopped after resource failures; rerun pending with two concurrent test collections",
-      "passedLines": 170,
-      "failedLines": [
-        "  Failed Wasla.Tests.Integration.DoctorPatientsSqlTests.Archive_move_preserves_membership_and_large_directory_uses_bounded_sql_pages [28 m 30 s]",
-        "  Failed Wasla.Tests.Integration.Phase16SharingActivationTests.Sql_configuration_activated_sharing_expires_and_denies_reads_after_ticket_completion [1 m 25 s]",
-        "  Failed Wasla.Tests.Integration.FamilySelfServiceApiTests.Child_intake_has_no_patient_until_atomic_approval_and_medical_off_does_not_block_operational_authority(sql: True) [4 m 47 s]",
-        "  Failed Wasla.Tests.Integration.SubscriptionArchiveAuthorizationTests.Legacy_snapshot_proves_old_owned_records_but_stops_at_paid_supersession [5 m 29 s]"
-      ],
-      "skipLines": [
-        "  Skipped Wasla.Tests.Integration.ExportBrowserSmokeTests.Automatic_download_renders_bilingual_reports_and_every_issued_prescription_status [1 ms]"
-      ],
-      "failureAnalysis": "Four inspected failures were SQL connection/command timeouts and HTTP cancellation during heavily parallel LocalDB execution. No final totals; this is not a passing full-suite result.",
-      "binarySource": "pre-governance extensions",
-      "environment": "Disposable LocalDB only"
-    },
-    "governance": {
-      "state": "SQLite preflight passed; SQL, birthday/archive and migration/restore verification pending",
-      "build": {
-        "errors": 0,
-        "warnings": 0,
-        "log": "governance-build-3.log"
-      },
-      "sqlite": {
-        "total": 11,
-        "passed": 8,
-        "failed": 0,
-        "skipped": 3,
-        "notes": "SQL variants explicitly skipped because this preflight did not set WASLA_SQLSERVER_CONNECTION_STRING. These skips are not SQL validation."
-      },
-      "migration": "20261108022505_FamilyGovernanceAndJoinInvitations",
-      "permissions": 371,
-      "privateMediaReconciliation": "Count-only, disabled by default; rollback and ambiguous-commit retention tests passed on SQLite."
-    }
-  }
+    "otherMissingHostInputs": [
+      "API hostname and publish plan/profile",
+      "worker continuity and daemon/tunnel support",
+      "instance topology/shared storage/certificate permissions and backup"
+    ],
+    "configurationStorage": "appsettings; existing credentials retained; values omitted"
+  },
+  "smtp": {
+    "connectivity": true,
+    "startTls": true,
+    "authentication": false,
+    "failureType": "AuthenticationException",
+    "controlledMessagesSent": 0,
+    "inboxDeliveryVerified": false,
+    "configurationModified": false,
+    "probe": "tools/Wasla.ProductionProbe"
+  },
+  "coverageMap": "TEST-MATRIX-2026-11-08.md",
+  "productionReady": false
 }

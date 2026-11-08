@@ -1,3 +1,5 @@
+> Historical implementation checkpoint. Superseded by [CLOSURE-REPORT-2026-11-08.md](CLOSURE-REPORT-2026-11-08.md) and [owner decision v2](DECISION-2026-11-08-v2.md). Earlier disabled-feature and missing-policy statements describe that checkpoint, not the current Production target.
+
 # Extension implementation checkpoint — epic still in progress
 
 Branch: `codex/family-self-service-historical-documents`.

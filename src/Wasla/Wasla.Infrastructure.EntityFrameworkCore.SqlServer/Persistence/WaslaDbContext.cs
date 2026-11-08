@@ -382,7 +382,7 @@ public sealed partial class WaslaDbContext(DbContextOptions<WaslaDbContext> opti
         foreach (var entry in ChangeTracker.Entries())
         {
             if (entry.State is EntityState.Modified or EntityState.Deleted && entry.Entity is
-                PatientHistoricalDocumentVersion or PatientHistoricalDocumentAttachment or PatientHistoricalDocumentHistory or HistoricalDocumentOperation or DependentProfileChange)
+                PatientHistoricalDocumentVersion or PatientHistoricalDocumentAttachment or PatientHistoricalDocumentHistory or HistoricalDocumentOperation or DependentProfileChange or Wasla.Domain.Media.PrivateMediaReconciliationRun)
                 throw new InvalidOperationException("Historical source versions and proxy audit records are immutable.");
             if (entry.State == EntityState.Deleted && entry.Entity is PatientHistoricalDocument)
                 throw new InvalidOperationException("Historical documents must be withdrawn without erasing history.");

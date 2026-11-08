@@ -2144,6 +2144,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("GovernanceCaseId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2217,6 +2220,8 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasIndex("FamilyRelationshipRequestId");
 
+                    b.HasIndex("GovernanceCaseId");
+
                     b.HasIndex("ReviewedByApplicationUserId");
 
                     b.HasIndex("ActorApplicationUserId", "IdempotencyKey")
@@ -2224,7 +2229,7 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.HasIndex("ParentPatientId", "IntentHash")
                         .IsUnique()
-                        .HasFilter("[Status] IN (1,2)");
+                        .HasFilter("[Status] IN (1,2,5)");
 
                     b.HasIndex("Status", "CreatedAtUtc", "Id");
 
@@ -2234,7 +2239,7 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                             t.HasCheckConstraint("CK_ChildOnboarding_Role", "[ParentRole] IN (1,2)");
 
-                            t.HasCheckConstraint("CK_ChildOnboarding_Status", "[Status] IN (1,2,3,4)");
+                            t.HasCheckConstraint("CK_ChildOnboarding_Status", "[Status] IN (1,2,3,4,5)");
                         });
                 });
 
@@ -2313,6 +2318,12 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.Property<Guid>("ActorUserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AfterSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BeforeSnapshot")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("ChildPatientId")
                         .HasColumnType("uniqueidentifier");
@@ -4614,6 +4625,73 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.ToTable("PatientLabResultSubmissionHistories", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Media.PrivateMediaReconciliationCheckpoint", b =>
+                {
+                    b.Property<string>("Module")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("LastFileKey")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("LastReferenceKey")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Module");
+
+                    b.ToTable("PrivateMediaReconciliationCheckpoints", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Media.PrivateMediaReconciliationRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("ExaminedFiles")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ExaminedReferences")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FindingsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("HasMore")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("InspectedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("MissingFiles")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("OrphanCandidates")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Module", "InspectedAtUtc", "Id");
+
+                    b.ToTable("PrivateMediaReconciliationRuns", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Medications.DrugCatalog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6861,6 +6939,10 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
                     b.Property<string>("Fingerprint")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -6871,6 +6953,9 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Operation")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -6878,6 +6963,13 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
 
                     b.Property<Guid>("SubjectPatientId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ValidationState")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasDefaultValue("AvailableUnverified");
 
                     b.Property<int>("VersionNumber")
                         .HasColumnType("int");
@@ -13105,6 +13197,11 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence.Migrati
                     b.HasOne("Wasla.Domain.Families.FamilyRelationshipRequest", null)
                         .WithMany()
                         .HasForeignKey("FamilyRelationshipRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Wasla.Domain.Families.FamilyGovernanceCase", null)
+                        .WithMany()
+                        .HasForeignKey("GovernanceCaseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Wasla.Domain.Patients.Patient", null)

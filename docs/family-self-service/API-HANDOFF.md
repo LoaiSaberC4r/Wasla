@@ -1,4 +1,6 @@
-# Family self-service API handoff (in progress)
+> Current additions and frontend migration requirements: [API-HANDOFF-CLOSURE.md](API-HANDOFF-CLOSURE.md). Existing routes below remain supported.
+
+# Family self-service API handoff
 
 See [API-HANDOFF-EXTENSIONS.md](API-HANDOFF-EXTENSIONS.md) for added profile, historical, diagnostic and finance routes.
 
@@ -10,12 +12,12 @@ new family views. Enumerations retain existing string JSON serialization.
 
 | Method | Route | Permission / actor | Contract |
 |---|---|---|---|
-| GET | `/families/mine/workspace` | `FamilyWorkspace.ViewOwn`, adult Patient | 200 even without Family; separate per-child operational/medical capabilities; unfinished actions false |
+| GET | `/families/mine/workspace` | `FamilyWorkspace.ViewOwn`, adult Patient | 200 even without Family; separate per-child operational/medical capabilities; independent live capabilities and reason codes |
 | POST | `/families/patient-candidates/search` | `PatientFamilyCandidates.Search`, adult Patient | JSON NameAr AND DOB AND Gender, optional phone; bounded masked opaque references; ambiguous identity requires review |
 | POST | `/family-relationship-requests/from-candidate` | `PatientFamilyCandidates.Submit`, adult Patient | multipart candidateReference, Father/Mother relationshipType, evidenceFiles/documentTypes, Idempotency-Key; 202 pending; no PatientId/FamilyId |
 | POST | `/families/mine/child-onboarding` | `ChildOnboarding.CreateOwn`, adult Patient | multipart identity/contact/parent-role/evidence, Idempotency-Key; 202; no definitive Patient before review |
 | GET | `/families/mine/child-onboarding-requests[/{requestId}]` | `ChildOnboarding.ViewOwn` | own private intake, evidence metadata and status; bounded list, no existing-match identifiers |
-| POST | `/families/mine/child-onboarding-requests/{requestId}/resubmit` | `ChildOnboarding.ResubmitOwn` | evidence-only new revision after modification request; RowVersion and Idempotency-Key |
+| POST | `/families/mine/child-onboarding-requests/{requestId}/resubmit` | `ChildOnboarding.ResubmitOwn` | identity/contact metadata and evidence revision after modification request; RowVersion and Idempotency-Key |
 | GET | `/admin/child-onboarding-requests[/{requestId}]` | `ChildOnboarding.ViewAll` / `.ViewDetails`, SuperAdmin | private intake review; no clinical document entitlement |
 | GET | `/admin/child-onboarding-requests/{requestId}/evidence/{documentId}/content` | `ChildOnboarding.ViewEvidence`, SuperAdmin | private stream, fresh authorization, no-store/nosniff |
 | POST | `/admin/child-onboarding-requests/{requestId}/approve` | `ChildOnboarding.Decide`, SuperAdmin | RowVersion, Idempotency-Key, optional confirmedExistingPatientId selected after independent identity review; also requires existing family approval permission |
@@ -52,16 +54,15 @@ Existing enum values 1–4 are unchanged. Appended request types are
 `VerifyOperationalParentChild=5` and `JoinFamilyAsParent=6`. The former explicitly
 does not create clinical proof. A second parent can submit an independently
 reviewed selected-child case to join the existing Family. Membership conflicts
-return a non-disclosing conflict rather than transferring anyone automatically.
+return a private governance-case receipt rather than transferring anyone automatically.
 
 Frontend flow: open workspace directly; choose Find Existing Child or Register
 New Child; retain only opaque candidateReference for selection; upload evidence;
 track own requests; wait for review. Never render null/empty redacted identifiers
-as navigation targets. Use independent capability flags. Contact/photo writes,
-identity corrections, historical documents, dependent finance and proxy diagnostic
-UI must remain unavailable until their implementations and checks are complete.
-No historical Timeline subtype is supplied by this slice; official counts and
-existing timeline discriminators remain unchanged.
+as navigation targets. Use the independent capability flags for contact/photo,
+reviewed identity correction, historical documents, dependent finance and proxy
+diagnostics described in the current closure handoff. HistoricalPatientDocument
+is distinct from official clinical results; official counters retain their meaning.
 
 New errors use English/Arabic resources. Normal authentication/permission errors
 are 401/403, unrelated subject/reference reads are opaque 404, stale/replayed or

@@ -9,6 +9,16 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     services:
+      clamav:
+        image: clamav/clamav:1.5.4@sha256:6d87c712e3391e13c1ba6e05dfb074d4b1ddb5a6834b23bb9da990d2a4ef042a
+        ports:
+          - 127.0.0.1:3310:3310
+        options: >-
+          --health-cmd "clamdcheck.sh"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-start-period 120s
+          --health-retries 30
       sqlserver:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
@@ -22,9 +32,12 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
+      WASLA_RUN_BROWSER_TESTS: "1"
       WASLA_SQLSERVER_CONNECTION_STRING: "Server=localhost,1433;Database=master;User ID=sa;Password=Wasla_CI_Only_2026!;TrustServerCertificate=True;Encrypt=True"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
@@ -40,9 +53,15 @@ jobs:
         run: dotnet test tests/Wasla.Tests.Architecture/Wasla.Tests.Architecture.csproj --configuration Release --no-build --logger trx --results-directory TestResults/architecture
       - name: BuildingBlock foundation and frozen main API compatibility
         run: dotnet test src/BuildingBlock/BuildingBlock.Tests/BuildingBlock.Tests.csproj --configuration Release --logger trx --results-directory TestResults/buildingblock
+      - name: Evidence provenance
+        if: always()
+        run: python tools/write-test-evidence.py
       - name: Test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: TestResults/**/*.trx
+          path: |
+            TestResults/**/*.trx
+            TestResults/provenance.json
+            TestResults/TEST-EVIDENCE.json

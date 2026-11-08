@@ -125,9 +125,25 @@ internal sealed class FamilyGovernanceWorkflow(WaslaDbContext db, IWaslaDataStor
         return await SaveAsync(row, scope.Value.ActorUserId, op, c.IdempotencyKey, hash, null, ct);
     }
     public async Task<Result<FamilyGovernanceReceipt>> OpenConflictAsync(Guid actorUserId, Guid parentPatientId, Guid childPatientId,
-        FamilyMemberRole intendedRole, IReadOnlyList<FamilyEvidenceUpload> evidence, string key, string fingerprint, CancellationToken ct)
+        FamilyMemberRole intendedRole, IReadOnlyList<FamilyEvidenceUpload> evidence, string key, string fingerprint, CancellationToken ct,
+        Guid? onboardingRequestId = null)
     {
-        var actor = await ActorAsync(FamilySelfServicePermissionNames.Submit, false, ct);
+        var actor = onboardingRequestId.HasValue ? await store.GetAccessSnapshotAsync(actorUserId, ct) : await ActorAsync(FamilySelfServicePermissionNames.Submit, false, ct);
+        if (onboardingRequestId is { } source)
+        {
+            // The review operates in the administrator's context, on behalf of the
+            // original applicant. Validate both actors and the preserved intake.
+            var admin = await ActorAsync(FamilySelfServicePermissionNames.OnboardingReview, true, ct);
+            var intake = await db.Set<ChildOnboardingRequest>().AsNoTracking().SingleOrDefaultAsync(r => r.Id == source &&
+                r.ActorApplicationUserId == actorUserId && r.ParentPatientId == parentPatientId && r.Status == ChildOnboardingStatus.PendingReview, ct);
+            var link = await store.FindPatientAccountLinkAsync(actorUserId, ct);
+            var parentPatient = await store.FindPatientByIdAsync(parentPatientId, ct);
+            if (admin is null || intake is null || actor is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.Patient } ||
+                !actor.Permissions.Contains(FamilySelfServicePermissionNames.Onboard) || link?.PatientId != parentPatientId ||
+                parentPatient is null || parentPatient.GetAge(options.Value.Today(clock.UtcNow)) < 18 || intake.ParentRole != intendedRole ||
+                !await FamilyIdentitySearch.Exact(db.Patients.Where(p => p.Id == childPatientId && p.DateOfBirth == intake.DateOfBirth && p.Gender == intake.Gender), intake.NameAr).AnyAsync(ct))
+                return Result<FamilyGovernanceReceipt>.Fail(Missing);
+        }
         if (!options.Value.Enabled || actor is null || actor.PatientId != parentPatientId || actor.User.Id != actorUserId) return Result<FamilyGovernanceReceipt>.Fail(Missing);
         if (!Key(key) || intendedRole is not (FamilyMemberRole.Father or FamilyMemberRole.Mother)) return Result<FamilyGovernanceReceipt>.Fail(Invalid);
         var hash = await FingerprintAsync(new { parentPatientId, childPatientId, intendedRole, fingerprint }, evidence, ct); if (hash is null) return Result<FamilyGovernanceReceipt>.Fail(Invalid);

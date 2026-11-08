@@ -27,7 +27,14 @@ public sealed class FamilyMigrationRehearsalTests
                 var reviewer = ApplicationUser.Create(Guid.NewGuid(), "migration-reviewer", "reviewer@migration.test", null, "synthetic-password-hash", UserType.SuperAdmin, false, now).Value;
                 var owner = ApplicationUser.Create(Guid.NewGuid(), "migration-parent", "parent@migration.test", null, "synthetic-password-hash", UserType.Patient, false, now).Value;
                 db.AddRange(reviewer, owner);
-                foreach (var permission in PermissionNames.All.Take(337)) db.Add(Permission.Create(SystemPermissionIds.For(permission), permission, true).Value);
+                // Earlier migrations already seed some of the frozen permissions.
+                // Preserve and verify those rows; insert only the missing baseline names.
+                var seeded = await db.Permissions.AsNoTracking().ToDictionaryAsync(p => p.Name, p => p.Id, TestContext.Current.CancellationToken);
+                foreach (var permission in PermissionNames.All.Take(337))
+                {
+                    if (seeded.TryGetValue(permission, out var existingId)) Assert.Equal(SystemPermissionIds.For(permission), existingId);
+                    else db.Add(Permission.Create(SystemPermissionIds.For(permission), permission, true).Value);
+                }
                 for (var i = 0; i < 2; i++)
                 {
                     var parent = Patient.Create(Guid.NewGuid(), "والد سابق " + i, null, today.AddYears(-40), Gender.Male, null, null, null, null, null, today).Value;
@@ -45,7 +52,8 @@ public sealed class FamilyMigrationRehearsalTests
                 await using var master = new SqlConnection(administrative.ConnectionString); await master.OpenAsync(TestContext.Current.CancellationToken);
                 await using var folder = master.CreateCommand(); folder.CommandText = "SELECT CONVERT(nvarchar(4000), COALESCE(SERVERPROPERTY('InstanceDefaultBackupPath'), SERVERPROPERTY('InstanceDefaultDataPath')))"; var root = (string)(await folder.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
                 backup = Path.Combine(root, name + ".bak"); await using var copy = master.CreateCommand(); copy.CommandTimeout = 120; copy.CommandText = $"BACKUP DATABASE [{name}] TO DISK=@path WITH COPY_ONLY, INIT, CHECKSUM; RESTORE VERIFYONLY FROM DISK=@path WITH CHECKSUM;"; copy.Parameters.AddWithValue("@path", backup); await copy.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
-                await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
+                await ApplyScript(db);
+                await ApplyScript(db); // Exact generated deployment artifact is idempotent.
             }
             await Verify(); SqlConnection.ClearAllPools();
             await using (var master = new SqlConnection(administrative.ConnectionString))
@@ -53,7 +61,7 @@ public sealed class FamilyMigrationRehearsalTests
                 await master.OpenAsync(TestContext.Current.CancellationToken); await using var restore = master.CreateCommand(); restore.CommandTimeout = 120;
                 restore.CommandText = $"ALTER DATABASE [{name}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; RESTORE DATABASE [{name}] FROM DISK=@path WITH REPLACE, CHECKSUM; ALTER DATABASE [{name}] SET MULTI_USER;"; restore.Parameters.AddWithValue("@path", backup); await restore.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             }
-            await using (var db = new WaslaDbContext(opts)) await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
+            await using (var db = new WaslaDbContext(opts)) await ApplyScript(db);
             await Verify();
         }
         finally
@@ -73,5 +81,39 @@ public sealed class FamilyMigrationRehearsalTests
             Assert.Empty(await db.Set<ParentChildOperationalAuthority>().ToArrayAsync()); Assert.Empty(await db.Set<FamilyGovernanceCase>().ToArrayAsync()); Assert.Empty(await db.Set<PatientHistoricalDocument>().ToArrayAsync());
             var permissions = await db.Permissions.ToDictionaryAsync(p => p.Name, p => p.Id); Assert.Equal(337, permissions.Count); foreach (var permission in PermissionNames.All.Take(337)) Assert.Equal(SystemPermissionIds.For(permission), permissions[permission]);
         }
+    }
+    [Fact, Trait("Category", "SQLServerConcurrency")]
+    public async Task Generated_idempotent_script_initializes_clean_SQL_Server_and_replays_without_schema_drift()
+    {
+        var supplied = Environment.GetEnvironmentVariable("WASLA_SQLSERVER_CONNECTION_STRING"); Assert.SkipWhen(string.IsNullOrWhiteSpace(supplied), "Disposable SQL Server configuration required.");
+        var builder = new SqlConnectionStringBuilder(supplied) { InitialCatalog = "WaslaFamilyClean_" + Guid.NewGuid().ToString("N") };
+        await using var db = new WaslaDbContext(new DbContextOptionsBuilder<WaslaDbContext>().UseSqlServer(builder.ConnectionString, s => s.CommandTimeout(120)).Options);
+        try
+        {
+            await db.Database.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>().CreateAsync(TestContext.Current.CancellationToken);
+            await ApplyScript(db); await ApplyScript(db);
+            Assert.Equal(db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync(TestContext.Current.CancellationToken));
+            Assert.False(db.Database.HasPendingModelChanges()); Assert.Empty(await db.Set<FamilyGovernanceCase>().ToArrayAsync(TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+#pragma warning disable xUnit1051 // Disposable SQL database must be removed even if the test is cancelled.
+            await db.Database.EnsureDeletedAsync(CancellationToken.None);
+#pragma warning restore xUnit1051
+        }
+    }
+    private static async Task ApplyScript(WaslaDbContext db)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Wasla.sln"))) directory = directory.Parent;
+        var sql = await File.ReadAllTextAsync(Path.Combine(directory!.FullName, "docs/family-self-service/MIGRATION.sql"), TestContext.Current.CancellationToken);
+        var batches = System.Text.RegularExpressions.Regex.Split(sql, @"^GO\s*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.CultureInvariant, TimeSpan.FromSeconds(2));
+        await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
+        try
+        {
+            foreach (var batch in batches.Where(b => !string.IsNullOrWhiteSpace(b)))
+                await db.Database.ExecuteSqlRawAsync(batch, TestContext.Current.CancellationToken);
+        }
+        finally { await db.Database.CloseConnectionAsync(); }
     }
 }

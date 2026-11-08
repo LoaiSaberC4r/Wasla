@@ -28,6 +28,9 @@ public sealed class DependentProfileController(ISender sender) : ControllerBase
     [HttpPost("contacts"), Permission(FamilyExtensionPermissionNames.ManageContacts)]
     public Task<IActionResult> Add(Guid childPatientId, [FromBody] DependentContactForm form, [FromHeader(Name = "Idempotency-Key")] string key, CancellationToken ct)
         => Change(new(childPatientId, "add", form.RowVersion, key, Contact: form.Contact), ct);
+    [HttpPatch("phone"), Permission(FamilyExtensionPermissionNames.ManageContacts)]
+    public Task<IActionResult> Phone(Guid childPatientId, [FromBody] DependentPhoneForm form, [FromHeader(Name = "Idempotency-Key")] string key, CancellationToken ct)
+        => Change(new(childPatientId, "phone", form.RowVersion, key, PhoneNumber: form.PhoneNumber), ct);
     [HttpPut("contacts/{contactId:guid}"), Permission(FamilyExtensionPermissionNames.ManageContacts)]
     public Task<IActionResult> Update(Guid childPatientId, Guid contactId, [FromBody] DependentContactForm form, [FromHeader(Name = "Idempotency-Key")] string key, CancellationToken ct)
         => Change(new(childPatientId, "update", form.RowVersion, key, contactId, form.Contact), ct);
@@ -44,6 +47,7 @@ public sealed class DependentProfileController(ISender sender) : ControllerBase
 }
 public sealed record DependentContactForm(string RowVersion, PatientContactInput Contact);
 public sealed record DependentVersionForm(string RowVersion);
+public sealed record DependentPhoneForm(string RowVersion, string? PhoneNumber);
 public sealed class DependentPhotoForm
 {
     public string RowVersion { get; set; } = "";

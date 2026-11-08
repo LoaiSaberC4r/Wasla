@@ -1,3 +1,5 @@
+> Historical decision v1. The Production disablement and configuration-provider instructions are superseded by [owner decision v2](docs/family-self-service/DECISION-2026-11-08-v2.md), integrated in [the repository master](MASTER-SOURCE-OF-TRUTH.md). Exact authority, privacy and immutable-history rules remain effective.
+
 # Family self-service implementation decision addendum v1
 
 Authority: the owner-approved 2026-11-07 implementation epic, preserved in

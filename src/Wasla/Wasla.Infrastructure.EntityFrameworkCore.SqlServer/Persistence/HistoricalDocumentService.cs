@@ -45,6 +45,11 @@ internal sealed class HistoricalDocumentService(WaslaDbContext db, IWaslaDataSto
     { try { return value is not null && d.RowVersion.AsSpan().SequenceEqual(Convert.FromBase64String(value)); } catch (FormatException) { return false; } }
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     private static string? Trim(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static string SafeName(string value)
+    {
+        var name = new string(Path.GetFileName(value).Where(c => !char.IsControl(c)).Take(255).ToArray());
+        return string.IsNullOrWhiteSpace(name) ? "medical-document" : name;
+    }
     private async Task<string?> FingerprintAsync(HistoricalDocumentMutation c, CancellationToken ct)
     {
         var parts = new List<string> { JsonSerializer.Serialize(new { c.Operation, c.ChildPatientId, c.DocumentId, c.RowVersion, c.Metadata, c.Reason }) };
@@ -79,7 +84,7 @@ internal sealed class HistoricalDocumentService(WaslaDbContext db, IWaslaDataSto
         await identities.LockAsync(ct);
         var replay = await db.Set<HistoricalDocumentOperation>().SingleOrDefaultAsync(r => r.ActorUserId == scope.ActorId && r.Operation == c.Operation && r.IdempotencyKey == c.IdempotencyKey, ct);
         if (replay is not null) return replay.SubjectPatientId == scope.PatientId && replay.Fingerprint == fingerprint ?
-            Result<HistoricalDocumentMutationResponse>.Ok(new(replay.DocumentId, replay.VersionNumber)) : Result<HistoricalDocumentMutationResponse>.Fail(Conflict);
+            Result<HistoricalDocumentMutationResponse>.Ok(new(replay.DocumentId, replay.VersionNumber, ValidationState: replay.ValidationState, FailureCode: replay.FailureCode)) : Result<HistoricalDocumentMutationResponse>.Fail(Conflict);
         var doc = c.Operation == "create" ? null : await db.Set<PatientHistoricalDocument>().SingleOrDefaultAsync(d => d.Id == c.DocumentId && d.SubjectPatientId == scope.PatientId, ct);
         if (c.Operation != "create" && doc is null) return Result<HistoricalDocumentMutationResponse>.Fail(Missing);
         if (doc is not null && (!Version(doc, c.RowVersion) || doc.State != HistoricalDocumentState.AvailableUnverified)) return Result<HistoricalDocumentMutationResponse>.Fail(Conflict);
@@ -105,6 +110,26 @@ internal sealed class HistoricalDocumentService(WaslaDbContext db, IWaslaDataSto
         if (c.Operation == "withdraw") doc.Withdraw(clock.UtcNow);
         else
         {
+            // Persist a safe rejected-attempt receipt, never unsafe bytes. A rejected
+            // replacement cannot change the last validated version or its attachments.
+            foreach (var file in c.Files!)
+            {
+                foreach (var scanner in scanners.Where(s => s is ClamAvMalwareScanner))
+                {
+                    file.Content.Position = 0;
+                    var verdict = await scanner.ScanAsync(file.Content, Path.GetFileName(file.FileName), file.ContentType ?? "application/octet-stream", ct);
+                    file.Content.Position = 0;
+                    if (verdict.IsSafe) continue;
+                    var state = verdict.Reason == "MalwareDetected" ? "RejectedUnsafe" : "Quarantined";
+                    if (doc.CurrentVersionNumber == 0) doc.RejectValidation(state == "RejectedUnsafe", clock.UtcNow);
+                    if (await ScopeAsync(c.ChildPatientId, own, dependent, true, ct) != scope) return Result<HistoricalDocumentMutationResponse>.Fail(Missing);
+                    db.Add(new PatientHistoricalDocumentHistory(doc.Id, doc.CurrentVersionNumber, scope.ActorId, state, clock.UtcNow));
+                    db.Add(new HistoricalDocumentOperation(scope.ActorId, scope.PatientId, c.Operation, c.IdempotencyKey, fingerprint, doc.Id,
+                        doc.CurrentVersionNumber, clock.UtcNow, state, verdict.Reason, JsonSerializer.Serialize(c.Metadata)));
+                    await db.SaveChangesAsync(ct);
+                    return Result<HistoricalDocumentMutationResponse>.Ok(new(doc.Id, doc.CurrentVersionNumber, ValidationState: state, FailureCode: verdict.Reason));
+                }
+            }
             var version = new PatientHistoricalDocumentVersion(doc.Id, doc.CurrentVersionNumber + 1, m!.Category, m.DocumentDate, m.DateUnknown,
                 Trim(m.ProviderName), Trim(m.Title), Trim(m.PatientNote), scope.ActorId, clock.UtcNow, Trim(c.Reason), doc.UploadedAtUtc);
             foreach (var file in c.Files!)
@@ -112,7 +137,7 @@ internal sealed class HistoricalDocumentService(WaslaDbContext db, IWaslaDataSto
                 // Private media is validated and scanned before any available metadata is committed.
                 var saved = await media.SaveAsync(file, new($"HistoricalDocuments/{doc.Id:N}/{version.Id:N}"), ct);
                 file.Content.Position = 0; var hash = Convert.ToHexString(await SHA256.HashDataAsync(file.Content, ct)); file.Content.Position = 0;
-                db.Add(new PatientHistoricalDocumentAttachment(version.Id, saved.Key, Path.GetFileName(file.FileName), saved.ContentType, saved.Length, hash, clock.UtcNow));
+                db.Add(new PatientHistoricalDocumentAttachment(version.Id, saved.Key, SafeName(file.FileName), saved.ContentType, saved.Length, hash, clock.UtcNow));
             }
             db.Add(version); doc.PublishValidatedVersion(version.VersionNumber, clock.UtcNow);
         }
@@ -134,7 +159,8 @@ internal sealed class HistoricalDocumentService(WaslaDbContext db, IWaslaDataSto
         if (scope is null) return Result<object>.Fail(Missing);
         if (q.PageNumber is < 1 or > 10000 || q.PageSize is < 1 or > 100 || q.Versions && q.DocumentId is null) return Result<object>.Fail(Invalid);
         var query = db.Set<PatientHistoricalDocument>().AsNoTracking().Where(d => d.SubjectPatientId == scope.PatientId &&
-            (d.State == HistoricalDocumentState.AvailableUnverified || q.IncludeWithdrawn && d.State == HistoricalDocumentState.Withdrawn));
+            (d.State == HistoricalDocumentState.AvailableUnverified || d.State == HistoricalDocumentState.RejectedUnsafe || d.State == HistoricalDocumentState.Quarantined ||
+                q.IncludeWithdrawn && d.State == HistoricalDocumentState.Withdrawn));
         if (q.DocumentId is { } id) query = query.Where(d => d.Id == id);
         var ordered = query.OrderByDescending(d => d.UploadedAtUtc).ThenBy(d => d.Id);
         var docs = q.DocumentId.HasValue ? await ordered.Take(1).ToArrayAsync(ct) :
@@ -153,9 +179,9 @@ internal sealed class HistoricalDocumentService(WaslaDbContext db, IWaslaDataSto
             var withdraw = await ScopeAsync(q.ChildPatientId, MedicalDocumentPermissionNames.WithdrawOwn, MedicalDocumentPermissionNames.WithdrawDependent, false, ct) is not null;
             foreach (var d in docs)
             {
-                var v = await db.Set<PatientHistoricalDocumentVersion>().AsNoTracking().SingleAsync(v => v.DocumentId == d.Id && v.VersionNumber == d.CurrentVersionNumber, ct);
+                var v = d.CurrentVersionNumber == 0 ? null : await db.Set<PatientHistoricalDocumentVersion>().AsNoTracking().SingleAsync(v => v.DocumentId == d.Id && v.VersionNumber == d.CurrentVersionNumber, ct);
                 var editable = d.State == HistoricalDocumentState.AvailableUnverified && (!q.ChildPatientId.HasValue || d.UploadedByApplicationUserId == scope.ActorId);
-                output.Add(new(d.Id, d.SubjectPatientId, d.State, d.CurrentVersionNumber, d.UploadedAtUtc, Convert.ToBase64String(d.RowVersion), await VersionAsync(v, ct), editable && revise, editable && withdraw));
+                output.Add(new(d.Id, d.SubjectPatientId, d.State, d.CurrentVersionNumber, d.UploadedAtUtc, Convert.ToBase64String(d.RowVersion), v is null ? null : await VersionAsync(v, ct), editable && revise, editable && withdraw));
             }
             if (q.DocumentId.HasValue && output.Count == 0) return Result<object>.Fail(Missing);
             result = q.DocumentId.HasValue ? output[0] : new { Items = output, q.PageNumber, q.PageSize, TotalCount = await query.CountAsync(ct) };

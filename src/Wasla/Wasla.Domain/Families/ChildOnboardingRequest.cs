@@ -3,7 +3,7 @@ using Wasla.Domain.Common;
 
 namespace Wasla.Domain.Families;
 
-public enum ChildOnboardingStatus { PendingReview = 1, ModificationRequested = 2, Approved = 3, Rejected = 4 }
+public enum ChildOnboardingStatus { PendingReview = 1, ModificationRequested = 2, Approved = 3, Rejected = 4, ConflictReview = 5 }
 public sealed class ChildOnboardingRequest : Entity<Guid>
 {
     private ChildOnboardingRequest() { }
@@ -12,8 +12,7 @@ public sealed class ChildOnboardingRequest : Entity<Guid>
     {
         if (actor == Guid.Empty || parent == Guid.Empty || role is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) ||
             string.IsNullOrWhiteSpace(nameAr) || nameAr.Length > 200 || nameEn?.Length > 200 || birth == default || gender is not (Gender.Male or Gender.Female) ||
-            phone?.Length > 30 || contactName.Length > 200 || contactPhone.Length > 30 ||
-            (string.IsNullOrWhiteSpace(phone) && string.IsNullOrWhiteSpace(contactPhone)) || (!string.IsNullOrWhiteSpace(contactPhone) && string.IsNullOrWhiteSpace(contactName)))
+            !ValidContact(phone, contactName, contactPhone))
             throw new ArgumentException("Invalid private child intake.");
         Id = Guid.NewGuid(); ActorApplicationUserId = actor; ParentPatientId = parent; ParentRole = role; NameAr = nameAr.Trim(); NameEn = nameEn?.Trim();
         DateOfBirth = birth; Gender = gender; PhoneNumber = phone?.Trim(); ContactNameAr = contactName.Trim(); ContactPhone = contactPhone.Trim();
@@ -40,6 +39,7 @@ public sealed class ChildOnboardingRequest : Entity<Guid>
     public string? ReviewMessage { get; private set; }
     public Guid? ApprovedPatientId { get; private set; }
     public Guid? FamilyRelationshipRequestId { get; private set; }
+    public Guid? GovernanceCaseId { get; private set; }
     public string? ReviewIdempotencyKey { get; private set; }
     public string? ReviewFingerprint { get; private set; }
     public string? ResubmitIdempotencyKey { get; private set; }
@@ -60,10 +60,20 @@ public sealed class ChildOnboardingRequest : Entity<Guid>
         Revision++; Status = ChildOnboardingStatus.PendingReview; ReviewMessage = null; ReviewedAtUtc = null; ReviewedByApplicationUserId = null;
         ResubmitIdempotencyKey = key; ResubmitFingerprint = fingerprint;
     }
+    public void ReferConflict(Guid caseId, Guid reviewer, DateTime now, string key, string fingerprint)
+    {
+        if (caseId == Guid.Empty) throw new ArgumentException("A governance case is required.");
+        Decide(ChildOnboardingStatus.ConflictReview, reviewer, "Confidential membership review", now, key: key, fingerprint: fingerprint);
+        GovernanceCaseId = caseId;
+    }
+    public static bool ValidContact(string? phone, string? contactName, string? contactPhone) =>
+        phone?.Length is not > 30 && contactName?.Length is not > 200 && contactPhone?.Length is not > 30 &&
+        (!string.IsNullOrWhiteSpace(phone) || !string.IsNullOrWhiteSpace(contactPhone)) &&
+        (string.IsNullOrWhiteSpace(contactPhone) || !string.IsNullOrWhiteSpace(contactName));
     public void CorrectPendingIntake(string nameAr, string? nameEn, DateOnly birth, Gender gender, string? phone, string contactName, string contactPhone, string intent)
     {
         if (Status != ChildOnboardingStatus.ModificationRequested || string.IsNullOrWhiteSpace(nameAr) || nameAr.Length > 200 || nameEn?.Length > 200 ||
-            birth == default || gender is not (Gender.Male or Gender.Female) || phone?.Length > 30 || contactName.Length is 0 or > 200 || contactPhone.Length is 0 or > 30)
+            birth == default || gender is not (Gender.Male or Gender.Female) || !ValidContact(phone, contactName, contactPhone))
             throw new ArgumentException("Invalid revised child intake.");
         NameAr = nameAr.Trim(); NameEn = nameEn?.Trim(); DateOfBirth = birth; Gender = gender; PhoneNumber = phone?.Trim(); ContactNameAr = contactName.Trim(); ContactPhone = contactPhone.Trim(); IntentHash = intent;
     }

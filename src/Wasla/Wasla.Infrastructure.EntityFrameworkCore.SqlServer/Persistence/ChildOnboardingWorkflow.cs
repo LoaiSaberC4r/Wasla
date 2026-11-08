@@ -19,7 +19,7 @@ namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore store, IPatientIdentityStore identity,
     ICurrentUser current, IDateTimeProvider clock, IOptions<DependentManagementOptions> options, IMediaService media,
-    IPrivateMediaReader privateMedia, FamilyRelationshipWorkflowService familyWorkflow) : IChildOnboardingWorkflow
+    IPrivateMediaReader privateMedia, FamilyRelationshipWorkflowService familyWorkflow, IFamilyGovernanceWorkflow governance) : IChildOnboardingWorkflow
 {
     private static Error Conflict => Error.Conflict("ChildOnboarding.StaleRevision", Wasla.Domain.Resources.FamilySelfServiceText.Get("ChildOnboarding_StaleRevision"));
     private static Error Invalid => Error.Validation("ChildOnboarding.Invalid", Wasla.Domain.Resources.FamilySelfServiceText.Get("ChildOnboarding_Invalid"));
@@ -41,7 +41,8 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
         Convert.ToBase64String(r.RowVersion), admin ? r.ReviewMessage : r.Status switch {
             ChildOnboardingStatus.ModificationRequested => Wasla.Domain.Resources.FamilySelfServiceText.Get("FamilyRelationship_ReviewSubmittedEvidence"),
             ChildOnboardingStatus.Rejected => Wasla.Domain.Resources.FamilySelfServiceText.Get("FamilyRelationship_RequestRejected"),
-            _ => null }, r.Status == ChildOnboardingStatus.ModificationRequested, r.ApprovedPatientId, r.FamilyRelationshipRequestId);
+            _ => null }, r.Status == ChildOnboardingStatus.ModificationRequested, r.ApprovedPatientId, r.FamilyRelationshipRequestId,
+        r.GovernanceCaseId, r.Status == ChildOnboardingStatus.ConflictReview ? "WaitForConfidentialReview" : null);
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     private static bool Key(string key) => !string.IsNullOrWhiteSpace(key) && key.Length <= 100;
     private static bool Version(ChildOnboardingRequest r, string value)
@@ -83,7 +84,7 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
         if (!Key(request.IdempotencyKey) || i is null || string.IsNullOrWhiteSpace(i.NameAr) || i.NameAr.Length > 200 || i.NameEn?.Length > 200 ||
             i.DateOfBirth == default || i.DateOfBirth > today || i.DateOfBirth <= today.AddYears(-18) || i.Gender is not (Gender.Male or Gender.Female) ||
             i.RelationToChild is not (FamilyMemberRole.Father or FamilyMemberRole.Mother) || i.PhoneNumber?.Length > 30 || i.PrimaryContactPhone?.Length > 30 ||
-            (string.IsNullOrWhiteSpace(i.PhoneNumber) && string.IsNullOrWhiteSpace(i.PrimaryContactPhone)) || i.PrimaryContactNameAr?.Length > 200)
+            !ChildOnboardingRequest.ValidContact(i.PhoneNumber, i.PrimaryContactNameAr, i.PrimaryContactPhone))
             return Result<ChildOnboardingResponse>.Fail(Invalid);
         var fingerprint = await EvidenceFingerprintAsync(JsonSerializer.Serialize(i), request.Evidence, ct);
         if (fingerprint is null) return Result<ChildOnboardingResponse>.Fail(Invalid);
@@ -92,7 +93,7 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
         if (replay is not null) return replay.Fingerprint == fingerprint ? Result<ChildOnboardingResponse>.Ok(Map(replay)) : Result<ChildOnboardingResponse>.Fail(Conflict);
         var intent = Hash($"{FamilyIdentitySearch.Normalize(i.NameAr)}:{i.DateOfBirth:yyyy-MM-dd}:{i.Gender}");
         if (await db.Set<ChildOnboardingRequest>().AnyAsync(r => r.ParentPatientId == parent && r.IntentHash == intent &&
-            (r.Status == ChildOnboardingStatus.PendingReview || r.Status == ChildOnboardingStatus.ModificationRequested), ct)) return Result<ChildOnboardingResponse>.Fail(Conflict);
+            (r.Status == ChildOnboardingStatus.PendingReview || r.Status == ChildOnboardingStatus.ModificationRequested || r.Status == ChildOnboardingStatus.ConflictReview), ct)) return Result<ChildOnboardingResponse>.Fail(Conflict);
         var row = new ChildOnboardingRequest(actor.User.Id, parent, i.RelationToChild, i.NameAr, i.NameEn, i.DateOfBirth, i.Gender, i.PhoneNumber,
             i.PrimaryContactNameAr ?? string.Empty, i.PrimaryContactPhone ?? string.Empty, request.IdempotencyKey, fingerprint, intent, clock.UtcNow);
         await SaveEvidenceAsync(row, request.Evidence, ct); db.Add(row);
@@ -125,11 +126,11 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
             if (parentPatient is null || parentPatient.GetAge(today) < 18 || !parent.Permissions.Contains(FamilySelfServicePermissionNames.Onboard))
                 return Result<ChildOnboardingResponse>.Fail(DependentAccessErrors.Unavailable);
             if (row.DateOfBirth > today || row.DateOfBirth <= today.AddYears(-18)) return Result<ChildOnboardingResponse>.Fail(Invalid);
-            var matches = await FamilyIdentitySearch.Exact(db.Patients.Where(p => p.DateOfBirth == row.DateOfBirth && p.Gender == row.Gender), row.NameAr).Take(6).ToArrayAsync(ct);
+            var matches = FamilyIdentitySearch.Exact(db.Patients.Where(p => p.DateOfBirth == row.DateOfBirth && p.Gender == row.Gender), row.NameAr);
             Patient patient;
-            if (matches.Length > 0)
+            if (await matches.AnyAsync(ct))
             {
-                var existing = matches.SingleOrDefault(p => p.Id == request.ConfirmedExistingPatientId);
+                var existing = await matches.SingleOrDefaultAsync(p => p.Id == request.ConfirmedExistingPatientId, ct);
                 if (existing is null) return Result<ChildOnboardingResponse>.Fail(Error.Conflict("ChildOnboarding.PossibleDuplicateReview", Wasla.Domain.Resources.FamilySelfServiceText.Get("ChildOnboarding_PossibleDuplicateReview")));
                 patient = existing;
             }
@@ -148,16 +149,9 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
                 }
                 await db.SaveChangesAsync(ct); // Still inside the command's SQL transaction.
             }
-            if (string.IsNullOrWhiteSpace(patient.PhoneNumber) && !await db.PatientContacts.AnyAsync(c => c.PatientId == patient.Id && c.IsPrimary && c.PhoneNumber != "", ct))
-            {
-                var guardianContact = PatientContact.Create(Guid.NewGuid(), patient.Id, row.ContactNameAr, null, row.ContactPhone,
-                    row.ParentRole == FamilyMemberRole.Father ? PatientContactRelationshipType.Father : PatientContactRelationshipType.Mother, row.ParentPatientId, true);
-                if (guardianContact.IsFailure) return Result<ChildOnboardingResponse>.Fail(guardianContact.Errors);
-                db.Add(guardianContact.Value); await db.SaveChangesAsync(ct);
-            }
             var adultMember = await store.FindActiveFamilyMemberByPatientIdAsync(row.ParentPatientId, ct);
             var childMember = await store.FindActiveFamilyMemberByPatientIdAsync(patient.Id, ct);
-            if (adultMember is not null && childMember is not null && adultMember.FamilyId != childMember.FamilyId) return Result<ChildOnboardingResponse>.Fail(Conflict);
+            var crossFamily = adultMember is not null && childMember is not null && adultMember.FamilyId != childMember.FamilyId;
             var type = childMember is not null ? adultMember is null ? FamilyRelationshipRequestType.JoinFamilyAsParent : FamilyRelationshipRequestType.VerifyOperationalParentChild :
                 adultMember is null ? FamilyRelationshipRequestType.CreateFamily : FamilyRelationshipRequestType.AddFamilyMember;
             var documents = await db.Set<ChildOnboardingEvidence>().Where(e => e.RequestId == row.Id && e.Revision == row.Revision).ToArrayAsync(ct);
@@ -170,6 +164,23 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
                     var file = await privateMedia.OpenAsync(d.MediaKey, ct);
                     if (file is null || !file.Content.CanSeek || file.Content.Length != d.FileSize) return Result<ChildOnboardingResponse>.Fail(Invalid);
                     streams.Add(file.Content); evidence.Add(new(d.DocumentType, new(file.Content, d.FileName, d.ContentType, d.FileSize)));
+                }
+                if (crossFamily)
+                {
+                    var review = await governance.OpenConflictAsync(row.ActorApplicationUserId, row.ParentPatientId, patient.Id,
+                        row.ParentRole, evidence, $"onboarding:{row.Id:N}", fingerprint, ct, row.Id);
+                    if (review.IsFailure) return Result<ChildOnboardingResponse>.Fail(review.Errors);
+                    row.ReferConflict(review.Value.CaseId, actor.User.Id, clock.UtcNow, request.IdempotencyKey, fingerprint);
+                    db.Add(new ChildOnboardingHistory(row.Id, row.Revision, actor.User.Id, "ConflictReview", clock.UtcNow));
+                    await db.SaveChangesAsync(ct);
+                    return Result<ChildOnboardingResponse>.Ok(Map(row, true));
+                }
+                if (string.IsNullOrWhiteSpace(patient.PhoneNumber) && !await db.PatientContacts.AnyAsync(c => c.PatientId == patient.Id && c.IsPrimary && c.PhoneNumber != "", ct))
+                {
+                    var contact = PatientContact.Create(Guid.NewGuid(), patient.Id, row.ContactNameAr, null, row.ContactPhone,
+                        row.ParentRole == FamilyMemberRole.Father ? PatientContactRelationshipType.Father : PatientContactRelationshipType.Mother, row.ParentPatientId, true);
+                    if (contact.IsFailure) return Result<ChildOnboardingResponse>.Fail(contact.Errors);
+                    db.Add(contact.Value); await db.SaveChangesAsync(ct);
                 }
                 var submitted = await familyWorkflow.SubmitAsync(type, childMember?.FamilyId ?? adultMember?.FamilyId, row.ParentPatientId, patient.Id,
                     row.ParentRole, FamilyMemberRole.Child, evidence, row.ActorApplicationUserId, ct);
@@ -205,13 +216,12 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
             var today = options.Value.Today(clock.UtcNow);
             if (string.IsNullOrWhiteSpace(revised.NameAr) || revised.NameAr.Length > 200 || revised.NameEn?.Length > 200 || revised.DateOfBirth == default ||
                 revised.DateOfBirth > today || revised.DateOfBirth <= today.AddYears(-18) || revised.Gender is not (Gender.Male or Gender.Female) ||
-                revised.RelationToChild != row.ParentRole || revised.PhoneNumber?.Length > 30 || string.IsNullOrWhiteSpace(revised.PrimaryContactNameAr) ||
-                revised.PrimaryContactNameAr.Length > 200 || string.IsNullOrWhiteSpace(revised.PrimaryContactPhone) || revised.PrimaryContactPhone.Length > 30)
+                revised.RelationToChild != row.ParentRole || !ChildOnboardingRequest.ValidContact(revised.PhoneNumber, revised.PrimaryContactNameAr, revised.PrimaryContactPhone))
                 return Result<ChildOnboardingResponse>.Fail(Invalid);
             var intent = Hash($"{FamilyIdentitySearch.Normalize(revised.NameAr)}:{revised.DateOfBirth:yyyy-MM-dd}:{revised.Gender}");
             if (await db.Set<ChildOnboardingRequest>().AnyAsync(r => r.Id != row.Id && r.ParentPatientId == row.ParentPatientId && r.IntentHash == intent &&
                 (r.Status == ChildOnboardingStatus.PendingReview || r.Status == ChildOnboardingStatus.ModificationRequested), ct)) return Result<ChildOnboardingResponse>.Fail(Conflict);
-            row.CorrectPendingIntake(revised.NameAr, revised.NameEn, revised.DateOfBirth, revised.Gender, revised.PhoneNumber, revised.PrimaryContactNameAr, revised.PrimaryContactPhone, intent);
+            row.CorrectPendingIntake(revised.NameAr, revised.NameEn, revised.DateOfBirth, revised.Gender, revised.PhoneNumber, revised.PrimaryContactNameAr ?? string.Empty, revised.PrimaryContactPhone ?? string.Empty, intent);
         }
         row.Resubmit(request.IdempotencyKey, fingerprint); await SaveEvidenceAsync(row, request.Evidence, ct);
         db.Add(new ChildOnboardingHistory(row.Id, row.Revision, actor.User.Id, "Resubmitted", clock.UtcNow));
@@ -224,7 +234,8 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
         var permission = request.Admin ? request.RequestId.HasValue ? FamilySelfServicePermissionNames.OnboardingDetails : FamilySelfServicePermissionNames.OnboardingInbox : FamilySelfServicePermissionNames.OnboardingOwn;
         var actor = await ActorAsync(permission, request.Admin, ct);
         if (actor is null) return Result<IReadOnlyList<ChildOnboardingReview>>.Fail(DependentAccessErrors.Unavailable);
-        if (request.PageNumber < 1 || request.PageNumber > 10000 || request.PageSize is < 1 or > 100) return Result<IReadOnlyList<ChildOnboardingReview>>.Fail(Invalid);
+        if (request.PageNumber < 1 || request.PageNumber > 10000 || request.PageSize is < 1 or > 100 ||
+            request.MatchPageNumber is < 1 or > 10000 || request.MatchPageSize is < 1 or > 100) return Result<IReadOnlyList<ChildOnboardingReview>>.Fail(Invalid);
         var rows = await db.Set<ChildOnboardingRequest>().AsNoTracking().Where(r => (!request.RequestId.HasValue || r.Id == request.RequestId) &&
             (request.Admin || r.ActorApplicationUserId == actor.User.Id)).OrderByDescending(r => r.CreatedAtUtc).ThenBy(r => r.Id)
             .Skip((request.PageNumber - 1) * request.PageSize).Take(request.PageSize).ToArrayAsync(ct);
@@ -233,10 +244,12 @@ internal sealed class ChildOnboardingWorkflow(WaslaDbContext db, IWaslaDataStore
         {
             var docs = await db.Set<ChildOnboardingEvidence>().AsNoTracking().Where(e => e.RequestId == row.Id).OrderBy(e => e.Revision).ThenBy(e => e.Id).ToArrayAsync(ct);
             var matches = request.Admin && request.RequestId.HasValue ? await FamilyIdentitySearch.Exact(db.Patients.AsNoTracking().Where(p =>
-                    p.DateOfBirth == row.DateOfBirth && p.Gender == row.Gender), row.NameAr).OrderBy(p => p.Id).Take(5)
+                    p.DateOfBirth == row.DateOfBirth && p.Gender == row.Gender), row.NameAr).OrderBy(p => p.Id)
+                    .Skip((request.MatchPageNumber - 1) * request.MatchPageSize).Take(request.MatchPageSize + 1)
                     .Select(p => new ChildOnboardingDuplicateCandidate(p.Id, p.NameAr, p.NameEn, p.DateOfBirth, p.Gender)).ToArrayAsync(ct) : [];
             result.Add(new(Map(row, request.Admin), new(row.NameAr, row.NameEn, row.DateOfBirth, row.Gender, row.PhoneNumber, row.ContactNameAr, row.ContactPhone, row.ParentRole),
-                docs.Select(d => new FamilyRelationshipDocumentResponse(d.Id, d.Revision, d.DocumentType, d.FileName, d.ContentType, d.FileSize, d.CreatedAtUtc)).ToArray(), matches));
+                docs.Select(d => new FamilyRelationshipDocumentResponse(d.Id, d.Revision, d.DocumentType, d.FileName, d.ContentType, d.FileSize, d.CreatedAtUtc)).ToArray(),
+                matches.Take(request.MatchPageSize).ToArray(), matches.Length > request.MatchPageSize, request.MatchPageNumber));
         }
         return Result<IReadOnlyList<ChildOnboardingReview>>.Ok(result);
     }

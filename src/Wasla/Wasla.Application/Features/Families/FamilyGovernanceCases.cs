@@ -36,7 +36,8 @@ public interface IFamilyGovernanceWorkflow
     Task<Result<PrivateMedia>> EvidenceAsync(FamilyGovernanceEvidenceQuery query, CancellationToken ct);
     // Called only after an actor-bound opaque candidate redemption, inside its transaction.
     Task<Result<FamilyGovernanceReceipt>> OpenConflictAsync(Guid actorUserId, Guid parentPatientId, Guid childPatientId,
-        FamilyMemberRole intendedRole, IReadOnlyList<FamilyEvidenceUpload> evidence, string key, string fingerprint, CancellationToken ct);
+        FamilyMemberRole intendedRole, IReadOnlyList<FamilyEvidenceUpload> evidence, string key, string fingerprint, CancellationToken ct,
+        Guid? onboardingRequestId = null);
 }
 internal sealed class SubmitDependentIdentityCorrectionHandler(IFamilyGovernanceWorkflow workflow) : ICommandHandler<SubmitDependentIdentityCorrectionCommand, FamilyGovernanceReceipt>
 { public Task<Result<FamilyGovernanceReceipt>> Handle(SubmitDependentIdentityCorrectionCommand request, CancellationToken ct) => workflow.SubmitIdentityAsync(request, ct); }

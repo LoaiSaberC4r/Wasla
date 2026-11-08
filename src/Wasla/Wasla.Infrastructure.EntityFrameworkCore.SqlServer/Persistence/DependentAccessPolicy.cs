@@ -16,29 +16,32 @@ internal sealed class OperationalAuthorityReader(WaslaDbContext db, IDateTimePro
     IOptions<DependentManagementOptions> options) : IOperationalAuthorityReader
 {
     public async Task<ParentChildOperationalAuthority?> FindAsync(Guid adultPatientId, Guid childPatientId, CancellationToken ct)
+        => (await FindManyAsync(adultPatientId, [childPatientId], ct)).GetValueOrDefault(childPatientId);
+
+    public async Task<IReadOnlyDictionary<Guid, ParentChildOperationalAuthority>> FindManyAsync(Guid adultPatientId,
+        IReadOnlyCollection<Guid> children, CancellationToken ct)
     {
-        if (!options.Value.Enabled) return null;
-        var today = options.Value.Today(clock.UtcNow);
-        var cutoff = today.AddYears(-18);
-        var proof = await db.Set<ParentChildOperationalAuthority>().AsNoTracking().SingleOrDefaultAsync(p => p.IsActive && p.ParentPatientId == adultPatientId && p.ChildPatientId == childPatientId, ct);
-        if (proof is null || !await db.Families.AnyAsync(f => f.Id == proof.FamilyId && f.Status == FamilyStatus.Active, ct)) return null;
-        var members = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == proof.FamilyId && m.IsActive && (m.Id == proof.ParentFamilyMemberId || m.Id == proof.ChildFamilyMemberId)).ToArrayAsync(ct);
-        var adult = members.SingleOrDefault(m => m.Id == proof.ParentFamilyMemberId && m.PatientId == adultPatientId && m.Role == proof.ParentRole);
-        var child = members.SingleOrDefault(m => m.Id == proof.ChildFamilyMemberId && m.PatientId == childPatientId && m.Role == FamilyMemberRole.Child);
-        if (adult is null || child is null || adult.Role is not (FamilyMemberRole.Father or FamilyMemberRole.Mother or FamilyMemberRole.LegalGuardian)) return null;
-        if (!await db.Patients.AnyAsync(p => p.Id == childPatientId && p.DateOfBirth > cutoff && p.DateOfBirth <= today, ct) ||
-            !await db.Patients.AnyAsync(p => p.Id == adultPatientId && p.DateOfBirth <= cutoff, ct)) return null;
-        var request = await db.FamilyRelationshipRequests.AsNoTracking().SingleOrDefaultAsync(r => r.Id == proof.ApprovedRelationshipRequestId, ct);
-        if (request is null || request.RequestType is not (FamilyRelationshipRequestType.CreateFamily or FamilyRelationshipRequestType.AddFamilyMember or
-                FamilyRelationshipRequestType.VerifyParentChild or FamilyRelationshipRequestType.VerifyGuardianChild or
-                FamilyRelationshipRequestType.VerifyOperationalParentChild or FamilyRelationshipRequestType.JoinFamilyAsParent) ||
-            request.Status != FamilyRelationshipRequestStatus.Approved || request.CurrentRevisionNumber != proof.ApprovedRevisionNumber || request.ReviewedOnUtc != proof.ApprovedAtUtc ||
-            request.FamilyId != proof.FamilyId || request.RequesterPatientId != adultPatientId || request.TargetPatientId != childPatientId ||
-            request.RequesterClaimedRole != adult.Role || request.TargetClaimedRole != child.Role || request.ReviewedBySuperAdminApplicationUserId != proof.ReviewedByApplicationUserId ||
-            !await db.SuperAdmins.AnyAsync(s => s.ApplicationUserId == proof.ReviewedByApplicationUserId &&
-                db.ApplicationUsers.Any(u => u.Id == s.ApplicationUserId && u.UserType == UserType.SuperAdmin), ct) ||
-            !await db.FamilyRelationshipDocuments.AnyAsync(d => d.FamilyRelationshipRequestId == request.Id && d.RevisionNumber == request.CurrentRevisionNumber && d.FileSize > 0, ct)) return null;
-        return proof;
+        if (!options.Value.Enabled || children.Count == 0) return new Dictionary<Guid, ParentChildOperationalAuthority>();
+        var today = options.Value.Today(clock.UtcNow); var cutoff = today.AddYears(-18);
+        // One statement evaluates every live pair and its immutable reviewed source.
+        return await db.Set<ParentChildOperationalAuthority>().AsNoTracking().Where(p => p.IsActive && p.ParentPatientId == adultPatientId && children.Contains(p.ChildPatientId) &&
+            (p.ParentRole == FamilyMemberRole.Father || p.ParentRole == FamilyMemberRole.Mother || p.ParentRole == FamilyMemberRole.LegalGuardian) &&
+            db.Families.Any(f => f.Id == p.FamilyId && f.Status == FamilyStatus.Active) &&
+            db.FamilyMembers.Any(m => m.Id == p.ParentFamilyMemberId && m.FamilyId == p.FamilyId && m.IsActive && m.PatientId == adultPatientId && m.Role == p.ParentRole) &&
+            db.FamilyMembers.Any(m => m.Id == p.ChildFamilyMemberId && m.FamilyId == p.FamilyId && m.IsActive && m.PatientId == p.ChildPatientId && m.Role == FamilyMemberRole.Child) &&
+            db.Patients.Any(c => c.Id == p.ChildPatientId && c.DateOfBirth > cutoff && c.DateOfBirth <= today) &&
+            db.Patients.Any(a => a.Id == adultPatientId && a.DateOfBirth <= cutoff) &&
+            db.FamilyRelationshipRequests.Any(r => r.Id == p.ApprovedRelationshipRequestId &&
+                (r.RequestType == FamilyRelationshipRequestType.CreateFamily || r.RequestType == FamilyRelationshipRequestType.AddFamilyMember ||
+                 r.RequestType == FamilyRelationshipRequestType.VerifyParentChild || r.RequestType == FamilyRelationshipRequestType.VerifyGuardianChild ||
+                 r.RequestType == FamilyRelationshipRequestType.VerifyOperationalParentChild || r.RequestType == FamilyRelationshipRequestType.JoinFamilyAsParent) &&
+                r.Status == FamilyRelationshipRequestStatus.Approved && r.CurrentRevisionNumber == p.ApprovedRevisionNumber && r.ReviewedOnUtc == p.ApprovedAtUtc &&
+                r.FamilyId == p.FamilyId && r.RequesterPatientId == adultPatientId && r.TargetPatientId == p.ChildPatientId &&
+                r.RequesterClaimedRole == p.ParentRole && r.TargetClaimedRole == FamilyMemberRole.Child && r.ReviewedBySuperAdminApplicationUserId == p.ReviewedByApplicationUserId) &&
+            db.SuperAdmins.Any(s => s.ApplicationUserId == p.ReviewedByApplicationUserId &&
+                db.ApplicationUsers.Any(u => u.Id == s.ApplicationUserId && u.UserType == UserType.SuperAdmin)) &&
+            db.FamilyRelationshipDocuments.Any(d => d.FamilyRelationshipRequestId == p.ApprovedRelationshipRequestId && d.RevisionNumber == p.ApprovedRevisionNumber && d.FileSize > 0))
+            .ToDictionaryAsync(p => p.ChildPatientId, ct);
     }
 }
 
@@ -58,6 +61,20 @@ internal sealed class DependentAccessPolicy(IWaslaDataStore store, ICurrentUser 
             Result<DependentOperationalScope>.Ok(new(actor, link.PatientId, childPatientId, proof.FamilyId, proof.Id, proof.ParentRole,
                 $"{proof.Id:N}:{Convert.ToBase64String(proof.RowVersion)}:{proof.ApprovedRevisionNumber}"));
     }
+    public async Task<DependentAccessSnapshot> SnapshotAsync(IReadOnlyCollection<Guid> children, CancellationToken ct)
+    {
+        DependentAccessSnapshot empty = new(new Dictionary<Guid, DependentOperationalScope>(), new HashSet<string>());
+        if (!current.IsAuthenticated || current.UserId is not { } actor) return empty;
+        var account = await store.GetAccessSnapshotAsync(actor, ct);
+        if (account is not { User.IsActive: true, User.IsFirstLogin: false, User.UserType: UserType.Patient, PatientId: not null }) return empty;
+        var link = await store.FindPatientAccountLinkAsync(actor, ct);
+        if (link?.PatientId != account.PatientId) return empty;
+        var pairs = await proofs.FindManyAsync(link!.PatientId, children, ct);
+        return new(pairs.ToDictionary(p => p.Key, p => new DependentOperationalScope(actor, link.PatientId, p.Key, p.Value.FamilyId,
+            p.Value.Id, p.Value.ParentRole, $"{p.Value.Id:N}:{Convert.ToBase64String(p.Value.RowVersion)}:{p.Value.ApprovedRevisionNumber}")),
+            account.Permissions.Intersect(current.Permissions, StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase));
+    }
+
 }
 
 internal sealed class FamilyOperationalVerification(WaslaDbContext db, ITicketQueueLock locks, IPrivateMediaReader media,

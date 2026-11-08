@@ -11,7 +11,7 @@ internal sealed class ChildOnboardingConfiguration : IWriteEntityConfiguration<C
     public void ConfigureAggregate(EntityTypeBuilder<ChildOnboardingRequest> b)
     {
         b.ToTable("ChildOnboardingRequests", t => {
-            t.HasCheckConstraint("CK_ChildOnboarding_Status", "[Status] IN (1,2,3,4)");
+            t.HasCheckConstraint("CK_ChildOnboarding_Status", "[Status] IN (1,2,3,4,5)");
             t.HasCheckConstraint("CK_ChildOnboarding_Role", "[ParentRole] IN (1,2)");
             t.HasCheckConstraint("CK_ChildOnboarding_Revision", "[Revision] >= 1");
         });
@@ -26,8 +26,9 @@ internal sealed class ChildOnboardingConfiguration : IWriteEntityConfiguration<C
         b.HasOne<Patient>().WithMany().HasForeignKey(r => r.ParentPatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Patient>().WithMany().HasForeignKey(r => r.ApprovedPatientId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<FamilyRelationshipRequest>().WithMany().HasForeignKey(r => r.FamilyRelationshipRequestId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<FamilyGovernanceCase>().WithMany().HasForeignKey(r => r.GovernanceCaseId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(r => new { r.ActorApplicationUserId, r.IdempotencyKey }).IsUnique();
-        b.HasIndex(r => new { r.ParentPatientId, r.IntentHash }).IsUnique().HasFilter("[Status] IN (1,2)");
+        b.HasIndex(r => new { r.ParentPatientId, r.IntentHash }).IsUnique().HasFilter("[Status] IN (1,2,5)");
         b.HasIndex(r => new { r.Status, r.CreatedAtUtc, r.Id });
     }
 }

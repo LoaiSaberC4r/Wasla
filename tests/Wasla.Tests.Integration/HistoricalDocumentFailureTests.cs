@@ -14,10 +14,11 @@ namespace Wasla.Tests.Integration;
 
 public sealed class HistoricalDocumentFailureTests
 {
-    [Fact]
-    public async Task Rolled_back_metadata_leaves_only_private_staging_and_reconciliation_never_deletes_it()
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Rolled_back_metadata_leaves_only_private_staging_and_reconciliation_never_deletes_it(bool sql)
     {
-        var failure = new AttachmentWriteFailure(); await using var f = await CreateAsync(commands: failure); Enable(f);
+        var failure = new AttachmentWriteFailure(); await using var f = await CreateAsync(sql, commands: failure); Enable(f);
         using var owner = await f.ClientAsync("patient"); using var response = await Upload(owner, Guid.NewGuid().ToString("N"));
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode); Assert.True(failure.Fired);
         await f.WithDbAsync(async db => { Assert.Empty(await db.Set<PatientHistoricalDocument>().ToArrayAsync()); Assert.Empty(await db.Set<PatientHistoricalDocumentAttachment>().ToArrayAsync()); });
@@ -26,10 +27,11 @@ public sealed class HistoricalDocumentFailureTests
         await using var scope = f.Services.CreateAsyncScope(); var report = await scope.ServiceProvider.GetRequiredService<IPrivateMediaReconciliation>().InspectAsync(TestContext.Current.CancellationToken);
         Assert.Equal(1, report.StaleUnreferencedCandidates); Assert.Equal(0, report.MissingReferencedFiles); Assert.True(File.Exists(staged));
     }
-    [Fact]
-    public async Task Lost_commit_acknowledgement_keeps_retained_bytes_and_retry_replays_one_document()
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Lost_commit_acknowledgement_keeps_retained_bytes_and_retry_replays_one_document(bool sql)
     {
-        var failure = new LostCommitAcknowledgement(); await using var f = await CreateAsync(commands: failure); Enable(f);
+        var failure = new LostCommitAcknowledgement(); await using var f = await CreateAsync(sql, commands: failure); Enable(f);
         using var owner = await f.ClientAsync("patient"); var key = Guid.NewGuid().ToString("N"); using var first = await Upload(owner, key);
         Assert.Equal(HttpStatusCode.InternalServerError, first.StatusCode); Assert.True(failure.Fired);
         Guid id = default; await f.WithDbAsync(async db => { var doc = Assert.Single(await db.Set<PatientHistoricalDocument>().ToArrayAsync()); id = doc.Id; Assert.Single(await db.Set<HistoricalDocumentOperation>().ToArrayAsync()); });
@@ -59,7 +61,8 @@ public sealed class HistoricalDocumentFailureTests
         public bool Fired { get; private set; }
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
         {
-            if (!Fired && command.CommandText.Contains("INSERT INTO \"PatientHistoricalDocumentAttachments\"", StringComparison.Ordinal)) { Fired = true; throw new DbUpdateException("Synthetic attachment metadata failure"); }
+            if (!Fired && (command.CommandText.Contains("INSERT INTO \"PatientHistoricalDocumentAttachments\"", StringComparison.Ordinal) ||
+                command.CommandText.Contains("INSERT INTO [PatientHistoricalDocumentAttachments]", StringComparison.Ordinal))) { Fired = true; throw new DbUpdateException("Synthetic attachment metadata failure"); }
             return ValueTask.FromResult(result);
         }
     }

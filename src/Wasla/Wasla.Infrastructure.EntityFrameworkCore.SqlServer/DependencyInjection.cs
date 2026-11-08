@@ -37,6 +37,8 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+        // Validate Production dependencies before any delivery or reconciliation worker starts.
+        services.AddHostedService<ProductionActivationStartup>();
 
         var connectionString = configuration.GetConnectionString("Database")
             ?? throw new InvalidOperationException(
@@ -164,6 +166,7 @@ public static class DependencyInjection
         services.AddScoped<IDependentAccessPolicy, DependentAccessPolicy>();
         services.AddScoped<IFamilyOperationalVerification, FamilyOperationalVerification>();
         services.AddScoped<IFamilyCandidateStore, FamilyCandidateStore>();
+        services.AddScoped<IFamilyWorkspacePendingReader, FamilyWorkspacePendingReader>();
         services.AddScoped<IFamilyGovernanceWorkflow, FamilyGovernanceWorkflow>();
         services.AddScoped<IFamilyJoinInvitations, FamilyJoinInvitations>();
         services.AddOptions<PrivateMediaReconciliationOptions>().Bind(configuration.GetSection("PrivateMediaReconciliation"))
@@ -172,8 +175,10 @@ public static class DependencyInjection
         services.AddHostedService<PrivateMediaReconciliationWorker>();
         services.AddOptions<Media.ClamAvMalwareScannerOptions>().Bind(configuration.GetSection("MalwareScanner"))
             .Validate(o => o.IsValid, "Invalid local malware scanner configuration.").ValidateOnStart();
+        services.AddSingleton<Media.ClamAvMalwareScanner>();
         if (configuration.GetValue<bool>("MalwareScanner:Enabled"))
-            services.AddSingleton<BuildingBlock.Application.Abstraction.Media.IMalwareScanner, Media.ClamAvMalwareScanner>();
+            services.AddSingleton<BuildingBlock.Application.Abstraction.Media.IMalwareScanner>(p => p.GetRequiredService<Media.ClamAvMalwareScanner>());
+        services.AddHealthChecks().AddCheck<PrivateDependencyHealthCheck>("private-dependencies");
         services.AddScoped<IChildOnboardingWorkflow, ChildOnboardingWorkflow>();
         services.AddScoped<FamilyMedicalAccessPolicy>();
         services.AddScoped<IFamilyMedicalAccessPolicy>(p => p.GetRequiredService<FamilyMedicalAccessPolicy>());
@@ -197,6 +202,13 @@ public static class DependencyInjection
         var protection = services.AddDataProtection().SetApplicationName("Wasla.Phase16");
         if (configuration["MedicalRecord:DataProtectionKeyRingPath"] is { Length: > 0 } keyPath)
             protection.PersistKeysToFileSystem(new DirectoryInfo(keyPath));
+        if (configuration["MedicalRecord:DataProtectionCertificatePath"] is { Length: > 0 } certificatePath)
+        {
+            var certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
+                certificatePath, configuration["MedicalRecord:DataProtectionCertificatePassword"]);
+            if (!certificate.HasPrivateKey) throw new InvalidOperationException("MedicalRecord:DataProtectionCertificatePath must contain the private key required for recovery and shared-instance decryption.");
+            protection.ProtectKeysWithCertificate(certificate);
+        }
         services.AddSingleton<IMedicalRecordTokens, MedicalRecordTokens>();
         services.AddScoped<IEncounterVisibilityReader, EncounterVisibilityReader>();
         services.AddScoped<IClinicalReadService, ClinicalReadService>();

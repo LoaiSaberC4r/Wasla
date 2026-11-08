@@ -8,6 +8,19 @@ namespace Wasla.Tests.Unit;
 public sealed class FamilySelfServiceFoundationTests
 {
     [Fact]
+    public void All_371_pre_closure_permission_ids_remain_frozen_in_original_order()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Wasla.sln"))) root = root.Parent;
+        using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(root!.FullName, "docs/family-self-service/permission-id-baseline-2026-11-08.json")));
+        var frozen = json.RootElement.EnumerateArray().ToArray(); Assert.Equal(371, frozen.Length);
+        foreach (var permission in frozen)
+        {
+            var index = permission.GetProperty("index").GetInt32(); var name = permission.GetProperty("name").GetString()!;
+            Assert.Equal(name, PermissionNames.All[index]); Assert.Equal(permission.GetProperty("id").GetGuid(), SystemPermissionIds.For(name));
+        }
+    }
+    [Fact]
     public void All_pre_epic_permission_names_keep_their_index_and_guid()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
