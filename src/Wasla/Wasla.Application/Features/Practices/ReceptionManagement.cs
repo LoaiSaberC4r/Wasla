@@ -297,7 +297,8 @@ internal sealed class CreateDoctorReceptionCommandHandler(
         dataStore.Add(reception.Value);
         if (isNewUser)
         {
-            var email = emailFactory.ReceptionAccountCreated(reception.Value.NameAr, user.UserName);
+            var email = await emailFactory.CreateAsync(new ReceptionAccountCreatedEmail(
+                new(reception.Value.NameAr, reception.Value.NameEn), user.UserName), cancellationToken);
             await emailOutbox.QueueAsync(new QueueEmailMessage(
                 $"reception-account-created:{reception.Value.Id}",
                 user.Email,

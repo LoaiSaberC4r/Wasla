@@ -29,6 +29,7 @@ public interface ISubscriptionDataStore
     Task<Wasla.Application.Features.Subscriptions.SubscriptionCommitment?> ReadCommitmentAsync(Wasla.Application.Features.Subscriptions.SubscriptionResource resource, CancellationToken ct);
     Task<Wasla.Application.Features.Subscriptions.SubscriptionCommitment?> CommitmentAsync(Wasla.Application.Features.Subscriptions.SubscriptionResource resource, CancellationToken ct);
     Task<SubscriptionCatalogData> CatalogAsync(CancellationToken ct);
+    Task<CommercialPlan?> FindPlanAsync(Guid planId, CancellationToken ct);
     Task<DoctorSubscription?> FindAsync(Guid id, CancellationToken ct);
     Task<Guid?> DoctorIdAsync(Guid id, CancellationToken ct);
     Task<DoctorSubscription?> ScheduledAsync(Guid doctorId, CancellationToken ct);

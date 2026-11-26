@@ -39,16 +39,15 @@ public sealed class Phase17NotificationTests
         Assert.Throws<ArgumentException>(() => NotificationPolicy.ReminderDue(DateTime.SpecifyKind(Appointment, DateTimeKind.Unspecified), lead));
     }
     [Fact]
-    public void E14_E15_E16_templates_fallback_version_and_encode_only_safe_booking_fields()
+    public void E14_E15_E16_in_app_templates_preserve_language_fallback_and_version()
     {
-        var ar = NotificationTemplates.Render("Appointment.ReminderDue", 1, "unsupported", "<script>\r\n", Appointment);
-        Assert.Equal(ar, NotificationTemplates.Render("Appointment.ReminderDue", 1, "ar", "<script>\r\n", Appointment));
-        Assert.Contains("&lt;script&gt;", ar.HtmlBody, StringComparison.Ordinal);
-        Assert.DoesNotContain("<script>", ar.HtmlBody, StringComparison.Ordinal);
+        var ar = NotificationTemplates.Render("Appointment.ReminderDue", 1, "unsupported");
+        Assert.Equal(ar, NotificationTemplates.Render("Appointment.ReminderDue", 1, "ar"));
+        Assert.Equal("تذكير بموعد حجزك", ar.Title);
         Assert.Throws<ArgumentException>(() => NotificationTemplates.Render("Prescription.Available", 999));
-        var clinical = NotificationTemplates.Render("Prescription.Available", 1, "en", "SENSITIVE_REFERENCE", Appointment);
-        Assert.DoesNotContain("SENSITIVE_REFERENCE", clinical.TextBody, StringComparison.Ordinal);
-        Assert.DoesNotContain("2026", clinical.TextBody, StringComparison.Ordinal);
+        var clinical = NotificationTemplates.Render("Prescription.Available", 1, "en");
+        Assert.Equal("Medical update available", clinical.Title);
+        Assert.DoesNotContain("2026", clinical.Message, StringComparison.Ordinal);
     }
     [Fact]
     public void E09_E10_E11_E12_preferences_are_independent_and_essential_categories_are_not_editable()

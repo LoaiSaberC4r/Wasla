@@ -1,0 +1,1138 @@
+[
+  {
+    "key": "Authentication.PasswordResetOtp",
+    "subject": {
+      "ar": "رمز إعادة تعيين كلمة المرور",
+      "en": "Password Reset Code"
+    },
+    "heading": {
+      "ar": "إعادة تعيين كلمة المرور",
+      "en": "Reset your password"
+    },
+    "icon": "lock-keyhole",
+    "tone": "Neutral",
+    "introduction": {
+      "ar": [
+        "مرحبًا بك في وصلة،",
+        "تلقينا طلبًا لإعادة تعيين كلمة المرور الخاصة بحسابك. استخدم رمز التحقق التالي لاستكمال العملية."
+      ],
+      "en": [
+        "Hello,",
+        "We received a request to reset your Wasla account password. Please use the verification code above to continue."
+      ]
+    },
+    "security": {
+      "ar": "لا تشارك رمز التحقق مع أي شخص، حتى مع فريق الدعم الخاص بوصلة. إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذه الرسالة.",
+      "en": "Never share your verification code with anyone. If you did not request a password reset, you can safely ignore this email."
+    }
+  },
+  {
+    "key": "Patient.EmailVerificationOtp",
+    "subject": {
+      "ar": "تأكيد البريد الإلكتروني",
+      "en": "Email Verification"
+    },
+    "heading": {
+      "ar": "تأكيد بريدك الإلكتروني",
+      "en": "Verify your email address"
+    },
+    "icon": "mail-check",
+    "tone": "Neutral",
+    "introduction": {
+      "ar": [
+        "مرحبًا بك في وصلة،",
+        "نسعد بانضمامك إلى منصة وصلة. لحماية حسابك والتأكد من ملكيتك للبريد الإلكتروني، يرجى استخدام رمز التحقق التالي."
+      ],
+      "en": [
+        "Welcome to Wasla!",
+        "Please use the verification code above to confirm ownership of your email address and continue securely."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "لماذا نحتاج إلى تأكيد بريدك الإلكتروني؟",
+        "en": "Why verify your email address?"
+      },
+      "body": {
+        "ar": "للتأكد من ملكيتك للبريد الإلكتروني، والمساعدة في حماية حسابك ومعلوماتك الشخصية، وإرسال الإشعارات المهمة إليك.",
+        "en": "Verifying your email address confirms that it belongs to you, helps protect your account and personal information, and lets us send you important notifications."
+      }
+    },
+    "security": {
+      "ar": "لا تشارك رمز التحقق مع أي شخص. إذا لم تطلب تأكيد بريدك الإلكتروني، يمكنك تجاهل هذه الرسالة.",
+      "en": "Never share this code with anyone. If you did not request email verification, you can safely ignore this email."
+    }
+  },
+  {
+    "key": "Patient.AccountActivation",
+    "subject": {
+      "ar": "تفعيل حسابك على وصلة",
+      "en": "Activate Your Account"
+    },
+    "heading": {
+      "ar": "أهلًا بك في عائلة وصلة!",
+      "en": "Welcome to Wasla!"
+    },
+    "icon": "user-round-check",
+    "tone": "Success",
+    "steps": {
+      "heading": {
+        "ar": "استكشف خدمات وصلة",
+        "en": "Explore Wasla"
+      },
+      "items": [
+        {
+          "icon": "stethoscope",
+          "title": {
+            "ar": "اكتشف الأطباء",
+            "en": "Discover doctors"
+          },
+          "description": {
+            "ar": "ابحث عن الطبيب المناسب لاحتياجاتك.",
+            "en": "Find a doctor suited to your needs."
+          }
+        },
+        {
+          "icon": "calendar-check",
+          "title": {
+            "ar": "احجز مواعيدك بسهولة",
+            "en": "Book appointments easily"
+          },
+          "description": {
+            "ar": "احجز وتابع مواعيدك الطبية من مكان واحد.",
+            "en": "Book and manage your medical appointments in one place."
+          }
+        },
+        {
+          "icon": "heart-pulse",
+          "title": {
+            "ar": "تابع سجلك الصحي",
+            "en": "View your health record"
+          },
+          "description": {
+            "ar": "اطّلع على المعلومات الطبية المتاحة لك.",
+            "en": "Access the medical information available to you."
+          }
+        },
+        {
+          "icon": "users-round",
+          "title": {
+            "ar": "اهتم بصحة عائلتك",
+            "en": "Manage family care"
+          },
+          "description": {
+            "ar": "أدر حسابات أفراد عائلتك وفقًا لصلاحياتك.",
+            "en": "Manage your family's healthcare according to your permissions."
+          }
+        }
+      ]
+    },
+    "action": {
+      "destination": "PatientActivationUrl",
+      "label": {
+        "ar": "تفعيل حسابي",
+        "en": "Activate My Account"
+      },
+      "placement": "afterIntroduction"
+    },
+    "activation": {
+      "secureLink": {
+        "introduction": {
+          "ar": "لتفعيل حسابك، اضغط على الزر التالي وقم بإنشاء كلمة المرور الخاصة بك.",
+          "en": "Use the activation button below to create your password and activate your account."
+        },
+        "bilingualEnglishIntroduction": "Use the activation button above to create your password and activate your account.",
+        "expiration": {
+          "ar": "رابط التفعيل صالح لمدة {0} ساعة.",
+          "en": "Your activation link is valid for {0} hours."
+        },
+        "security": {
+          "ar": "رابط التفعيل مخصص لك فقط، يرجى عدم مشاركته مع أي شخص. إذا لم تطلب إنشاء حساب على وصلة، يمكنك تجاهل هذه الرسالة.",
+          "en": "Your activation link is for your use only. Do not share it with anyone. If you did not request a Wasla account, you can safely ignore this email."
+        }
+      },
+      "tokenFallback": {
+        "introduction": {
+          "ar": "يسعدنا انضمامك إلى منصة وصلة. استخدم رمز التفعيل التالي لإكمال تفعيل حسابك واختيار كلمة المرور الخاصة بك.",
+          "en": "Welcome to Wasla. Use the activation token below to complete your account activation and create your password."
+        },
+        "bilingualEnglishIntroduction": "Welcome to Wasla. Use the activation token above to complete your account activation and create your password.",
+        "expiration": {
+          "ar": "رمز التفعيل صالح لمدة {0} ساعة.",
+          "en": "Your activation token is valid for {0} hours."
+        },
+        "security": {
+          "ar": "رمز التفعيل مخصص لك فقط، يرجى عدم مشاركته مع أي شخص. إذا لم تطلب إنشاء حساب على وصلة، يمكنك تجاهل هذه الرسالة.",
+          "en": "Your activation token is for your use only. Do not share it with anyone. If you did not request a Wasla account, you can safely ignore this email."
+        }
+      }
+    }
+  },
+  {
+    "key": "Doctor.RegistrationReceived",
+    "subject": {
+      "ar": "تم استلام طلب تسجيلك",
+      "en": "Registration Received"
+    },
+    "heading": {
+      "ar": "تم استلام طلب تسجيلك بنجاح",
+      "en": "Your registration has been received"
+    },
+    "icon": "clipboard-check",
+    "tone": "Neutral",
+    "introduction": {
+      "ar": [
+        "يسعدنا اهتمامك بالانضمام إلى مجتمع الأطباء على منصة وصلة. نؤكد لك استلام طلب التسجيل الخاص بك بنجاح، وهو الآن قيد المراجعة من قِبل فريقنا المختص."
+      ],
+      "en": [
+        "Thank you for your interest in joining Wasla's healthcare community. We have successfully received your registration application, and it is currently under review."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "لا يتطلب منك اتخاذ أي إجراء حاليًا. سيقوم فريقنا بمراجعة بياناتك، وسنرسل إليك رسالة عبر البريد الإلكتروني فور صدور نتيجة المراجعة.",
+        "en": "No action is required at this time. Our team will review your information and notify you by email once a decision has been made."
+      }
+    }
+  },
+  {
+    "key": "Doctor.AccountApproved",
+    "subject": {
+      "ar": "تم اعتماد حسابك كطبيب",
+      "en": "Doctor Account Approved"
+    },
+    "heading": {
+      "ar": "مبروك! تم اعتماد حسابك",
+      "en": "Congratulations! Your account is approved"
+    },
+    "icon": "shield-check",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "يسعدنا إبلاغك بأنه تمت مراجعة طلب التسجيل الخاص بك واعتماد حسابك رسميًا كطبيب على منصة وصلة.",
+        "نرحب بك في مجتمعنا الطبي، ونتطلع إلى مساعدتك في إدارة عياداتك وتقديم تجربة رعاية صحية أفضل لمرضاك."
+      ],
+      "en": [
+        "Congratulations! Your registration has been reviewed, and your doctor account on Wasla has been officially approved."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "اعتماد حسابك هو الخطوة الأولى. يمكنك استقبال الحجوزات بعد استكمال إعدادات العيادة واستيفاء شروط النشر وإتاحة الحجز على المنصة.",
+        "en": "Account approval is your first step. Patient bookings become available once the required practice setup, publication and booking conditions are satisfied."
+      }
+    },
+    "steps": {
+      "heading": {
+        "ar": "الخطوات الأولى",
+        "en": "Getting started"
+      },
+      "items": [
+        {
+          "icon": "user-round",
+          "title": {
+            "ar": "استكمال ملفك الشخصي",
+            "en": "Complete your professional profile"
+          },
+          "description": {
+            "ar": "أضف بياناتك المهنية وتخصصك وصورتك الشخصية.",
+            "en": "Add your professional information, specialization, and profile picture."
+          }
+        },
+        {
+          "icon": "hospital",
+          "title": {
+            "ar": "إعداد عياداتك",
+            "en": "Set up your practices"
+          },
+          "description": {
+            "ar": "أضف عياداتك واستكمل بياناتها ومواقعها.",
+            "en": "Add your practices and complete their information and locations."
+          }
+        },
+        {
+          "icon": "calendar-clock",
+          "title": {
+            "ar": "تنظيم مواعيد العمل",
+            "en": "Configure working hours"
+          },
+          "description": {
+            "ar": "حدد أيام العمل والفترات الزمنية المتاحة للحجز.",
+            "en": "Define your working days and available appointment periods."
+          }
+        },
+        {
+          "icon": "settings",
+          "title": {
+            "ar": "إعداد الحجز والأسعار",
+            "en": "Configure bookings and pricing"
+          },
+          "description": {
+            "ar": "حدد إعدادات الحجز وأسعار الكشف المناسبة.",
+            "en": "Configure booking settings and consultation prices."
+          }
+        },
+        {
+          "icon": "users-round",
+          "title": {
+            "ar": "إدارة فريق الاستقبال",
+            "en": "Manage your reception team"
+          },
+          "description": {
+            "ar": "أضف فريق الاستقبال وحدد صلاحياته حسب احتياجاتك.",
+            "en": "Add reception staff and assign appropriate permissions."
+          }
+        }
+      ],
+      "numbered": true
+    },
+    "action": {
+      "destination": "LoginUrl",
+      "label": {
+        "ar": "الدخول إلى حسابي",
+        "en": "Sign In to My Account"
+      },
+      "placement": "afterDetails"
+    }
+  },
+  {
+    "key": "Doctor.RegistrationRejected",
+    "subject": {
+      "ar": "تحديث طلب التسجيل",
+      "en": "Registration Update"
+    },
+    "heading": {
+      "ar": "تحديث بشأن طلب تسجيلك",
+      "en": "An update on your registration"
+    },
+    "icon": "clipboard-x",
+    "tone": "Danger",
+    "introduction": {
+      "ar": [
+        "نشكرك على اهتمامك بالانضمام إلى منصة وصلة. بعد مراجعة طلب التسجيل والبيانات المقدمة، نأسف لإبلاغك بعدم إمكانية اعتماد طلبك في الوقت الحالي."
+      ],
+      "en": [
+        "Thank you for your interest in joining Wasla. After reviewing your registration and submitted information, we are unable to approve your application at this time."
+      ]
+    },
+    "action": {
+      "destination": "SupportUrl",
+      "label": {
+        "ar": "التواصل مع الدعم",
+        "en": "Contact Support"
+      },
+      "placement": "afterInstructions"
+    }
+  },
+  {
+    "key": "Doctor.AccountSuspended",
+    "subject": {
+      "ar": "تم تعليق حساب الطبيب",
+      "en": "Doctor Account Suspended"
+    },
+    "heading": {
+      "ar": "تم تعليق حسابك على وصلة",
+      "en": "Your doctor account has been suspended"
+    },
+    "icon": "shield-alert",
+    "tone": "Warning",
+    "introduction": {
+      "ar": [
+        "نود إبلاغك بأنه تم تعليق حسابك كطبيب على منصة وصلة. قد تتأثر قدرتك على استخدام الخدمات وإدارة الحجوزات وفقًا لقواعد تعليق الحساب."
+      ],
+      "en": [
+        "Your doctor account on Wasla has been suspended. Access to services and booking management may be affected according to the account suspension policy."
+      ]
+    },
+    "action": {
+      "destination": "SupportUrl",
+      "label": {
+        "ar": "التواصل مع الدعم",
+        "en": "Contact Support"
+      },
+      "placement": "afterInstructions"
+    }
+  },
+  {
+    "key": "Doctor.AccountReactivated",
+    "subject": {
+      "ar": "تمت إعادة تفعيل حسابك",
+      "en": "Doctor Account Reactivated"
+    },
+    "heading": {
+      "ar": "مرحبًا بعودتك إلى وصلة!",
+      "en": "Welcome back to Wasla!"
+    },
+    "icon": "shield-check",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "يسعدنا إبلاغك بأنه تمت إعادة تفعيل حسابك كطبيب على منصة وصلة بنجاح. يمكنك الآن تسجيل الدخول ومراجعة إعدادات حسابك وعياداتك."
+      ],
+      "en": [
+        "We are pleased to inform you that your doctor account has been reactivated. You can now sign in and review your account and practice settings."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "راجع مواعيد العمل وحالة العيادات والاشتراك وإعدادات إتاحة الحجز قبل استئناف العمل.",
+        "en": "Review your schedules, practice status, subscription and booking availability."
+      }
+    },
+    "action": {
+      "destination": "LoginUrl",
+      "label": {
+        "ar": "الدخول إلى حسابي",
+        "en": "Sign In"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Doctor.SpecializationChangesRequested",
+    "subject": {
+      "ar": "مطلوب تعديل التخصصات الطبية",
+      "en": "Specialization Changes Requested"
+    },
+    "heading": {
+      "ar": "مطلوب استكمال بيانات التخصص الطبي",
+      "en": "Specialization changes requested"
+    },
+    "icon": "file-pen",
+    "tone": "Warning",
+    "introduction": {
+      "ar": [
+        "تمت مراجعة طلب التخصصات الطبية الخاص بك، ونحتاج إلى استكمال أو تعديل بعض البيانات قبل متابعة المراجعة."
+      ],
+      "en": [
+        "Your medical specialization request has been reviewed. Some information needs to be updated before the review can continue."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "الخطوات التالية",
+        "en": "Next steps"
+      },
+      "body": {
+        "ar": "افتح طلب التخصص، واستكمل التعديلات المطلوبة ثم أعد إرساله للمراجعة وفقًا للخطوات المتاحة.",
+        "en": "Open your specialization request, complete the required changes and resubmit it for review."
+      }
+    },
+    "action": {
+      "destination": "DoctorSpecializationRequestUrl",
+      "label": {
+        "ar": "مراجعة طلب التخصص",
+        "en": "Review Specialization Request"
+      },
+      "placement": "afterInstructions"
+    }
+  },
+  {
+    "key": "Patient.IdentityClaimUpdate",
+    "subject": {
+      "ar": "تحديث طلب إثبات الهوية",
+      "en": "Identity Claim Update"
+    },
+    "heading": {
+      "ar": "يوجد تحديث على طلب إثبات هويتك",
+      "en": "Your identity claim has been updated"
+    },
+    "icon": "fingerprint",
+    "tone": "Neutral",
+    "introduction": {
+      "ar": [
+        "نود إبلاغك بوجود تحديث على طلب إثبات الهوية الخاص بك. يمكنك الاطلاع على تفاصيل التحديث بعد التحقق من بريدك الإلكتروني."
+      ],
+      "en": [
+        "An update is available for your identity claim. You can view its details after completing email verification."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "الخصوصية",
+        "en": "Privacy"
+      },
+      "body": {
+        "ar": "حرصًا على خصوصيتك، لا نعرض تفاصيل طلب إثبات الهوية أو نتيجة مراجعته داخل البريد الإلكتروني.",
+        "en": "To protect your privacy, claim details and review decisions are not disclosed in this email."
+      }
+    },
+    "action": {
+      "destination": "PatientIdentityClaimUrl",
+      "label": {
+        "ar": "متابعة حالة الطلب",
+        "en": "View Request Status"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Family.RelationshipApproved",
+    "subject": {
+      "ar": "تم اعتماد علاقة الأسرة",
+      "en": "Family Relationship Approved"
+    },
+    "heading": {
+      "ar": "تم اعتماد طلب علاقة الأسرة",
+      "en": "Family relationship request approved"
+    },
+    "icon": "users-round",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "يسعدنا إبلاغك بأنه تمت مراجعة طلب إثبات علاقة الأسرة واعتماده بنجاح."
+      ],
+      "en": [
+        "Your family relationship request has been reviewed and approved successfully."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "يمكنك مراجعة أفراد أسرتك والصلاحيات المتاحة لك من خلال حسابك على وصلة.",
+        "en": "You can review your family members and available permissions within your Wasla account."
+      }
+    },
+    "action": {
+      "destination": "FamilyUrl",
+      "label": {
+        "ar": "إدارة أسرتي",
+        "en": "Manage My Family"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Family.RelationshipRejected",
+    "subject": {
+      "ar": "لم يتم اعتماد علاقة الأسرة",
+      "en": "Family Relationship Rejected"
+    },
+    "heading": {
+      "ar": "تحديث على طلب علاقة الأسرة",
+      "en": "Family relationship request update"
+    },
+    "icon": "users-round",
+    "tone": "Danger",
+    "introduction": {
+      "ar": [
+        "تمت مراجعة طلب إثبات علاقة الأسرة الخاص بك، ولم يتم اعتماده في الوقت الحالي."
+      ],
+      "en": [
+        "Your family relationship request has been reviewed and was not approved at this time."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "الخصوصية",
+        "en": "Privacy"
+      },
+      "body": {
+        "ar": "يمكنك مراجعة التفاصيل المسموح بعرضها من خلال حسابك. لا نرسل مستندات الأسرة أو ملاحظات المراجعة الخاصة عبر البريد الإلكتروني.",
+        "en": "Review the information available in your account. Private review notes and family documents are not sent by email."
+      }
+    },
+    "action": {
+      "destination": "FamilyRequestUrl",
+      "label": {
+        "ar": "عرض حالة الطلب",
+        "en": "View Request"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Family.RelationshipChangesRequested",
+    "subject": {
+      "ar": "مطلوب تعديل إثبات علاقة الأسرة",
+      "en": "Family Relationship Changes Requested"
+    },
+    "heading": {
+      "ar": "مطلوب تعديل طلب علاقة الأسرة",
+      "en": "Family relationship changes requested"
+    },
+    "icon": "file-pen",
+    "tone": "Warning",
+    "introduction": {
+      "ar": [
+        "بعد مراجعة طلب إثبات علاقة الأسرة الخاص بك، نحتاج إلى استكمال بعض البيانات أو المستندات لمتابعة عملية المراجعة."
+      ],
+      "en": [
+        "After reviewing your family relationship request, additional information or documents are needed to continue."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "سجّل الدخول لمراجعة التعديلات المتاحة واستكمال الطلب بطريقة آمنة.",
+        "en": "Sign in to review the available instructions and complete your request securely."
+      }
+    },
+    "action": {
+      "destination": "FamilyRequestUrl",
+      "label": {
+        "ar": "استكمال الطلب",
+        "en": "Update Request"
+      },
+      "placement": "afterInstructions"
+    }
+  },
+  {
+    "key": "Reception.AccountCreated",
+    "subject": {
+      "ar": "تم إنشاء حساب الاستقبال",
+      "en": "Reception Account Created"
+    },
+    "heading": {
+      "ar": "أهلًا بك في فريق الاستقبال على وصلة",
+      "en": "Welcome to Wasla's reception team"
+    },
+    "icon": "user-round-plus",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "تم إنشاء حساب استقبال لك على منصة وصلة. يمكنك تسجيل الدخول لاستخدام خدمات الاستقبال المتاحة وفقًا للصلاحيات المخصصة لك."
+      ],
+      "en": [
+        "A reception account has been created for you on Wasla. Sign in to access the reception features assigned to you."
+      ]
+    },
+    "security": {
+      "ar": "استخدم كلمة المرور المؤقتة التي زودك بها الطبيب، ثم قم بتغييرها بعد تسجيل الدخول. لا تشارك بيانات الدخول مع أي شخص.",
+      "en": "Use the temporary password supplied by your doctor and change it after signing in. Keep your credentials private."
+    },
+    "action": {
+      "destination": "LoginUrl",
+      "label": {
+        "ar": "تسجيل الدخول",
+        "en": "Sign In"
+      },
+      "placement": "afterInstructions"
+    }
+  },
+  {
+    "key": "Reservation.Confirmed",
+    "subject": {
+      "ar": "تم تأكيد الحجز",
+      "en": "Reservation Confirmed"
+    },
+    "heading": {
+      "ar": "تم تأكيد حجزك بنجاح!",
+      "en": "Your reservation is confirmed!"
+    },
+    "icon": "calendar-check",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "يسعدنا تأكيد حجز موعدك على منصة وصلة. احتفظ بتفاصيل الحجز للرجوع إليها عند الحاجة."
+      ],
+      "en": [
+        "Your appointment reservation has been confirmed. Keep these details for future reference."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "يرجى مراجعة تفاصيل الحجز وتعليمات الحضور المتاحة داخل التطبيق.",
+        "en": "Review your reservation details and attendance instructions in the app."
+      }
+    },
+    "action": {
+      "destination": "ReservationUrl",
+      "label": {
+        "ar": "عرض حجزي",
+        "en": "View Reservation"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Reservation.Rescheduled",
+    "subject": {
+      "ar": "تمت إعادة جدولة الحجز",
+      "en": "Reservation Rescheduled"
+    },
+    "heading": {
+      "ar": "تم تعديل موعد حجزك",
+      "en": "Your appointment has been rescheduled"
+    },
+    "icon": "calendar-clock",
+    "tone": "Neutral",
+    "introduction": {
+      "ar": [
+        "نود إبلاغك بأنه تمت إعادة جدولة موعد حجزك. يرجى الاطلاع على الموعد المحدّث أدناه."
+      ],
+      "en": [
+        "Your appointment has been rescheduled. Please review the updated appointment details below."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "الموعد الموضح أعلاه هو الموعد المحدّث للحجز. راجع حسابك للتأكد من أحدث التفاصيل.",
+        "en": "The appointment above is your updated schedule. Check your account for the latest information."
+      }
+    },
+    "action": {
+      "destination": "ReservationUrl",
+      "label": {
+        "ar": "عرض الموعد الجديد",
+        "en": "View Updated Appointment"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Reservation.Cancelled",
+    "subject": {
+      "ar": "تم إلغاء الحجز",
+      "en": "Reservation Cancelled"
+    },
+    "heading": {
+      "ar": "تم إلغاء حجزك",
+      "en": "Your reservation has been cancelled"
+    },
+    "icon": "calendar-x",
+    "tone": "Danger",
+    "introduction": {
+      "ar": [
+        "نود إبلاغك بأنه تم إلغاء الحجز الموضحة تفاصيله أدناه، ولم يعد الموعد السابق مؤكدًا."
+      ],
+      "en": [
+        "The reservation listed below has been cancelled. Its previous appointment is no longer confirmed."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "يمكنك استعراض المواعيد المتاحة على وصلة وإجراء حجز جديد إذا كانت الخدمة متاحة.",
+        "en": "Explore available appointments and make a new reservation if the service is available."
+      }
+    },
+    "action": {
+      "destination": "ReservationUrl",
+      "label": {
+        "ar": "عرض تفاصيل الحجز",
+        "en": "View Reservation"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Reservation.AppointmentReminder",
+    "subject": {
+      "ar": "تذكير بموعد حجزك",
+      "en": "Appointment Reminder"
+    },
+    "heading": {
+      "ar": "تذكير بموعد حجزك القادم",
+      "en": "A reminder about your upcoming appointment"
+    },
+    "icon": "bell-ring",
+    "tone": "Neutral",
+    "introduction": {
+      "ar": [
+        "نذكّرك بموعد حجزك القادم على منصة وصلة. نتمنى لك زيارة موفقة."
+      ],
+      "en": [
+        "This is a friendly reminder about your upcoming appointment on Wasla."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "راجع موعدك وتعليمات الحضور المتاحة داخل حسابك قبل التوجه إلى الزيارة.",
+        "en": "Review your appointment and attendance instructions in your account before your visit."
+      }
+    },
+    "action": {
+      "destination": "ReservationUrl",
+      "label": {
+        "ar": "عرض الموعد",
+        "en": "View Appointment"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Reservation.RestoredFromNoShow",
+    "subject": {
+      "ar": "تمت استعادة الحجز",
+      "en": "Reservation Restored"
+    },
+    "heading": {
+      "ar": "تمت استعادة حجزك",
+      "en": "Your reservation has been restored"
+    },
+    "icon": "calendar-sync",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "تم تحديث حالة حجزك بعد تسجيله سابقًا كعدم حضور. يرجى مراجعة حالة الحجز الحالية داخل وصلة."
+      ],
+      "en": [
+        "Your reservation has been restored following a previous no-show status. Please review its current details in Wasla."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "استعادة الحجز لا تعني تسجيل حضورك أو إصدار تذكرة انتظار تلقائيًا.",
+        "en": "Restoring a reservation does not automatically check you in or issue a queue ticket."
+      }
+    },
+    "action": {
+      "destination": "ReservationUrl",
+      "label": {
+        "ar": "متابعة الحجز",
+        "en": "View Reservation"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Clinical.MedicalUpdateAvailable",
+    "subject": {
+      "ar": "تحديث جديد على وصلة",
+      "en": "New Wasla Update"
+    },
+    "heading": {
+      "ar": "يوجد تحديث جديد على حسابك",
+      "en": "A new update is available"
+    },
+    "icon": "shield-check",
+    "tone": "Neutral",
+    "introduction": {
+      "ar": [
+        "يتوفر تحديث ضمن معلوماتك الطبية على وصلة. يرجى تسجيل الدخول إلى حسابك للاطلاع على المعلومات المتاحة لك."
+      ],
+      "en": [
+        "An update is available in your Wasla medical information. Please sign in to review the information currently available to you."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "الخصوصية",
+        "en": "Privacy"
+      },
+      "body": {
+        "ar": "حفاظًا على سرية معلوماتك، لا نعرض التفاصيل الطبية أو المستندات في رسائل البريد الإلكتروني.",
+        "en": "To protect your privacy, medical details and documents are not included in our emails."
+      }
+    },
+    "action": {
+      "destination": "LoginUrl",
+      "label": {
+        "ar": "الدخول إلى حسابي",
+        "en": "Sign In Securely"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Subscription.TrialStarted",
+    "subject": {
+      "ar": "بدأت الفترة التجريبية",
+      "en": "Trial Started"
+    },
+    "heading": {
+      "ar": "مرحبًا بك في الفترة التجريبية!",
+      "en": "Your free trial has started!"
+    },
+    "icon": "gift",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "يسعدنا إبلاغك ببدء الفترة التجريبية الخاصة بك على منصة وصلة. يمكنك الاستفادة من الخدمات المتاحة ضمن حدود الباقة خلال هذه الفترة."
+      ],
+      "en": [
+        "Your Wasla trial has started. Explore the available features within your trial plan limits."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "لا يوجد تجديد تلقائي أو خصم تلقائي عند انتهاء الفترة التجريبية.",
+        "en": "There is no automatic renewal or automatic charge when your trial ends."
+      }
+    },
+    "action": {
+      "destination": "SubscriptionUrl",
+      "label": {
+        "ar": "استكشاف اشتراكي",
+        "en": "Explore My Subscription"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Subscription.TrialReminder",
+    "subject": {
+      "ar": "تذكير بانتهاء الفترة التجريبية",
+      "en": "Trial Reminder"
+    },
+    "heading": {
+      "ar": "فترتك التجريبية تقترب من الانتهاء",
+      "en": "Your trial is ending soon"
+    },
+    "icon": "clock",
+    "tone": "Warning",
+    "introduction": {
+      "ar": [
+        "نأمل أن تكون قد استمتعت بتجربة وصلة. نود تذكيرك بأن فترتك التجريبية تقترب من الانتهاء."
+      ],
+      "en": [
+        "We hope you have enjoyed exploring Wasla. Your trial period is coming to an end."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "راجع خيارات الاشتراك المتاحة لك. لا يتم تجديد الفترة أو خصم أي مبلغ تلقائيًا.",
+        "en": "Review your available subscription options. No renewal or charge occurs automatically."
+      }
+    },
+    "action": {
+      "destination": "SubscriptionPlansUrl",
+      "label": {
+        "ar": "استعراض الباقات",
+        "en": "Explore Plans"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Subscription.TrialExpired",
+    "subject": {
+      "ar": "انتهت الفترة التجريبية",
+      "en": "Trial Expired"
+    },
+    "heading": {
+      "ar": "انتهت فترتك التجريبية",
+      "en": "Your trial has ended"
+    },
+    "icon": "hourglass",
+    "tone": "Warning",
+    "introduction": {
+      "ar": [
+        "نود إبلاغك بانتهاء الفترة التجريبية الخاصة بك على منصة وصلة. نشكرك على تجربتك لخدماتنا."
+      ],
+      "en": [
+        "Your Wasla trial has ended. Thank you for trying our services."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "يخضع الوصول إلى الخدمات لقواعد الاشتراك الحالية. يمكنك مراجعة الباقات المتاحة من حسابك. لم يتم خصم أي مبلغ تلقائيًا.",
+        "en": "Service access follows your current subscription rules. Review available plans in your account. No automatic charge has been made."
+      }
+    },
+    "action": {
+      "destination": "SubscriptionPlansUrl",
+      "label": {
+        "ar": "استعراض الباقات",
+        "en": "Explore Plans"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Subscription.TrialExtended",
+    "subject": {
+      "ar": "تم تمديد الفترة التجريبية",
+      "en": "Trial Extended"
+    },
+    "heading": {
+      "ar": "تم تمديد فترتك التجريبية!",
+      "en": "Your trial has been extended!"
+    },
+    "icon": "calendar-plus",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "يسعدنا إبلاغك بأنه تم تمديد الفترة التجريبية الخاصة بك على وصلة، مما يمنحك وقتًا إضافيًا لاستكشاف الخدمات المتاحة."
+      ],
+      "en": [
+        "Your Wasla trial has been extended, giving you more time to explore the available features."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "راجع تفاصيل الفترة التجريبية والحدود المتاحة داخل حسابك. لا يوجد خصم أو تجديد تلقائي.",
+        "en": "Review your updated trial period and available limits in your account. There is no automatic charge or renewal."
+      }
+    },
+    "action": {
+      "destination": "SubscriptionUrl",
+      "label": {
+        "ar": "عرض تفاصيل الفترة",
+        "en": "View Trial Details"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Subscription.PaidActivated",
+    "subject": {
+      "ar": "تم تفعيل الاشتراك",
+      "en": "Subscription Activated"
+    },
+    "heading": {
+      "ar": "تم تفعيل اشتراكك بنجاح!",
+      "en": "Your subscription is now active!"
+    },
+    "icon": "badge-check",
+    "tone": "Success",
+    "introduction": {
+      "ar": [
+        "شكرًا لاختيارك وصلة. تم تفعيل اشتراكك بنجاح، ويمكنك الآن الاستفادة من الخدمات المتاحة وفقًا للباقة وحدودها."
+      ],
+      "en": [
+        "Thank you for choosing Wasla. Your subscription is now active, with features available according to your plan limits."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "يمكنك مراجعة اشتراكك والعيادات المرتبطة به من حسابك. لا يوجد تجديد أو خصم تلقائي.",
+        "en": "Review your subscription and linked practices in your account. There is no automatic renewal or charge."
+      }
+    },
+    "action": {
+      "destination": "SubscriptionUrl",
+      "label": {
+        "ar": "إدارة اشتراكي",
+        "en": "Manage Subscription"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Subscription.PaidReminder",
+    "subject": {
+      "ar": "تذكير بانتهاء الاشتراك",
+      "en": "Subscription Reminder"
+    },
+    "heading": {
+      "ar": "اشتراكك على وشك الانتهاء",
+      "en": "Your subscription is ending soon"
+    },
+    "icon": "calendar-clock",
+    "tone": "Warning",
+    "introduction": {
+      "ar": [
+        "نود تذكيرك بأن اشتراكك الحالي على منصة وصلة يقترب من الانتهاء. يمكنك مراجعة خيارات التجديد المتاحة لك."
+      ],
+      "en": [
+        "Your current Wasla subscription is approaching its end date. Review the renewal options available to you."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "لن يتم تجديد اشتراكك أو خصم أي مبلغ تلقائيًا. راجع السعر والشروط الفعلية قبل تأكيد التجديد.",
+        "en": "Your subscription will not renew automatically and no automatic charge will be made. Review current terms and pricing before renewing."
+      }
+    },
+    "action": {
+      "destination": "SubscriptionUrl",
+      "label": {
+        "ar": "تجديد الاشتراك",
+        "en": "Renew Subscription"
+      },
+      "placement": "beforeClosing"
+    }
+  },
+  {
+    "key": "Subscription.Expired",
+    "subject": {
+      "ar": "انتهى الاشتراك",
+      "en": "Subscription Expired"
+    },
+    "heading": {
+      "ar": "انتهى اشتراكك على وصلة",
+      "en": "Your Wasla subscription has expired"
+    },
+    "icon": "calendar-x",
+    "tone": "Danger",
+    "introduction": {
+      "ar": [
+        "نود إبلاغك بانتهاء فترة اشتراكك على منصة وصلة. يمكنك مراجعة حالة الاشتراك وخيارات التجديد المتاحة لك."
+      ],
+      "en": [
+        "Your Wasla subscription period has ended. Review your subscription status and the available renewal options."
+      ]
+    },
+    "information": {
+      "heading": {
+        "ar": "معلومات مهمة",
+        "en": "Important information"
+      },
+      "body": {
+        "ar": "يتم تحديد الخدمات المتاحة طبقًا لحالة اشتراكك والقواعد المعتمدة. لم يتم تجديد الاشتراك أو خصم أي مبلغ تلقائيًا.",
+        "en": "Available services depend on your subscription status and applicable rules. No automatic renewal or charge has occurred."
+      }
+    },
+    "action": {
+      "destination": "SubscriptionUrl",
+      "label": {
+        "ar": "إدارة الاشتراك",
+        "en": "Manage Subscription"
+      },
+      "placement": "beforeClosing"
+    }
+  }
+]

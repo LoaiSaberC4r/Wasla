@@ -1,7 +1,6 @@
 using BuildingBlock.Infrastructure.Bootstrap;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Wasla.Application.Email;
 using Wasla.Application.Media;
 using Wasla.Application.Security;
 using Wasla.Infrastructure.Email;
@@ -46,17 +45,10 @@ public static class DependencyInjection
                 options.HmacSecret.Length >= 32,
                 "Password reset options are invalid.")
             .ValidateOnStart();
-        services.AddOptions<EmailBrandingOptions>()
-            .Bind(configuration.GetSection(EmailBrandingOptions.SectionName))
-            .Validate(options =>
-                Uri.TryCreate(options.FooterImageUrl, UriKind.Absolute, out var uri) &&
-                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps),
-                "Email branding FooterImageUrl must be an absolute HTTP or HTTPS URL.")
-            .ValidateOnStart();
+        services.AddWaslaEmailRendering(configuration);
 
         services.AddSingleton<IAccessTokenService, JwtAccessTokenService>();
         services.AddSingleton<IPasswordResetProtector, PasswordResetProtector>();
-        services.AddSingleton<IEmailBrandingProvider, EmailBrandingProvider>();
         services.AddSingleton<IPrivateMediaReader, PrivateMediaReader>();
 
         return services;

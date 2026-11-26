@@ -1,17 +1,24 @@
 using Microsoft.Extensions.Options;
-using Wasla.Application.Email;
 
 namespace Wasla.Infrastructure.Email;
 
-public sealed class EmailBrandingOptions
-{
-    public const string SectionName = "EmailBranding";
-    public string FooterImageUrl { get; set; } = string.Empty;
-}
-
 internal sealed class EmailBrandingProvider(IOptions<EmailBrandingOptions> options)
-    : IEmailBrandingProvider
 {
-    public string FooterImageUrl { get; } = options.Value.FooterImageUrl;
+    internal EmailBrandingOptions Options { get; } = options.Value;
+    internal EmailUrlValidator Urls { get; } = new(options.Value.AllowedOrigins);
+
+    internal string? Destination(string key) => Urls.Validate(key switch
+    {
+        nameof(Options.SupportUrl) => Options.SupportUrl,
+        nameof(Options.LoginUrl) => Options.LoginUrl,
+        nameof(Options.PatientIdentityClaimUrl) => Options.PatientIdentityClaimUrl,
+        nameof(Options.DoctorSpecializationRequestUrl) => Options.DoctorSpecializationRequestUrl,
+        nameof(Options.FamilyUrl) => Options.FamilyUrl,
+        nameof(Options.FamilyRequestUrl) => Options.FamilyRequestUrl,
+        nameof(Options.ReservationUrl) => Options.ReservationUrl,
+        nameof(Options.SubscriptionUrl) => Options.SubscriptionUrl,
+        nameof(Options.SubscriptionPlansUrl) => Options.SubscriptionPlansUrl,
+        _ => null
+    });
 }
 

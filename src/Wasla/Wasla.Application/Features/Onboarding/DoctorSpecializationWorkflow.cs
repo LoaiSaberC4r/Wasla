@@ -528,8 +528,8 @@ internal sealed class RequestDoctorSpecializationModificationCommandHandler(
         dataStore.Add(new DoctorSpecializationRequestHistory(
             Guid.NewGuid(), owner.Request.Id, DoctorSpecializationRequestAction.ModificationRequested,
             owner.Request.CurrentRevisionNumber, message, actorId, now));
-        var email = emailFactory.DoctorSpecializationModificationRequested(
-            owner.Doctor.NameAr, message, owner.Request.CurrentRevisionNumber);
+        var email = await emailFactory.CreateAsync(new DoctorSpecializationChangesRequestedEmail(
+            new(owner.Doctor.NameAr, owner.Doctor.NameEn), message, owner.Request.CurrentRevisionNumber), cancellationToken);
         await emailOutbox.QueueAsync(new QueueEmailMessage(
             $"doctor-specialization-modification:{owner.Request.Id}:revision-{owner.Request.CurrentRevisionNumber}",
             owner.User.Email,

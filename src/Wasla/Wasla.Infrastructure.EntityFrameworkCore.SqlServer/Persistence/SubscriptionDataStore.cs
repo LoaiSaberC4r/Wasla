@@ -78,6 +78,8 @@ public sealed partial class SubscriptionDataStore(WaslaDbContext db) : ISubscrip
         await db.CommercialPlans.AsNoTracking().OrderBy(x => x.DisplayOrder).ToArrayAsync(ct),
         await db.CommercialFeatures.AsNoTracking().OrderBy(x => x.DisplayOrder).ToArrayAsync(ct),
         await db.PlanFeatureEntitlements.AsNoTracking().ToArrayAsync(ct));
+    public Task<CommercialPlan?> FindPlanAsync(Guid planId, CancellationToken ct) =>
+        db.CommercialPlans.AsNoTracking().SingleOrDefaultAsync(plan => plan.Id == planId, ct);
     public Task<DoctorSubscription?> FindAsync(Guid id, CancellationToken ct) => db.DoctorSubscriptions.SingleOrDefaultAsync(x => x.Id == id, ct);
     public Task<Guid?> DoctorIdAsync(Guid id, CancellationToken ct) => db.DoctorSubscriptions.AsNoTracking().Where(s => s.Id == id).Select(s => (Guid?)s.DoctorId).SingleOrDefaultAsync(ct);
     public Task<DoctorSubscription?> ScheduledAsync(Guid doctorId, CancellationToken ct) => db.DoctorSubscriptions.SingleOrDefaultAsync(s => s.DoctorId == doctorId && s.Status == SubscriptionStatus.Scheduled, ct);

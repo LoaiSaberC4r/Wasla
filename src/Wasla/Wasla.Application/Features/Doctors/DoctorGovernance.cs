@@ -404,6 +404,14 @@ internal sealed class ReactivateDoctorCommandHandler(DoctorLifecycleService serv
             cancellationToken);
 }
 
+internal enum DoctorEmailEvent
+{
+    Approved = 2,
+    Rejected = 3,
+    Suspended = 4,
+    Reactivated = 5
+}
+
 internal sealed class DoctorLifecycleService(
     IWaslaDataStore dataStore,
     IEmailNotificationFactory emailFactory,
@@ -501,17 +509,18 @@ internal sealed class DoctorLifecycleService(
             return Result<DoctorLifecycleResponse>.Fail(DoctorErrors.NotFound);
         }
 
-        var email = emailFactory.DoctorLifecycle(emailEvent, doctor.NameAr, reason);
-        var eventName = emailEvent switch
+        var name = new EmailName(doctor.NameAr, doctor.NameEn);
+        (string EventName, DoctorLifecycleEmail Model) delivery = emailEvent switch
         {
-            DoctorEmailEvent.Approved => "approved",
-            DoctorEmailEvent.Rejected => "rejected",
-            DoctorEmailEvent.Suspended => "suspended",
-            DoctorEmailEvent.Reactivated => "reactivated",
+            DoctorEmailEvent.Approved => ("approved", new DoctorAccountApprovedEmail(name, now)),
+            DoctorEmailEvent.Rejected => ("rejected", new DoctorRegistrationRejectedEmail(name, now, reason!)),
+            DoctorEmailEvent.Suspended => ("suspended", new DoctorAccountSuspendedEmail(name, now, reason!)),
+            DoctorEmailEvent.Reactivated => ("reactivated", new DoctorAccountReactivatedEmail(name, now)),
             _ => throw new InvalidOperationException("Unsupported doctor lifecycle email event.")
         };
+        var email = await emailFactory.CreateAsync(delivery.Model, cancellationToken);
         await emailOutbox.QueueAsync(new QueueEmailMessage(
-            $"doctor-{eventName}:{doctor.Id}:{historyId}",
+            $"doctor-{delivery.EventName}:{doctor.Id}:{historyId}",
             user.Email,
             email.Subject,
             email.HtmlBody,
@@ -540,19 +549,21 @@ internal sealed class DoctorLifecycleService(
                 cancelledReservationCount++;
                 var recipients = reservationRecipients.GetValueOrDefault(reservation.Id) ?? [];
 
-                foreach (var recipient in notificationOptions.Value.Enabled && notificationOptions.Value.OwnReservationEmails ? [] : recipients)
+                if (recipients.Count > 0 && !(notificationOptions.Value.Enabled && notificationOptions.Value.OwnReservationEmails))
                 {
                     var reservationHistoryId = reservation.History.Last().Id;
-                    var reference = System.Net.WebUtility.HtmlEncode(reservation.ReservationReference);
-                    var recipientHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
-                        System.Text.Encoding.UTF8.GetBytes(recipient)))[..12];
-                    await emailOutbox.QueueAsync(new QueueEmailMessage(
-                        $"reservation-doctor-suspended:{reservation.Id:N}:{reservationHistoryId:N}:{recipientHash}",
-                        recipient,
-                        "Wasla | تم إلغاء الحجز لتعليق الطبيب | Reservation Cancelled",
-                        $"<p dir=\"rtl\">تم إلغاء الحجز {reference} بسبب تعليق الطبيب.</p><p>Reservation {reference} was cancelled because the doctor was suspended.</p>",
-                        $"Reservation {reservation.ReservationReference} was cancelled because the doctor was suspended."),
+                    var cancellation = await emailFactory.CreateAsync(
+                        new ReservationCancelledEmail(reservation.ReservationReference, reservation.ScheduledLocalDateTime),
                         cancellationToken);
+                    foreach (var recipient in recipients)
+                    {
+                        var recipientHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+                            System.Text.Encoding.UTF8.GetBytes(recipient)))[..12];
+                        await emailOutbox.QueueAsync(new QueueEmailMessage(
+                            $"reservation-doctor-suspended:{reservation.Id:N}:{reservationHistoryId:N}:{recipientHash}",
+                            recipient, cancellation.Subject, cancellation.HtmlBody, cancellation.TextBody),
+                            cancellationToken);
+                    }
                 }
 
                 await projectionOutbox.QueueAsync(new QueueReservationProjectionInvalidation(

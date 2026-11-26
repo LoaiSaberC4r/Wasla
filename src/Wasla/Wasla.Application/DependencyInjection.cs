@@ -82,7 +82,7 @@ public static class DependencyInjection
             ReservationNotificationRecipientResolver>();
         services.AddSingleton<IReservationReferenceGenerator, ReservationReferenceGenerator>();
         services.AddSingleton<IPatientAccessPolicy, PatientAccessPolicy>();
-        services.AddSingleton<IEmailNotificationFactory, BilingualEmailNotificationFactory>();
+        services.AddSingleton<IEmailNotificationFactory, EmailNotificationFactory>();
 
         return services;
     }

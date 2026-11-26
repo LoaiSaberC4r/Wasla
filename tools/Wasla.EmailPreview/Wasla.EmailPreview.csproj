@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Wasla/Wasla.Infrastructure/Wasla.Infrastructure.csproj" />
+    <EmbeddedResource Include="PreviewIndex.html" />
+    <Content Include="../../src/Wasla/Wasla.Api/wwwroot/email-assets/icons/*"
+             Link="icons/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

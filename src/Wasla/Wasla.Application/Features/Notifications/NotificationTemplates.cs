@@ -1,13 +1,11 @@
-using System.Globalization;
-using System.Net;
 using Wasla.Domain.Notifications;
 
 namespace Wasla.Application.Features.Notifications;
 
-public sealed record NotificationText(string Title, string Message, string HtmlBody, string TextBody);
+public sealed record NotificationText(string Title, string Message);
 public static class NotificationTemplates
 {
-    public static NotificationText Render(string code, int version, string? language = null, string? reference = null, DateTime? localAppointment = null)
+    public static NotificationText Render(string code, int version, string? language = null)
     {
         if (!NotificationPolicy.KnownEvent(code) || version != NotificationPolicy.TemplateVersion) throw new ArgumentException("Notification.TemplateUnavailable");
         var english = NotificationPolicy.Language(language) == "en";
@@ -30,12 +28,6 @@ public static class NotificationTemplates
         var message = NotificationPolicy.Clinical(code)
             ? english ? "An update is available in your Wasla medical information. Sign in to review information currently available to you." : "تم إتاحة تحديث ضمن معلوماتك الطبية على وصلة. سجّل الدخول لعرض المعلومات المتاحة لك."
             : english ? "An update is available on Wasla." : "يتوفر تحديث جديد على وصلة.";
-        // Only booking-safe values can enter this renderer. No arbitrary entity or template-variable dictionary.
-        var safeReference = reference is null ? null : new string(reference.Where(c => c is not '\r' and not '\n' && !char.IsControl(c)).Take(32).ToArray());
-        var details = safeReference is null || NotificationPolicy.Clinical(code) ? "" :
-            $"\n{(english ? "Reservation reference" : "رقم الحجز")}: {safeReference}" +
-            (localAppointment is { } local ? $"\n{local.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)}" : "");
-        var text = $"{title}\n\n{message}{details}";
-        return new(title, message, $"<p dir=\"{(english ? "ltr" : "rtl")}\">{WebUtility.HtmlEncode(text).Replace("\n", "<br>", StringComparison.Ordinal)}</p>", text);
+        return new(title, message);
     }
 }

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using BuildingBlock.Application.Abstraction.Media;
 using BuildingBlock.Domain.Results;
+using Wasla.Application.Email;
 using Wasla.Domain.Common;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Security;
@@ -235,8 +236,9 @@ public sealed partial class PatientIdentityWorkflow
     private static Result<object> AcceptedResend() => Ok(new { message = Wasla.Domain.Resources.ErrorMessage.PatientIdentityResendAccepted });
     private void History(PatientClaimRequest claim, PatientClaimStatus? from, PatientClaimAction action, Guid? actor, string? reason = null, string? metadata = null) =>
         data.Add(new PatientClaimHistory(Guid.NewGuid(), claim.Id, claim.EvidenceRevision, from, claim.Status, action, actor, Now, reason, metadata));
-    private Task NotifyClaimAsync(PatientClaimRequest claim, string action, CancellationToken ct) => MailAsync($"patient-claim-decision:{claim.Id:N}:{claim.EvidenceRevision}:{action}",
-        claim.ClaimantNormalizedEmail, "تحديث طلب إثبات الهوية / Identity claim update", "تم تحديث طلب إثبات هويتك. افتح حالة الطلب باستخدام التحقق من البريد.\nYour identity claim was updated. Verify your email to view its status.", ct);
+    private Task NotifyClaimAsync(PatientClaimRequest claim, string action, CancellationToken ct) =>
+        QueueEmailAsync($"patient-claim-decision:{claim.Id:N}:{claim.EvidenceRevision}:{action}",
+            claim.ClaimantNormalizedEmail, new PatientIdentityClaimUpdateEmail(), ct);
     private static bool MatchesVersion(byte[] actual, string? supplied)
     {
         try { return supplied is not null && Convert.FromBase64String(supplied).AsSpan().SequenceEqual(actual); } catch (FormatException) { return false; }

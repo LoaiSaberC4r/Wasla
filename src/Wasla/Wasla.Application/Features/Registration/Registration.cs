@@ -218,9 +218,8 @@ internal sealed class RegisterDoctorCommandHandler(
                 null,
                 now));
 
-            var email = emailFactory.DoctorLifecycle(
-                DoctorEmailEvent.RegistrationReceived,
-                doctorResult.Value.NameAr);
+            var email = await emailFactory.CreateAsync(new DoctorRegistrationReceivedEmail(
+                new(doctorResult.Value.NameAr, doctorResult.Value.NameEn), now), cancellationToken);
             await emailOutbox.QueueAsync(new QueueEmailMessage(
                 $"doctor-registration-received:{doctorId}",
                 userResult.Value.Email,

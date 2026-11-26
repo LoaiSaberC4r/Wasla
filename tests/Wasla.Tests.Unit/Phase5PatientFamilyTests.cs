@@ -276,6 +276,7 @@ public sealed class Phase5RegistrationApplicationTests
         services.AddSingleton(DispatchProxy.Create<Wasla.Application.Security.IPasswordResetProtector, UnusedIdentityDependencyProxy>());
         services.AddSingleton(DispatchProxy.Create<Wasla.Application.Media.IPrivateMediaReader, UnusedIdentityDependencyProxy>());
         services.AddSingleton(DispatchProxy.Create<Wasla.Application.Email.IEmailOutbox, UnusedIdentityDependencyProxy>());
+        services.AddSingleton(DispatchProxy.Create<BuildingBlock.Application.Email.IEmailTemplateRenderer, UnusedIdentityDependencyProxy>());
         services.AddSingleton(DispatchProxy.Create<Wasla.Application.Features.PatientOnboarding.IPatientIdentityMediaCompensation, UnusedIdentityDependencyProxy>());
         services.AddSingleton<IPasswordService, RegistrationPasswordService>();
         services.AddSingleton<IMediaService, UnusedMediaService>();
