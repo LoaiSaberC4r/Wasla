@@ -11,6 +11,7 @@ internal sealed record SampleEmail(string Slug, string Title, EmailTemplateModel
 
 internal static class SampleEmails
 {
+    internal const string AssetBaseUrl = "https://app.wasla.test/email-assets/";
     private static readonly DateTime Today = new(2026, 11, 26, 9, 0, 0, DateTimeKind.Utc);
 
     internal static ServiceProvider BuildServices(IReadOnlyDictionary<string, string?>? settings = null)
@@ -26,6 +27,8 @@ internal static class SampleEmails
     internal static Dictionary<string, string?> Branding() => new(StringComparer.Ordinal)
     {
         ["EmailBranding:AllowedOrigins:0"] = "https://app.wasla.test",
+        ["EmailBranding:AssetBaseUrl"] = AssetBaseUrl,
+        ["EmailBranding:TimeZoneId"] = "Africa/Cairo",
         ["EmailBranding:WebsiteUrl"] = "https://app.wasla.test/",
         ["EmailBranding:SupportUrl"] = "https://app.wasla.test/help",
         ["EmailBranding:PrivacyPolicyUrl"] = "https://app.wasla.test/privacy",
@@ -51,19 +54,20 @@ internal static class SampleEmails
         EmailName[] practices = [new("عيادة النور", "Noor Practice"), new("عيادة الأمل", "Amal Practice")];
         const string token = "SYNTHETIC-ACTIVATION-TOKEN";
         const string reference = "WSL-278519";
-        const string plan = "DEMO-PLAN";
-        var appointment = new DateTime(2026, 12, 1, 15, 40, 0, DateTimeKind.Unspecified);
+        var plan = new SubscriptionPlanEmailName("PROFESSIONAL", "الباقة الاحترافية", "Professional Plan");
+        var trial = new SubscriptionPlanEmailName("DEMO-TRIAL");
+        var appointment = new DateTime(2026, 11, 30, 18, 30, 0, DateTimeKind.Unspecified);
         var end = Today.AddDays(7);
         return
         [
             new("01-password-reset-otp", "Password Reset OTP", new PasswordResetOtpEmail("042916", 5), "042916"),
             new("02-patient-email-verification", "Patient Email Verification", new PatientEmailVerificationEmail("071852", 10), "071852"),
             new("03-patient-account-activation", "Patient Account Activation", new PatientAccountActivationEmail(token, 48), token),
-            new("04-doctor-registration-received", "Doctor Registration Received", new DoctorRegistrationReceivedEmail(doctor, Today), "2026-11-26"),
-            new("05-doctor-account-approved", "Doctor Account Approved", new DoctorAccountApprovedEmail(doctor, Today), "2026-11-26"),
+            new("04-doctor-registration-received", "Doctor Registration Received", new DoctorRegistrationReceivedEmail(doctor, Today), "11:00"),
+            new("05-doctor-account-approved", "Doctor Account Approved", new DoctorAccountApprovedEmail(doctor, Today), "11:00"),
             new("06-doctor-registration-rejected", "Doctor Registration Rejected", new DoctorRegistrationRejectedEmail(doctor, Today, "Registration document is out of date."), "Registration document is out of date."),
             new("07-doctor-account-suspended", "Doctor Account Suspended", new DoctorAccountSuspendedEmail(doctor, Today, "Professional credentials require review."), "Professional credentials require review."),
-            new("08-doctor-account-reactivated", "Doctor Account Reactivated", new DoctorAccountReactivatedEmail(doctor, Today), "2026-11-26"),
+            new("08-doctor-account-reactivated", "Doctor Account Reactivated", new DoctorAccountReactivatedEmail(doctor, Today), "11:00"),
             new("09-doctor-specialization-changes-requested", "Doctor Specialization Changes Requested", new DoctorSpecializationChangesRequestedEmail(doctor, "Please update the specialization information.", 3), "Please update the specialization information."),
             new("10-patient-identity-claim-update", "Patient Identity Claim Update", new PatientIdentityClaimUpdateEmail(), "https://app.wasla.test/identity-claim"),
             new("11-family-relationship-approved", "Family Relationship Approved", new FamilyRelationshipApprovedEmail(patient, 2), "2"),
@@ -76,13 +80,13 @@ internal static class SampleEmails
             new("18-appointment-reminder", "Appointment Reminder", new AppointmentReminderEmail(reference, appointment), reference),
             new("19-reservation-restored", "Reservation Restored", new ReservationRestoredEmail(reference, appointment), reference),
             new("20-medical-update-available", "Medical Update Available", new MedicalUpdateAvailableEmail(), "https://app.wasla.test/sign-in"),
-            new("21-trial-started", "Trial Started", new TrialStartedEmail(doctor, plan, end, Today, 2, 4), plan),
-            new("22-trial-reminder", "Trial Reminder", new TrialReminderEmail(doctor, plan, end), plan),
-            new("23-trial-expired", "Trial Expired", new TrialExpiredEmail(doctor, plan, Today), plan),
-            new("24-trial-extended", "Trial Extended", new TrialExtendedEmail(doctor, plan, end.AddDays(14)), plan),
-            new("25-paid-subscription-activated", "Paid Subscription Activated", new PaidSubscriptionActivatedEmail(doctor, plan, end, Today, 2, 4, practices), plan),
+            new("21-trial-started", "Trial Started", new TrialStartedEmail(doctor, trial, end, Today, 2, 4), trial.PlanCode),
+            new("22-trial-reminder", "Trial Reminder", new TrialReminderEmail(doctor, trial, end), trial.PlanCode),
+            new("23-trial-expired", "Trial Expired", new TrialExpiredEmail(doctor, trial, Today), trial.PlanCode),
+            new("24-trial-extended", "Trial Extended", new TrialExtendedEmail(doctor, trial, end.AddDays(14)), trial.PlanCode),
+            new("25-paid-subscription-activated", "Paid Subscription Activated", new PaidSubscriptionActivatedEmail(doctor, plan, end, Today, 2, 4, practices), "11:00"),
             new("26-paid-subscription-reminder", "Paid Subscription Reminder", new PaidSubscriptionReminderEmail(doctor, plan, end, practices, 1200m, "EGP"), "1200.00"),
-            new("27-subscription-expired", "Subscription Expired", new SubscriptionExpiredEmail(doctor, plan, Today), plan)
+            new("27-subscription-expired", "Subscription Expired", new SubscriptionExpiredEmail(doctor, trial, Today), trial.PlanCode)
         ];
     }
 

@@ -57,6 +57,11 @@ public sealed class SubscriptionLifecycle(ISubscriptionDataStore store, IWaslaDa
             await QueueProjectionAsync(subscription, key, ct);
         // A renewal can reserve a future period while the current one is still active.
         if (eventType == "Activated" && subscription.Status == SubscriptionStatus.Scheduled) return;
+        await QueueEmailAsync(subscription, eventType, key, ct);
+    }
+
+    internal async Task QueueEmailAsync(DoctorSubscription subscription, string eventType, string key, CancellationToken ct)
+    {
         var doctor = await doctors.FindDoctorByIdAsync(subscription.DoctorId, ct);
         var user = doctor is null ? null : await doctors.FindUserByIdAsync(doctor.ApplicationUserId, ct);
         if (user is null) return;
@@ -69,17 +74,28 @@ public sealed class SubscriptionLifecycle(ISubscriptionDataStore store, IWaslaDa
         }
         decimal? renewalPrice = null;
         string? currency = null;
+        var terms = subscription.Terms;
+        CommercialPlan? catalogPlan;
         if (eventType == "PaidReminder" && subscription.SubscriptionKind == SubscriptionKind.Paid)
         {
-            var renewal = await resolver.ResolveAsync(new(subscription.Terms.ProductCode, subscription.Terms.PlanCode, subscription.BillingCycle, SelectedPracticeCount: subscription.SelectedPracticeCount), ct);
+            var catalog = await store.CatalogAsync(ct);
+            var renewal = await resolver.ResolveAsync(new(terms.ProductCode, terms.PlanCode, subscription.BillingCycle,
+                SelectedPracticeCount: subscription.SelectedPracticeCount), ct, catalog);
+            catalogPlan = catalog.Plans.SingleOrDefault(plan => plan.Id == terms.PlanId);
             if (renewal.IsSuccess)
             {
                 renewalPrice = renewal.Value.PriceAmount;
                 currency = renewal.Value.Currency;
             }
         }
+        else
+        {
+            catalogPlan = await store.FindPlanAsync(terms.PlanId, ct);
+        }
         var name = new EmailName(doctor!.NameAr, doctor.NameEn);
-        var plan = subscription.Terms.PlanCode;
+        var plan = catalogPlan is not null && catalogPlan.ProductId == terms.ProductId && catalogPlan.Code == terms.PlanCode
+            ? new SubscriptionPlanEmailName(terms.PlanCode, catalogPlan.NameAr, catalogPlan.NameEn)
+            : new SubscriptionPlanEmailName(terms.PlanCode);
         var ends = subscription.EndsAtUtc;
         SubscriptionEmail model = eventType switch
         {

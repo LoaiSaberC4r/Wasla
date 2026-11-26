@@ -9,7 +9,7 @@
       "ar": "إعادة تعيين كلمة المرور",
       "en": "Reset your password"
     },
-    "icon": "🔒",
+    "icon": "lock-keyhole",
     "tone": "Neutral",
     "introduction": {
       "ar": [
@@ -36,7 +36,7 @@
       "ar": "تأكيد بريدك الإلكتروني",
       "en": "Verify your email address"
     },
-    "icon": "✉",
+    "icon": "mail-check",
     "tone": "Neutral",
     "introduction": {
       "ar": [
@@ -73,48 +73,98 @@
       "ar": "أهلًا بك في عائلة وصلة!",
       "en": "Welcome to Wasla!"
     },
-    "icon": "✓",
+    "icon": "user-round-check",
     "tone": "Success",
-    "introduction": {
-      "ar": [
-        "مرحبًا بك،",
-        "يسعدنا انضمامك إلى منصة وصلة. أنت الآن على بُعد خطوة واحدة من تفعيل حسابك والاستفادة من خدماتنا الصحية.",
-        "لتفعيل حسابك، اضغط على الزر التالي وقم بإنشاء كلمة المرور الخاصة بك."
-      ],
-      "en": [
-        "You're one step away from activating your account. Use the activation button above to create your password and start using Wasla.",
-        "With Wasla, you can discover doctors, book appointments, access available medical records, and manage your family's healthcare according to your access permissions."
-      ]
-    },
-    "security": {
-      "ar": "رابط التفعيل مخصص لك فقط، يرجى عدم مشاركته مع أي شخص. إذا لم تطلب إنشاء حساب على وصلة، يمكنك تجاهل هذه الرسالة.",
-      "en": "Do not share it with anyone."
-    },
     "steps": {
       "heading": {
         "ar": "استكشف خدمات وصلة",
         "en": "Explore Wasla"
       },
-      "items": {
-        "ar": [
-          "اكتشف الأطباء — ابحث عن الطبيب المناسب لاحتياجاتك.",
-          "احجز مواعيدك بسهولة — احجز وتابع مواعيدك الطبية.",
-          "تابع سجلك الصحي — اطّلع على المعلومات الطبية المتاحة لك.",
-          "اهتم بصحة عائلتك — أدر حسابات أفراد عائلتك وفقًا لصلاحياتك."
-        ],
-        "en": [
-          "Discover doctors — Find a doctor suited to your needs.",
-          "Book appointments — Schedule and manage your medical appointments.",
-          "View your health record — Access the medical information available to you.",
-          "Manage family care — Use the family features available under your permissions."
-        ]
-      }
+      "items": [
+        {
+          "icon": "stethoscope",
+          "title": {
+            "ar": "اكتشف الأطباء",
+            "en": "Discover doctors"
+          },
+          "description": {
+            "ar": "ابحث عن الطبيب المناسب لاحتياجاتك.",
+            "en": "Find a doctor suited to your needs."
+          }
+        },
+        {
+          "icon": "calendar-check",
+          "title": {
+            "ar": "احجز مواعيدك بسهولة",
+            "en": "Book appointments easily"
+          },
+          "description": {
+            "ar": "احجز وتابع مواعيدك الطبية من مكان واحد.",
+            "en": "Book and manage your medical appointments in one place."
+          }
+        },
+        {
+          "icon": "heart-pulse",
+          "title": {
+            "ar": "تابع سجلك الصحي",
+            "en": "View your health record"
+          },
+          "description": {
+            "ar": "اطّلع على المعلومات الطبية المتاحة لك.",
+            "en": "Access the medical information available to you."
+          }
+        },
+        {
+          "icon": "users-round",
+          "title": {
+            "ar": "اهتم بصحة عائلتك",
+            "en": "Manage family care"
+          },
+          "description": {
+            "ar": "أدر حسابات أفراد عائلتك وفقًا لصلاحياتك.",
+            "en": "Manage your family's healthcare according to your permissions."
+          }
+        }
+      ]
     },
     "action": {
       "destination": "PatientActivationUrl",
       "label": {
         "ar": "تفعيل حسابي",
         "en": "Activate My Account"
+      },
+      "placement": "afterIntroduction"
+    },
+    "activation": {
+      "secureLink": {
+        "introduction": {
+          "ar": "لتفعيل حسابك، اضغط على الزر التالي وقم بإنشاء كلمة المرور الخاصة بك.",
+          "en": "Use the activation button below to create your password and activate your account."
+        },
+        "bilingualEnglishIntroduction": "Use the activation button above to create your password and activate your account.",
+        "expiration": {
+          "ar": "رابط التفعيل صالح لمدة {0} ساعة.",
+          "en": "Your activation link is valid for {0} hours."
+        },
+        "security": {
+          "ar": "رابط التفعيل مخصص لك فقط، يرجى عدم مشاركته مع أي شخص. إذا لم تطلب إنشاء حساب على وصلة، يمكنك تجاهل هذه الرسالة.",
+          "en": "Your activation link is for your use only. Do not share it with anyone. If you did not request a Wasla account, you can safely ignore this email."
+        }
+      },
+      "tokenFallback": {
+        "introduction": {
+          "ar": "يسعدنا انضمامك إلى منصة وصلة. استخدم رمز التفعيل التالي لإكمال تفعيل حسابك واختيار كلمة المرور الخاصة بك.",
+          "en": "Welcome to Wasla. Use the activation token below to complete your account activation and create your password."
+        },
+        "bilingualEnglishIntroduction": "Welcome to Wasla. Use the activation token above to complete your account activation and create your password.",
+        "expiration": {
+          "ar": "رمز التفعيل صالح لمدة {0} ساعة.",
+          "en": "Your activation token is valid for {0} hours."
+        },
+        "security": {
+          "ar": "رمز التفعيل مخصص لك فقط، يرجى عدم مشاركته مع أي شخص. إذا لم تطلب إنشاء حساب على وصلة، يمكنك تجاهل هذه الرسالة.",
+          "en": "Your activation token is for your use only. Do not share it with anyone. If you did not request a Wasla account, you can safely ignore this email."
+        }
       }
     }
   },
@@ -128,7 +178,7 @@
       "ar": "تم استلام طلب تسجيلك بنجاح",
       "en": "Your registration has been received"
     },
-    "icon": "▤",
+    "icon": "clipboard-check",
     "tone": "Neutral",
     "introduction": {
       "ar": [
@@ -159,7 +209,7 @@
       "ar": "مبروك! تم اعتماد حسابك",
       "en": "Congratulations! Your account is approved"
     },
-    "icon": "✓",
+    "icon": "shield-check",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -185,29 +235,72 @@
         "ar": "الخطوات الأولى",
         "en": "Getting started"
       },
-      "items": {
-        "ar": [
-          "استكمال ملفك الشخصي",
-          "إعداد عياداتك",
-          "تنظيم مواعيد العمل",
-          "إعداد الحجز والأسعار",
-          "إدارة فريق الاستقبال"
-        ],
-        "en": [
-          "Complete your professional profile.",
-          "Set up your practices.",
-          "Configure working hours and schedules.",
-          "Configure booking settings and consultation prices.",
-          "Manage reception staff and permissions."
-        ]
-      }
+      "items": [
+        {
+          "icon": "user-round",
+          "title": {
+            "ar": "استكمال ملفك الشخصي",
+            "en": "Complete your professional profile"
+          },
+          "description": {
+            "ar": "أضف بياناتك المهنية وتخصصك وصورتك الشخصية.",
+            "en": "Add your professional information, specialization, and profile picture."
+          }
+        },
+        {
+          "icon": "hospital",
+          "title": {
+            "ar": "إعداد عياداتك",
+            "en": "Set up your practices"
+          },
+          "description": {
+            "ar": "أضف عياداتك واستكمل بياناتها ومواقعها.",
+            "en": "Add your practices and complete their information and locations."
+          }
+        },
+        {
+          "icon": "calendar-clock",
+          "title": {
+            "ar": "تنظيم مواعيد العمل",
+            "en": "Configure working hours"
+          },
+          "description": {
+            "ar": "حدد أيام العمل والفترات الزمنية المتاحة للحجز.",
+            "en": "Define your working days and available appointment periods."
+          }
+        },
+        {
+          "icon": "settings",
+          "title": {
+            "ar": "إعداد الحجز والأسعار",
+            "en": "Configure bookings and pricing"
+          },
+          "description": {
+            "ar": "حدد إعدادات الحجز وأسعار الكشف المناسبة.",
+            "en": "Configure booking settings and consultation prices."
+          }
+        },
+        {
+          "icon": "users-round",
+          "title": {
+            "ar": "إدارة فريق الاستقبال",
+            "en": "Manage your reception team"
+          },
+          "description": {
+            "ar": "أضف فريق الاستقبال وحدد صلاحياته حسب احتياجاتك.",
+            "en": "Add reception staff and assign appropriate permissions."
+          }
+        }
+      ],
+      "numbered": true
     },
     "action": {
       "destination": "LoginUrl",
       "label": {
         "ar": "الدخول إلى حسابي",
         "en": "Sign In to My Account"
-      }
+      },
+      "placement": "afterDetails"
     }
   },
   {
@@ -220,7 +313,7 @@
       "ar": "تحديث بشأن طلب تسجيلك",
       "en": "An update on your registration"
     },
-    "icon": "✕",
+    "icon": "clipboard-x",
     "tone": "Danger",
     "introduction": {
       "ar": [
@@ -235,7 +328,8 @@
       "label": {
         "ar": "التواصل مع الدعم",
         "en": "Contact Support"
-      }
+      },
+      "placement": "afterInstructions"
     }
   },
   {
@@ -248,7 +342,7 @@
       "ar": "تم تعليق حسابك على وصلة",
       "en": "Your doctor account has been suspended"
     },
-    "icon": "!",
+    "icon": "shield-alert",
     "tone": "Warning",
     "introduction": {
       "ar": [
@@ -263,7 +357,8 @@
       "label": {
         "ar": "التواصل مع الدعم",
         "en": "Contact Support"
-      }
+      },
+      "placement": "afterInstructions"
     }
   },
   {
@@ -276,7 +371,7 @@
       "ar": "مرحبًا بعودتك إلى وصلة!",
       "en": "Welcome back to Wasla!"
     },
-    "icon": "✓",
+    "icon": "shield-check",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -301,7 +396,8 @@
       "label": {
         "ar": "الدخول إلى حسابي",
         "en": "Sign In"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -314,7 +410,7 @@
       "ar": "مطلوب استكمال بيانات التخصص الطبي",
       "en": "Specialization changes requested"
     },
-    "icon": "✎",
+    "icon": "file-pen",
     "tone": "Warning",
     "introduction": {
       "ar": [
@@ -339,7 +435,8 @@
       "label": {
         "ar": "مراجعة طلب التخصص",
         "en": "Review Specialization Request"
-      }
+      },
+      "placement": "afterInstructions"
     }
   },
   {
@@ -352,7 +449,7 @@
       "ar": "يوجد تحديث على طلب إثبات هويتك",
       "en": "Your identity claim has been updated"
     },
-    "icon": "↻",
+    "icon": "fingerprint",
     "tone": "Neutral",
     "introduction": {
       "ar": [
@@ -377,7 +474,8 @@
       "label": {
         "ar": "متابعة حالة الطلب",
         "en": "View Request Status"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -390,7 +488,7 @@
       "ar": "تم اعتماد طلب علاقة الأسرة",
       "en": "Family relationship request approved"
     },
-    "icon": "✓",
+    "icon": "users-round",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -415,7 +513,8 @@
       "label": {
         "ar": "إدارة أسرتي",
         "en": "Manage My Family"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -428,7 +527,7 @@
       "ar": "تحديث على طلب علاقة الأسرة",
       "en": "Family relationship request update"
     },
-    "icon": "✕",
+    "icon": "users-round",
     "tone": "Danger",
     "introduction": {
       "ar": [
@@ -453,7 +552,8 @@
       "label": {
         "ar": "عرض حالة الطلب",
         "en": "View Request"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -466,7 +566,7 @@
       "ar": "مطلوب تعديل طلب علاقة الأسرة",
       "en": "Family relationship changes requested"
     },
-    "icon": "✎",
+    "icon": "file-pen",
     "tone": "Warning",
     "introduction": {
       "ar": [
@@ -491,7 +591,8 @@
       "label": {
         "ar": "استكمال الطلب",
         "en": "Update Request"
-      }
+      },
+      "placement": "afterInstructions"
     }
   },
   {
@@ -504,7 +605,7 @@
       "ar": "أهلًا بك في فريق الاستقبال على وصلة",
       "en": "Welcome to Wasla's reception team"
     },
-    "icon": "＋",
+    "icon": "user-round-plus",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -523,7 +624,8 @@
       "label": {
         "ar": "تسجيل الدخول",
         "en": "Sign In"
-      }
+      },
+      "placement": "afterInstructions"
     }
   },
   {
@@ -536,7 +638,7 @@
       "ar": "تم تأكيد حجزك بنجاح!",
       "en": "Your reservation is confirmed!"
     },
-    "icon": "✓",
+    "icon": "calendar-check",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -561,7 +663,8 @@
       "label": {
         "ar": "عرض حجزي",
         "en": "View Reservation"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -574,7 +677,7 @@
       "ar": "تم تعديل موعد حجزك",
       "en": "Your appointment has been rescheduled"
     },
-    "icon": "↻",
+    "icon": "calendar-clock",
     "tone": "Neutral",
     "introduction": {
       "ar": [
@@ -599,7 +702,8 @@
       "label": {
         "ar": "عرض الموعد الجديد",
         "en": "View Updated Appointment"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -612,7 +716,7 @@
       "ar": "تم إلغاء حجزك",
       "en": "Your reservation has been cancelled"
     },
-    "icon": "✕",
+    "icon": "calendar-x",
     "tone": "Danger",
     "introduction": {
       "ar": [
@@ -637,7 +741,8 @@
       "label": {
         "ar": "عرض تفاصيل الحجز",
         "en": "View Reservation"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -650,7 +755,7 @@
       "ar": "تذكير بموعد حجزك القادم",
       "en": "A reminder about your upcoming appointment"
     },
-    "icon": "◷",
+    "icon": "bell-ring",
     "tone": "Neutral",
     "introduction": {
       "ar": [
@@ -675,7 +780,8 @@
       "label": {
         "ar": "عرض الموعد",
         "en": "View Appointment"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -688,7 +794,7 @@
       "ar": "تمت استعادة حجزك",
       "en": "Your reservation has been restored"
     },
-    "icon": "↻",
+    "icon": "calendar-sync",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -713,7 +819,8 @@
       "label": {
         "ar": "متابعة الحجز",
         "en": "View Reservation"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -726,7 +833,7 @@
       "ar": "يوجد تحديث جديد على حسابك",
       "en": "A new update is available"
     },
-    "icon": "◆",
+    "icon": "shield-check",
     "tone": "Neutral",
     "introduction": {
       "ar": [
@@ -751,7 +858,8 @@
       "label": {
         "ar": "الدخول إلى حسابي",
         "en": "Sign In Securely"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -764,7 +872,7 @@
       "ar": "مرحبًا بك في الفترة التجريبية!",
       "en": "Your free trial has started!"
     },
-    "icon": "★",
+    "icon": "gift",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -789,7 +897,8 @@
       "label": {
         "ar": "استكشاف اشتراكي",
         "en": "Explore My Subscription"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -802,7 +911,7 @@
       "ar": "فترتك التجريبية تقترب من الانتهاء",
       "en": "Your trial is ending soon"
     },
-    "icon": "◷",
+    "icon": "clock",
     "tone": "Warning",
     "introduction": {
       "ar": [
@@ -827,7 +936,8 @@
       "label": {
         "ar": "استعراض الباقات",
         "en": "Explore Plans"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -840,7 +950,7 @@
       "ar": "انتهت فترتك التجريبية",
       "en": "Your trial has ended"
     },
-    "icon": "⌛",
+    "icon": "hourglass",
     "tone": "Warning",
     "introduction": {
       "ar": [
@@ -865,7 +975,8 @@
       "label": {
         "ar": "استعراض الباقات",
         "en": "Explore Plans"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -878,7 +989,7 @@
       "ar": "تم تمديد فترتك التجريبية!",
       "en": "Your trial has been extended!"
     },
-    "icon": "＋",
+    "icon": "calendar-plus",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -903,7 +1014,8 @@
       "label": {
         "ar": "عرض تفاصيل الفترة",
         "en": "View Trial Details"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -916,7 +1028,7 @@
       "ar": "تم تفعيل اشتراكك بنجاح!",
       "en": "Your subscription is now active!"
     },
-    "icon": "✓",
+    "icon": "badge-check",
     "tone": "Success",
     "introduction": {
       "ar": [
@@ -941,7 +1053,8 @@
       "label": {
         "ar": "إدارة اشتراكي",
         "en": "Manage Subscription"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -954,7 +1067,7 @@
       "ar": "اشتراكك على وشك الانتهاء",
       "en": "Your subscription is ending soon"
     },
-    "icon": "◷",
+    "icon": "calendar-clock",
     "tone": "Warning",
     "introduction": {
       "ar": [
@@ -979,7 +1092,8 @@
       "label": {
         "ar": "تجديد الاشتراك",
         "en": "Renew Subscription"
-      }
+      },
+      "placement": "beforeClosing"
     }
   },
   {
@@ -992,7 +1106,7 @@
       "ar": "انتهى اشتراكك على وصلة",
       "en": "Your Wasla subscription has expired"
     },
-    "icon": "✕",
+    "icon": "calendar-x",
     "tone": "Danger",
     "introduction": {
       "ar": [
@@ -1017,7 +1131,8 @@
       "label": {
         "ar": "إدارة الاشتراك",
         "en": "Manage Subscription"
-      }
+      },
+      "placement": "beforeClosing"
     }
   }
 ]

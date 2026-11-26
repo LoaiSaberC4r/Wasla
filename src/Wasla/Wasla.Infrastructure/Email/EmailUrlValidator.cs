@@ -31,6 +31,13 @@ internal sealed class EmailUrlValidator
         return new UriBuilder(route) { Query = $"{tokenParameter}={Uri.EscapeDataString(token)}" }.Uri.AbsoluteUri;
     }
 
+    internal string? AssetBaseUrl(string? destination)
+    {
+        var validated = Validate(destination);
+        if (validated is null || validated.Contains('?') || validated.Contains('#')) return null;
+        return validated.TrimEnd('/') + "/";
+    }
+
     private static string Origin(Uri uri) => uri.GetLeftPart(UriPartial.Authority);
 
     private static Uri? Parse(string? value)

@@ -108,9 +108,17 @@ public sealed class SubscriptionApiTests
         Assert.Equal(HttpStatusCode.OK, renewed.StatusCode); var next = (await JsonAsync(renewed)).GetProperty("subscription");
         Assert.Equal("Scheduled", next.GetProperty("status").GetString()); Assert.Equal(upgraded.GetProperty("subscription").GetProperty("endsAtUtc").GetDateTime(), next.GetProperty("startsAtUtc").GetDateTime());
         var nextId = next.GetProperty("id").GetGuid();
-        await app.WithDbAsync(async db => Assert.False(await db.EmailOutboxMessages.AnyAsync(e => e.IdempotencyKey == "subscription-activated:" + nextId)));
+        var activationKey = "subscription-activated:" + nextId;
+        await app.WithDbAsync(async db => Assert.False(await db.EmailOutboxMessages.AnyAsync(e => e.IdempotencyKey == activationKey)));
         app.Clock.UtcNow = next.GetProperty("startsAtUtc").GetDateTime(); await Process(app, nextId);
-        await app.WithDbAsync(async db => Assert.Equal(1, await db.DoctorSubscriptions.CountAsync(s => s.DoctorId == app.DoctorId && s.Status == SubscriptionStatus.Active)));
+        await app.WithDbAsync(async db =>
+        {
+            Assert.Equal(1, await db.DoctorSubscriptions.CountAsync(s => s.DoctorId == app.DoctorId && s.Status == SubscriptionStatus.Active));
+            var activated = Assert.Single(await db.EmailOutboxMessages.Where(e => e.IdempotencyKey == activationKey).ToArrayAsync());
+            Assert.Contains("Subscription Activated", activated.Subject, StringComparison.Ordinal);
+        });
+        await Process(app, nextId);
+        await app.WithDbAsync(async db => Assert.Equal(1, await db.EmailOutboxMessages.CountAsync(e => e.IdempotencyKey == activationKey)));
     }
     internal static async Task Process(Phase13ApiFixture app, Guid id)
     {

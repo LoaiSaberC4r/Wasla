@@ -114,7 +114,8 @@ internal sealed class EmailNotificationFactory(IEmailTemplateRenderer renderer) 
             decimal? price = null, string? currency = null)
         {
             fields["Name"] = ValidName(input.Doctor);
-            fields["Plan"] = Required(input.Plan);
+            Required(input.Plan?.PlanCode);
+            fields["Plan"] = input.Plan;
             fields["EndsAtUtc"] = input.EndsAtUtc;
             fields["StartsAtUtc"] = startsAtUtc;
             fields["PracticeLimit"] = practiceLimit;

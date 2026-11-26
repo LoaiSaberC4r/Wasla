@@ -42,14 +42,16 @@ public sealed record ReservationRestoredEmail(string Reference, DateTime Appoint
 
 public sealed record MedicalUpdateAvailableEmail : EmailTemplateModel;
 
-public abstract record SubscriptionEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc) : EmailTemplateModel;
-public sealed record TrialStartedEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc,
+public sealed record SubscriptionPlanEmailName(string PlanCode, string? NameAr = null, string? NameEn = null);
+
+public abstract record SubscriptionEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc) : EmailTemplateModel;
+public sealed record TrialStartedEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc,
     DateTime? StartsAtUtc, int PracticeLimit, int ReceptionLimit) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
-public sealed record TrialReminderEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
-public sealed record TrialExpiredEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
-public sealed record TrialExtendedEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
-public sealed record PaidSubscriptionActivatedEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc,
+public sealed record TrialReminderEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
+public sealed record TrialExpiredEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
+public sealed record TrialExtendedEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
+public sealed record PaidSubscriptionActivatedEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc,
     DateTime? StartsAtUtc, int PracticeLimit, int ReceptionLimit, IReadOnlyList<EmailName> LinkedPractices) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
-public sealed record PaidSubscriptionReminderEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc,
+public sealed record PaidSubscriptionReminderEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc,
     IReadOnlyList<EmailName> LinkedPractices, decimal? RenewalPrice, string? Currency) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
-public sealed record SubscriptionExpiredEmail(EmailName Doctor, string Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);
+public sealed record SubscriptionExpiredEmail(EmailName Doctor, SubscriptionPlanEmailName Plan, DateTime? EndsAtUtc) : SubscriptionEmail(Doctor, Plan, EndsAtUtc);

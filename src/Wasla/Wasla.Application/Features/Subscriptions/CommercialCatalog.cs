@@ -11,14 +11,14 @@ public sealed record SubscriptionSelection(string ProductCode, string PlanCode, 
 
 public interface ISubscriptionCatalogResolver
 {
-    Task<Result<SubscriptionTerms>> ResolveAsync(SubscriptionSelection? selection, CancellationToken ct);
+    Task<Result<SubscriptionTerms>> ResolveAsync(SubscriptionSelection? selection, CancellationToken ct, SubscriptionCatalogData? catalog = null);
 }
 public sealed class SubscriptionCatalogResolver(ISubscriptionDataStore store, IOptionsMonitor<SubscriptionCatalogOptions> options) : ISubscriptionCatalogResolver
 {
-    public async Task<Result<SubscriptionTerms>> ResolveAsync(SubscriptionSelection? selection, CancellationToken ct)
+    public async Task<Result<SubscriptionTerms>> ResolveAsync(SubscriptionSelection? selection, CancellationToken ct, SubscriptionCatalogData? catalog = null)
     {
         if (selection is null) return Result<SubscriptionTerms>.Fail(SubscriptionErrors.Invalid("InvalidSelection"));
-        var o = options.CurrentValue; var data = await store.CatalogAsync(ct);
+        var o = options.CurrentValue; var data = catalog ?? await store.CatalogAsync(ct);
         var product = data.Products.SingleOrDefault(p => p.Code == selection.ProductCode && p.IsActive && p.IsPubliclySelectable);
         if (product is null || selection.ProductCode == "ONLINE_BOOKING_ONLY" && !o.BookingOnly.Enabled)
             return Result<SubscriptionTerms>.Fail(SubscriptionErrors.Invalid("ProductNotAvailable"));

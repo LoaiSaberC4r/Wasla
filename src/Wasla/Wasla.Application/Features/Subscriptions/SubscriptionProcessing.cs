@@ -49,6 +49,8 @@ internal sealed class ProcessSubscriptionLifecycleCommandHandler(ISubscriptionDa
             s.BeginScheduledPeriod(now);
             lifecycle.History(s, "PeriodStarted", SubscriptionStatus.Scheduled, null, null, "period-started:" + s.Id);
             await lifecycle.QueueProjectionAsync(s, "period-started:" + s.Id, cancellationToken);
+            if (s.SubscriptionKind == SubscriptionKind.Paid && s.Status == SubscriptionStatus.Active)
+                await lifecycle.QueueEmailAsync(s, "Activated", $"subscription-activated:{s.Id}", cancellationToken);
         }
         if (s.Status != SubscriptionStatus.Active) return Result<bool>.Ok(false);
         var reminders = await store.RemindersAsync(s.Id, cancellationToken);

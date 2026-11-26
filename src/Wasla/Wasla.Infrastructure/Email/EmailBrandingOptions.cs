@@ -10,6 +10,8 @@ public sealed class EmailBrandingOptions
     public string TaglineEn { get; set; } = "More Connected Healthcare";
 
     public string[] AllowedOrigins { get; set; } = [];
+    public string? AssetBaseUrl { get; set; }
+    public string? TimeZoneId { get; set; }
     public string? LogoUrl { get; set; }
     public string? FooterImageUrl { get; set; }
     public string? WebsiteUrl { get; set; }

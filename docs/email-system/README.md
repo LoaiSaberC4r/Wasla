@@ -13,7 +13,7 @@ Callers queue those three values through `IEmailOutbox` using their existing rec
 
 1. Add a typed model and key under `Wasla.Application/Email`. Limit the model to values the recipient is authorized to see.
 2. Map the model's permitted fields in `EmailNotificationFactory`. Use the default bilingual language for direct system email or explicitly set the guarded recipient's preferred language.
-3. Add the localized copy to `EmailTemplates.v1.json` and compose any dynamic details from the shared components. Keep subjects static and pass only validated destinations into links.
+3. Add the localized copy and registered icon to `EmailTemplates.v1.json`. Define any action in the catalog with its placement and approved destination. Use the shared components for dynamic content.
 4. Add a synthetic preview sample. Connect the template to an approved existing trigger and reuse caller-owned Outbox queueing.
 
 ## Generate previews
@@ -24,4 +24,4 @@ Run the generator from the repository root.
 dotnet run --project tools/Wasla.EmailPreview
 ```
 
-Open `email-previews/index.html` to choose a template, language, viewport, and format. Each template has a bilingual HTML and text file plus Arabic (`.ar`) and English (`.en`) variants. An optional argument after `--` selects an alternate output directory. All sample data and destinations are synthetic. The CLI resolves the production factory and renderer without a database, SMTP registration, or live credentials.
+Open `email-previews/index.html` to choose a template, language, viewport, and format. Each template has a bilingual HTML and text file plus Arabic (`.ar`) and English (`.en`) variants. The index also includes Patient Account Activation (token fallback) in all three modes. An optional argument after `--` selects an alternate output directory. The CLI uses the production factory and renderer with synthetic data. It copies the published icon files into the preview folder so they load offline.

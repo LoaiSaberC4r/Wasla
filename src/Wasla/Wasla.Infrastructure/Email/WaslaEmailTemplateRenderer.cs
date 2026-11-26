@@ -9,7 +9,8 @@ namespace Wasla.Infrastructure.Email;
 internal sealed class WaslaEmailTemplateRenderer(
     EmailTemplateRegistry registry, EmailBrandingProvider branding, IDateTimeProvider clock) : IEmailTemplateRenderer
 {
-    private readonly EmailComponents components = new(branding.Options);
+    private readonly EmailComponents components = new(branding.Options, branding.Urls.AssetBaseUrl(branding.Options.AssetBaseUrl));
+    private readonly EmailDateFormatter dates = new(branding.Options.TimeZoneId);
 
     public Task<EmailTemplateResult> RenderAsync(EmailTemplateRequest request, CancellationToken ct = default)
     {
@@ -25,42 +26,44 @@ internal sealed class WaslaEmailTemplateRenderer(
         var options = branding.Options;
         var data = request.Model;
         var now = clock.UtcNow;
-        var activation = template.Key == PatientAccountActivation;
-        var token = activation ? Required<string>(data, "ActivationToken") : null;
+        var token = template.Activation is not null ? Required<string>(data, "ActivationToken") : null;
         var expiration = template.Key is PasswordResetOtp or PatientEmailVerification or PatientAccountActivation
             ? Required<int>(data, "Expiration") : 0;
         var destination = token is null
             ? template.Action is { } link ? branding.Destination(link.Destination) : null
             : branding.Urls.ActivationLink(options.PatientActivationUrl, options.PatientActivationTokenQueryParameter, token);
-        var action = destination is not null && template.Action is { } cta
-            ? components.Action(cta.Label, language, destination) : null;
-
-        EmailBlock? shared = template.Key is PasswordResetOtp or PatientEmailVerification
-            ? components.Otp(Required<string>(data, "OtpCode"), expiration, language)
-            : activation ? action : null;
+        var activationCopy = destination is null ? template.Activation?.TokenFallback : template.Activation?.SecureLink;
+        var action = template.Action is { } cta
+            ? CreateAction(cta) : null;
+        var otp = template.Key is PasswordResetOtp or PatientEmailVerification
+            ? components.Otp(Required<string>(data, "OtpCode"), expiration, language) : null;
 
         var sections = new List<EmailBlock> { components.Hero(template, language) };
         if (language != EmailLanguageMode.English)
-            sections.Add(RenderLanguage(false, shared, divider: false));
+            sections.Add(RenderLanguage(english: false, first: true));
         if (language != EmailLanguageMode.Arabic)
-            sections.Add(RenderLanguage(true, language == EmailLanguageMode.English ? shared : null,
-                divider: language == EmailLanguageMode.Bilingual));
-        if (!activation && action is not null) sections.Add(action);
+            sections.Add(RenderLanguage(english: true, first: language == EmailLanguageMode.English));
         var content = EmailBlock.Join(sections);
         var header = components.Header(language, branding.Urls.Validate(options.LogoUrl));
         var footer = components.Footer(language, now.Year, branding.Urls.Validate(options.FooterImageUrl, legacyFooter: true),
             branding.Urls.Validate(options.WebsiteUrl), branding.Urls.Validate(options.SupportUrl), branding.Urls.Validate(options.PrivacyPolicyUrl));
         var subject = "Wasla | " + EmailComponents.InlineText(template.Subject, language);
         var text = EmailBlock.Join([header, content, footer]).Text;
-        if (token is not null && action is null)
-        {
-            var tokenBlock = EmailComponents.ActivationToken(token, language);
-            content = EmailBlock.Join([content, tokenBlock]);
-            text += "\n\n" + tokenBlock.Text;
-        }
         return Task.FromResult(new EmailTemplateResult(subject, components.Layout(language, subject, header, content, footer), text));
 
-        EmailBlock RenderLanguage(bool english, EmailBlock? sharedComponent, bool divider)
+        EmailBlock? CreateAction(TemplateAction cta)
+        {
+            if (activationCopy is not null && token is not null)
+            {
+                var validity = new Localized<string>(
+                    string.Format(CultureInfo.InvariantCulture, activationCopy.Expiration.Ar, expiration),
+                    string.Format(CultureInfo.InvariantCulture, activationCopy.Expiration.En, expiration));
+                return components.Activation(token, destination, cta.Label, validity, language);
+            }
+            return destination is null ? null : components.Action(cta.Label, language, destination);
+        }
+
+        EmailBlock RenderLanguage(bool english, bool first)
         {
             string L(string ar, string en) => english ? en : ar;
             var blocks = new List<EmailBlock>();
@@ -74,29 +77,21 @@ internal sealed class WaslaEmailTemplateRenderer(
                     : L($"مرحبًا {display}،", $"Hello {display},")));
             }
 
-            if (english && sharedComponent is not null) blocks.Add(sharedComponent);
-            if (activation && action is null)
-            {
-                blocks.Add(EmailComponents.Paragraph(L(
-                    "مرحبًا بك في وصلة. استخدم رمز التفعيل الوارد في هذه الرسالة لإنشاء كلمة مرور وتفعيل حسابك.",
-                    "Welcome to Wasla. Use the activation token in this email to create your password and activate your account.")));
-            }
-            else
-            {
-                blocks.AddRange(template.Introduction.For(english).Select(EmailComponents.Paragraph));
-            }
-            if (!english && sharedComponent is not null) blocks.Add(sharedComponent);
-
-            if (activation)
-                blocks.Add(EmailComponents.Paragraph(L($"دعوة التفعيل صالحة لمدة {expiration} ساعة.",
-                    $"Your activation invitation is valid for {expiration} hours.")));
+            if (first && english && otp is not null) blocks.Add(otp);
+            if (activationCopy is not null)
+                blocks.Add(EmailComponents.Paragraph(english && !first
+                    ? activationCopy.BilingualEnglishIntroduction : activationCopy.Introduction.For(english)));
+            else if (template.Introduction is { } introduction)
+                blocks.AddRange(introduction.For(english).Select(EmailComponents.Paragraph));
+            if (!english && otp is not null) blocks.Add(otp);
+            AddAction(EmailActionPlacement.AfterIntroduction);
 
             var details = Details(template.Key, data, now, english);
             if (details is not null) blocks.Add(details);
+            AddAction(EmailActionPlacement.AfterDetails);
 
             if (template.Key == DoctorRegistrationReceived) blocks.Add(components.Stepper(english));
-            if (template.Steps is { } steps)
-                blocks.Add(components.Steps(steps.Heading.For(english), steps.Items.For(english), numbered: !activation));
+            if (template.Steps is { } steps) blocks.Add(components.Steps(steps, english));
             if (Get<string>(data, "ReviewMessage") is { } message &&
                 template.Key is DoctorRegistrationRejected or DoctorAccountSuspended or DoctorSpecializationChangesRequested)
             {
@@ -110,10 +105,17 @@ internal sealed class WaslaEmailTemplateRenderer(
             }
             if (template.Information is { } info)
                 blocks.Add(EmailComponents.Information(info.Heading.For(english), info.Body.For(english)));
-            if (template.Security is { } security)
+            if ((activationCopy?.Security ?? template.Security) is { } security)
                 blocks.Add(EmailComponents.Security(L("تنبيه أمني", "Security alert"), security.For(english)));
+            AddAction(EmailActionPlacement.AfterInstructions);
+            AddAction(EmailActionPlacement.BeforeClosing);
             blocks.Add(EmailComponents.Paragraph(L("مع تحيات فريق وصلة", "Best regards, Wasla Team")));
-            return EmailComponents.LanguageSection(english, divider, blocks);
+            return EmailComponents.LanguageSection(english, divider: !first, blocks);
+
+            void AddAction(EmailActionPlacement placement)
+            {
+                if (first && action is not null && template.Action?.Placement == placement) blocks.Add(action);
+            }
         }
     }
 
@@ -140,7 +142,7 @@ internal sealed class WaslaEmailTemplateRenderer(
         if (Get<DateTime?>(data, "OccurredAtUtc") is { } when && Get<EmailName>(data, "Name") is { } doctor)
         {
             Row("اسم الطبيب", "Doctor name", Name(doctor, english));
-            var date = UtcDate(when);
+            var date = dates.PlatformDateTime(when, english);
             switch (key)
             {
                 case DoctorRegistrationReceived: Row("تاريخ التسجيل", "Registration date", date); break;
@@ -166,8 +168,8 @@ internal sealed class WaslaEmailTemplateRenderer(
             Row("رقم الحجز", "Reservation reference", reference);
             if (Get<DateTime?>(data, "ScheduledLocalDateTime") is { Ticks: > 0 } local)
             {
-                var date = local.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                var time = local.ToString("HH:mm", CultureInfo.InvariantCulture);
+                var date = EmailDateFormatter.LocalDate(local, english);
+                var time = EmailDateFormatter.LocalTime(local, english);
                 if (key == ReservationRescheduled)
                 {
                     Row("تاريخ الموعد الجديد", "New appointment date", date);
@@ -180,26 +182,19 @@ internal sealed class WaslaEmailTemplateRenderer(
                 }
             }
         }
-        if (Get<string>(data, "Plan") is { } plan)
+        if (Get<SubscriptionPlanEmailName>(data, "Plan") is { } plan)
         {
-            Row("الباقة", "Plan", plan);
+            var planName = english ? plan.NameEn : plan.NameAr;
+            Row("الباقة", "Plan", string.IsNullOrWhiteSpace(planName) ? plan.PlanCode : planName);
             if (Get<DateTime?>(data, "StartsAtUtc") is { } start)
-                Row("تاريخ البداية", "Start date", UtcDate(start));
+                Row("تاريخ البداية", "Start date", dates.PlatformDateTime(start, english));
             if (Get<DateTime?>(data, "EndsAtUtc") is { } end)
             {
-                if (key == TrialExtended) Row("تاريخ الانتهاء الجديد", "New end date", UtcDate(end));
-                else Row("تاريخ الانتهاء", "End date", UtcDate(end));
+                if (key == TrialExtended) Row("تاريخ الانتهاء الجديد", "New end date", dates.PlatformDateTime(end, english));
+                else Row("تاريخ الانتهاء", "End date", dates.PlatformDateTime(end, english));
 
                 if (key is TrialReminder or PaidSubscriptionReminder)
-                {
-                    var time = end - now;
-                    var remaining = time.TotalDays >= 1
-                        ? L($"{Number((int)time.TotalDays)} يوم", $"{Number((int)time.TotalDays)} day(s)")
-                        : time.TotalHours >= 1
-                            ? L($"{Number((int)time.TotalHours)} ساعة", $"{Number((int)time.TotalHours)} hour(s)")
-                            : time > TimeSpan.Zero ? L("أقل من ساعة", "Less than an hour") : L("انتهت المدة", "Period ended");
-                    Row("الوقت المتبقي", "Remaining time", remaining);
-                }
+                    Row("الوقت المتبقي", "Remaining time", EmailDateFormatter.Remaining(end - now, english));
             }
             if (Get<int?>(data, "PracticeLimit") is { } practices)
                 Row("الحد الأقصى للعيادات", "Maximum practices", Number(practices));
@@ -219,7 +214,6 @@ internal sealed class WaslaEmailTemplateRenderer(
 
     private static string Name(EmailName name, bool english) =>
         english && !string.IsNullOrWhiteSpace(name.English) ? name.English : name.Arabic;
-    private static string UtcDate(DateTime value) => value.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
     private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 
     private static T? Get<T>(IReadOnlyDictionary<string, object?> data, string key) =>

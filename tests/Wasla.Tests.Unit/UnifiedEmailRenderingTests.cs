@@ -25,6 +25,7 @@ public sealed class UnifiedEmailRenderingTests
             Assert.StartsWith("Wasla | ", result.Subject, StringComparison.Ordinal);
             Assert.NotEmpty(result.HtmlBody);
             Assert.False(string.IsNullOrWhiteSpace(result.TextBody));
+            Assert.Contains("src=\"" + SampleEmails.AssetBaseUrl + "icons/", result.HtmlBody, StringComparison.Ordinal);
             Assert.Single(Regex.Matches(result.HtmlBody, "id=\"wasla-header\""));
             Assert.Single(Regex.Matches(result.HtmlBody, "id=\"wasla-footer\""));
             Assert.Contains(sample.Example, result.TextBody, StringComparison.Ordinal);
@@ -53,6 +54,7 @@ public sealed class UnifiedEmailRenderingTests
         var settings = SampleEmails.Branding();
         settings["EmailBranding:LogoUrl"] = "https://app.wasla.test/logo.png";
         settings["EmailBranding:LoginUrl"] = "https://unapproved.test/login";
+        settings["EmailBranding:AssetBaseUrl"] = "https://unapproved.test/email-assets/";
         settings["EmailBranding:SupportUrl"] = "javascript:alert(1)";
         settings["EmailBranding:PatientActivationUrl"] = "https://app.wasla.test@unapproved.test/activate";
         using var services = SampleEmails.BuildServices(settings);
@@ -65,8 +67,41 @@ public sealed class UnifiedEmailRenderingTests
         Assert.DoesNotContain("unapproved.test", clinical.HtmlBody + activation.HtmlBody, StringComparison.Ordinal);
         Assert.DoesNotContain("javascript:", clinical.HtmlBody, StringComparison.Ordinal);
         Assert.DoesNotContain("Activate My Account", activation.HtmlBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("activation link", activation.TextBody!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Your activation token is valid for 48 hours.", activation.TextBody, StringComparison.Ordinal);
+        Assert.Contains("Use the activation token above", activation.TextBody, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(activation.HtmlBody, "SYNTHETIC-TOKEN"));
-        Assert.EndsWith("SYNTHETIC-TOKEN", activation.TextBody, StringComparison.Ordinal);
+        Assert.Single(Regex.Matches(activation.TextBody!, "SYNTHETIC-TOKEN"));
+        InOrder(activation.HtmlBody, "SYNTHETIC-TOKEN", "استكشف خدمات وصلة", "wasla-footer");
+        InOrder(activation.TextBody!, "SYNTHETIC-TOKEN", "استكشف خدمات وصلة", "الموقع الإلكتروني");
+    }
+
+    [Fact]
+    public async Task Ctas_appear_once_at_the_configured_point_in_the_first_language()
+    {
+        using var services = SampleEmails.BuildServices(SampleEmails.Branding());
+        var factory = services.GetRequiredService<IEmailNotificationFactory>();
+        var ct = TestContext.Current.CancellationToken;
+        var activation = new PatientAccountActivationEmail("SYNTHETIC-LINK-TOKEN", 48);
+        var bilingual = await factory.CreateAsync(activation, ct);
+        const string activationUrl = "https://app.wasla.test/activate?token=SYNTHETIC-LINK-TOKEN";
+        Assert.Single(Regex.Matches(bilingual.HtmlBody, Regex.Escape(activationUrl)));
+        Assert.Single(Regex.Matches(bilingual.TextBody!, Regex.Escape(activationUrl)));
+        InOrder(bilingual.HtmlBody, activationUrl, "استكشف خدمات وصلة", "Use the activation button above");
+        Assert.Contains("Your activation link is valid for 48 hours.", bilingual.TextBody, StringComparison.Ordinal);
+        var english = await factory.CreateAsync(activation with { Language = EmailLanguageMode.English }, ct);
+        InOrder(english.TextBody!, "Use the activation button below", activationUrl, "Explore Wasla");
+
+        var approved = await factory.CreateAsync(new DoctorAccountApprovedEmail(new("ليلى", "Layla"),
+            new DateTime(2026, 11, 26, 10, 0, 0, DateTimeKind.Utc)), ct);
+        const string login = "https://app.wasla.test/sign-in";
+        Assert.Single(Regex.Matches(approved.HtmlBody, Regex.Escape(login)));
+        InOrder(approved.HtmlBody, "تاريخ الاعتماد", login, "الخطوات الأولى", "Hello Dr. Layla,");
+        InOrder(approved.TextBody!, "تاريخ الاعتماد", login, "الخطوات الأولى", "Hello Dr. Layla,");
+        Assert.Contains("26 نوفمبر 2026، 12:00 ظهرًا", approved.TextBody, StringComparison.Ordinal);
+        Assert.Contains("26 Nov 2026, 12:00 PM", approved.TextBody, StringComparison.Ordinal);
+        Assert.Contains("icons/shield-check-success.png", approved.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("icons/hospital.png", approved.HtmlBody, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -75,16 +110,43 @@ public sealed class UnifiedEmailRenderingTests
         using var services = SampleEmails.BuildServices();
         var factory = services.GetRequiredService<IEmailNotificationFactory>();
         var ct = TestContext.Current.CancellationToken;
-        var booking = await factory.CreateAsync(new AppointmentReminderEmail("<script>\r\n", new(2026, 11, 30, 14, 35, 0))
-            { Language = EmailLanguageMode.English }, ct);
+        var booking = await factory.CreateAsync(new AppointmentReminderEmail("<script>\r\n", new(2026, 11, 30, 18, 30, 0)), ct);
         var family = await factory.CreateAsync(new FamilyRelationshipRejectedEmail(new("سلمى"), 3), ct);
         var clinical = await factory.CreateAsync(new MedicalUpdateAvailableEmail(), ct);
 
         Assert.Contains("&lt;script&gt;", booking.HtmlBody, StringComparison.Ordinal);
         Assert.DoesNotContain("<script>", booking.HtmlBody, StringComparison.Ordinal);
-        Assert.Contains("Appointment time: 14:35", booking.TextBody, StringComparison.Ordinal);
+        Assert.Contains("Appointment time: 06:30 PM", booking.TextBody, StringComparison.Ordinal);
+        Assert.Contains("تاريخ الموعد: 30 نوفمبر 2026", booking.TextBody, StringComparison.Ordinal);
+        Assert.Contains("وقت الموعد: 06:30 مساءً", booking.TextBody, StringComparison.Ordinal);
         Assert.DoesNotContain("Reason:", family.TextBody, StringComparison.Ordinal);
         Assert.Equal("Wasla | تحديث جديد على وصلة | New Wasla Update", clinical.Subject);
         Assert.DoesNotContain("Reservation reference", clinical.TextBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Subscription_copy_uses_localized_plan_names_with_per_language_code_fallback()
+    {
+        using var services = SampleEmails.BuildServices();
+        var factory = services.GetRequiredService<IEmailNotificationFactory>();
+        var reminder = await factory.CreateAsync(new TrialReminderEmail(new("ليلى", "Layla"), new("DEMO", "باقة وصلة"),
+            new DateTime(2026, 11, 26, 10, 0, 0, DateTimeKind.Utc)), TestContext.Current.CancellationToken);
+
+        Assert.Contains("الباقة: باقة وصلة", reminder.TextBody, StringComparison.Ordinal);
+        Assert.Contains("Plan: DEMO", reminder.TextBody, StringComparison.Ordinal);
+        Assert.Contains("End date: 26 Nov 2026, 10:00 AM (UTC)", reminder.TextBody, StringComparison.Ordinal);
+        Assert.Contains("Remaining time: 1 hour", reminder.TextBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("hour(s)", reminder.TextBody, StringComparison.Ordinal);
+    }
+
+    private static void InOrder(string content, params string[] snippets)
+    {
+        var offset = 0;
+        foreach (var snippet in snippets)
+        {
+            var position = content.IndexOf(snippet, offset, StringComparison.Ordinal);
+            Assert.True(position >= 0, $"Expected {snippet} after character {offset}.");
+            offset = position + snippet.Length;
+        }
     }
 }

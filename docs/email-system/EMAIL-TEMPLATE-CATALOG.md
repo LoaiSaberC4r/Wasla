@@ -34,4 +34,16 @@ Bilingual Arabic-first delivery is the default for Authentication, Patient Ident
 
 The generic clinical template serves `Prescription.Available`, `Lab.RequestAvailable`, `Radiology.RequestAvailable`, `Lab.OfficialResultAvailable`, `Radiology.OfficialResultAvailable`, `DiagnosticResult.Corrected`, and `DiagnosticResult.Voided`. These notifications carry no medical payload. The guarded clinical sender continues to enforce the patient-self recipient rule, verified email, opt-in, release gate, and authorization.
 
+| Action placement | Template IDs |
+|---|---|
+| After introduction, before features | 03 |
+| After details, before getting-started steps | 05 |
+| After review, next-step, or sign-in instructions | 06, 07, 09, 13, 14 |
+| Before the closing | 08, 10–12, 15–27 |
+| No action | 01, 02, 04 |
+
+EMAIL-03 uses a secure button or a labelled activation token in the same position. EMAIL-25 is queued for an immediately active paid subscription or when a scheduled paid period becomes active. Both paths use the existing `subscription-activated:{SubscriptionPeriodId}` key.
+
+All seven subscription templates use the localized commercial name when the catalog row matches the purchased plan ID, product ID, and code. A missing name in the selected language falls back to the saved `PlanCode`. Plan names are presentation metadata. Purchased dates, limits, and other terms still come from the existing snapshot and period.
+
 Optional links are sourced from branding. Reception never passes the temporary password. Family models cannot accept private review notes or family member identities. Patient identity claim updates carry no review decision or claimant data. Subscription contract and period identifiers stay in the existing idempotency and persistence paths, outside customer-facing content.

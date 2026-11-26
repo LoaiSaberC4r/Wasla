@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Wasla.Application.Email;
 
 namespace Wasla.Infrastructure.Email;
@@ -21,7 +22,7 @@ internal sealed record EmailBlock(string Html, string Text)
     }
 }
 
-internal sealed class EmailComponents(EmailBrandingOptions options)
+internal sealed class EmailComponents(EmailBrandingOptions options, string? assetBaseUrl)
 {
     private const string PrimarySurface = "#F0F8F6";
     private const string PrimaryBorder = "#CCE7DF";
@@ -125,7 +126,7 @@ internal sealed class EmailComponents(EmailBrandingOptions options)
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:20px">
             <tr><td align="center">
             <table role="presentation" width="72" cellspacing="0" cellpadding="0" align="center"><tr>
-            <td width="72" height="72" align="center" valign="middle" aria-hidden="true" bgcolor="{fill}" style="border-radius:50%;font-size:30px;font-weight:bold;color:{color}">{Encode(template.Icon)}</td>
+            <td width="72" height="72" align="center" valign="middle" aria-hidden="true" bgcolor="{fill}" style="border-radius:50%;font-size:30px;font-weight:bold;color:{color}">{Icon(template.Icon, template.Tone, 36)}</td>
             </tr></table>
             <h1 {Direction(english)} style="margin:12px 0 0;font-size:24px;line-height:1.35;color:{heading}">{Encode(template.Heading.For(english))}</h1>
             {subtitle}
@@ -175,7 +176,7 @@ internal sealed class EmailComponents(EmailBrandingOptions options)
         $"""
         <table role="presentation" cellspacing="0" cellpadding="0" align="center" style="margin:4px auto 16px">
         <tr><td align="center" bgcolor="{primary}" style="border-radius:8px;mso-padding-alt:14px 22px">
-        <a href="{Encode(destination)}" style="display:inline-block;padding:14px 22px;font-weight:bold;color:#fff;text-decoration:none">{LocalizedInline(label, language, "<br>")}</a>
+        <a href="{Encode(destination)}" style="display:inline-block;padding:14px 22px;font-weight:bold;color:#fff;text-decoration:none">{ActionLabel(label, language)}</a>
         </td></tr></table>
         """, $"{InlineText(label, language)}: {destination}");
 
@@ -195,15 +196,22 @@ internal sealed class EmailComponents(EmailBrandingOptions options)
         return new(Card(cells, PrimarySurface, PrimaryBorder), $"{InlineText(label, language)}: {code}\n{InlineText(expiration, language, "\n")}");
     }
 
-    internal static EmailBlock ActivationToken(string token, EmailLanguageMode language)
+    internal EmailBlock Activation(string token, string? destination, Localized<string> actionLabel,
+        Localized<string> expiration, EmailLanguageMode language)
     {
-        var label = new Localized<string>("رمز التفعيل", "Activation token");
+        var expiryHtml = $"<div style=\"color:{muted};font-size:13px;text-align:center\">{LocalizedInline(expiration, language, "<br>")}</div>";
+        var expiryText = InlineText(expiration, language, "\n");
+        if (destination is not null)
+            return EmailBlock.Join([Action(actionLabel, language, destination), new($"<div style=\"margin:0 0 16px\">{expiryHtml}</div>", expiryText)]);
+
+        var label = new Localized<string>("رمز التفعيل", "Activation Token");
         return new(Card($"""
             <tr><td align="center">
             <strong>{LocalizedInline(label, language)}</strong>
-            <div dir="ltr" style="overflow-wrap:anywhere">{Encode(token)}</div>
+            <div dir="ltr" style="margin:8px 0;font-family:Consolas,'Courier New',monospace;font-weight:bold;color:{primary};overflow-wrap:anywhere;word-break:break-all">{Encode(token)}</div>
+            {expiryHtml}
             </td></tr>
-            """, PrimarySurface, PrimaryBorder), InlineText(label, language) + "\n" + token);
+            """, PrimarySurface, PrimaryBorder), $"{InlineText(label, language)}\n{token}\n{expiryText}");
     }
 
     internal static EmailBlock Security(string title, string message) => Callout("⚠", title, message, WarningBackground, WarningText);
@@ -212,20 +220,91 @@ internal sealed class EmailComponents(EmailBrandingOptions options)
 
     internal EmailBlock Stepper(bool english)
     {
-        (string Stage, string State, string Marker, string Tone)[] steps = english
-            ? [("Registration received", "Completed", "✓", "Success"), ("Data review", "Current", "2", "Neutral"), ("Review decision", "Pending", "3", "Neutral")]
-            : [("استلام الطلب", "مكتمل", "✓", "Success"), ("مراجعة البيانات", "المرحلة الحالية", "2", "Neutral"), ("نتيجة المراجعة", "في انتظار القرار", "3", "Neutral")];
-        var rows = string.Concat(steps.Select(step =>
-            $"<tr><td width=\"25\" style=\"padding:5px;color:{primary}\">{step.Marker}</td><td style=\"padding:5px\"><strong>{Encode(step.Stage)}</strong> · {Status(step.State, step.Tone)}</td></tr>"));
+        (string Stage, string State, string Marker, string Color, string Fill)[] steps = english
+            ? [("Registration received", "Completed", "✓", primary, primaryLight),
+               ("Data review", "Current", "2", warning, WarningBackground),
+               ("Review decision", "Pending", "3", muted, Border)]
+            : [("استلام الطلب", "مكتمل", "✓", primary, primaryLight),
+               ("مراجعة البيانات", "المرحلة الحالية", "2", warning, WarningBackground),
+               ("نتيجة المراجعة", "في انتظار القرار", "3", muted, Border)];
+        var indicators = string.Concat(steps.Select((step, index) => $"""
+            <td width="33%" align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>
+            <td width="50%" valign="middle">{(index == 0 ? "" : Connector(index == 1 ? primary : "#94A3B8"))}</td>
+            <td align="center" style="padding:0 4px">
+            <table role="presentation" width="30" cellspacing="0" cellpadding="0"><tr>
+            <td width="30" height="30" align="center" bgcolor="{step.Fill}" style="border:1px solid {step.Color};border-radius:50%;font-size:14px;font-weight:bold;color:{step.Color}">{step.Marker}</td>
+            </tr></table>
+            </td>
+            <td width="50%" valign="middle">{(index == steps.Length - 1 ? "" : Connector(index == 0 ? primary : "#94A3B8"))}</td>
+            </tr></table>
+            </td>
+            """));
+        var labels = string.Concat(steps.Select(step => $"""
+            <td align="center" valign="top" style="padding:8px 4px 0;font-size:13px;line-height:1.45;color:{heading};overflow-wrap:anywhere">
+            <strong>{Encode(step.Stage)}</strong><br><span style="color:{step.Color}">{Encode(step.State)}</span>
+            </td>
+            """));
+        var rows = $"<tr>{indicators}</tr><tr>{labels}</tr>";
         return new(Card(rows, PrimarySurface, PrimaryBorder), string.Join("\n", steps.Select(step => $"{step.Stage} — {step.State}")));
+
+        static string Connector(string color) =>
+            $"<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\"><tr><td height=\"2\" bgcolor=\"{color}\" style=\"font-size:1px;line-height:2px\">&nbsp;</td></tr></table>";
     }
 
-    internal EmailBlock Steps(string title, IEnumerable<string> items, bool numbered)
+    internal EmailBlock Steps(TemplateSteps steps, bool english)
     {
-        var tag = numbered ? "ol" : "ul";
-        var list = string.Concat(items.Select(item => $"<li style=\"margin:5px 0\">{Encode(item)}</li>"));
-        return new(Card($"<tr><td><strong style=\"font-size:18px;color:{heading}\">{Encode(title)}</strong><{tag} style=\"margin:8px 22px 0;padding:0\">{list}</{tag}></td></tr>",
-            PrimarySurface, PrimaryBorder), title + "\n" + string.Join("\n", items.Select((item, index) => numbered ? $"{index + 1}. {item}" : $"• {item}")));
+        var sectionTitle = steps.Heading.For(english);
+        var html = new StringBuilder();
+        var text = new List<string> { sectionTitle };
+        html.Append(CultureInfo.InvariantCulture, $"<tr><td colspan=\"2\" style=\"font-size:18px;font-weight:bold;color:{heading}\">{Encode(sectionTitle)}</td></tr>");
+        for (var index = 0; index < steps.Items.Length; index++)
+        {
+            var feature = steps.Items[index];
+            var title = feature.Title.For(english);
+            if (steps.Numbered) title = $"{(index + 1).ToString(CultureInfo.InvariantCulture)}. {title}";
+            var description = feature.Description.For(english);
+            var divider = index == 0 ? "" : $"border-top:1px solid {PrimaryBorder};";
+            html.Append(CultureInfo.InvariantCulture, $"""
+                <tr>
+                <td width="42" valign="middle" style="{divider}padding:10px 0">
+                <table role="presentation" width="42" cellspacing="0" cellpadding="0"><tr>
+                <td width="42" height="42" align="center" valign="middle" aria-hidden="true" bgcolor="{White}" style="border-radius:9px;color:{primary};font-size:20px;font-weight:bold">{Icon(feature.Icon, "Neutral", 22)}</td>
+                </tr></table>
+                </td>
+                <td valign="middle" style="{divider}padding:10px 9px;line-height:1.45">
+                <strong style="color:{heading}">{Encode(title)}</strong><br><span style="font-size:13px;color:{muted}">{Encode(description)}</span>
+                </td>
+                </tr>
+                """);
+            text.Add($"{title} — {description}");
+        }
+        return new(Card(html.ToString(), PrimarySurface, PrimaryBorder), string.Join("\n", text));
+    }
+
+    private string Icon(EmailIcon icon, string tone, int size)
+    {
+        var fallback = icon switch
+        {
+            EmailIcon.LockKeyhole => "🔒",
+            EmailIcon.MailCheck => "✉",
+            EmailIcon.ClipboardX or EmailIcon.CalendarX => "×",
+            EmailIcon.ShieldAlert => "!",
+            EmailIcon.FilePen => "✎",
+            EmailIcon.CalendarClock or EmailIcon.Clock or EmailIcon.Hourglass => "◷",
+            EmailIcon.CalendarPlus or EmailIcon.UserRoundPlus => "+",
+            EmailIcon.CalendarSync => "↻",
+            EmailIcon.HeartPulse => "♥",
+            EmailIcon.Stethoscope or EmailIcon.Hospital => "+",
+            EmailIcon.Settings => "⚙",
+            EmailIcon.Fingerprint or EmailIcon.Gift or EmailIcon.UsersRound or EmailIcon.UserRound or EmailIcon.BellRing => "•",
+            _ => "✓"
+        };
+        if (assetBaseUrl is null) return Encode(fallback);
+
+        var suffix = tone switch { "Success" => "-success", "Warning" => "-warning", "Danger" => "-danger", _ => "" };
+        var file = JsonNamingPolicy.KebabCaseLower.ConvertName(icon.ToString()) + suffix + ".png";
+        return $"<img src=\"{Encode(assetBaseUrl + "icons/" + file)}\" alt=\"{Encode(fallback)}\" width=\"{size}\" height=\"{size}\" style=\"display:block;border:0;margin:0 auto\">";
     }
 
     private static EmailBlock Callout(string icon, string title, string message, string fill, string color) => new(
@@ -257,6 +336,11 @@ internal sealed class EmailComponents(EmailBrandingOptions options)
         EmailLanguageMode.English => Span(value.En, true),
         _ => Span(value.Ar, false) + divider + Span(value.En, true)
     };
+
+    private static string ActionLabel(Localized<string> label, EmailLanguageMode language) =>
+        language == EmailLanguageMode.Bilingual
+            ? Span(label.Ar, false) + $"<br><span style=\"font-size:12px;font-weight:normal\">{Span(label.En, true)}</span>"
+            : LocalizedInline(label, language);
 
     internal static string InlineText(Localized<string> value, EmailLanguageMode language, string divider = " | ") => language switch
     {

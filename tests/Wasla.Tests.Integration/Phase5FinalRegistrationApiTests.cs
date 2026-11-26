@@ -104,6 +104,8 @@ internal static class Phase5IdentityApi
     internal static async Task<string> InvitationAsync(Phase13ApiFixture app, string email)
     {
         string text = ""; await app.WithDbAsync(async db => text = (await db.EmailOutboxMessages.Where(m => m.RecipientEmail == email && m.IdempotencyKey.StartsWith("patient-full-invite:")).OrderByDescending(m => m.CreatedOnUtc).FirstAsync()).TextBody!);
-        return text.Split('\n')[^1].Trim();
+        var token = Regex.Match(text, @"(?m)^رمز التفعيل \| Activation Token\r?\n([A-Za-z0-9_-]+)\r?$", RegexOptions.CultureInvariant);
+        Assert.True(token.Success, "The activation email must contain a labelled token.");
+        return token.Groups[1].Value;
     }
 }
