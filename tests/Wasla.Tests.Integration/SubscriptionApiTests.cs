@@ -107,7 +107,9 @@ public sealed class SubscriptionApiTests
         using var renewed = await PostAsync(admin, $"/api/v1/admin/subscriptions/{id}/renew", new { rowVersion = upgraded.GetProperty("rowVersion").GetString(), paymentMethod = "Cash", amountReceived = 999 });
         Assert.Equal(HttpStatusCode.OK, renewed.StatusCode); var next = (await JsonAsync(renewed)).GetProperty("subscription");
         Assert.Equal("Scheduled", next.GetProperty("status").GetString()); Assert.Equal(upgraded.GetProperty("subscription").GetProperty("endsAtUtc").GetDateTime(), next.GetProperty("startsAtUtc").GetDateTime());
-        app.Clock.UtcNow = next.GetProperty("startsAtUtc").GetDateTime(); await Process(app, next.GetProperty("id").GetGuid());
+        var nextId = next.GetProperty("id").GetGuid();
+        await app.WithDbAsync(async db => Assert.False(await db.EmailOutboxMessages.AnyAsync(e => e.IdempotencyKey == "subscription-activated:" + nextId)));
+        app.Clock.UtcNow = next.GetProperty("startsAtUtc").GetDateTime(); await Process(app, nextId);
         await app.WithDbAsync(async db => Assert.Equal(1, await db.DoctorSubscriptions.CountAsync(s => s.DoctorId == app.DoctorId && s.Status == SubscriptionStatus.Active)));
     }
     internal static async Task Process(Phase13ApiFixture app, Guid id)

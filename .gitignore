@@ -27,3 +27,4 @@ artifacts/family-*.log
 artifacts/PermissionSnapshot/
 artifacts-baseline-*.log
 artifacts/baseline/
+/email-previews/

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wasla email previews</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #172b36; background: #edf2f4; font: 15px Tahoma, Arial, sans-serif; }
+    header { padding: 20px max(16px, calc((100% - 1000px) / 2)); background: white; border-bottom: 3px solid #087f75; }
+    h1 { margin: 0 0 16px; font-size: 23px; }
+    form { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; }
+    label { display: grid; gap: 5px; }
+    select, a { font: inherit; }
+    select { padding: 7px; }
+    a { padding: 8px 0; color: #087f75; }
+    main { padding: 16px; }
+    iframe { display: block; width: 100%; max-width: 1000px; margin: 0 auto; height: 82vh; border: 1px solid #cce7df; background: white; }
+    iframe.mobile { max-width: 390px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Wasla email previews</h1>
+    <form>
+      <label>Template <select id="template"><!--template-options--></select></label>
+      <label>Language <select id="language"><option value="">Bilingual</option><option value=".ar">Arabic</option><option value=".en">English</option></select></label>
+      <label>Viewport <select id="viewport"><option value="">Desktop</option><option value="mobile">Mobile</option></select></label>
+      <label>Format <select id="format"><option value=".html">HTML</option><option value=".txt">Plain text</option></select></label>
+      <a id="open" target="_blank" rel="noopener">Open preview</a>
+    </form>
+  </header>
+  <main>
+    <iframe id="preview" title="Email preview" sandbox="allow-same-origin"></iframe>
+  </main>
+  <script>
+    const template = document.getElementById('template');
+    const language = document.getElementById('language');
+    const format = document.getElementById('format');
+    const viewport = document.getElementById('viewport');
+    const frame = document.getElementById('preview');
+    function update() {
+      const source = template.value + language.value + format.value;
+      frame.src = source;
+      frame.className = viewport.value;
+      document.getElementById('open').href = source;
+    }
+    document.querySelector('form').addEventListener('change', update);
+    update();
+  </script>
+</body>
+</html>

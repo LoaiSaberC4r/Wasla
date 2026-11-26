@@ -278,7 +278,7 @@ public sealed class TrustAccessApiTests
             var outbox = await db.EmailOutboxMessages.SingleAsync(
                 item => item.IdempotencyKey == $"password-reset-otp:{requestId}",
                 testToken);
-            otp = Regex.Match(outbox.HtmlBody, @"\b\d{6}\b", RegexOptions.CultureInvariant).Value;
+            otp = Regex.Match(outbox.TextBody!, @"Verification code: (\d{6})", RegexOptions.CultureInvariant).Groups[1].Value;
             Assert.NotEmpty(otp);
             Assert.DoesNotContain(otp, challenge.OtpHash, StringComparison.Ordinal);
         }

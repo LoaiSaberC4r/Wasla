@@ -55,21 +55,44 @@ public sealed class SubscriptionLifecycle(ISubscriptionDataStore store, IWaslaDa
     {
         if (eventType is "Activated" or "TrialStarted" or "Expired" or "TrialExpired" or "TrialExtended")
             await QueueProjectionAsync(subscription, key, ct);
+        // A renewal can reserve a future period while the current one is still active.
+        if (eventType == "Activated" && subscription.Status == SubscriptionStatus.Scheduled) return;
         var doctor = await doctors.FindDoctorByIdAsync(subscription.DoctorId, ct);
         var user = doctor is null ? null : await doctors.FindUserByIdAsync(doctor.ApplicationUserId, ct);
         if (user is null) return;
-        var names = new List<string>();
-        foreach (var allocation in await store.AllocationsAsync(subscription.SubscriptionContractId, ct))
-            if (await doctors.FindDoctorPracticeAsync(allocation.DoctorPracticeId, ct) is { } practice) names.Add(practice.NameAr);
+        var names = new List<EmailName>();
+        if (eventType is "Activated" or "PaidReminder")
+        {
+            foreach (var allocation in await store.AllocationsAsync(subscription.SubscriptionContractId, ct))
+                if (await doctors.FindDoctorPracticeAsync(allocation.DoctorPracticeId, ct) is { } practice)
+                    names.Add(new(practice.NameAr, practice.NameEn));
+        }
         decimal? renewalPrice = null;
-        if (subscription.SubscriptionKind == SubscriptionKind.Paid)
+        string? currency = null;
+        if (eventType == "PaidReminder" && subscription.SubscriptionKind == SubscriptionKind.Paid)
         {
             var renewal = await resolver.ResolveAsync(new(subscription.Terms.ProductCode, subscription.Terms.PlanCode, subscription.BillingCycle, SelectedPracticeCount: subscription.SelectedPracticeCount), ct);
-            if (renewal.IsSuccess) renewalPrice = renewal.Value.PriceAmount;
+            if (renewal.IsSuccess)
+            {
+                renewalPrice = renewal.Value.PriceAmount;
+                currency = renewal.Value.Currency;
+            }
         }
-        var email = factory.SubscriptionLifecycle(eventType, doctor!.NameAr, subscription.EndsAtUtc,
-            subscription.StartsAtUtc, subscription.Terms.PlanCode, subscription.PracticeLimit, subscription.ReceptionLimit,
-            subscription.SubscriptionContractId, subscription.Id, names, renewalPrice);
+        var name = new EmailName(doctor!.NameAr, doctor.NameEn);
+        var plan = subscription.Terms.PlanCode;
+        var ends = subscription.EndsAtUtc;
+        SubscriptionEmail model = eventType switch
+        {
+            "TrialStarted" => new TrialStartedEmail(name, plan, ends, subscription.StartsAtUtc, subscription.PracticeLimit, subscription.ReceptionLimit),
+            "TrialReminder" => new TrialReminderEmail(name, plan, ends),
+            "TrialExpired" => new TrialExpiredEmail(name, plan, ends),
+            "TrialExtended" => new TrialExtendedEmail(name, plan, ends),
+            "Activated" => new PaidSubscriptionActivatedEmail(name, plan, ends, subscription.StartsAtUtc, subscription.PracticeLimit, subscription.ReceptionLimit, names),
+            "PaidReminder" => new PaidSubscriptionReminderEmail(name, plan, ends, names, renewalPrice, currency),
+            "Expired" => new SubscriptionExpiredEmail(name, plan, ends),
+            _ => throw new InvalidOperationException("Unsupported subscription email event.")
+        };
+        var email = await factory.CreateAsync(model, ct);
         await outbox.QueueAsync(new QueueEmailMessage(key, user.Email, email.Subject, email.HtmlBody, email.TextBody), ct);
     }
     public async Task QueueProjectionAsync(DoctorSubscription subscription, string key, CancellationToken ct)

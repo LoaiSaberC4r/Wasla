@@ -2,7 +2,6 @@ using Wasla.Domain.Tickets;
 using Wasla.Application.Features.PatientIdentityMatching;
 using Wasla.Application.Features.Archives;
 using Wasla.Application.Features.Reporting;
-using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Globalization;
@@ -680,6 +679,7 @@ internal sealed partial class ReservationApplicationService(
     IDateTimeProvider clock,
     Wasla.Application.Features.Families.IDependentAccessPolicy dependents,
     IReceptionPracticeAuthorizationService receptionAuthorization,
+    IEmailNotificationFactory emailFactory,
     IEmailOutbox emailOutbox,
     IPracticeReservationOccupancyReader occupancyReader,
     IReservationProjectionInvalidationOutbox projectionOutbox,
@@ -2725,31 +2725,29 @@ internal sealed partial class ReservationApplicationService(
         CancellationToken cancellationToken)
     {
         if (notificationOptions.Value.Enabled && notificationOptions.Value.OwnReservationEmails) return;
-        var localTime = TimeOnly.FromDateTime(reservation.ScheduledLocalDateTime);
-        var subject = eventName switch
-        {
-            "created" => "Wasla | تم تأكيد الحجز | Reservation Confirmed",
-            "rescheduled" => "Wasla | تمت إعادة جدولة الحجز | Reservation Rescheduled",
-            "cancelled" => "Wasla | تم إلغاء الحجز | Reservation Cancelled",
-            _ => "Wasla | تحديث الحجز | Reservation Update"
-        };
-        var safeReference = WebUtility.HtmlEncode(reservation.ReservationReference);
-        var safeDate = WebUtility.HtmlEncode(reservation.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-        var safeTime = WebUtility.HtmlEncode(localTime.ToString("HH:mm", CultureInfo.InvariantCulture));
-        var html = $"<p dir=\"rtl\">مرجع الحجز: {safeReference}<br>الموعد: {safeDate} {safeTime}</p>" +
-                   $"<p>Reservation reference: {safeReference}<br>Appointment: {safeDate} {safeTime}</p>";
         var historyId = reservation.History.OrderBy(item => item.OccurredOnUtc).Last().Id;
         var resolved = await recipientResolver.ResolveAsync([reservation], cancellationToken);
         var recipients = resolved.GetValueOrDefault(reservation.Id) ?? [];
+        if (recipients.Count == 0) return;
 
+        var reference = reservation.ReservationReference;
+        var appointment = reservation.ScheduledLocalDateTime;
+        ReservationEmail model = eventName switch
+        {
+            "created" => new ReservationConfirmedEmail(reference, appointment),
+            "rescheduled" => new ReservationRescheduledEmail(reference, appointment),
+            "cancelled" => new ReservationCancelledEmail(reference, appointment),
+            _ => throw new InvalidOperationException("Unsupported reservation email event.")
+        };
+        var email = await emailFactory.CreateAsync(model, cancellationToken);
         foreach (var recipient in recipients)
         {
             await emailOutbox.QueueAsync(new QueueEmailMessage(
                 $"reservation-{eventName}:{reservation.Id:N}:{historyId:N}:{Fingerprint(recipient)[..12]}",
                 recipient,
-                subject,
-                html,
-                $"{reservation.ReservationReference} - {reservation.BusinessDate:yyyy-MM-dd} {localTime:HH:mm}"),
+                email.Subject,
+                email.HtmlBody,
+                email.TextBody),
                 cancellationToken);
         }
     }

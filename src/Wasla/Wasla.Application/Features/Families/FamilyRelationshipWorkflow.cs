@@ -672,7 +672,16 @@ public sealed class FamilyRelationshipWorkflowService(
     {
         // Reviewer free text may contain confidential identity/conflict information.
         // Status notifications never distribute that private review text.
-        var content = emailFactory.FamilyRelationshipStatus(record.Requester.NameAr, action, record.Request.CurrentRevisionNumber, null);
+        var name = new EmailName(record.Requester.NameAr, record.Requester.NameEn);
+        var revision = record.Request.CurrentRevisionNumber;
+        FamilyRelationshipEmail model = action switch
+        {
+            FamilyRelationshipRequestAction.Approved => new FamilyRelationshipApprovedEmail(name, revision),
+            FamilyRelationshipRequestAction.Rejected => new FamilyRelationshipRejectedEmail(name, revision),
+            FamilyRelationshipRequestAction.ModificationRequested => new FamilyRelationshipChangesRequestedEmail(name, revision),
+            _ => throw new InvalidOperationException("Unsupported family email event.")
+        };
+        var content = await emailFactory.CreateAsync(model, cancellationToken);
         await emailOutbox.QueueAsync(new QueueEmailMessage(
             $"family-relationship:{record.Request.Id}:revision-{record.Request.CurrentRevisionNumber}:{action}",
             record.Submitter.Email, content.Subject, content.HtmlBody, content.TextBody), cancellationToken);

@@ -115,7 +115,7 @@ internal sealed class RequestPasswordResetOtpCommandHandler(
         }
 
         dataStore.Add(challengeResult.Value);
-        var email = emailFactory.PasswordResetOtp(otp, options.Value.OtpExpirationMinutes);
+        var email = await emailFactory.CreateAsync(new PasswordResetOtpEmail(otp, options.Value.OtpExpirationMinutes), cancellationToken);
         await emailOutbox.QueueAsync(new QueueEmailMessage(
             $"password-reset-otp:{opaqueRequestId}",
             user.Email,

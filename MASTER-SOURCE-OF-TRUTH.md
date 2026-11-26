@@ -28,3 +28,6 @@ The other repository SOURCE-OF-TRUTH-* approved addenda continue governing their
 respective modules. Proposed documents do not supersede final approved decisions.
 No unrelated business rule, retention rule, patient identity or permission ID is
 changed by this index.
+
+[Transactional email design and architecture](docs/email-system/README.md) documents
+the shared renderer and the existing caller-owned Email Outbox integration.

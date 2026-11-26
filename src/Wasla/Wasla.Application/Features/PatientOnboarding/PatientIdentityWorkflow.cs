@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -29,7 +28,7 @@ public sealed record PatientIdentityAttestationResponse(Guid PatientId, Guid Att
 
 public sealed partial class PatientIdentityWorkflow(IWaslaDataStore data, IPatientIdentityStore store, ICurrentUser current,
     IReceptionPracticeAuthorizationService reception, IPasswordResetProtector protector, IPasswordService passwords,
-    IMediaService media, IPrivateMediaReader privateMedia, IEmailOutbox outbox, IDateTimeProvider clock,
+    IMediaService media, IPrivateMediaReader privateMedia, IEmailNotificationFactory emailFactory, IEmailOutbox outbox, IDateTimeProvider clock,
     IOptions<PatientIdentityOptions> options, IPatientIdentityMediaCompensation compensation)
     : ICommandHandler<PatientIdentityCommand, object>, IQueryHandler<PatientIdentityQuery, object>
 {
@@ -150,7 +149,7 @@ public sealed partial class PatientIdentityWorkflow(IWaslaDataStore data, IPatie
         var otp = protector.GenerateOtp(Options.OtpLength);
         var hash = protector.HashOtp($"patient-identity:otp:{id:N}:{(int)p.Purpose}:{email}:{otp}");
         data.Add(new PatientOnboardingChallenge(id, p.Purpose, email, userId, p.PatientReference, hash, Now, Now.AddMinutes(Options.EmailOtpTtlMinutes), Options.EmailOtpMaxAttempts));
-        await MailAsync($"patient-otp:{id:N}", email, "رمز التحقق / Verification code", $"رمز التحقق: {otp}. صالح لمدة {Options.EmailOtpTtlMinutes} دقائق.\nVerification code: {otp}. Valid for {Options.EmailOtpTtlMinutes} minutes.", cancellationToken);
+        await QueueEmailAsync($"patient-otp:{id:N}", email, new PatientEmailVerificationEmail(otp, Options.EmailOtpTtlMinutes), cancellationToken);
         return Ok(new { requestId = id, message = ErrorMessage.PatientIdentityStartAccepted });
     }
     private async Task<Result<object>> VerifyAsync(PatientIdentityInput p, CancellationToken cancellationToken)
@@ -298,14 +297,18 @@ public sealed partial class PatientIdentityWorkflow(IWaslaDataStore data, IPatie
         if (upload is null) return null;
         var stored = await media.SaveAsync(upload, new MediaStorageRequest(folder), cancellationToken); compensation.Track(stored.Key); return stored.Key;
     }
-    private Task MailAsync(string key, string email, string subject, string text, CancellationToken cancellationToken) => outbox.QueueAsync(new QueueEmailMessage(key, email, subject,
-        "<p dir=\"auto\">" + WebUtility.HtmlEncode(text).Replace("\n", "<br>", StringComparison.Ordinal) + "</p>", text), cancellationToken);
+    private async Task QueueEmailAsync(string key, string email, EmailTemplateModel model, CancellationToken cancellationToken)
+    {
+        var content = await emailFactory.CreateAsync(model, cancellationToken);
+        await outbox.QueueAsync(new QueueEmailMessage(key, email, content.Subject, content.HtmlBody, content.TextBody), cancellationToken);
+    }
+
     private async Task<PatientActivationInvitation> InviteAsync(PatientActivationPurpose purpose, Guid? userId, Guid? claimId, string email, CancellationToken cancellationToken, int sendCount = 1)
     {
         var token = protector.GenerateResetToken(); var invitation = new PatientActivationInvitation(Guid.NewGuid(), purpose, userId, claimId, email, InvitationHash(token), Now, Now.AddHours(Options.ActivationInvitationTtlHours), sendCount);
         data.Add(invitation);
-        await MailAsync($"patient-full-invite:{invitation.Id:N}", email, "تفعيل حساب وصلة / Activate your Wasla account",
-            $"استخدم دعوة التفعيل لاختيار كلمة المرور خلال {Options.ActivationInvitationTtlHours} ساعة.\nUse this activation invitation to choose your password within {Options.ActivationInvitationTtlHours} hours.\n{token}", cancellationToken);
+        await QueueEmailAsync($"patient-full-invite:{invitation.Id:N}", email,
+            new PatientAccountActivationEmail(token, Options.ActivationInvitationTtlHours), cancellationToken);
         return invitation;
     }
 }

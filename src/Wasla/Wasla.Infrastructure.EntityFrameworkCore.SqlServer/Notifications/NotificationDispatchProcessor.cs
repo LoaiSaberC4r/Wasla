@@ -9,12 +9,13 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Email;
 using Wasla.Application.Features.Notifications;
 using Wasla.Domain.Notifications;
+using Wasla.Domain.Reservations;
 using Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Persistence;
 
 namespace Wasla.Infrastructure.EntityFrameworkCore.SqlServer.Notifications;
 
 public sealed partial class NotificationDispatchProcessor(WaslaDbContext db, NotificationEligibility eligibility, IEmailOutbox email,
-    IDateTimeProvider clock, IOptions<NotificationOptions> options, ILogger<NotificationDispatchProcessor> logger)
+    IEmailNotificationFactory emailFactory, IDateTimeProvider clock, IOptions<NotificationOptions> options, ILogger<NotificationDispatchProcessor> logger)
 {
     private static readonly Meter Meter = new("Wasla.Notifications", "1.0");
     private static readonly Counter<long> Outcomes = Meter.CreateCounter<long>("notification_dispatch_total");
@@ -99,7 +100,12 @@ public sealed partial class NotificationDispatchProcessor(WaslaDbContext db, Not
                     else
                     {
                         var reservation = source.SourceType == "Reservation" ? await db.Reservations.AsNoTracking().SingleOrDefaultAsync(r => r.Id == source.SourceId, ct) : null;
-                        var rendered = NotificationTemplates.Render(delivery.TemplateCode, delivery.TemplateVersion, policy.Language, reservation?.ReservationReference, reservation?.ScheduledLocalDateTime);
+                        var model = SelectEmailModel(delivery.TemplateCode, delivery.TemplateVersion, reservation) with
+                        {
+                            Language = NotificationPolicy.Language(policy.Language) == "en"
+                                ? EmailLanguageMode.English : EmailLanguageMode.Arabic
+                        };
+                        var rendered = await emailFactory.CreateAsync(model, ct);
                         var key = delivery.LogicalDeliveryKey;
                         if (source.EventType is "Reservation.Created" or "Reservation.Rescheduled" or "Reservation.Cancelled")
                         {
@@ -108,7 +114,7 @@ public sealed partial class NotificationDispatchProcessor(WaslaDbContext db, Not
                             var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(recipient.TrustedEmail!)))[..12];
                             key = $"reservation-{name}:{source.SourceId:N}:{source.SourceEventKey}:{hash}";
                         }
-                        await email.QueueAsync(new QueueEmailMessage(key, recipient.TrustedEmail!, $"Wasla | {rendered.Title}", rendered.HtmlBody, rendered.TextBody, delivery.Id), ct);
+                        await email.QueueAsync(new QueueEmailMessage(key, recipient.TrustedEmail!, rendered.Subject, rendered.HtmlBody, rendered.TextBody, delivery.Id), ct);
                     }
                     delivery.Queue(clock.UtcNow);
                 }
@@ -122,6 +128,26 @@ public sealed partial class NotificationDispatchProcessor(WaslaDbContext db, Not
         Outcome(logger, status, intent.SkipReasonCode ?? "Dispatch.Recorded");
         Outcomes.Add(1, new KeyValuePair<string, object?>("status", status));
     }
+    private static EmailTemplateModel SelectEmailModel(string code, int version, Reservation? reservation)
+    {
+        if (version != NotificationPolicy.TemplateVersion || !NotificationPolicy.EmailAllowed(code))
+            throw new ArgumentException("Notification.TemplateUnavailable");
+        if (NotificationPolicy.Clinical(code)) return new MedicalUpdateAvailableEmail();
+        if (reservation is null) throw new InvalidOperationException("Notification.SourceUnavailable");
+
+        var reference = reservation.ReservationReference;
+        var appointment = reservation.ScheduledLocalDateTime;
+        return code switch
+        {
+            "Reservation.Created" => new ReservationConfirmedEmail(reference, appointment),
+            "Reservation.Rescheduled" => new ReservationRescheduledEmail(reference, appointment),
+            "Reservation.Cancelled" => new ReservationCancelledEmail(reference, appointment),
+            "Appointment.ReminderDue" => new AppointmentReminderEmail(reference, appointment),
+            "Reservation.RestoredFromNoShow" => new ReservationRestoredEmail(reference, appointment),
+            _ => throw new ArgumentException("Notification.TemplateUnavailable")
+        };
+    }
+
     [LoggerMessage(EventId = 4700, Level = LogLevel.Information, Message = "Notification dispatch {Status}; {ReasonCode}.")]
     private static partial void Outcome(ILogger logger, string status, string reasonCode);
 }

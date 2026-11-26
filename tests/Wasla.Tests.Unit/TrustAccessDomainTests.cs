@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Xml.Linq;
 using BuildingBlock.Application.Time;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application;
 using Wasla.Application.Email;
@@ -9,6 +10,7 @@ using Wasla.Domain.Doctors;
 using Wasla.Domain.Patients;
 using Wasla.Domain.Resources;
 using Wasla.Domain.Security;
+using Wasla.Infrastructure.Email;
 
 namespace Wasla.Tests.Unit;
 
@@ -176,20 +178,22 @@ public sealed class TrustAccessDomainTests
     }
 
     [Fact]
-    public void EmailTemplates_AreBilingualEscapedAndUseConfiguredFooter()
+    public async Task EmailTemplates_AreBilingualEscapedAndUseConfiguredFooter()
     {
         var services = new ServiceCollection();
         services.AddSingleton<IDateTimeProvider>(new FixedClock(Now));
-        services.AddSingleton<IEmailBrandingProvider>(new FixedBranding("https://api.example.test/email-assets/wasla-email-footer.png?a=1&b=2"));
         services.AddWaslaApplication();
+        services.AddWaslaEmailRendering(new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?> { ["EmailBranding:FooterImageUrl"] = "https://api.example.test/email-assets/wasla-email-footer.png?a=1&b=2" }).Build());
         using var provider = services.BuildServiceProvider();
         var factory = provider.GetRequiredService<IEmailNotificationFactory>();
 
-        var otp = factory.PasswordResetOtp("123456", 5);
-        var rejected = factory.DoctorLifecycle(DoctorEmailEvent.Rejected, "<Ahmed>", "bad & unsafe");
+        var ct = TestContext.Current.CancellationToken;
+        var otp = await factory.CreateAsync(new PasswordResetOtpEmail("123456", 5), ct);
+        var rejected = await factory.CreateAsync(new DoctorRegistrationRejectedEmail(new("<Ahmed>"), Now, "bad & unsafe"), ct);
         Assert.Contains("lang=\"ar\"", otp.HtmlBody, StringComparison.Ordinal);
         Assert.Contains("lang=\"en\"", otp.HtmlBody, StringComparison.Ordinal);
-        Assert.Contains("123456", otp.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("Verification code: 123456", otp.TextBody, StringComparison.Ordinal);
         Assert.Contains("wasla-email-footer.png?a=1&amp;b=2", otp.HtmlBody, StringComparison.Ordinal);
         Assert.DoesNotContain("<Ahmed>", rejected.HtmlBody, StringComparison.Ordinal);
         Assert.Contains("&lt;Ahmed&gt;", rejected.HtmlBody, StringComparison.Ordinal);
@@ -236,8 +240,4 @@ public sealed class TrustAccessDomainTests
         public DateTime UtcNow { get; } = value;
     }
 
-    private sealed class FixedBranding(string footerImageUrl) : IEmailBrandingProvider
-    {
-        public string FooterImageUrl { get; } = footerImageUrl;
-    }
 }

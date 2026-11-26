@@ -32,4 +32,6 @@ Every enabled channel is conditional on current source, recipient and channel po
 
 Source capture is in the existing save transaction, before external delivery. No-op/failed mutations have no added history, so they produce no added event or reminder. Uncorrelated security/account and pending historical emails retain their original outbox behavior. No VisitSummary.Available or Prescription.Voided notification was introduced.
 
+The [unified email renderer](../email-system/README.md) supplies the subject, HTML, and plain text for newly queued email. The matrix, email ownership, delivery correlation, final guards, and persisted content for historical emails retain their existing behavior.
+
 The complete per-case test method, outcome and actual TRX reference are in [ACCEPTANCE.md](ACCEPTANCE.md) and [TEST-EVIDENCE.json](TEST-EVIDENCE.json). Implementation of a guarded channel is distinct from independently approved production activation.
